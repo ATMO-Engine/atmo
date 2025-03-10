@@ -4,3 +4,9 @@
 [submodule "submodules/simdjson"]
 	path = submodules/simdjson
 	url = git@github.com:simdjson/simdjson.git
+[submodule "submodules/imgui"]
+	path = submodules/imgui
+	url = git@github.com:ocornut/imgui.git
+[submodule "submodules/flecs"]
+	path = submodules/flecs
+	url = git@github.com:SanderMertens/flecs.git

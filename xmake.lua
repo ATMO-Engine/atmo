@@ -25,7 +25,10 @@ package("simdjson")
 package_end()
 
 -- add_requires("sdl3", "simdjson", "clay", "imgui", "flecs", "luau", "curlpp", "joltphysics")
-add_requires("libsdl3", "simdjson")
+add_requires(
+    "libsdl3", {system = false},
+    "simdjson", {system = false}
+)
 
 target("atmo")
     set_warnings("all", "error")
@@ -33,6 +36,16 @@ target("atmo")
     set_kind("binary")
     add_packages("libsdl3", "simdjson")
     add_files("src/*.cpp")
+
+    -- ImGui
+    add_includedirs(SUBMODULE_PATH .. "imgui")
+    add_files(SUBMODULE_PATH .. "imgui/*.cpp")
+    add_files(SUBMODULE_PATH .. "imgui/backends/imgui_impl_sdl3.cpp")
+    add_includedirs(SUBMODULE_PATH .. "imgui/backends")
+
+    -- flecs
+    add_includedirs(SUBMODULE_PATH .. "flecs/distr")
+    add_files(SUBMODULE_PATH .. "flecs/distr/*.c")
 
     if is_plat("macosx") then
         add_frameworks(
