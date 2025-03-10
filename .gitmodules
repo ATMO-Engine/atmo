@@ -1,0 +1,6 @@
+[submodule "submodules/SDL"]
+	path = submodules/SDL
+	url = git@github.com:libsdl-org/SDL.git
+[submodule "submodules/simdjson"]
+	path = submodules/simdjson
+	url = git@github.com:simdjson/simdjson.git

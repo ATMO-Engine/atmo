@@ -1,5 +1,5 @@
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
+#include <simdjson.h>
 
 int main(int argc, char* argv[]) {
 
