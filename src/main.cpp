@@ -2,6 +2,7 @@
 #include <simdjson.h>
 #include <imgui.h>
 #include <flecs.h>
+#include <spdlog/spdlog.h>
 
 int main(int argc, char* argv[])
 {
@@ -43,5 +44,6 @@ int main(int argc, char* argv[])
 
     // Clean up
     SDL_Quit();
+    spdlog::info("bye");
     return 0;
 }

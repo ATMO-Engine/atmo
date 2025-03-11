@@ -10,3 +10,6 @@
 [submodule "submodules/flecs"]
 	path = submodules/flecs
 	url = git@github.com:SanderMertens/flecs.git
+[submodule "submodules/spdlog"]
+	path = submodules/spdlog
+	url = git@github.com:gabime/spdlog.git
