@@ -13,9 +13,9 @@ package("libsdl3")
     end)
 package_end()
 
-package("simdjson")
+package("glaze")
     add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "simdjson"))
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "glaze"))
     on_install(function (package)
         local configs = {}
         table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
@@ -46,19 +46,19 @@ package("spdlog")
     end)
 package_end()
 
--- add_requires("sdl3", "simdjson", "clay", "imgui", "flecs", "luau", "curlpp", "joltphysics")
+-- add_requires("sdl3", "glaze", "clay", "imgui", "flecs", "luau", "curlpp", "joltphysics")
 add_requires(
     "libsdl3", {system = false},
-    "simdjson", {system = false},
+    "glaze", {system = false},
     "flecs", {system = false},
     "spdlog", {system = false}
 )
 
 target("atmo")
     set_warnings("all", "error")
-    set_languages("c++20")
+    set_languages("c++23")
     set_kind("binary")
-    add_packages("libsdl3", "simdjson", "flecs", "spdlog")
+    add_packages("libsdl3", "glaze", "flecs", "spdlog")
     add_files("src/*.cpp")
 
     -- ImGui

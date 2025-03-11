@@ -13,3 +13,9 @@
 [submodule "submodules/spdlog"]
 	path = submodules/spdlog
 	url = git@github.com:gabime/spdlog.git
+[submodule "submodules/v5.0.0"]
+	path = submodules/v5.0.0
+	url = git@github.com:stephenberry/glaze.git
+[submodule "submodules/glaze"]
+	path = submodules/glaze
+	url = git@github.com:stephenberry/glaze.git

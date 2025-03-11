@@ -1,5 +1,5 @@
 #include <SDL3/SDL.h>
-#include <simdjson.h>
+#include <glaze/glaze.hpp>
 #include <imgui.h>
 #include <flecs.h>
 #include <spdlog/spdlog.h>
