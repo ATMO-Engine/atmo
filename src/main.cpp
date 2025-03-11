@@ -5,6 +5,7 @@
 
 int main(int argc, char* argv[])
 {
+    flecs::world ecs;
     SDL_Window *window;                    // Declare a pointer
     bool done = false;
 
