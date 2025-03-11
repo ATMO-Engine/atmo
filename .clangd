@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: -ferror-limit=1000000000
