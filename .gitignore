@@ -9,3 +9,4 @@ build/
 .vscode
 compile_commands.json
 .cache/
+imgui.ini

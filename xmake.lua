@@ -59,7 +59,7 @@ target("atmo")
     set_languages("c++23")
     set_kind("binary")
     add_packages("libsdl3", "glaze", "flecs", "spdlog")
-    add_files("src/*.cpp")
+    add_files("src/**.cpp")
 
     -- ImGui
     add_includedirs(SUBMODULE_PATH .. "imgui")
