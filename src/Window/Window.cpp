@@ -1,5 +1,7 @@
 #include "Window.hpp"
 #include "SDL3/SDL_init.h"
+#include "imgui.h"
+#include "imgui_internal.h"
 
 Window::Window() : shouldClose(false) {}
 
@@ -39,10 +41,12 @@ void Window::setupImGui()
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    io.IniFilename = NULL;
 
     ImGui_ImplSDL3_InitForOpenGL(window, context);
     ImGui_ImplOpenGL3_Init();
@@ -50,34 +54,59 @@ void Window::setupImGui()
 
 void Window::run()
 {
+    ImGuiIO &io = ImGui::GetIO();
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
     while (!shouldClose) {
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
-            // (Where your code calls SDL_PollEvent())
-            ImGui_ImplSDL3_ProcessEvent(&event); // Forward your event to backend
+            ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT) {
                 shouldClose = true;
             }
         }
-        // Do game logic, present a frame, etc.
 
-        // (After event loop)
-        // Start the Dear ImGui frame
+        // TODO: game logic here
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // Rendering
-        // (Your code clears your framebuffer, renders your other stuff etc.)
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, 30));
+        ImGui::SetNextWindowViewport(viewport->ID);
+
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+                                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
+
+        if (ImGui::Begin("TopBar", nullptr, window_flags))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 5));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 0));
+
+            if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None))
+            {
+                if (ImGui::BeginTabItem("Scene")) { ImGui::EndTabItem(); }
+                if (ImGui::BeginTabItem("Texture")) { ImGui::EndTabItem(); }
+                ImGui::EndTabBar();
+            }
+
+            ImGui::PopStyleVar(2);
+        }
+        ImGui::End();
+
+        ImGui::DockSpaceOverViewport(viewport->ID);
+
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w,
                      clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        // (Your code calls SDL_GL_SwapWindow() etc.)
         SDL_GL_SwapWindow(window);
     }
 }

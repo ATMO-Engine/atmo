@@ -23,7 +23,6 @@ class Window
         SDL_Window *window;
         bool shouldClose;
         SDL_GLContext context;
-        ImGuiIO io;
 };
 
 #endif /* !WINDOW_HPP_ */
