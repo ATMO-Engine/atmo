@@ -1,14 +1,16 @@
 #ifndef EDITOR_HPP_
 #define EDITOR_HPP_
 
+#include <string>
+
 class Editor
 {
     public:
-        Editor();
-        ~Editor();
+        virtual void run() = 0;
+        std::string getEditorName() { return editorName; }
 
     protected:
-    private:
+        const std::string editorName;
 };
 
 #endif /* !EDITOR_HPP_ */
