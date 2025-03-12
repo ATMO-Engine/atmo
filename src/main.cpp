@@ -65,7 +65,9 @@ int main(int argc, char *argv[])
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow(); // Show demo window! :)
+        if (show_demo_window) {
+            ImGui::ShowDemoWindow(); // Show demo window! :)
+        }
 
         static float f = 0.0f;
         static int counter = 0;
@@ -87,6 +89,14 @@ int main(int argc, char *argv[])
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
 
+        if (show_another_window)
+        {
+            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+            ImGui::Text("Hello from another window!");
+            if (ImGui::Button("Close Me"))
+                show_another_window = false;
+            ImGui::End();
+        }
 
         // Rendering
         // (Your code clears your framebuffer, renders your other stuff etc.)
