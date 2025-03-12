@@ -28,6 +28,11 @@ int main(int argc, char *argv[])
         spdlog::critical("Could not create window: %s\n", SDL_GetError());
         return 1;
     }
+    // Request OpenGL 4.1 Core Profile on macOS
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
     // Setup Dear ImGui context
