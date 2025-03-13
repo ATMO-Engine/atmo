@@ -76,7 +76,7 @@ void Window::run()
         ImGuiViewport* viewport = ImGui::GetMainViewport();
 
         ImGui::SetNextWindowPos(viewport->Pos);
-        ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, 30));
+        ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y));
         ImGui::SetNextWindowViewport(viewport->ID);
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
@@ -90,8 +90,18 @@ void Window::run()
 
             if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None))
             {
-                if (ImGui::BeginTabItem("Scene")) { ImGui::EndTabItem(); }
-                if (ImGui::BeginTabItem("Texture")) { ImGui::EndTabItem(); }
+                if (ImGui::BeginTabItem("Scene")) {
+                    sceneEditor.run();
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Texture")) {
+                    textureEditor.run();
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::TabItemButton("+")) {
+                    spdlog::info("pressed");
+                    // TODO: modal to create new tab choosing from list of available tabs
+                }
                 ImGui::EndTabBar();
             }
 
@@ -99,7 +109,7 @@ void Window::run()
         }
         ImGui::End();
 
-        ImGui::DockSpaceOverViewport(viewport->ID);
+        // ImGui::DockSpaceOverViewport(viewport->ID);
 
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);

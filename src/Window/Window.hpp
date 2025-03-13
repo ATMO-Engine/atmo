@@ -8,6 +8,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
 #include "imgui_impl_sdl3.h"
+#include "../Editor/SceneEditor/SceneEditor.hpp"
 
 class Window
 {
@@ -23,6 +24,8 @@ class Window
         SDL_Window *window;
         bool shouldClose;
         SDL_GLContext context;
+        SceneEditor sceneEditor;
+        SceneEditor textureEditor;
 };
 
 #endif /* !WINDOW_HPP_ */
