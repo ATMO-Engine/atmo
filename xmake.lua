@@ -46,26 +46,13 @@ on_install(function(package)
 end)
 package_end()
 
-
-package("imgui-paint")
-add_deps("cmake")
-set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "imgui-paint"))
-on_install(function(package)
-    local configs = {}
-    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-    table.insert(configs, "-DBUILD_STATIC_LIBS=" .. (package:config("static") and "ON" or "OFF"))
-    import("package.tools.cmake").install(package, configs)
-end)
-package_end()
-
 -- add_requires("sdl3", "glaze", "clay", "imgui", "flecs", "luau", "curlpp", "joltphysics")
 
 add_requires(
     "libsdl3", { system = false },
     "glaze", { system = false },
     "flecs", { system = false },
-    "spdlog", { system = false },
-    "imgui-paint", { system = false }
+    "spdlog", { system = false }
 )
 
 target("atmo")
