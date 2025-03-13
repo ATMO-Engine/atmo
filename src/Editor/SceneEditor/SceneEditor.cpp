@@ -2,8 +2,9 @@
 #include "imgui.h"
 
 SceneEditor::SceneEditor()
-    : world(flecs::world())
+    : world(flecs::world()), sceneHierarchy(world)
 {
+
 }
 
 void SceneEditor::run()
