@@ -19,3 +19,6 @@
 [submodule "submodules/glaze"]
 	path = submodules/glaze
 	url = git@github.com:stephenberry/glaze.git
+[submodule "submodules/imgui-paint"]
+	path = submodules/imgui-paint
+	url = git@github.com:OpenGL-Graphics/imgui-paint.git
