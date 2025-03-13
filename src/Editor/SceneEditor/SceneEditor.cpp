@@ -2,24 +2,50 @@
 #include "imgui.h"
 
 SceneEditor::SceneEditor()
-{
-}
-
-SceneEditor::~SceneEditor()
+    : world(flecs::world())
 {
 }
 
 void SceneEditor::run()
 {
-    // game engine layout with a column to the left containing the scene hierarchy and a file explorer both taking up 1/2 of the screen
+    ImGui::Columns(3, "SceneEditorColumns", true);
 
-    // ImGui::Columns(2, "SceneEditorColumns", false);
-    // ImGui::SetColumnWidth(0, 300.0f);
-    // ImGui::BeginChild("SceneHierarchy", ImVec2(0, 0), true);
-    // ImGui::Text("Scene Hierarchy");
-    // ImGui::EndChild();
-    // ImGui::NextColumn();
-    // ImGui::BeginChild("FileExplorer", ImVec2(0, 0), true);
-    // ImGui::Text("File Explorer");
-    // ImGui::EndChild();
+    ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.15f);
+    ImGui::BeginChild("LeftColumn", ImVec2(0, 0), false);
+        ImGui::BeginChild("SceneHierarchy", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.5f), false);
+            ImGui::Text("Scene Hierarchy");
+        ImGui::EndChild();
+
+        ImGui::Separator();
+
+        ImGui::BeginChild("FileExplorer", ImVec2(0, 0), false);
+            ImGui::Text("File Explorer");
+        ImGui::EndChild();
+    ImGui::EndChild();
+
+    ImGui::NextColumn();
+
+    ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.7f);
+    ImGui::BeginChild("MiddleColumn", ImVec2(0, 0), false);
+        ImGui::BeginChild("SceneView", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.7f), false);
+            ImGui::Text("Scene View");
+        ImGui::EndChild();
+
+        ImGui::Separator();
+
+        ImGui::BeginChild("Console", ImVec2(0, 0), false);
+            ImGui::Text("Console");
+        ImGui::EndChild();
+    ImGui::EndChild();
+
+    ImGui::NextColumn();
+
+    ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.15f);
+    ImGui::BeginChild("RightColumn", ImVec2(0, 0), false);
+        ImGui::BeginChild("Inspector", ImVec2(0, 0), false);
+            ImGui::Text("Inspector");
+        ImGui::EndChild();
+    ImGui::EndChild();
+
+    ImGui::Columns(1);
 }

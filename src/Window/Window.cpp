@@ -85,9 +85,6 @@ void Window::run()
 
         if (ImGui::Begin("TopBar", nullptr, window_flags))
         {
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 5));
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 0));
-
             if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None))
             {
                 if (ImGui::BeginTabItem("Scene")) {
@@ -105,7 +102,6 @@ void Window::run()
                 ImGui::EndTabBar();
             }
 
-            ImGui::PopStyleVar(2);
         }
         ImGui::End();
 
