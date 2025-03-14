@@ -22,3 +22,6 @@
 [submodule "submodules/imgui-paint"]
 	path = submodules/imgui-paint
 	url = git@github.com:OpenGL-Graphics/imgui-paint.git
+[submodule "submodules/SDL_image"]
+	path = submodules/SDL_image
+	url = git@github.com:libsdl-org/SDL_image.git

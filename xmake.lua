@@ -13,6 +13,17 @@ package("libsdl3")
     end)
 package_end()
 
+package("libsdl3_image")
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "SDL_image"))
+    on_install(function(package)
+        local configs = {}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+        table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
+        import("package.tools.cmake").install(package, configs)
+    end)
+package_end()
+
 package("glaze")
     add_deps("cmake")
     set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "glaze"))
@@ -57,6 +68,7 @@ end
 
 add_requires(
     "libsdl3", { system = false },
+    "libsdl3_image", { system = false },
     "glaze", { system = false },
     "flecs", { system = false },
     "spdlog", { system = false }
@@ -65,7 +77,7 @@ add_requires(
 target("atmo")
     set_languages("c++23")
     set_kind("binary")
-    add_packages("libsdl3", "glaze", "flecs", "spdlog", "imgui-paint")
+    add_packages("libsdl3", "libsdl3_image", "glaze", "flecs", "spdlog", "imgui-paint")
     add_files("src/**.cpp")
     --add_defines("FLECS_CPP_NO_AUTO_REGISTRATION=1")
 

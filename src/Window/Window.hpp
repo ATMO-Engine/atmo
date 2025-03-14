@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 #include "../Editor/SceneEditor/SceneEditor.hpp"
+#include "../Editor/SpriteEditor/SpriteEditor.hpp"
 #include "SDL3/SDL_video.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
@@ -25,7 +26,7 @@ class Window
         bool shouldClose;
         SDL_GLContext context;
         SceneEditor sceneEditor;
-        SceneEditor textureEditor;
+        SpriteEditor textureEditor;
 };
 
 #endif /* !WINDOW_HPP_ */
