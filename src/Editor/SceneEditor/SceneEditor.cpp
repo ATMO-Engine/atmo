@@ -28,7 +28,6 @@ void SceneEditor::run()
         ImGui::Separator();
 
         ImGui::BeginChild("FileExplorer", ImVec2(0, 0), false);
-            ImGui::Text("File Explorer");
             fileExplorer.run();
         ImGui::EndChild();
     ImGui::EndChild();

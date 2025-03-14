@@ -10,13 +10,16 @@ FileExplorer::~FileExplorer() {}
 
 void FileExplorer::run()
 {
+    ImGui::Text("File Explorer");
     ImGui::SameLine();
     if (ImGui::Button("refresh")) {
         refresh();
     }
+    ImGui::BeginChild("content", ImVec2(0, 0), false);
     display(0, _fileList);
-
+    ImGui::EndChild();
 }
+
 
 void FileExplorer::display(int depth, std::vector<File> &list)
 {
