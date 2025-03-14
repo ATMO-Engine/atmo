@@ -8,7 +8,15 @@ FileExplorer::FileExplorer(std::filesystem::path dirPath) { _actualPath = dirPat
 
 FileExplorer::~FileExplorer() {}
 
-void FileExplorer::run() { display(0, _fileList); }
+void FileExplorer::run()
+{
+    ImGui::SameLine();
+    if (ImGui::Button("refresh")) {
+        refresh();
+    }
+    display(0, _fileList);
+
+}
 
 void FileExplorer::display(int depth, std::vector<File> &list)
 {
