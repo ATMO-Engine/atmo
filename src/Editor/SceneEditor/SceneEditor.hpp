@@ -18,6 +18,7 @@ class SceneEditor : public Editor
 
     private:
         flecs::world ecs;
+        flecs::entity_t selectedEntity;
         SceneHierarchy sceneHierarchy;
         FileExplorer fileExplorer;
 };
