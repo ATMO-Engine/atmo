@@ -3,9 +3,9 @@
 
 #include <flecs.h>
 #include <spdlog/spdlog.h>
-#include "../Editor.hpp"
-#include "../../Widget/SceneHierarchy/SceneHierarchy.hpp"
 #include "../../Widget/FileExplorer/FileExplorer.hpp"
+#include "../../Widget/SceneHierarchy/SceneHierarchy.hpp"
+#include "../Editor.hpp"
 
 class SceneEditor : public Editor
 {

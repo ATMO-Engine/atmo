@@ -20,7 +20,7 @@ bool Window::init()
     //     return false;
     // }
 
-    window = SDL_CreateWindow("ATMO Engine", 1920/1.5, 1080/1.5, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("ATMO Engine", 1920 / 1.5, 1080 / 1.5, SDL_WINDOW_OPENGL);
     if (!window) {
         spdlog::critical("Could not create window: {}\n", SDL_GetError());
         return false;
@@ -73,20 +73,18 @@ void Window::run()
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGuiViewport *viewport = ImGui::GetMainViewport();
 
         ImGui::SetNextWindowPos(viewport->Pos);
         ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y));
         ImGui::SetNextWindowViewport(viewport->ID);
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoDocking;
 
-        if (ImGui::Begin("TopBar", nullptr, window_flags))
-        {
-            if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None))
-            {
+        if (ImGui::Begin("TopBar", nullptr, window_flags)) {
+            if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None)) {
                 if (ImGui::BeginTabItem("Scene")) {
                     sceneEditor.run();
                     ImGui::EndTabItem();
@@ -101,7 +99,6 @@ void Window::run()
                 }
                 ImGui::EndTabBar();
             }
-
         }
         ImGui::End();
 

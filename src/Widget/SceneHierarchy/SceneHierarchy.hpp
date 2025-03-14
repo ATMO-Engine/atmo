@@ -4,11 +4,13 @@
 #include <flecs.h>
 #include "../Widget.hpp"
 
-struct Engine {
-    bool process;
+struct Engine
+{
+        bool process;
 };
 
-class SceneHierarchy : public Widget {
+class SceneHierarchy : public Widget
+{
     public:
         SceneHierarchy(const flecs::world &ecs);
         ~SceneHierarchy() = default;
