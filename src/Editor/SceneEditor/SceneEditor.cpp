@@ -1,10 +1,12 @@
 #include "SceneEditor.hpp"
 #include "imgui.h"
 
-SceneEditor::SceneEditor()
-    : world(flecs::world()), sceneHierarchy(world)
-{
+#include <filesystem>
 
+SceneEditor::SceneEditor()
+    : world(flecs::world()), sceneHierarchy(world), fileExplorer(std::filesystem::current_path())
+{
+    fileExplorer.refresh();
 }
 
 void SceneEditor::run()
@@ -21,6 +23,7 @@ void SceneEditor::run()
 
         ImGui::BeginChild("FileExplorer", ImVec2(0, 0), false);
             ImGui::Text("File Explorer");
+            fileExplorer.run();
         ImGui::EndChild();
     ImGui::EndChild();
 
