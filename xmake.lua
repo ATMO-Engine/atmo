@@ -12,7 +12,7 @@ on_install(function(package)
     table.insert(configs, "-DGLAZE_BUILD_EXAMPLES=OFF")
     table.insert(configs, "-DGLAZE_BUILD_TESTS=OFF")
     table.insert(configs, "-DGLAZE_BUILD_DOCS=OFF")
-    table.insert(configs, "-DGLAZE_BUILD_TOOLS=OFF")
+    -- table.insert(configs, "-DGLAZE_BUILD_TOOLS=OFF")
     table.insert(configs, "-Dglaze_DEVELOPER_MODE=OFF")
     table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
     import("package.tools.cmake").install(package, configs)
@@ -64,6 +64,10 @@ set_kind("binary")
 add_packages("libsdl3", "libsdl3_image", "glaze", "flecs", "spdlog", "imgui-paint")
 add_files("src/**.cpp")
 --add_defines("FLECS_CPP_NO_AUTO_REGISTRATION=1")
+
+if is_mode("release") then
+    set_optimize("fastest")
+end
 
 -- ImGui
 add_includedirs(SUBMODULE_PATH .. "imgui")
