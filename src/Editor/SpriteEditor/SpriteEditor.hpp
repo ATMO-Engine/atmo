@@ -11,8 +11,9 @@
 class SpriteEditor : public Editor
 {
     public:
-        SpriteEditor();
+        SpriteEditor(SDL_Window *window);
         void run() override;
+        void init();
 
     protected:
         const std::string editorName = "Scene Editor";

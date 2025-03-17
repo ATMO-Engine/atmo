@@ -1,4 +1,5 @@
 #include "EntityInspector.hpp"
+#include "flecs.h"
 #include "flecs/addons/cpp/c_types.hpp"
 #include "flecs/addons/cpp/type.hpp"
 
@@ -31,8 +32,8 @@ void EntityInspector::run() {
     // show all components of entity
     entity.each([&](flecs::id id) {
         // check if component is flecs::Identifier
-        if (entity.world().has<EcsPrivate>(id) || e.world().has<EcsHidden>(id))
-            ImGui::Text("Identifier");
+        if (id.has_flags(EcsPrivate))
+            ImGui::Text("[PRIVATE] %s", id.type_id().str().c_str());
         else
             ImGui::Text("%s", id.type_id().str().c_str());
     });

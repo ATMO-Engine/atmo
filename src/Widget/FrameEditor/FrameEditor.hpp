@@ -20,17 +20,20 @@ struct DrawPoint {
 class FrameEditor : public Widget
 {
     public:
-        FrameEditor();
-        ~FrameEditor();
+        FrameEditor(SDL_Window *window);
+        ~FrameEditor() = default;
 
+        void init();
         void run() override;
         void draw();
     private:
         std::vector<DrawPoint> points;
         SDL_Renderer *_renderer;
         SDL_Texture *_texture;
+        ImTextureID _textureID;
         int _width = 512;
         int _height = 512;
+        SDL_Window **_window;
 };
 
 #endif /* !FrameEditor_HPP_ */
