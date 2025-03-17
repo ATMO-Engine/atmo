@@ -73,9 +73,11 @@ end
 -- ImGui
 add_includedirs(SUBMODULE_PATH .. "imgui")
 add_files(SUBMODULE_PATH .. "imgui/*.cpp")
+add_files(SUBMODULE_PATH .. "imgui/misc/cpp/*.cpp")
 add_files(SUBMODULE_PATH .. "imgui/backends/imgui_impl_sdl3.cpp")
 add_files(SUBMODULE_PATH .. "imgui/backends/imgui_impl_opengl3.cpp")
 add_includedirs(SUBMODULE_PATH .. "imgui/backends")
+add_includedirs(SUBMODULE_PATH .. "imgui/misc/cpp")
 
 if is_plat("macosx") then
     add_frameworks(

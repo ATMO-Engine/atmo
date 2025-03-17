@@ -13,12 +13,21 @@ class EntityInspector : public Widget
 
         void run() override;
 
+        void drawData(Node *node, flecs::entity entity);
+        void drawData(Transform *transform, flecs::entity entity);
+        void drawComponent(flecs::entity entity, flecs::id component);
+
     protected:
         const std::string widgetName = "Entity Inspector";
 
     private:
-        const flecs::world &ecs;
-        flecs::entity_t &selectedEntity;
+        const flecs::world &_ecs;
+        flecs::entity_t &_selectedEntity;
+        flecs::component<flecs::Identifier> _identifier;
+
+        void drawFieldString(const std::string &label, std::string *value);
+        void drawFieldVector2(const std::string &label, std::array<float, 2> *value);
+        void drawFieldFloat(const std::string &label, float *value);
 };
 
 #endif /* !EntityInspector_HPP_ */
