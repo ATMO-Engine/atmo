@@ -1,6 +1,8 @@
+#include "SDL3/SDL_pixels.h"
 #include "SDL3/SDL_render.h"
 #include "imgui.h"
 #include "imgui_impl_sdlrenderer3.h"
+#include "spdlog/spdlog.h"
 
 #include "FrameEditor.hpp"
 #include <cstddef>
@@ -27,7 +29,7 @@ void FrameEditor::init()
     SDL_SetRenderTarget(_renderer, _texture);
     SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255);
     SDL_RenderClear(_renderer);
-    SDL_SetRenderTarget(_renderer, NULL);
+    SDL_SetRenderTarget(_renderer, nullptr);
 
     // Set texture ID for ImGui
     _textureID = (ImTextureID)_texture;
@@ -35,14 +37,14 @@ void FrameEditor::init()
 
 void FrameEditor::draw()
 {
-    SDL_SetRenderTarget(_renderer, _texture);  // Set target to canvas texture
+    SDL_SetRenderTarget(_renderer, _texture);
     SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);  // Black color for drawing
 
     for (size_t i = 1; i < points.size(); ++i) {
         SDL_RenderLine(_renderer, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
     }
 
-    SDL_SetRenderTarget(_renderer, _texture);
+    SDL_SetRenderTarget(_renderer, nullptr);
 }
 
 void FrameEditor::run()

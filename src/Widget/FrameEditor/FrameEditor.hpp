@@ -31,8 +31,8 @@ class FrameEditor : public Widget
         SDL_Renderer *_renderer;
         SDL_Texture *_texture;
         ImTextureID _textureID;
-        int _width = 512;
-        int _height = 512;
+        int _width = 256;
+        int _height = 256;
         SDL_Window *_window;
 };
 
