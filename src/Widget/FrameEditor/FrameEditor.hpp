@@ -4,6 +4,13 @@
 #include <vector>
 
 #include <SDL3/SDL.h>
+#include <cstddef>
+#include <glad/glad.h>       // GLAD loader
+#include <imgui.h>           // ImGui main header
+#include <imgui_impl_sdl3.h> // ImGui SDL3 backend
+#include <imgui_impl_opengl3.h> // ImGui OpenGL backend
+
+#include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
@@ -23,7 +30,8 @@ class FrameEditor : public Widget
         FrameEditor(SDL_Window *window);
         ~FrameEditor();
 
-        void init();
+        GLuint SDLTextureToOpenGL();
+        bool init();
         void run() override;
         void draw();
     private:

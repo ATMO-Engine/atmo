@@ -1,4 +1,5 @@
 #include "Window.hpp"
+#include <glad/glad.h>
 #include "SDL3/SDL_init.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -28,6 +29,17 @@ bool Window::init()
         spdlog::critical("Could not create window: {}\n", SDL_GetError());
         return false;
     }
+
+
+    SDL_GLContext glContext = SDL_GL_CreateContext(window);
+    if (!glContext) {
+        return false;
+    }
+
+        // Initialize GLAD (make sure it's done after the OpenGL context is created)
+        if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+            return false;
+        }
 
 #if defined(__APPLE__)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);

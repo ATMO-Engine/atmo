@@ -53,6 +53,7 @@ end
 add_requires(
     "libsdl3 release-3.2.8", { system = false },
     "libsdl3_image", { system = false },
+    "glad", {system = false},
     "glaze", { system = false },
     "flecs", { system = false },
     "spdlog", { system = false }
@@ -61,7 +62,7 @@ add_requires(
 target("atmo")
 set_languages("c++23")
 set_kind("binary")
-add_packages("libsdl3", "libsdl3_image", "glaze", "flecs", "spdlog", "imgui-paint")
+add_packages("libsdl3", "libsdl3_image", "glad", "glaze", "flecs", "spdlog", "imgui-paint")
 add_files("src/**.cpp")
 --add_defines("FLECS_CPP_NO_AUTO_REGISTRATION=1")
 
