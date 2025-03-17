@@ -4,13 +4,10 @@
 #include "imgui_impl_sdlrenderer3.h"
 #include "spdlog/spdlog.h"
 
-#include "FrameEditor.hpp"
 #include <cstddef>
+#include "FrameEditor.hpp"
 
-FrameEditor::FrameEditor(SDL_Window *window)
-{
-    _window = window;
-}
+FrameEditor::FrameEditor(SDL_Window *window) { _window = window; }
 
 FrameEditor::~FrameEditor()
 {
@@ -22,8 +19,7 @@ void FrameEditor::init()
 {
     _renderer = SDL_CreateRenderer(_window, nullptr);
 
-    _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_TARGET, _width, _height);
+    _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, _width, _height);
 
     // Clear canvas to white
     SDL_SetRenderTarget(_renderer, _texture);
@@ -38,7 +34,7 @@ void FrameEditor::init()
 void FrameEditor::draw()
 {
     SDL_SetRenderTarget(_renderer, _texture);
-    SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);  // Black color for drawing
+    SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255); // Black color for drawing
 
     for (size_t i = 1; i < points.size(); ++i) {
         SDL_RenderLine(_renderer, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);

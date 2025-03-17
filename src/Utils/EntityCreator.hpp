@@ -1,6 +1,6 @@
+#include <array>
 #include <flecs.h>
 #include <string>
-#include <array>
 
 struct Node
 {

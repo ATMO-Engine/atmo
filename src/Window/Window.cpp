@@ -5,7 +5,8 @@
 
 Window::Window() : shouldClose(false) {}
 
-Window::~Window() {
+Window::~Window()
+{
     delete textureEditor;
     delete sceneEditor;
 }
