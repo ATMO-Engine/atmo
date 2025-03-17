@@ -5,9 +5,13 @@
 #include "FrameEditor.hpp"
 
 FrameEditor::FrameEditor(SDL_Window *window)
-    : _window(window)
 {
-    _renderer = SDL_CreateRenderer(_window, nullptr);
+    _window = &window;
+}
+
+void FrameEditor::init()
+{
+    _renderer = SDL_CreateRenderer(*_window, nullptr);
 
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_TARGET, _width, _height);
@@ -21,7 +25,6 @@ FrameEditor::FrameEditor(SDL_Window *window)
     // Set texture ID for ImGui
     _textureID = (ImTextureID)_texture;
 }
-
 
 void FrameEditor::draw()
 {

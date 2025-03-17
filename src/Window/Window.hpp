@@ -25,8 +25,8 @@ class Window
         SDL_Window *window;
         bool shouldClose;
         SDL_GLContext context;
-        SceneEditor sceneEditor;
-        SpriteEditor textureEditor;
+        SceneEditor *sceneEditor;
+        SpriteEditor *textureEditor;
 };
 
 #endif /* !WINDOW_HPP_ */

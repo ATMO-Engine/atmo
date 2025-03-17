@@ -8,6 +8,10 @@ SpriteEditor::SpriteEditor(SDL_Window *window)
     fileExplorer.refresh();
 }
 
+void SpriteEditor::init() {
+    frameEditor.init();
+}
+
 void SpriteEditor::run()
 {
     ImGui::Columns(2, "SpriteEditorColumns", true);

@@ -3,9 +3,12 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-Window::Window() : shouldClose(false), textureEditor(window) {}
+Window::Window() : shouldClose(false) {}
 
-Window::~Window() {}
+Window::~Window() {
+    delete textureEditor;
+    delete sceneEditor;
+}
 
 bool Window::init()
 {
@@ -33,6 +36,9 @@ bool Window::init()
 #endif
 
     context = SDL_GL_CreateContext(window);
+
+    textureEditor = new SpriteEditor(window);
+    sceneEditor = new SceneEditor();
 
     return true;
 }
@@ -86,11 +92,11 @@ void Window::run()
         if (ImGui::Begin("TopBar", nullptr, window_flags)) {
             if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None)) {
                 if (ImGui::BeginTabItem("Scene")) {
-                    sceneEditor.run();
+                    sceneEditor->run();
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Texture")) {
-                    textureEditor.run();
+                    textureEditor->run();
                     ImGui::EndTabItem();
                 }
                 if (ImGui::TabItemButton("+")) {
