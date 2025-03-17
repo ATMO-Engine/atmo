@@ -3,7 +3,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-Window::Window() : shouldClose(false) {}
+Window::Window() : shouldClose(false), textureEditor(window) {}
 
 Window::~Window() {}
 

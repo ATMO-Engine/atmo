@@ -2,9 +2,6 @@ add_rules("mode.debug", "mode.release")
 
 local SUBMODULE_PATH = "submodules/"
 
-add_requires("libsdl3", { system = false })
-add_requires("libsdl3_image", { system = false })
-
 package("glaze")
     add_deps("cmake")
     set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "glaze"))

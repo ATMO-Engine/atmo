@@ -2,8 +2,8 @@
 #include "imgui.h"
 
 
-SpriteEditor::SpriteEditor()
-: fileExplorer(std::filesystem::current_path()), frameEditor(), frameTools()
+SpriteEditor::SpriteEditor(SDL_Window *window)
+: fileExplorer(std::filesystem::current_path()), frameEditor(window), frameTools()
 {
     fileExplorer.refresh();
 }

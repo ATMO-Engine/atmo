@@ -1,10 +1,13 @@
-#include "SDL3/SDL_oldnames.h"
+#include "SDL3/SDL_render.h"
 #include "imgui.h"
+#include "imgui_impl_sdlrenderer3.h"
 
 #include "FrameEditor.hpp"
 
-FrameEditor::FrameEditor()
+FrameEditor::FrameEditor(SDL_Window *window)
+    : _window(window)
 {
+    _renderer = SDL_CreateRenderer(_window, nullptr);
 
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_TARGET, _width, _height);
@@ -14,6 +17,9 @@ FrameEditor::FrameEditor()
     SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255);
     SDL_RenderClear(_renderer);
     SDL_SetRenderTarget(_renderer, NULL);
+
+    // Set texture ID for ImGui
+    _textureID = (ImTextureID)_texture;
 }
 
 
@@ -23,7 +29,7 @@ void FrameEditor::draw()
     SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);  // Black color for drawing
 
     for (size_t i = 1; i < points.size(); ++i) {
-        SDL_RenderDrawLine(_renderer, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+        SDL_RenderLine(_renderer, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
     }
 
     SDL_SetRenderTarget(_renderer, NULL);
@@ -36,7 +42,7 @@ void FrameEditor::run()
     ImVec2 canvasSize = ImVec2(_width, _height);
 
     // Draw the texture as an image in ImGui
-    ImGui::Image((void*)_texture, canvasSize);
+    ImGui::Image(_textureID, canvasSize);
 
     // Check for mouse input
     ImVec2 mousePos = ImGui::GetMousePos();

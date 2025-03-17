@@ -11,7 +11,7 @@
 class SpriteEditor : public Editor
 {
     public:
-        SpriteEditor();
+        SpriteEditor(SDL_Window *window);
         void run() override;
 
     protected:
