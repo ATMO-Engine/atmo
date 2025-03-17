@@ -20,7 +20,6 @@ void FrameEditor::init()
     SDL_SetRenderTarget(_renderer, _texture);
     SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255);
     SDL_RenderClear(_renderer);
-    SDL_SetRenderTarget(_renderer, NULL);
 
     // Set texture ID for ImGui
     _textureID = (ImTextureID)_texture;
