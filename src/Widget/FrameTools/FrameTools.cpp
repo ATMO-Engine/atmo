@@ -4,6 +4,4 @@
 
 FrameTools::FrameTools() {}
 
-void FrameTools::run()
-{
-}
+void FrameTools::run() {}

@@ -19,9 +19,10 @@
 #include "../Widget.hpp"
 #include "SDL3/SDL_render.h"
 
-struct DrawPoint {
-    int x;
-    int y;
+struct DrawPoint
+{
+        int x;
+        int y;
 };
 
 class FrameEditor : public Widget
@@ -34,6 +35,7 @@ class FrameEditor : public Widget
         bool init();
         void run() override;
         void draw();
+
     private:
         std::vector<DrawPoint> points;
         SDL_Renderer *_renderer;

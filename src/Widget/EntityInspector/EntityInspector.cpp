@@ -8,15 +8,17 @@ EntityInspector::EntityInspector(const flecs::world &ecs, flecs::entity_t &selec
 {
 }
 
-static void TextCentered(const std::string &text) {
+static void TextCentered(const std::string &text)
+{
     auto windowWidth = ImGui::GetWindowSize().x;
-    auto textWidth   = ImGui::CalcTextSize(text.c_str()).x;
+    auto textWidth = ImGui::CalcTextSize(text.c_str()).x;
 
     ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
     ImGui::Text("%s", text.c_str());
 }
 
-void EntityInspector::run() {
+void EntityInspector::run()
+{
     if (selectedEntity == -1)
         return;
 
@@ -30,11 +32,13 @@ void EntityInspector::run() {
         TextCentered(entity.name().c_str());
     ImGui::Separator();
     // show all components of entity
-    entity.each([&](flecs::id id) {
-        // check if component is flecs::Identifier
-        if (id.has_flags(EcsPrivate))
-            ImGui::Text("[PRIVATE] %s", id.type_id().str().c_str());
-        else
-            ImGui::Text("%s", id.type_id().str().c_str());
-    });
+    entity.each(
+        [&](flecs::id id)
+        {
+            // check if component is flecs::Identifier
+            if (id.has_flags(EcsPrivate))
+                ImGui::Text("[PRIVATE] %s", id.type_id().str().c_str());
+            else
+                ImGui::Text("%s", id.type_id().str().c_str());
+        });
 }

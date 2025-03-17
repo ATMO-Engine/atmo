@@ -2,10 +2,10 @@
 #define SceneHierarchy_HPP_
 
 #include <flecs.h>
+#include "../../Utils/EntityCreator.hpp"
 #include "../../Utils/SafeQueue.hpp"
 #include "../Widget.hpp"
 #include "imgui.h"
-#include "../../Utils/EntityCreator.hpp"
 
 class SceneHierarchy : public Widget
 {

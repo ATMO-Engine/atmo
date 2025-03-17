@@ -4,10 +4,7 @@
 
 #include "FrameEditor.hpp"
 
-FrameEditor::FrameEditor(SDL_Window *window)
-{
-    _window = window;
-}
+FrameEditor::FrameEditor(SDL_Window *window) { _window = window; }
 
 FrameEditor::~FrameEditor()
 {
@@ -102,7 +99,7 @@ bool FrameEditor::init()
 void FrameEditor::draw()
 {
     SDL_SetRenderTarget(_renderer, _texture);
-    SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);  // Black color for drawing
+    SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255); // Black color for drawing
 
     for (size_t i = 1; i < points.size(); ++i) {
         SDL_RenderLine(_renderer, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
