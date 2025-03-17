@@ -3,15 +3,22 @@
 #include "imgui_impl_sdlrenderer3.h"
 
 #include "FrameEditor.hpp"
+#include <cstddef>
 
 FrameEditor::FrameEditor(SDL_Window *window)
 {
-    _window = &window;
+    _window = window;
+}
+
+FrameEditor::~FrameEditor()
+{
+    SDL_DestroyRenderer(_renderer);
+    SDL_DestroyTexture(_texture);
 }
 
 void FrameEditor::init()
 {
-    _renderer = SDL_CreateRenderer(*_window, nullptr);
+    _renderer = SDL_CreateRenderer(_window, nullptr);
 
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_TARGET, _width, _height);
@@ -20,6 +27,7 @@ void FrameEditor::init()
     SDL_SetRenderTarget(_renderer, _texture);
     SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255);
     SDL_RenderClear(_renderer);
+    SDL_SetRenderTarget(_renderer, NULL);
 
     // Set texture ID for ImGui
     _textureID = (ImTextureID)_texture;

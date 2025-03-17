@@ -21,7 +21,7 @@ class FrameEditor : public Widget
 {
     public:
         FrameEditor(SDL_Window *window);
-        ~FrameEditor() = default;
+        ~FrameEditor();
 
         void init();
         void run() override;
@@ -33,7 +33,7 @@ class FrameEditor : public Widget
         ImTextureID _textureID;
         int _width = 512;
         int _height = 512;
-        SDL_Window **_window;
+        SDL_Window *_window;
 };
 
 #endif /* !FrameEditor_HPP_ */
