@@ -2,27 +2,8 @@ add_rules("mode.debug", "mode.release")
 
 local SUBMODULE_PATH = "submodules/"
 
-package("libsdl3")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "SDL"))
-    on_install(function(package)
-        local configs = {}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-        table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
-        import("package.tools.cmake").install(package, configs)
-    end)
-package_end()
-
-package("libsdl3_image")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "SDL_image"))
-    on_install(function(package)
-        local configs = {}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-        table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
-        import("package.tools.cmake").install(package, configs)
-    end)
-package_end()
+add_requires("libsdl3", { system = false })
+add_requires("libsdl3_image", { system = false })
 
 package("glaze")
     add_deps("cmake")

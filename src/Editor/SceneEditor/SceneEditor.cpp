@@ -3,15 +3,16 @@
 
 
 SceneEditor::SceneEditor() :
-    selectedEntity(-1), sceneHierarchy(ecs, selectedEntity), fileExplorer(std::filesystem::current_path())
+    selectedEntity(-1), sceneHierarchy(ecs, selectedEntity), fileExplorer(std::filesystem::current_path()),
+    entityInspector(ecs, selectedEntity)
 {
     fileExplorer.refresh();
-    ecs.component<Engine>();
+    EntityCreator::registerComponents(ecs);
 
-    auto hello = ecs.entity("Hello world").set(Engine{true});
-    auto lorem = ecs.entity("Lorem ipsum").set<Engine>({true}).child_of(hello);
-    auto dolor = ecs.entity("Dolor sit amet").set<Engine>({true}).child_of(lorem);
-    auto coucou = ecs.entity("Coucou").set<Engine>({true});
+    auto hello = EntityCreator::createEntity(ecs, "Hello world").set<Transform>({});
+    auto lorem = EntityCreator::createEntity(ecs, "Lorem ipsum").set<Transform>({}).child_of(hello);
+    auto dolor = EntityCreator::createEntity(ecs, "Dolor sit amet").set<Transform>({}).child_of(lorem);
+    auto coucou = EntityCreator::createEntity(ecs, "Coucou").set<Transform>({});
 }
 
 void SceneEditor::run()
@@ -51,7 +52,7 @@ void SceneEditor::run()
     ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.15f);
     ImGui::BeginChild("RightColumn", ImVec2(0, 0), false);
     ImGui::BeginChild("Inspector", ImVec2(0, 0), false);
-    ImGui::Text("Inspector");
+    entityInspector.run();
     ImGui::EndChild();
     ImGui::EndChild();
 

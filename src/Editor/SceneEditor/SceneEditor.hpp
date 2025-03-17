@@ -3,6 +3,7 @@
 
 #include <flecs.h>
 #include <spdlog/spdlog.h>
+#include "../../Widget/EntityInspector/EntityInspector.hpp"
 #include "../../Widget/FileExplorer/FileExplorer.hpp"
 #include "../../Widget/SceneHierarchy/SceneHierarchy.hpp"
 #include "../Editor.hpp"
@@ -21,6 +22,7 @@ class SceneEditor : public Editor
         flecs::entity_t selectedEntity;
         SceneHierarchy sceneHierarchy;
         FileExplorer fileExplorer;
+        EntityInspector entityInspector;
 };
 
 #endif /* !SCENEEDITOR_HPP_ */

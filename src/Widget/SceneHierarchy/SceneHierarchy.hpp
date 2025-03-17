@@ -4,16 +4,13 @@
 #include <flecs.h>
 #include "../../Utils/SafeQueue.hpp"
 #include "../Widget.hpp"
-
-struct Engine
-{
-        bool process;
-};
+#include "imgui.h"
+#include "../../Utils/EntityCreator.hpp"
 
 class SceneHierarchy : public Widget
 {
     public:
-        SceneHierarchy(const flecs::world &ecs, flecs::entity_t &selectedEntity);
+        SceneHierarchy(flecs::world &ecs, flecs::entity_t &selectedEntity);
         ~SceneHierarchy() = default;
 
         void run() override;
@@ -23,8 +20,8 @@ class SceneHierarchy : public Widget
         const std::string widgetName = "Scene Hierarchy";
 
     private:
-        const flecs::world &ecs;
-        const flecs::query<Engine> query;
+        flecs::world &ecs;
+        const flecs::query<Node> query;
         SafeQueue<flecs::entity_t> deleteQueue;
         flecs::entity_t &selectedEntity;
 };
