@@ -35,7 +35,7 @@ void FrameEditor::draw()
         SDL_RenderLine(_renderer, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
     }
 
-    SDL_SetRenderTarget(_renderer, NULL);
+    SDL_SetRenderTarget(_renderer, _texture);
 }
 
 void FrameEditor::run()
