@@ -29,31 +29,29 @@ GLuint FrameEditor::SDLTextureToOpenGL()
     if (SDL_LockTexture(_texture, nullptr, (void **)&pixels, &pitch) != true) {
         return 0;
     }
+    if (!pixels) {
+        spdlog::warn("Texture lock failed");
+    }
 
-    const SDL_PixelFormatDetails *tmp = SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888);
-
+    const SDL_PixelFormatDetails *tmp = SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA32);
     for (int y = 0; y < _height; y++) {
         Uint32 *p = (Uint32 *)(pixels + pitch * y); // cast for a pointer increments by 4 bytes.(RGBA)
         for (int x = 0; x < _width; x++) {
             // *p = 0x00FF0000;
-            *p = SDL_MapRGBA(tmp, nullptr, 255, 255, 255, 128);
+            *p = SDL_MapRGBA(tmp, nullptr, 255, 255, 255, 255);
 
             p++;
         }
     }
 
-    if (!pixels) {
-        spdlog::critical("shit");
-    }
-
-    spdlog::critical("{}", pitch);
-
     // Create an OpenGL texture
     GLuint texID;
+    std::vector<uint8_t> buffer(_width * _height * 4);
+    memcpy(buffer.data(), pixels, buffer.size());
 
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_2D, texID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32I, _width, _height, 0, GL_RGBA32I, GL_UNSIGNED_BYTE, buffer.data());
 
     // Set filtering options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -90,10 +88,8 @@ bool FrameEditor::init()
         return false;
     }
 
-    static GLuint glTex = SDLTextureToOpenGL();
-
     // Set texture ID for ImGui
-    _textureID = (ImTextureID)glTex;
+    _textureID = (ImTextureID)SDLTextureToOpenGL();
     return true;
 }
 
@@ -116,7 +112,7 @@ void FrameEditor::run()
     ImVec2 canvasSize = ImVec2(_width, _height);
 
     // Draw the texture as an image in ImGui
-    ImGui::Image(_textureID, canvasSize);
+    ImGui::Image((ImTextureID)SDLTextureToOpenGL(), canvasSize);
 
     // Check for mouse input
     ImVec2 mousePos = ImGui::GetMousePos();
