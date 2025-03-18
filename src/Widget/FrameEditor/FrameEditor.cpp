@@ -1,8 +1,10 @@
 
 #include "SDL3/SDL_rect.h"
+#include "SDL3/SDL_render.h"
 #include "spdlog/spdlog.h"
 
 #include "FrameEditor.hpp"
+#include <cstdint>
 
 FrameEditor::FrameEditor(SDL_Window *window) { _window = window; }
 
@@ -14,18 +16,10 @@ FrameEditor::~FrameEditor()
 
 
 GLuint FrameEditor::SDLTextureToOpenGL() {
-    float width, height;
-    SDL_GetTextureSize(_texture, &width, &height);
-    spdlog::warn("{} {}", width, height);
-
-    spdlog::info("est cuit");
     // Lock texture to get raw pixel data
-
-    SDL_Rect *shit = new SDL_Rect(_width, _height);
-    spdlog::info("vous me le branlez");
-    void* pixels;
+    uint8_t* pixels;
     int pitch;
-    if (SDL_LockTexture(_texture, shit, &pixels, &pitch) != 0) {
+    if (SDL_LockTexture(_texture, nullptr, (void **)&pixels, &pitch) != true) {
         return 0;
     }
 
@@ -67,7 +61,7 @@ bool FrameEditor::init()
     }
 
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_TARGET, _width, _height);
+        SDL_TEXTUREACCESS_STREAMING, _width, _height);
     if (!_texture) {
         return false;
     }
@@ -82,6 +76,9 @@ bool FrameEditor::init()
     if (!SDL_RenderClear(_renderer)) {
         spdlog::info("shit 3");
     }
+   // uint8_t* pixels;
+   // int pitch;
+   // SDL_UpdateTexture(_texture, nullptr, pixels, pitch);
     if (!SDL_SetRenderTarget(_renderer, nullptr)) {
         spdlog::info("shit 4");
     }
@@ -131,5 +128,5 @@ void FrameEditor::run()
     }
 
     // Render lines to canvas texture
-    draw();
+    //draw();
 }
