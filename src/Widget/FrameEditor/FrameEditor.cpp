@@ -1,6 +1,8 @@
 
+#include "SDL3/SDL_pixels.h"
 #include "SDL3/SDL_rect.h"
 #include "SDL3/SDL_render.h"
+#include "SDL3/SDL_stdinc.h"
 #include "spdlog/spdlog.h"
 
 #include "FrameEditor.hpp"
@@ -10,18 +12,34 @@ FrameEditor::FrameEditor(SDL_Window *window) { _window = window; }
 
 FrameEditor::~FrameEditor()
 {
-    SDL_DestroyRenderer(_renderer);
-    SDL_DestroyTexture(_texture);
+    if (_renderer) {
+        SDL_DestroyRenderer(_renderer);
+    }
+    if (_texture) {
+        SDL_DestroyTexture(_texture);
+    }
 }
 
 
 GLuint FrameEditor::SDLTextureToOpenGL() {
     // Lock texture to get raw pixel data
-    uint8_t* pixels;
-    int pitch;
+    uint8_t* pixels =  nullptr;
+    int pitch = 0;
     if (SDL_LockTexture(_texture, nullptr, (void **)&pixels, &pitch) != true) {
         return 0;
     }
+
+    const SDL_PixelFormatDetails *tmp = SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888);
+
+    for (int y = 0; y < _height; y++) {
+        Uint32 *p = (Uint32 *)(pixels + pitch*y); // cast for a pointer increments by 4 bytes.(RGBA)
+        for (int x = 0; x < _width; x++) {
+          // *p = 0x00FF0000;
+          *p = SDL_MapRGBA(tmp, nullptr, 255, 255, 255, 128);
+
+          p++;
+        }
+      }
 
     if (!pixels) {
         spdlog::critical("shit");
@@ -29,27 +47,19 @@ GLuint FrameEditor::SDLTextureToOpenGL() {
 
     spdlog::critical("{}", pitch);
 
-    spdlog::info("celui la");
     // Create an OpenGL texture
     GLuint texID;
 
-    spdlog::info("shit 0");
     glGenTextures(1, &texID);
-    spdlog::info("shit 1");
     glBindTexture(GL_TEXTURE_2D, texID);
-    spdlog::info("shit 2");
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    
-    spdlog::info("shit");
+
     // Set filtering options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    spdlog::info("shit");
     SDL_UnlockTexture(_texture);
-
-    spdlog::info("shit");
     return texID;
 }
 
@@ -68,28 +78,22 @@ bool FrameEditor::init()
 
     // Clear canvas to white
     if (!SDL_SetRenderTarget(_renderer, _texture)) {
-        spdlog::info("shit 1");
+        return false;
     }
     if (!SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255)) {
-        spdlog::info("shit 2");
+        return false;
     }
     if (!SDL_RenderClear(_renderer)) {
-        spdlog::info("shit 3");
+        return false;
     }
-   // uint8_t* pixels;
-   // int pitch;
-   // SDL_UpdateTexture(_texture, nullptr, pixels, pitch);
     if (!SDL_SetRenderTarget(_renderer, nullptr)) {
-        spdlog::info("shit 4");
+        return false;
     }
 
-
-    spdlog::info("le caca");
-    static GLuint caca = SDLTextureToOpenGL();
-    spdlog::info("le caca est cuit");
+    static GLuint glTex = SDLTextureToOpenGL();
 
     // Set texture ID for ImGui
-    _textureID = (ImTextureID)caca;
+    _textureID = (ImTextureID)glTex;
     return true;
 }
 
@@ -112,7 +116,7 @@ void FrameEditor::run()
     ImVec2 canvasSize = ImVec2(_width, _height);
 
     // Draw the texture as an image in ImGui
-    ImGui::Image((intptr_t)_textureID, canvasSize);
+    ImGui::Image(_textureID, canvasSize);
 
     // Check for mouse input
     ImVec2 mousePos = ImGui::GetMousePos();
