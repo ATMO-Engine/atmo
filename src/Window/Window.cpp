@@ -108,15 +108,12 @@ void Window::run()
                     ImGui::EndTabItem();
                 }
                 if (ImGui::TabItemButton("+")) {
-                    spdlog::info("pressed");
-                    // TODO: modal to create new tab choosing from list of available tabs
+                    spdlog::info("Opening new tab");
                 }
                 ImGui::EndTabBar();
             }
         }
         ImGui::End();
-
-        // ImGui::DockSpaceOverViewport(viewport->ID);
 
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);

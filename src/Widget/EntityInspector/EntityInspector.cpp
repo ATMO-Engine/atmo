@@ -84,6 +84,29 @@ void EntityInspector::drawData(Transform *transform, flecs::entity entity)
     drawFieldFloat("Skew", &transform->skew);
 }
 
+static bool centeredButton(const std::string &label, float alignment = 0.5f)
+{
+    ImGuiStyle &style = ImGui::GetStyle();
+
+    float size = ImGui::CalcTextSize(label.c_str()).x + style.FramePadding.x * 2.0f;
+    float avail = ImGui::GetContentRegionAvail().x;
+
+    float off = (avail - size) * alignment;
+    if (off > 0.0f)
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+    return ImGui::Button(label.c_str());
+}
+
+void EntityInspector::drawAddComponentsButtons(flecs::entity entity)
+{
+    if (!entity.owns<Transform>()) {
+        if (centeredButton("+ Add Transform")) {
+            entity.set<Transform>({});
+        }
+    }
+}
+
 void EntityInspector::run()
 {
     if (_selectedEntity == -1)
@@ -108,5 +131,10 @@ void EntityInspector::run()
             if (id.is_pair() && id.type_id() && id.type_id().str() == _identifier.type_id().str())
                 return;
             drawComponent(entity, id);
-        });
+        }
+    );
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f);
+
+    drawAddComponentsButtons(entity);
 }

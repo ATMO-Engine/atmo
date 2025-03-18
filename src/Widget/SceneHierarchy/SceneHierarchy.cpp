@@ -10,10 +10,16 @@ SceneHierarchy::SceneHierarchy(flecs::world &ecs, flecs::entity_t &selectedEntit
 
 void SceneHierarchy::logEntity(flecs::entity e, unsigned int depth)
 {
-    const std::string deleteBtn = std::format("x##{}", e.id());
     const std::string name = std::format("{}[{}] {}", std::string(2 * depth, ' '), e.id(), e.name().c_str());
     if (ImGui::Selectable(name.c_str(), selectedEntity == e.id()))
         selectedEntity = e.id();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        ImGui::SetTooltip("ID: %lld\nName: %s", e.id(), e.name().c_str());
+    }
+    if (ImGui::IsItemClicked(1)) {
+        ImGui::OpenPopup("EntityContextMenu");
+    }
     e.children([&](flecs::entity child) { logEntity(child, depth + 1); });
 }
 
