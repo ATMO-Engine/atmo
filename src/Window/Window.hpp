@@ -9,6 +9,7 @@
 #include "SDL3/SDL_video.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
+#include "imgui_impl_opengl3_loader.h"
 
 class Window
 {

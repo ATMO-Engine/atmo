@@ -3,19 +3,6 @@
 
 #include <vector>
 
-#include <SDL3/SDL.h>
-#include <cstddef>
-#include <glad/glad.h> // GLAD loader
-#include <imgui.h> // ImGui main header
-#include <imgui_impl_opengl3.h> // ImGui OpenGL backend
-#include <imgui_impl_sdl3.h> // ImGui SDL3 backend
-
-#include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
-#include <imgui.h>
-#include <imgui_impl_sdl3.h>
-#include <imgui_impl_sdlrenderer3.h>
-
 #include "../Widget.hpp"
 #include "SDL3/SDL_render.h"
 
@@ -31,7 +18,6 @@ class FrameEditor : public Widget
         FrameEditor(SDL_Window *window);
         ~FrameEditor();
 
-        GLuint SDLTextureToOpenGL();
         bool init();
         void run() override;
         void draw();
@@ -40,7 +26,6 @@ class FrameEditor : public Widget
         std::vector<DrawPoint> points;
         SDL_Renderer *_renderer;
         SDL_Texture *_texture;
-        ImTextureID _textureID;
         int _width = 256;
         int _height = 256;
         SDL_Window *_window;

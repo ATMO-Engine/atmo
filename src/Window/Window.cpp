@@ -1,5 +1,4 @@
 #include "Window.hpp"
-#include <glad/glad.h>
 #include "SDL3/SDL_init.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -34,11 +33,6 @@ bool Window::init()
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
     if (!glContext) {
-        return false;
-    }
-
-    // Initialize GLAD (make sure it's done after the OpenGL context is created)
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         return false;
     }
 
