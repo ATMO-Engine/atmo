@@ -12,7 +12,7 @@
 class SpriteEditor : public Editor
 {
     public:
-        SpriteEditor(SDL_Window *window);
+        SpriteEditor();
         void run() override;
         void init();
 

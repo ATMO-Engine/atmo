@@ -44,7 +44,7 @@ bool Window::init()
 
     context = SDL_GL_CreateContext(window);
 
-    textureEditor = new SpriteEditor(window);
+    textureEditor = new SpriteEditor();
     sceneEditor = new SceneEditor();
 
     textureEditor->init();
