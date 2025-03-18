@@ -37,10 +37,10 @@ bool Window::init()
         return false;
     }
 
-        // Initialize GLAD (make sure it's done after the OpenGL context is created)
-        if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-            return false;
-        }
+    // Initialize GLAD (make sure it's done after the OpenGL context is created)
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        return false;
+    }
 
 #if defined(__APPLE__)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);

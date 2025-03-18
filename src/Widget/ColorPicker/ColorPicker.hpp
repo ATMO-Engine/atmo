@@ -1,8 +1,8 @@
 #ifndef ColorPicker_HPP_
 #define ColorPicker_HPP_
 
-#include "imgui.h"
 #include "../Widget.hpp"
+#include "imgui.h"
 
 
 class ColorPicker : public Widget
@@ -12,6 +12,7 @@ class ColorPicker : public Widget
         ~ColorPicker();
 
         void run() override;
+
     private:
         float _currentColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         float _size = 0.5f;

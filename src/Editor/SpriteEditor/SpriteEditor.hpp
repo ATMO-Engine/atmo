@@ -3,10 +3,10 @@
 
 #include <flecs.h>
 #include <spdlog/spdlog.h>
+#include "../../Widget/ColorPicker/ColorPicker.hpp"
 #include "../../Widget/FileExplorer/FileExplorer.hpp"
 #include "../../Widget/FrameEditor/FrameEditor.hpp"
 #include "../../Widget/FrameTools/FrameTools.hpp"
-#include "../../Widget/ColorPicker/ColorPicker.hpp"
 #include "../Editor.hpp"
 
 class SpriteEditor : public Editor

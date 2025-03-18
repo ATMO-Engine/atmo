@@ -5,10 +5,10 @@
 
 #include <SDL3/SDL.h>
 #include <cstddef>
-#include <glad/glad.h>       // GLAD loader
-#include <imgui.h>           // ImGui main header
-#include <imgui_impl_sdl3.h> // ImGui SDL3 backend
+#include <glad/glad.h> // GLAD loader
+#include <imgui.h> // ImGui main header
 #include <imgui_impl_opengl3.h> // ImGui OpenGL backend
+#include <imgui_impl_sdl3.h> // ImGui SDL3 backend
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>

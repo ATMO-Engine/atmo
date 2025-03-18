@@ -1,8 +1,8 @@
 #include "ColorPicker.hpp"
 
-ColorPicker::ColorPicker(){};
+ColorPicker::ColorPicker() {};
 
-ColorPicker::~ColorPicker(){};
+ColorPicker::~ColorPicker() {};
 
 void ColorPicker::run()
 {

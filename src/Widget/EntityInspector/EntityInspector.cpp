@@ -48,35 +48,32 @@ void EntityInspector::drawComponent(flecs::entity entity, flecs::id componentId)
 {
     auto component = _ecs.component(componentId);
 
-    ImGui::BeginChild(componentId.type_id().str().c_str(), ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-        ImGui::Text("%s", componentId.str().c_str());
+    ImGui::BeginChild(componentId.type_id().str().c_str(), ImVec2(0, 0),
+                      ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+    ImGui::Text("%s", componentId.str().c_str());
 
-        ImGui::Separator();
+    ImGui::Separator();
 
-        if (componentId == _ecs.component<Node>()) {
-            auto st = entity.get_mut<Node>();
-            drawData(st, entity);
-        } else if (componentId == _ecs.component<Transform>()) {
-            auto st = entity.get_mut<Transform>();
-            drawData(st, entity);
-        } else {
-            spdlog::warn("Component {} not implemented", componentId.str().c_str());
-        }
+    if (componentId == _ecs.component<Node>()) {
+        auto st = entity.get_mut<Node>();
+        drawData(st, entity);
+    }
+    else if (componentId == _ecs.component<Transform>()) {
+        auto st = entity.get_mut<Transform>();
+        drawData(st, entity);
+    }
+    else {
+        spdlog::warn("Component {} not implemented", componentId.str().c_str());
+    }
     ImGui::EndChild();
 }
 
-void EntityInspector::drawData(Node *node, flecs::entity entity)
-{
-    drawFieldString("Description", &node->description);
-}
+void EntityInspector::drawData(Node *node, flecs::entity entity) { drawFieldString("Description", &node->description); }
 
 void EntityInspector::drawData(Transform *transform, flecs::entity entity)
 {
     const std::map<std::string, std::array<float, 2> *> fields = {
-        {"Position", &transform->position},
-        {"Rotation", &transform->rotation},
-        {"Scale", &transform->scale}
-    };
+        {"Position", &transform->position}, {"Rotation", &transform->rotation}, {"Scale", &transform->scale}};
 
     int id = 0;
     for (const auto &[label, value] : fields) {
@@ -87,7 +84,8 @@ void EntityInspector::drawData(Transform *transform, flecs::entity entity)
     drawFieldFloat("Skew", &transform->skew);
 }
 
-void EntityInspector::run() {
+void EntityInspector::run()
+{
     if (_selectedEntity == -1)
         return;
 
@@ -101,12 +99,14 @@ void EntityInspector::run() {
         TextCentered(entity.name().c_str());
     ImGui::Separator();
 
-    entity.each([&](flecs::id id) {
-        auto c = _ecs.component(id);
-        if (id.is_pair() && id.first() == flecs::ChildOf)
-            return;
-        if (id.is_pair() && id.type_id() && id.type_id().str() == _identifier.type_id().str())
-            return;
-        drawComponent(entity, id);
-    });
+    entity.each(
+        [&](flecs::id id)
+        {
+            auto c = _ecs.component(id);
+            if (id.is_pair() && id.first() == flecs::ChildOf)
+                return;
+            if (id.is_pair() && id.type_id() && id.type_id().str() == _identifier.type_id().str())
+                return;
+            drawComponent(entity, id);
+        });
 }

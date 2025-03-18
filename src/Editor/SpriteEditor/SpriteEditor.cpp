@@ -17,7 +17,8 @@ void SpriteEditor::run()
 
     ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.2f);
     ImGui::BeginChild("LeftColumn", ImVec2(0, 0), false);
-    ImGui::BeginChild("FileExplorer", ImVec2(ImGui::GetContentRegionAvail().x * 1.2f, ImGui::GetContentRegionAvail().y * 0.5f), false);
+    ImGui::BeginChild("FileExplorer",
+                      ImVec2(ImGui::GetContentRegionAvail().x * 1.2f, ImGui::GetContentRegionAvail().y * 0.5f), false);
     colorPicker.run();
     ImGui::EndChild();
 
