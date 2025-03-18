@@ -24,6 +24,8 @@ class SpriteEditor : public Editor
         FrameEditor frameEditor;
         FrameTools frameTools;
         ColorPicker colorPicker;
+        float _currentColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        ColorPicker::Tool _selectedTool;
 };
 
 #endif /* !SpriteEditor_HPP_ */

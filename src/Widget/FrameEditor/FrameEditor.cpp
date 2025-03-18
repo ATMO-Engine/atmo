@@ -12,15 +12,8 @@ FrameEditor::~FrameEditor()
     }
 }
 
-bool FrameEditor::init()
-{
-    return true;
-}
+bool FrameEditor::init() { return true; }
 
-void FrameEditor::draw()
-{
-}
+void FrameEditor::draw() {}
 
-void FrameEditor::run()
-{
-}
+void FrameEditor::run() {}

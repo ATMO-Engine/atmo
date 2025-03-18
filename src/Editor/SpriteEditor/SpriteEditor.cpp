@@ -9,7 +9,11 @@ SpriteEditor::SpriteEditor(SDL_Window *window) :
     fileExplorer.refresh();
 }
 
-void SpriteEditor::init() { frameEditor.init(); }
+void SpriteEditor::init()
+{
+    frameEditor.init();
+    colorPicker.init(&_selectedTool);
+}
 
 void SpriteEditor::run()
 {

@@ -1,4 +1,5 @@
 #include "ColorPicker.hpp"
+#include "spdlog/spdlog.h"
 
 ColorPicker::ColorPicker() {};
 
@@ -10,9 +11,14 @@ void ColorPicker::run()
     ImGui::Dummy(ImVec2(0.0f, 20.0f));
     ImGui::SliderFloat(" ", &_size, 0.0f, 1.0f);
     ImGui::Dummy(ImVec2(0.0f, 20.0f));
-    ImGui::Button("Pencil");
+    if (ImGui::Button("Pencil"))
+        spdlog::info("pencil");
     ImGui::SameLine();
-    ImGui::Button("Eraser");
+    if (ImGui::Button("Eraser"))
+        spdlog::info("eraser");
     ImGui::SameLine();
-    ImGui::Button("Bucket");
+    if (ImGui::Button("Bucket"))
+        spdlog::info("bucket");
 }
+
+void ColorPicker::init(ColorPicker::Tool *selectedTool) { _selectedTool = selectedTool; }
