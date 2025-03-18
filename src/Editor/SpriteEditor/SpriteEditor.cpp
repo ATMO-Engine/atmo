@@ -13,13 +13,12 @@ void SpriteEditor::init() { frameEditor.init(); }
 
 void SpriteEditor::run()
 {
-    float currentColor[4] = {1.0f, 0.0f, 0.0f, 1.0f};
-    ImGui::Columns(3, "SpriteEditorColumns", true);
+    ImGui::Columns(2, "SpriteEditorColumns", true);
 
     ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.2f);
     ImGui::BeginChild("LeftColumn", ImVec2(0, 0), false);
-    ImGui::BeginChild("FileExplorer", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.5f), false);
-    ImGui::ColorPicker4("Couleur", currentColor);
+    ImGui::BeginChild("FileExplorer", ImVec2(ImGui::GetContentRegionAvail().x * 1.2f, ImGui::GetContentRegionAvail().y * 0.5f), false);
+    colorPicker.run();
     ImGui::EndChild();
 
     ImGui::Separator();
@@ -31,20 +30,11 @@ void SpriteEditor::run()
 
     ImGui::NextColumn();
 
-    ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.75f);
+    ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.8f);
     ImGui::BeginChild("MiddleColumn", ImVec2(0, 0), false);
-    ImGui::BeginChild("SceneView", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.65f), false);
+    ImGui::BeginChild("SceneView", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.7f), false);
     ImGui::Text("Sprite Editor");
     frameEditor.run();
-    ImGui::EndChild();
-    ImGui::EndChild();
-
-    ImGui::NextColumn();
-
-    ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.05f);
-    ImGui::BeginChild("RightColumn", ImVec2(0, 0), false);
-    ImGui::BeginChild("Tool Bar", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.2f), false);
-    ImGui::Text("Tool Bar");
     ImGui::EndChild();
     ImGui::EndChild();
 

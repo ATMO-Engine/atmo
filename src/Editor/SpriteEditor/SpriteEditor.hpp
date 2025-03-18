@@ -6,6 +6,7 @@
 #include "../../Widget/FileExplorer/FileExplorer.hpp"
 #include "../../Widget/FrameEditor/FrameEditor.hpp"
 #include "../../Widget/FrameTools/FrameTools.hpp"
+#include "../../Widget/ColorPicker/ColorPicker.hpp"
 #include "../Editor.hpp"
 
 class SpriteEditor : public Editor
@@ -22,6 +23,7 @@ class SpriteEditor : public Editor
         FileExplorer fileExplorer;
         FrameEditor frameEditor;
         FrameTools frameTools;
+        ColorPicker colorPicker;
 };
 
 #endif /* !SpriteEditor_HPP_ */
