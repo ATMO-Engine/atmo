@@ -4,7 +4,7 @@
 
 
 SpriteEditor::SpriteEditor() :
-    fileExplorer(std::filesystem::current_path()), frameEditor(), frameTools()
+    fileExplorer(std::filesystem::current_path()), frameEditor()
 {
     fileExplorer.refresh();
 }
@@ -41,6 +41,7 @@ void SpriteEditor::run()
             ImGui::Text("Sprite Editor");
             frameEditor.setColor(colorPicker.getColor());
             frameEditor.setThickness(colorPicker.getSize());
+            frameEditor.setEraser(colorPicker.getEraser());
             frameEditor.run();
         ImGui::EndChild();
     ImGui::EndChild();

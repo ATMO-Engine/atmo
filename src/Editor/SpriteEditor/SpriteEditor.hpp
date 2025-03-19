@@ -6,7 +6,6 @@
 #include "../../Widget/ColorPicker/ColorPicker.hpp"
 #include "../../Widget/FileExplorer/FileExplorer.hpp"
 #include "../../Widget/FrameEditor/FrameEditor.hpp"
-#include "../../Widget/FrameTools/FrameTools.hpp"
 #include "../Editor.hpp"
 
 class SpriteEditor : public Editor
@@ -22,7 +21,6 @@ class SpriteEditor : public Editor
     private:
         FileExplorer fileExplorer;
         FrameEditor frameEditor;
-        FrameTools frameTools;
         ColorPicker colorPicker;
         float _currentColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         ColorPicker::Tool _selectedTool;

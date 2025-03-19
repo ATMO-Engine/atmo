@@ -19,6 +19,7 @@ class ColorPicker : public Widget
 
         float getSize() { return _size; }
         float *getColor() { return _currentColor; }
+        bool getEraser() { return _eraser; }
 
         void run() override;
         void init(ColorPicker::Tool *selectedTool);
@@ -27,6 +28,7 @@ class ColorPicker : public Widget
         float _currentColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         Tool *_selectedTool;
         float _size = 2.0f;
+        bool _eraser = false;
 };
 
 #endif /* !ColorPicker_HPP_ */

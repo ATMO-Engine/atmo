@@ -59,6 +59,15 @@ class FrameEditor : public Widget
                 _thickness = thick;
         }
 
+        void setEraser(bool eraser) {
+            if (eraser) {
+                _r = 255;
+                _g = 255;
+                _b = 255;
+                _a = 255;
+            }
+        }
+
         FrameEditor();
         ~FrameEditor();
 
