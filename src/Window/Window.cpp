@@ -59,7 +59,6 @@ void Window::setupImGui()
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     io.IniFilename = NULL;
 
@@ -92,11 +91,9 @@ void Window::run()
 
         ImGui::SetNextWindowPos(viewport->Pos);
         ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y));
-        ImGui::SetNextWindowViewport(viewport->ID);
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
-            ImGuiWindowFlags_NoDocking;
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
 
         if (ImGui::Begin("TopBar", nullptr, window_flags)) {
             if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None)) {
