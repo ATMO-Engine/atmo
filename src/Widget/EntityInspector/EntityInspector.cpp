@@ -109,6 +109,8 @@ void EntityInspector::drawAddComponentsButtons(flecs::entity entity)
         if (centeredButton("+ Add Transform")) {
             entity.set<Transform>({});
         }
+    }
+    if (!entity.owns<Image>()) {
         if (centeredButton("+ Add Image")) {
             entity.set<Image>({});
         }
