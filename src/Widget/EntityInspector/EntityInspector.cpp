@@ -61,6 +61,9 @@ void EntityInspector::drawComponent(flecs::entity entity, flecs::id componentId)
     else if (componentId == _ecs.component<Transform>()) {
         auto st = entity.get_mut<Transform>();
         drawData(st, entity);
+    } else if (componentId == _ecs.component<Image>()) {
+        auto st = entity.get_mut<Image>();
+        drawData(st, entity);
     }
     else {
         spdlog::warn("Component {} not implemented", componentId.str().c_str());
@@ -69,6 +72,8 @@ void EntityInspector::drawComponent(flecs::entity entity, flecs::id componentId)
 }
 
 void EntityInspector::drawData(Node *node, flecs::entity entity) { drawFieldString("Description", &node->description); }
+
+void EntityInspector::drawData(Image *image, flecs::entity entity) { drawFieldString("Image Path", &image->imagePath); }
 
 void EntityInspector::drawData(Transform *transform, flecs::entity entity)
 {
@@ -103,6 +108,9 @@ void EntityInspector::drawAddComponentsButtons(flecs::entity entity)
     if (!entity.owns<Transform>()) {
         if (centeredButton("+ Add Transform")) {
             entity.set<Transform>({});
+        }
+        if (centeredButton("+ Add Image")) {
+            entity.set<Image>({});
         }
     }
 }

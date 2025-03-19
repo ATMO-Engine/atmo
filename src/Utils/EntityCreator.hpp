@@ -15,6 +15,11 @@ struct Transform
         float skew = 0.0f;
 };
 
+struct Image
+{
+        std::string imagePath = "";
+};
+
 class EntityCreator
 {
     public:
@@ -25,6 +30,7 @@ class EntityCreator
         {
             ecs.component<Node>();
             ecs.component<Transform>();
+            ecs.component<Image>();
         }
 
         static flecs::entity createEntity(flecs::world &ecs, const std::string &name)

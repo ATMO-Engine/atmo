@@ -15,6 +15,7 @@ class EntityInspector : public Widget
 
         void drawData(Node *node, flecs::entity entity);
         void drawData(Transform *transform, flecs::entity entity);
+        void drawData(Image *image, flecs::entity entity);
         void drawComponent(flecs::entity entity, flecs::id component);
         void drawAddComponentsButtons(flecs::entity entity);
 
