@@ -6,10 +6,9 @@
 #include <spdlog/spdlog.h>
 #include "../Editor/SceneEditor/SceneEditor.hpp"
 #include "../Editor/SpriteEditor/SpriteEditor.hpp"
+#include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
-#include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
-#include "imgui_impl_sdl3.h"
 
 class Window
 {
@@ -24,9 +23,10 @@ class Window
     private:
         SDL_Window *window;
         bool shouldClose;
-        SDL_GLContext context;
+       // SDL_GLContext context;
         SceneEditor *sceneEditor;
         SpriteEditor *textureEditor;
+        SDL_Renderer *_renderer;
 };
 
 #endif /* !WINDOW_HPP_ */

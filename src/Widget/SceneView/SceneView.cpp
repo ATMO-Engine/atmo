@@ -68,16 +68,20 @@ SceneView::SceneView(const flecs::world &ecs) : _ecs(ecs)
 
 void SceneView::run()
 {
-
     ImGui::Text("Scene View");
     ImGui::Text("pointer = %p", my_texture);
     ImGui::Text("size = %d x %d", my_image_width, my_image_height);
     ImGui::Image((ImTextureID)(intptr_t)my_texture, ImVec2((float)my_image_width, (float)my_image_height));
 }
 
-void SceneView::init(SDL_Window *window)
+bool SceneView::init(SDL_Window *window)
 {
-    _renderer = SDL_CreateRenderer(window, nullptr);
+    _renderer = SDL_CreateRenderer(window, "nei");
+    if (!_renderer) {
+        spdlog::warn("Albéric ça te dirais de check tes retours fils de pute");
+        return false;
+    }
     bool ret = LoadTextureFromFile("./assets/huog.jpg", _renderer, &my_texture, &my_image_width, &my_image_height);
     IM_ASSERT(ret);
+    return true;
 }

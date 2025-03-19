@@ -1,7 +1,9 @@
 #include "Window.hpp"
 #include "SDL3/SDL_init.h"
+#include "SDL3/SDL_render.h"
 #include "imgui.h"
-#include "imgui_stdlib.h"
+#include "imgui_impl_sdl3.h"
+#include "backends/imgui_impl_sdlrenderer3.h"
 
 Window::Window() : shouldClose(false) {}
 
@@ -30,19 +32,17 @@ bool Window::init()
         return false;
     }
 
-
-    SDL_GLContext glContext = SDL_GL_CreateContext(window);
-    if (!glContext) {
+    _renderer = SDL_CreateRenderer(window, nullptr);
+    if (!_renderer) {
+        spdlog::critical("Could not create renderer: {}\n", SDL_GetError());
         return false;
     }
 
 #if defined(__APPLE__)
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
-
-    context = SDL_GL_CreateContext(window);
 
     textureEditor = new SpriteEditor();
     sceneEditor = new SceneEditor();
@@ -62,8 +62,8 @@ void Window::setupImGui()
 
     io.IniFilename = NULL;
 
-    ImGui_ImplSDL3_InitForOpenGL(window, context);
-    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplSDL3_InitForSDLRenderer(window, _renderer);
+    ImGui_ImplSDLRenderer3_Init(_renderer);
 }
 
 void Window::run()
@@ -83,7 +83,7 @@ void Window::run()
 
         // TODO: game logic here
 
-        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
@@ -114,18 +114,15 @@ void Window::run()
         ImGui::End();
 
         ImGui::Render();
-        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w,
-                     clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(window);
+
+        ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), _renderer);
+        SDL_RenderPresent(_renderer);
     }
 }
 
 void Window::destroy()
 {
-    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDLRenderer3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 

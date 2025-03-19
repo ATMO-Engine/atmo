@@ -13,12 +13,13 @@ class SceneView : public Widget
         ~SceneView() = default;
 
         void run() override;
-        void init(SDL_Window *window);
+        bool init(SDL_Window *window);
     private:
         const flecs::world &_ecs;
-        SDL_Renderer *_renderer;
-        int my_image_width, my_image_height;
-        SDL_Texture* my_texture;
+        SDL_Renderer *_renderer = nullptr;
+        int my_image_width = 0;
+        int my_image_height = 0;
+        SDL_Texture* my_texture = nullptr;
 };
 
 #endif /* !SceneView_HPP_ */
