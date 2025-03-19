@@ -2,9 +2,6 @@
 #include <SDL3/SDL_opengl.h>
 #include <utility>
 #include "imgui.h"
-#include "backends/imgui_impl_sdl3.h"
-#include "backends/imgui_impl_opengl3.h"
-#include "spdlog/spdlog.h"
 #include "FrameEditor.hpp"
 
 
@@ -48,16 +45,15 @@ void FrameEditor::run()
             int col = toLineUp.first.getColor();
             float thick = toLineUp.first.getThickness();
             auto &toDraw = toLineUp.second;
-            drawList->AddLine(ImVec2(toDraw[i-1].x, toDraw[i-1].y), ImVec2(toDraw[i].x, toDraw[i].y), 
-                        IM_COL32((col >> 24) & (0b11111111), (col >> 16) & (0b11111111), (col >> 8) & (0b11111111), col & 0b11111111), thick);
+            drawList->AddCircleFilled(ImVec2(toDraw[i].x, toDraw[i].y), thick, IM_COL32((col >> 24) & (0b11111111), (col >> 16) & (0b11111111), (col >> 8) & (0b11111111), col & 0b11111111));
+
         }
     }
 
-    for (size_t i = 1; i < _drawnList.second.size(); i++) {
+    for (size_t i = 0; i < _drawnList.second.size(); i++) {
         int col = _drawnList.first.getColor();
         float thick = _drawnList.first.getThickness();
         auto &toDraw = _drawnList.second;
-        drawList->AddLine(ImVec2(toDraw[i-1].x, toDraw[i-1].y), ImVec2(toDraw[i].x, toDraw[i].y),
-                            IM_COL32((col >> 24) & (0b11111111), (col >> 16) & (0b11111111), (col >> 8) & (0b11111111), col & 0b11111111), thick);
+        drawList->AddCircleFilled(ImVec2(toDraw[i].x, toDraw[i].y), thick, IM_COL32((col >> 24) & (0b11111111), (col >> 16) & (0b11111111), (col >> 8) & (0b11111111), col & 0b11111111));
     }
 }

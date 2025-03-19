@@ -25,7 +25,7 @@ class ColorPicker : public Widget
         void init(ColorPicker::Tool *selectedTool);
 
     private:
-        float _currentColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        float _currentColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
         Tool *_selectedTool;
         float _size = 2.0f;
         bool _eraser = false;

@@ -3,7 +3,6 @@
 
 #include <utility>
 #include <vector>
-#include <map>
 
 #include "../Widget.hpp"
 
