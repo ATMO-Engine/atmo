@@ -1,10 +1,11 @@
 #include "SceneEditor.hpp"
+#include "SDL3/SDL_video.h"
 #include "imgui.h"
 
 
 SceneEditor::SceneEditor() :
     selectedEntity(-1), sceneHierarchy(ecs, selectedEntity), fileExplorer(std::filesystem::current_path()),
-    entityInspector(ecs, selectedEntity)
+    entityInspector(ecs, selectedEntity), _sceneView(ecs)
 {
     fileExplorer.refresh();
     EntityCreator::registerComponents(ecs);
@@ -32,7 +33,7 @@ void SceneEditor::run()
     ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.7f);
     ImGui::BeginChild("MiddleColumn", ImVec2(0, 0), false);
     ImGui::BeginChild("SceneView", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.6f), false);
-    ImGui::Text("Scene View");
+    _sceneView.run();
     ImGui::EndChild();
 
     ImGui::Separator();
@@ -52,4 +53,9 @@ void SceneEditor::run()
     ImGui::EndChild();
 
     ImGui::Columns(1);
+}
+
+void SceneEditor::init(SDL_Window *window)
+{
+    _sceneView.init(window);
 }

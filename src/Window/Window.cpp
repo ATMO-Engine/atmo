@@ -47,6 +47,7 @@ bool Window::init()
     textureEditor = new SpriteEditor();
     sceneEditor = new SceneEditor();
 
+    sceneEditor->init(window);
     textureEditor->init();
     return true;
 }
