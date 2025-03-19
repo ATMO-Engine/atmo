@@ -20,12 +20,6 @@ bool Window::init()
         return false;
     }
 
-    // const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(0);
-    // if (!mode) {
-    //     spdlog::critical("Failed to get display mode: {}", SDL_GetError());
-    //     return false;
-    // }
-
     window = SDL_CreateWindow("ATMO Engine", 1920 / 1.5, 1080 / 1.5, SDL_WINDOW_OPENGL);
     if (!window) {
         spdlog::critical("Could not create window: {}\n", SDL_GetError());
@@ -45,9 +39,9 @@ bool Window::init()
 #endif
 
     textureEditor = new SpriteEditor();
-    sceneEditor = new SceneEditor();
+    sceneEditor = new SceneEditor(_renderer);
 
-    sceneEditor->init(window);
+    sceneEditor->init();
     textureEditor->init();
     return true;
 }

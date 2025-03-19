@@ -14,9 +14,9 @@
 class SceneEditor : public Editor
 {
     public:
-        SceneEditor();
+        SceneEditor(SDL_Renderer *rend);
         void run() override;
-        void init(SDL_Window *window);
+        void init();
 
         std::string *getRenameBuffer() { return sceneHierarchy.getRenameBuffer(); }
         flecs::world &getEcs() { return ecs; }

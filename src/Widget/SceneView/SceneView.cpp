@@ -1,4 +1,5 @@
 #include "SceneView.hpp"
+#include "SDL3/SDL_error.h"
 #include "SDL3/SDL_oldnames.h"
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
@@ -62,8 +63,9 @@ bool LoadTextureFromFile(const char* file_name, SDL_Renderer* renderer, SDL_Text
     return ret;
 }
 
-SceneView::SceneView(const flecs::world &ecs) : _ecs(ecs)
+SceneView::SceneView(const flecs::world &ecs, SDL_Renderer *rend) : _ecs(ecs), _renderer(nullptr)
 {
+    _renderer = rend;
 }
 
 void SceneView::run()
@@ -74,13 +76,8 @@ void SceneView::run()
     ImGui::Image((ImTextureID)(intptr_t)my_texture, ImVec2((float)my_image_width, (float)my_image_height));
 }
 
-bool SceneView::init(SDL_Window *window)
+bool SceneView::init()
 {
-    _renderer = SDL_CreateRenderer(window, "nei");
-    if (!_renderer) {
-        spdlog::warn("Albéric ça te dirais de check tes retours fils de pute");
-        return false;
-    }
     bool ret = LoadTextureFromFile("./assets/huog.jpg", _renderer, &my_texture, &my_image_width, &my_image_height);
     IM_ASSERT(ret);
     return true;

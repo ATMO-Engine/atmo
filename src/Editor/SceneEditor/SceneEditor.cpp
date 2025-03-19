@@ -3,9 +3,9 @@
 #include "imgui.h"
 
 
-SceneEditor::SceneEditor() :
+SceneEditor::SceneEditor(SDL_Renderer *rend) :
     selectedEntity(-1), sceneHierarchy(ecs, selectedEntity), fileExplorer(std::filesystem::current_path()),
-    entityInspector(ecs, selectedEntity), _sceneView(ecs)
+    entityInspector(ecs, selectedEntity), _sceneView(ecs, rend)
 {
     fileExplorer.refresh();
     EntityCreator::registerComponents(ecs);
@@ -55,7 +55,7 @@ void SceneEditor::run()
     ImGui::Columns(1);
 }
 
-void SceneEditor::init(SDL_Window *window)
+void SceneEditor::init()
 {
-    _sceneView.init(window);
+    _sceneView.init();
 }

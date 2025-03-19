@@ -9,11 +9,11 @@
 class SceneView : public Widget
 {
     public:
-        SceneView(const flecs::world &ecs);
+        SceneView(const flecs::world &ecs, SDL_Renderer *rend);
         ~SceneView() = default;
 
         void run() override;
-        bool init(SDL_Window *window);
+        bool init();
     private:
         const flecs::world &_ecs;
         SDL_Renderer *_renderer = nullptr;
