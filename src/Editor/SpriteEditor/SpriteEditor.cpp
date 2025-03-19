@@ -3,11 +3,7 @@
 #include "imgui_internal.h"
 
 
-SpriteEditor::SpriteEditor() :
-    fileExplorer(std::filesystem::current_path()), frameEditor()
-{
-    fileExplorer.refresh();
-}
+SpriteEditor::SpriteEditor() : fileExplorer(std::filesystem::current_path()), frameEditor() { fileExplorer.refresh(); }
 
 void SpriteEditor::init()
 {
@@ -37,13 +33,13 @@ void SpriteEditor::run()
 
     ImGui::SetColumnWidth(-1, ImGui::GetWindowWidth() * 0.8f);
     ImGui::BeginChild("MiddleColumn", ImVec2(0, 0), false);
-        ImGui::BeginChild("SceneView", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.7f), false);
-            ImGui::Text("Sprite Editor");
-            frameEditor.setColor(colorPicker.getColor());
-            frameEditor.setThickness(colorPicker.getSize());
-            frameEditor.setEraser(colorPicker.getEraser());
-            frameEditor.run();
-        ImGui::EndChild();
+    ImGui::BeginChild("SceneView", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.7f), false);
+    ImGui::Text("Sprite Editor");
+    frameEditor.setColor(colorPicker.getColor());
+    frameEditor.setThickness(colorPicker.getSize());
+    frameEditor.setEraser(colorPicker.getEraser());
+    frameEditor.run();
+    ImGui::EndChild();
     ImGui::EndChild();
 
     ImGui::Columns(1);

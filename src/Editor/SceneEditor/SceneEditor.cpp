@@ -8,11 +8,6 @@ SceneEditor::SceneEditor() :
 {
     fileExplorer.refresh();
     EntityCreator::registerComponents(ecs);
-
-    auto hello = EntityCreator::createEntity(ecs, "Hello world").set<Transform>({});
-    auto lorem = EntityCreator::createEntity(ecs, "Lorem ipsum").set<Transform>({}).child_of(hello);
-    auto dolor = EntityCreator::createEntity(ecs, "Dolor sit amet").set<Transform>({}).child_of(lorem);
-    auto coucou = EntityCreator::createEntity(ecs, "Coucou").set<Transform>({});
 }
 
 void SceneEditor::run()
@@ -43,7 +38,7 @@ void SceneEditor::run()
     ImGui::Separator();
 
     ImGui::BeginChild("Console", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.9f), false);
-    ImGui::Text("Console - Running at %d FPS", (int)ImGui::GetIO().Framerate);
+    console.run();
     ImGui::EndChild();
     ImGui::EndChild();
 

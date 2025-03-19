@@ -1,9 +1,9 @@
 #ifndef FrameEditor_HPP_
 #define FrameEditor_HPP_
 
+#include <map>
 #include <utility>
 #include <vector>
-#include <map>
 
 #include "../Widget.hpp"
 
@@ -19,7 +19,7 @@ class FrameEditor : public Widget
         class DrawingContext
         {
             public:
-            DrawingContext(unsigned char r, unsigned char g, unsigned char b, unsigned char a, float thickness)
+                DrawingContext(unsigned char r, unsigned char g, unsigned char b, unsigned char a, float thickness)
                 {
                     _r = r;
                     _g = g;
@@ -28,7 +28,8 @@ class FrameEditor : public Widget
                     _thickn = thickness;
                 }
 
-                int getColor() {
+                int getColor()
+                {
                     int col = 0;
                     col |= _r << 24;
                     col |= _g << 16;
@@ -37,9 +38,7 @@ class FrameEditor : public Widget
                     return col;
                 }
 
-                float getThickness() {
-                    return _thickn;
-                }
+                float getThickness() { return _thickn; }
 
                 unsigned char _r = 0;
                 unsigned char _g = 0;
@@ -48,18 +47,18 @@ class FrameEditor : public Widget
                 float _thickn = 2;
         };
 
-        void setColor(float *color) {
-                _r = color[0] * 255;
-                _g = color[1] * 255;
-                _b = color[2] * 255;
-                _a = color[3] * 255;
+        void setColor(float *color)
+        {
+            _r = color[0] * 255;
+            _g = color[1] * 255;
+            _b = color[2] * 255;
+            _a = color[3] * 255;
         }
 
-        void setThickness(float thick) {
-                _thickness = thick;
-        }
+        void setThickness(float thick) { _thickness = thick; }
 
-        void setEraser(bool eraser) {
+        void setEraser(bool eraser)
+        {
             if (eraser) {
                 _r = 255;
                 _g = 255;
@@ -74,6 +73,7 @@ class FrameEditor : public Widget
         bool init();
         void run() override;
         void draw();
+
     private:
         std::pair<DrawingContext, std::vector<Point>> _drawnList; // Store drawn points
         std::vector<std::pair<DrawingContext, std::vector<Point>>> _drawnPoints; // Store drawn points

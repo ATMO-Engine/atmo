@@ -1,7 +1,7 @@
 #include "Window.hpp"
 #include "SDL3/SDL_init.h"
 #include "imgui.h"
-#include "imgui_internal.h"
+#include "imgui_stdlib.h"
 
 Window::Window() : shouldClose(false) {}
 

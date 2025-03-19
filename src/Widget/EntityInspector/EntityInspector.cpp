@@ -61,7 +61,8 @@ void EntityInspector::drawComponent(flecs::entity entity, flecs::id componentId)
     else if (componentId == _ecs.component<Transform>()) {
         auto st = entity.get_mut<Transform>();
         drawData(st, entity);
-    } else if (componentId == _ecs.component<Image>()) {
+    }
+    else if (componentId == _ecs.component<Image>()) {
         auto st = entity.get_mut<Image>();
         drawData(st, entity);
     }
@@ -139,8 +140,7 @@ void EntityInspector::run()
             if (id.is_pair() && id.type_id() && id.type_id().str() == _identifier.type_id().str())
                 return;
             drawComponent(entity, id);
-        }
-    );
+        });
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f);
 
