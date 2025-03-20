@@ -1,12 +1,14 @@
 #include "SceneView.hpp"
 #include <SDL3/SDL.h>
 #include "SDL3/SDL_error.h"
-#include "SDL3/SDL_oldnames.h"
 #include "SDL3/SDL_render.h"
-#include "SDL3/SDL_video.h"
-#include "flecs/addons/cpp/world.hpp"
 #include "imgui.h"
 #include "spdlog/spdlog.h"
+<<<<<<< Updated upstream
+=======
+#include <SDL3/SDL.h>
+#include <iostream>
+>>>>>>> Stashed changes
 
 #define _CRT_SECURE_NO_WARNINGS
 #define STB_IMAGE_IMPLEMENTATION
@@ -65,6 +67,7 @@ bool LoadTextureFromFile(const char *file_name, SDL_Renderer *renderer, SDL_Text
     return ret;
 }
 
+<<<<<<< Updated upstream
 SceneView::SceneView(const flecs::world &ecs, SDL_Renderer *rend) : _ecs(ecs), _renderer(nullptr) { _renderer = rend; }
 
 void SceneView::run()
@@ -73,11 +76,97 @@ void SceneView::run()
     // ImGui::Text("pointer = %p", my_texture);
     // ImGui::Text("size = %d x %d", my_image_width, my_image_height);
     // ImGui::Image((ImTextureID)(intptr_t)my_texture, ImVec2((float)my_image_width, (float)my_image_height));
+=======
+SceneView::SceneView(const flecs::world &ecs, SDL_Renderer *rend) : _ecs(ecs), _renderer(rend), _query(ecs.query_builder<Node>().cached().build()), _images()
+{
+}
+
+SceneView::~SceneView()
+{
+    for (auto& entry : _images) {
+        SDL_Texture* texture = entry.second.first;
+        if (texture != nullptr) {
+            SDL_DestroyTexture(texture);
+            texture = nullptr;
+        }
+    }
+    _images.clear();
+}
+
+void SceneView::run()
+{
+    ImGui::Text("Scene View");
+    displayImages();
+>>>>>>> Stashed changes
 }
 
 bool SceneView::init()
 {
+<<<<<<< Updated upstream
     // bool ret = LoadTextureFromFile("./assets/huog.jpg", _renderer, &my_texture, &my_image_width, &my_image_height);
     // IM_ASSERT(ret);
+=======
+>>>>>>> Stashed changes
     return true;
+}
+
+bool isDisplayable(flecs::entity entity)
+{
+    bool has_transform = entity.has<Transform>();
+    bool has_image = entity.has<Image>();
+
+    return has_transform && has_image;
+}
+
+void SceneView::drawImage(flecs::entity entity)
+{
+    auto transformC = entity.get_mut<Transform>();
+    auto imageC = entity.get_mut<Image>();
+
+    auto it = _images.find(imageC->imagePath);
+    if (it == _images.end())
+        return;
+
+    ImVec2 scaled_dimensions(it->second.second.x * transformC->scale[0], it->second.second.y * transformC->scale[1]);
+
+    float x = transformC->position[0];
+    float y = transformC->position[1];
+    ImVec2 image_position(x, y);
+    ImGui::SetCursorPos(image_position);
+    ImGui::Image((ImTextureID)(intptr_t)it->second.first, scaled_dimensions);
+}
+
+void SceneView::loadImageTexture(flecs::entity entity)
+{
+    auto imageC = entity.get_mut<Image>();
+
+
+    if (!imageC || imageC->imagePath.empty())
+        return;
+
+    auto it = _images.find(imageC->imagePath);
+
+    if (it == _images.end()) {
+        std::string path = "./assets/" + imageC->imagePath;
+        int my_image_width = 0;
+        int my_image_height = 0;
+        SDL_Texture* my_texture = nullptr;
+
+        bool ret = LoadTextureFromFile(path.c_str(), _renderer, &my_texture, &my_image_width, &my_image_height);
+        IM_ASSERT(ret);
+
+        _images.insert({imageC->imagePath, {my_texture, ImVec2((float)my_image_width, (float)my_image_height)}});
+    }
+}
+
+
+void SceneView::displayImages()
+{
+    _query.each(
+        [this](flecs::entity e, Node &node) {
+        loadImageTexture(e);
+        if (isDisplayable(e)) {
+            drawImage(e);
+        }
+    });
 }
