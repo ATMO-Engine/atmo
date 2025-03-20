@@ -1,9 +1,9 @@
 #include "Window.hpp"
 #include "SDL3/SDL_init.h"
 #include "SDL3/SDL_render.h"
+#include "backends/imgui_impl_sdlrenderer3.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
-#include "backends/imgui_impl_sdlrenderer3.h"
 
 Window::Window() : shouldClose(false) {}
 
@@ -26,16 +26,18 @@ bool Window::init()
         return false;
     }
 
-    _renderer = SDL_CreateRenderer(window, nullptr);
+    _renderer = SDL_CreateRenderer(window, "opengl");
     if (!_renderer) {
         spdlog::critical("Could not create renderer: {}\n", SDL_GetError());
         return false;
     }
 
+    // SDL_SetRenderVSync(_renderer, 1);
+
 #if defined(__APPLE__)
-    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
     textureEditor = new SpriteEditor(_renderer);
@@ -54,7 +56,7 @@ void Window::setupImGui()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
-    io.IniFilename = NULL;
+    io.IniFilename = nullptr;
 
     ImGui_ImplSDL3_InitForSDLRenderer(window, _renderer);
     ImGui_ImplSDLRenderer3_Init(_renderer);
@@ -75,11 +77,11 @@ void Window::run()
             }
         }
 
-        // TODO: game logic here
-
         ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
+
+        SDL_RenderClear(_renderer);
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
 

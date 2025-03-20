@@ -1,12 +1,12 @@
 #include "Console.hpp"
+#include <iostream>
 #include "imgui.h"
+#include "spdlog/spdlog.h"
 
-Console::Console()
+Console::Console() : sink(std::make_shared<ConsoleSink>())
 {
-    // sink = std::make_shared<ConsoleSink>();
-    // logger = std::make_shared<spdlog::logger>("console", sink);
-    // spdlog::set_default_logger(logger);
-    // spdlog::set_level(spdlog::level::info);
+    auto logger = spdlog::default_logger();
+    logger->sinks().push_back(sink);
 }
 
 static void textRight(const std::string &text)
@@ -20,16 +20,27 @@ static void textRight(const std::string &text)
 
 void Console::run()
 {
+    sink->flush();
     ImGui::BeginChild("Console", ImVec2(0, 0), ImGuiChildFlags_None);
     ImGui::Text("Console - Engine running at %d FPS", (int)ImGui::GetIO().Framerate);
     ImGui::SameLine();
-    textRight(std::format("Logs taking %zu mb", (size_t)0.0));
+    textRight(fmt::format("Logs taking {:.2f} kb", sink->getFlushedLogsSize()));
+    if (ImGui::Button("Clear logs"))
+        sink->clearFlushedLogs();
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto Scrolling", &autoScroll);
     ImGui::BeginChild("ConsoleOutput", ImVec2(0, 0), ImGuiChildFlags_Borders);
-    ImGui::Text("Console output");
-    ImGui::Text("Console output");
-    ImGui::Text("Console output");
-    ImGui::Text("Console output");
-    ImGui::Text("Console output");
+    if (autoScroll)
+        ImGui::SetScrollY(ImGui::GetScrollMaxY());
+    for (const auto &log : sink->getFlushedLogs()) {
+        ImGui::TextUnformatted(log.c_str());
+    }
     ImGui::EndChild();
     ImGui::EndChild();
+}
+
+Console::ConsoleSink::ConsoleSink()
+{
+    set_pattern("[%Y-%m-%d %T.%e] [%^%-5l%$] %v");
+    set_formatter(std::make_unique<spdlog::pattern_formatter>());
 }

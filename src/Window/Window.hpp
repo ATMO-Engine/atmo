@@ -23,7 +23,7 @@ class Window
     private:
         SDL_Window *window;
         bool shouldClose;
-       // SDL_GLContext context;
+        // SDL_GLContext context;
         SceneEditor *sceneEditor;
         SpriteEditor *textureEditor;
         SDL_Renderer *_renderer;
