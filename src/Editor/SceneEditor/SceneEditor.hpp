@@ -3,10 +3,10 @@
 
 #include <flecs.h>
 #include <spdlog/spdlog.h>
+#include "../../Widget/Console/Console.hpp"
 #include "../../Widget/EntityInspector/EntityInspector.hpp"
 #include "../../Widget/FileExplorer/FileExplorer.hpp"
 #include "../../Widget/SceneHierarchy/SceneHierarchy.hpp"
-#include "../../Widget/Console/Console.hpp"
 #include "../../Widget/SceneView/SceneView.hpp"
 #include "../Editor.hpp"
 #include "SDL3/SDL_video.h"

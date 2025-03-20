@@ -55,7 +55,4 @@ void SceneEditor::run()
     ImGui::Columns(1);
 }
 
-void SceneEditor::init()
-{
-    _sceneView.init();
-}
+void SceneEditor::init() { _sceneView.init(); }

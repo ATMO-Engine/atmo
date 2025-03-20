@@ -92,7 +92,8 @@ void SceneHierarchy::createEntity()
             ImGui::SetKeyboardFocusHere(0);
             firstFocus = false;
         }
-        if (ImGui::InputText("##CreateEntity", &renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("OK")) {
+        if (ImGui::InputText("##CreateEntity", &renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue) ||
+            ImGui::Button("OK")) {
             if (renameBuffer.size() <= 0)
                 spdlog::warn("Entity name cannot be empty");
             else if (newEntityParent == -1) {
@@ -124,7 +125,8 @@ void SceneHierarchy::createEntity()
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
-    } else
+    }
+    else
         firstFocus = true;
 }
 
