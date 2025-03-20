@@ -2,6 +2,8 @@
 #include <flecs.h>
 #include <string>
 
+#pragma once
+
 struct Node
 {
         std::string description = "";
