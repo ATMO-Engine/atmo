@@ -38,7 +38,7 @@ bool Window::init()
     //SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
-    textureEditor = new SpriteEditor();
+    textureEditor = new SpriteEditor(_renderer);
     sceneEditor = new SceneEditor(_renderer);
 
     sceneEditor->init();

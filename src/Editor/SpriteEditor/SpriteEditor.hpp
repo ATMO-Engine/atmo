@@ -7,11 +7,12 @@
 #include "../../Widget/FileExplorer/FileExplorer.hpp"
 #include "../../Widget/FrameEditor/FrameEditor.hpp"
 #include "../Editor.hpp"
+#include "SDL3/SDL_render.h"
 
 class SpriteEditor : public Editor
 {
     public:
-        SpriteEditor();
+        SpriteEditor(SDL_Renderer *renderer);
         void run() override;
         void init();
 
