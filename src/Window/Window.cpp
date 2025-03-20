@@ -12,7 +12,7 @@ Window::~Window()
     delete textureEditor;
     delete sceneEditor;
 }
-#define SDL_RENDER_VSYNC "0"
+
 bool Window::init()
 {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -26,11 +26,13 @@ bool Window::init()
         return false;
     }
 
-    _renderer = SDL_CreateRenderer(window, nullptr);
+    _renderer = SDL_CreateRenderer(window, "opengl");
     if (!_renderer) {
         spdlog::critical("Could not create renderer: {}\n", SDL_GetError());
         return false;
     }
+
+    // SDL_SetRenderVSync(_renderer, 1);
 
 #if defined(__APPLE__)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);

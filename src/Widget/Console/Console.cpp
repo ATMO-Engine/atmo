@@ -27,8 +27,11 @@ void Console::run()
     textRight(fmt::format("Logs taking {:.2f} kb", sink->getFlushedLogsSize()));
     if (ImGui::Button("Clear logs"))
         sink->clearFlushedLogs();
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto Scrolling", &autoScroll);
     ImGui::BeginChild("ConsoleOutput", ImVec2(0, 0), ImGuiChildFlags_Borders);
-    ImGui::SetScrollY(ImGui::GetScrollMaxY());
+    if (autoScroll)
+        ImGui::SetScrollY(ImGui::GetScrollMaxY());
     for (const auto &log : sink->getFlushedLogs()) {
         ImGui::TextUnformatted(log.c_str());
     }

@@ -87,4 +87,5 @@ class Console : public Widget
     protected:
         const std::string widgetName = "Logs";
         std::shared_ptr<ConsoleSink> sink;
+        bool autoScroll = true;
 };
