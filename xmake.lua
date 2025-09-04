@@ -30,14 +30,59 @@ package("spdlog")
     end)
 package_end()
 
+package("luau")
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "luau"))
+    on_install(function(package)
+        local configs = {"-DLUAU_BUILD_TESTS=OFF", "-DCMAKE_POLICY_DEFAULT_CMP0057=NEW", "-DBUILD_SHARED_LIBS=OFF", "-DLUAU_BUILD_WEB=OFF", "-DLUAU_EXTERN_C=OFF"}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "RelWithDebInfo"))
+        import("package.tools.cmake").build(package, configs, { builddir = "build" })
+
+        local cmake_file = io.readfile("CMakeLists.txt")
+
+        local links = {}
+        for library_name, library_type in cmake_file:gmatch("add_library%(([%a|%.]+) (%w+)") do
+            library_type = library_type:lower()
+            if library_name:startswith("Luau.") and (library_type == "static" or library_type == "interface") then
+                if library_name:endswith(".lib") then
+                    library_name = library_name:sub(1, -5)
+                end
+                if library_type == "static" then
+                    table.insert(links, library_name)
+                end
+                local include_dir = library_name:sub(6)
+                include_dir = include_dir:gsub("%..*", "")
+                os.trycp(include_dir .. "/include/*", package:installdir("include"))
+            end
+        end
+
+        -- we have to link in reverse order
+        for i = #links, 1, -1 do
+            local link = links[i]
+            package:add("links", link)
+        end
+
+        os.trycp("build/**.a", package:installdir("lib"))
+        os.trycp("build/**.so", package:installdir("lib"))
+        os.trycp("build/**.dylib", package:installdir("lib"))
+        os.trycp("build/**.lib", package:installdir("lib"))
+        os.trycp("build/**.dll", package:installdir("bin"))
+        os.trycp("build/luau*", package:installdir("bin"))
+
+        package:addenv("PATH", "bin")
+    end)
+package_end()
+
 add_requires(
-    "spdlog", { system = false }
+    "spdlog", { system = false },
+    "luau", { system = false }
 )
 
 target("atmo")
     set_kind("binary")
-    add_packages("spdlog")
+    add_packages("spdlog", "luau")
     add_files("src/**.cpp")
+    add_includedirs("src")
 
 if is_plat("macosx") then
     add_frameworks(
