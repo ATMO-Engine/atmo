@@ -2,7 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include "luau/luau.h"
+#include "luau/luau.hpp"
 
 namespace atmo
 {
