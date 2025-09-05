@@ -13,6 +13,8 @@ namespace atmo
             protected:
                 static inline Engine *singleton = nullptr;
                 Engine() { singleton = this; }
+                Engine(Engine &other) = delete;
+                void operator=(const Engine &) = delete;
 
             public:
                 static Engine *get_singleton() { return singleton; }

@@ -56,7 +56,6 @@ package("luau")
             end
         end
 
-        -- we have to link in reverse order
         for i = #links, 1, -1 do
             local link = links[i]
             package:add("links", link)
@@ -73,14 +72,42 @@ package("luau")
     end)
 package_end()
 
+package("flecs")
+add_deps("cmake")
+set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "flecs"))
+on_install(function(package)
+    local configs = {"-DBUILD_STATIC_LIBS=ON", "-DFLECS_CPP_NO_AUTO_REGISTRATION=1"}
+    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+    import("package.tools.cmake").install(package, configs)
+end)
+package_end()
+
+package("glaze")
+add_deps("cmake")
+set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "glaze"))
+on_install(function(package)
+    local configs = {"-DBUILD_STATIC_LIBS=ON"}
+    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+    table.insert(configs, "-DGLAZE_BUILD_EXAMPLES=OFF")
+    table.insert(configs, "-DGLAZE_BUILD_TESTS=OFF")
+    table.insert(configs, "-DGLAZE_BUILD_DOCS=OFF")
+    -- table.insert(configs, "-DGLAZE_BUILD_TOOLS=OFF")
+    table.insert(configs, "-Dglaze_DEVELOPER_MODE=OFF")
+    table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
+    import("package.tools.cmake").install(package, configs)
+end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
-    "luau", { system = false }
+    "luau", { system = false },
+    "flecs", { system = false },
+    "glaze", { system = false }
 )
 
 target("atmo")
     set_kind("binary")
-    add_packages("spdlog", "luau")
+    add_packages("spdlog", "luau", "flecs", "glaze")
     add_files("src/**.cpp")
     add_includedirs("src")
 

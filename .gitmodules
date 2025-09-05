@@ -4,3 +4,9 @@
 [submodule "submodules/luau"]
 	path = submodules/luau
 	url = git@github.com:luau-lang/luau.git
+[submodule "submodules/flecs"]
+	path = submodules/flecs
+	url = git@github.com:SanderMertens/flecs.git
+[submodule "submodules/glaze"]
+	path = submodules/glaze
+	url = git@github.com:stephenberry/glaze.git
