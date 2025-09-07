@@ -98,16 +98,37 @@ on_install(function(package)
 end)
 package_end()
 
+package("libsdl3")
+add_deps("cmake")
+set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "sdl"))
+on_install(function(package)
+    local configs = {"-DBUILD_STATIC_LIBS=ON"}
+    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+    table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
+    table.insert(configs, "-DSDL_TEST=OFF")
+    import("package.tools.cmake").install(package, configs)
+end)
+package_end()
+
+package("clay")
+set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "clay"))
+on_install(function(package)
+    os.cp("clay.h", package:installdir("include"))
+end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
     "flecs", { system = false },
-    "glaze", { system = false }
+    "glaze", { system = false },
+    "libsdl3", { system = false },
+    "clay", { system = false }
 )
 
 target("atmo")
     set_kind("binary")
-    add_packages("spdlog", "luau", "flecs", "glaze")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "clay")
     add_files("src/**.cpp")
     add_includedirs("src")
 

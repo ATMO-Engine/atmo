@@ -10,3 +10,9 @@
 [submodule "submodules/glaze"]
 	path = submodules/glaze
 	url = git@github.com:stephenberry/glaze.git
+[submodule "submodules/sdl"]
+	path = submodules/sdl
+	url = git@github.com:libsdl-org/SDL.git
+[submodule "submodules/clay"]
+	path = submodules/clay
+	url = git@github.com:nicbarker/clay.git
