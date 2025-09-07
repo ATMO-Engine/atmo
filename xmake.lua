@@ -155,3 +155,6 @@ if is_plat("macosx") then
         "UniformTypeIdentifiers"
     )
 end
+if is_plat("windows") then
+    add_cxxflags("/utf-8")
+end
