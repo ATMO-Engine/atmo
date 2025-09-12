@@ -1,5 +1,6 @@
 #include <any>
 #include <exception>
+#include <iostream>
 #include <sstream>
 
 #include "core/resource/loaders/image_loader.hpp"
@@ -38,7 +39,8 @@ namespace atmo
             {
                 std::string extension = split(path, '.').back();
                 try {
-                    return _loaders.at(extension)->get(path);
+                    _loaders.at(extension)->load(path);
+                    return std::any();
                 }
                 catch (const std::exception &e) {
                     throw e;

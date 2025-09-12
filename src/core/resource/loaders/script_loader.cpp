@@ -15,16 +15,25 @@ namespace atmo
 
             void ScriptLoader::load(const std::string &path)
             {
-                size_t bytecodeSize = 0;
-                char *bytecode = atmo::luau::Luau::compile(path, &bytecodeSize);
+                try {
+                    std::ifstream luaFile(path);
 
-                std::ofstream out("compiled.luac", std::ios::binary);
-                if (out.is_open()) {
-                    out.write(bytecode, bytecodeSize);
-                    out.close();
+                    std::string source((std::istreambuf_iterator<char>(luaFile)), std::istreambuf_iterator<char>());
+                    luaFile.close();
+
+                    size_t bytecodeSize = 0;
+                    char *bytecode = atmo::luau::Luau::compile(source, &bytecodeSize);
+
+                    std::ofstream out("compiled.luac", std::ios::binary);
+                    if (out.is_open()) {
+                        out.write(bytecode, bytecodeSize);
+                        out.close();
+                    }
+                }
+                catch (const std::exception &e) {
+                    throw e;
                 }
             }
-
             std::any ScriptLoader::get(const std::string &path) {}
         } // namespace resource
     } // namespace core

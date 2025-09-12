@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     atmo::core::resource::ResourceManager test;
     std::cout << "1" << std::endl;
 
-    std::string path = "caca.png";
+    std::string path = "caca.lua";
     std::cout << "2" << std::endl;
 
     test.getResources(path);
