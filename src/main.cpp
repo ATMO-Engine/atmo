@@ -5,14 +5,19 @@ int main(int argc, char **argv)
 {
     // spdlog::info("Hello world!");
     // atmo::core::Engine::get_singleton()->run();
-    std::cout << "0" << std::endl;
     atmo::core::resource::ResourceManager test;
-    std::cout << "1" << std::endl;
 
-    std::string path = "caca.lua";
-    std::cout << "2" << std::endl;
-
-    test.getResources(path);
-    std::cout << "3" << std::endl;
+    std::string path = "test.lua";
+    std::any save = test.getResources(path);
+    try {
+        std::shared_ptr<char *> extracted = std::any_cast<std::shared_ptr<char *>>(save);
+        char *val = *extracted;
+        for (int i = 0; val[i] != '\0'; i++) {
+            std::cout << val[i] << "(" << (int)val[i] << ")" << std::endl;
+        }
+    }
+    catch (const std::exception &e) {
+        std::cerr << "Bad cast: " << e.what() << "\n";
+    }
     return 0;
 }

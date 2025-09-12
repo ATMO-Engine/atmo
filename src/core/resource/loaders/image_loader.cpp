@@ -1,10 +1,6 @@
 #include "core/resource/loaders/image_loader.hpp"
-#include <any>
-#include <memory>
 #include <string>
 #include <utility>
-
-#include <iostream>
 
 namespace atmo
 {
@@ -14,16 +10,20 @@ namespace atmo
         {
             ImageLoader::ImageLoader() {}
 
-            void ImageLoader::load(const std::string &path) {}
-
-            std::any ImageLoader::get(const std::string &path)
+            void ImageLoader::load(const std::string &path)
             {
                 std::shared_ptr<std::string> newRessource = std::make_shared<std::string>("test string loaded");
 
-                if (_ressources.find(path) == _ressources.end()) {
-                    _ressources.insert(std::make_pair(path, newRessource));
+                _resources.insert(std::make_pair(path, newRessource));
+            }
+
+            std::any ImageLoader::get(const std::string &path)
+            {
+                if (_resources.find(path) == _resources.end()) {
+                    load(path);
                 }
-                return std::make_any<std::shared_ptr<std::string>>(_ressources.at(path));
+
+                return std::make_any<std::shared_ptr<std::string>>(_resources.at(path));
             }
         } // namespace resource
     } // namespace core
