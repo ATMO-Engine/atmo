@@ -1,73 +1,87 @@
 #include "engine.hpp"
+#include "impl/window.hpp"
 
-const std::map<std::string, flecs::entity> atmo::core::Engine::prefabs = {
-    {"Script", ECS.prefab("Script").set(entities::Script{""})},
-    // {"UIRectangle", ecs.prefab("UI Rectangle").set()}
-};
-
-void atmo::core::Engine::load_ecs()
+void atmo::core::Engine::create_components()
 {
-    ecs.observer<entities::Script>()
-        .event(flecs::OnAdd)
-        .each(
-            [](flecs::entity e, entities::Script &s)
-            {
-                lua_getglobal(s.luau.get_state(), "ready");
+    create_managed_component<components::Window, impl::WindowManager>();
+    // create_component<components::Script>();
+}
 
-                if (!lua_isfunction(s.luau.get_state(), -1)) {
-                    lua_pop(s.luau.get_state(), 1);
-                    return;
-                }
+void atmo::core::Engine::load_prefabs()
+{
+    prefabs = {{"Window", ecs.prefab("Window").set(components::Window{false, "Atmo Window", {800, 600}})},
+               {"Script", ecs.prefab("Script").set(components::Script{""})}};
+}
 
-                if (lua_pcall(s.luau.get_state(), 0, 0, 0) != LUA_OK) {
-                    spdlog::error("Error calling ready: {}", lua_tostring(s.luau.get_state(), -1));
-                    lua_pop(s.luau.get_state(), 1);
-                }
+void atmo::core::Engine::init_systems()
+{
+    ecs.system<components::Window>("Draw").each(
+        [](flecs::iter &it, size_t, components::Window &window)
+        {
+            impl::WindowManager &wm = static_cast<impl::WindowManager &>(Engine::component_managers[it.entity(0).id()]);
+            wm.draw();
+        });
+    // ecs.observer<entities::Script>()
+    //     .event(flecs::OnAdd)
+    //     .each(
+    //         [](flecs::entity e, entities::Script &s)
+    //         {
+    //             lua_getglobal(s.luau.get_state(), "ready");
 
-                lua_pop(s.luau.get_state(), 1);
-            });
+    //             if (!lua_isfunction(s.luau.get_state(), -1)) {
+    //                 lua_pop(s.luau.get_state(), 1);
+    //                 return;
+    //             }
 
-    ecs.system<entities::Script>("ScriptProcess")
-        .kind(flecs::OnUpdate)
-        .each(
-            [](flecs::iter &it, size_t, entities::Script &s)
-            {
-                lua_getglobal(s.luau.get_state(), "process");
+    //             if (lua_pcall(s.luau.get_state(), 0, 0, 0) != LUA_OK) {
+    //                 spdlog::error("Error calling ready: {}", lua_tostring(s.luau.get_state(), -1));
+    //                 lua_pop(s.luau.get_state(), 1);
+    //             }
 
-                if (!lua_isfunction(s.luau.get_state(), -1)) {
-                    lua_pop(s.luau.get_state(), 1);
-                    return;
-                }
+    //             lua_pop(s.luau.get_state(), 1);
+    //         });
 
-                lua_pushnumber(s.luau.get_state(), it.delta_time());
+    // ecs.system<entities::Script>("ScriptProcess")
+    //     .kind(flecs::OnUpdate)
+    //     .each(
+    //         [](flecs::iter &it, size_t, entities::Script &s)
+    //         {
+    //             lua_getglobal(s.luau.get_state(), "process");
 
-                if (lua_pcall(s.luau.get_state(), 1, 0, 0) != LUA_OK) {
-                    spdlog::error("Error calling process: {}", lua_tostring(s.luau.get_state(), -1));
-                    lua_pop(s.luau.get_state(), 1);
-                }
+    //             if (!lua_isfunction(s.luau.get_state(), -1)) {
+    //                 lua_pop(s.luau.get_state(), 1);
+    //                 return;
+    //             }
 
-                lua_pop(s.luau.get_state(), 1);
-            });
+    //             lua_pushnumber(s.luau.get_state(), it.delta_time());
 
-    ecs.system<entities::Script>("ScriptPhysicsProcess")
-        .kind(flecs::PostUpdate)
-        .each(
-            [](flecs::iter &it, size_t, entities::Script &s)
-            {
-                lua_getglobal(s.luau.get_state(), "physics_process");
+    //             if (lua_pcall(s.luau.get_state(), 1, 0, 0) != LUA_OK) {
+    //                 spdlog::error("Error calling process: {}", lua_tostring(s.luau.get_state(), -1));
+    //                 lua_pop(s.luau.get_state(), 1);
+    //             }
 
-                if (!lua_isfunction(s.luau.get_state(), -1)) {
-                    lua_pop(s.luau.get_state(), 1);
-                    return;
-                }
+    //             lua_pop(s.luau.get_state(), 1);
+    //         });
 
-                lua_pushnumber(s.luau.get_state(), it.delta_time());
+    // ecs.system<entities::Script>("ScriptPhysicsProcess")
+    //     .kind(flecs::PostUpdate)
+    //     .each(
+    //         [](flecs::iter &it, size_t, entities::Script &s)
+    //         {
+    //             lua_getglobal(s.luau.get_state(), "physics_process");
 
-                if (lua_pcall(s.luau.get_state(), 1, 0, 0) != LUA_OK) {
-                    spdlog::error("Error calling physics_process: {}", lua_tostring(s.luau.get_state(), -1));
-                    lua_pop(s.luau.get_state(), 1);
-                }
+    //             if (!lua_isfunction(s.luau.get_state(), -1)) {
+    //                 lua_pop(s.luau.get_state(), 1);
+    //                 return;
+    //             }
 
-                lua_pop(s.luau.get_state(), 1);
-            });
+    //             lua_pushnumber(s.luau.get_state(), it.delta_time());
+
+    //             if (lua_pcall(s.luau.get_state(), 1, 0, 0) != LUA_OK) {
+    //                 spdlog::error("Error calling physics_process: {}", lua_tostring(s.luau.get_state(), -1));
+    //                 lua_pop(s.luau.get_state(), 1);
+    //             }
+
+    //             lua_pop(s.luau.get_state(), 1);
+    //         });
 }
