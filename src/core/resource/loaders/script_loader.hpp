@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include "core/resource/resource_loader.hpp"
 
 namespace atmo
@@ -13,6 +12,7 @@ namespace atmo
             {
             public:
                 ScriptLoader();
+                ~ScriptLoader() = default;
 
                 void load(const std::string &path);
                 std::any get(const std::string &path);

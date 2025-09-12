@@ -1,7 +1,7 @@
 #include "core/resource/loaders/script_loader.hpp"
 #include <any>
 #include <fstream>
-#include <memory>
+#include <iostream>
 #include "luau/luau.hpp"
 
 

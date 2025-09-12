@@ -31,13 +31,12 @@ namespace atmo
                 while (std::getline(stream, token, delimiter)) {
                     tokens.push_back(token);
                 }
-
                 return tokens;
             }
 
             std::any ResourceManager::getResources(std::string &path)
             {
-                std::string &extension = split(path, '.').back();
+                std::string extension = split(path, '.').back();
                 try {
                     return _loaders.at(extension)->get(path);
                 }
