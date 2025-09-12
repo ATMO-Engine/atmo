@@ -13,9 +13,12 @@ namespace atmo
         {
             class ImageLoader : public ResourceLoader
             {
-            public:           
-                ImageLoader(); 
-                std::any &get(const std::string &path);
+            public:
+                ImageLoader();
+                ~ImageLoader() = default;
+
+                void load(const std::string &path);
+                std::any get(const std::string &path);
 
             private:
                 std::map<std::string, std::shared_ptr<std::string>> ressources;

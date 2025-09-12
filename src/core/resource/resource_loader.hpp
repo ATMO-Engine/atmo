@@ -14,8 +14,9 @@ namespace atmo
             {
             public:
                 // TODO smart pointer resource system
-                void load(const std::string &path);
-                std::any &get(const std::string &path);
+                virtual ~ResourceLoader() = default;
+                virtual void load(const std::string &path) = 0;
+                virtual std::any get(const std::string &path) = 0;
             };
         } // namespace resource
     } // namespace core

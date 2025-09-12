@@ -16,15 +16,16 @@ namespace atmo
             class ResourceManager
             {
             public:
-                ResourceManager() = default;
+                ResourceManager();
                 ~ResourceManager() = default;
 
-                std::any &getResources(std::string &path);
+                std::any getResources(std::string &path);
+
             protected:
-                static const std::map<std::string, ResourceLoader> _loaders;
+                std::map<std::string, std::unique_ptr<ResourceLoader>> _loaders;
 
             private:
-                std::vector<std::string> split(const std::string& str, char delimiter);
+                std::vector<std::string> split(const std::string &str, char delimiter);
             };
         } // namespace resource
     } // namespace core

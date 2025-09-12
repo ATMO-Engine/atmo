@@ -15,7 +15,7 @@ namespace atmo
                 ScriptLoader();
 
                 void load(const std::string &path);
-                // std::shared_ptr<void> &get(const std::string &path);
+                std::any get(const std::string &path);
             };
         } // namespace resource
     } // namespace core

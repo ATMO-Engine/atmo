@@ -11,6 +11,8 @@ namespace atmo
     {
         namespace resource
         {
+            ScriptLoader::ScriptLoader() {}
+
             void ScriptLoader::load(const std::string &path)
             {
                 size_t bytecodeSize = 0;
@@ -22,6 +24,8 @@ namespace atmo
                     out.close();
                 }
             }
+
+            std::any ScriptLoader::get(const std::string &path) {}
         } // namespace resource
     } // namespace core
 } // namespace atmo
