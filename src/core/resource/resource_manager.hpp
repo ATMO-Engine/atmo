@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include <map>
 #include <string>
 #include <vector>
@@ -18,7 +19,7 @@ namespace atmo
                 ResourceManager() = default;
                 ~ResourceManager() = default;
 
-                ResourceLoader &getResources(std::string &path);
+                std::any &getResources(std::string &path);
             protected:
                 static const std::map<std::string, ResourceLoader> _loaders;
 
