@@ -24,17 +24,21 @@ namespace atmo
                     size_t bytecodeSize = 0;
                     char *bytecode = atmo::luau::Luau::compile(source, &bytecodeSize);
 
-                    std::ofstream out("compiled.luac", std::ios::binary);
-                    if (out.is_open()) {
-                        out.write(bytecode, bytecodeSize);
-                        out.close();
-                    }
+                    std::shared_ptr<char *> newRessource = std::make_shared<char *>(bytecode);
+                    _ressources.insert(std::make_pair(path, newRessource));
                 }
                 catch (const std::exception &e) {
                     throw e;
                 }
             }
-            std::any ScriptLoader::get(const std::string &path) {}
+
+            std::any ScriptLoader::get(const std::string &path)
+            {
+                if (_ressources.find(path) == _ressources.end()) {
+                    load(path);
+                }
+                return _ressources.at(path);
+            }
         } // namespace resource
     } // namespace core
 } // namespace atmo
