@@ -21,7 +21,7 @@ namespace atmo
                 std::any get(const std::string &path);
 
             private:
-                std::map<std::string, std::shared_ptr<std::string>> ressources;
+                std::map<std::string, std::shared_ptr<std::string>> _ressources;
             };
         } // namespace resource
     } // namespace core

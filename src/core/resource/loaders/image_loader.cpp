@@ -4,6 +4,8 @@
 #include <string>
 #include <utility>
 
+#include <iostream>
+
 namespace atmo
 {
     namespace core
@@ -16,13 +18,12 @@ namespace atmo
 
             std::any ImageLoader::get(const std::string &path)
             {
-                std::shared_ptr<std::string> newRessource = std::make_shared<std::string>("test");
+                std::shared_ptr<std::string> newRessource = std::make_shared<std::string>("test string loaded");
 
-                if (ressources.find(path) != ressources.end()) {
-                    ressources.insert(std::make_pair(path, newRessource));
+                if (_ressources.find(path) == _ressources.end()) {
+                    _ressources.insert(std::make_pair(path, newRessource));
                 }
-
-                return ressources.at(path);
+                return std::make_any<std::shared_ptr<std::string>>(_ressources.at(path));
             }
         } // namespace resource
     } // namespace core
