@@ -11,6 +11,13 @@ namespace atmo
     {
         namespace resource
         {
+
+            struct Bytecode
+            {
+                std::shared_ptr<char *> data;
+                size_t size;
+            };
+
             class ScriptLoader : public ResourceLoader
             {
             public:
@@ -21,7 +28,7 @@ namespace atmo
                 std::any get(const std::string &path);
 
             private:
-                std::map<std::string, std::shared_ptr<char *>> _ressources;
+                std::map<std::string, Bytecode> _ressources;
             };
         } // namespace resource
     } // namespace core

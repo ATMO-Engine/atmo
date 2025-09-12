@@ -1,4 +1,5 @@
 #include <iostream>
+#include "core/resource/loaders/script_loader.hpp"
 #include "core/resource/resource_manager.hpp"
 
 int main(int argc, char **argv)
@@ -10,10 +11,11 @@ int main(int argc, char **argv)
     std::string path = "test.lua";
     std::any save = test.getResources(path);
     try {
-        std::shared_ptr<char *> extracted = std::any_cast<std::shared_ptr<char *>>(save);
-        char *val = *extracted;
-        for (int i = 0; val[i] != '\0'; i++) {
-            std::cout << val[i] << "(" << (int)val[i] << ")" << std::endl;
+        atmo::core::resource::Bytecode result = std::any_cast<atmo::core::resource::Bytecode>(save);
+        char *val = *result.data.get();
+
+        for (size_t i = 0; i < result.size; ++i) {
+            std::cout << std::hex << std::uppercase << val[i];
         }
     }
     catch (const std::exception &e) {

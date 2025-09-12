@@ -24,7 +24,11 @@ namespace atmo
                     size_t bytecodeSize = 0;
                     char *bytecode = atmo::luau::Luau::compile(source, &bytecodeSize);
 
-                    std::shared_ptr<char *> newRessource = std::make_shared<char *>(bytecode);
+                    std::shared_ptr<char *> sharedData = std::make_shared<char *>(bytecode);
+                    Bytecode newRessource;
+                    newRessource.data = sharedData;
+                    newRessource.size = bytecodeSize;
+
                     _ressources.insert(std::make_pair(path, newRessource));
                 }
                 catch (const std::exception &e) {
