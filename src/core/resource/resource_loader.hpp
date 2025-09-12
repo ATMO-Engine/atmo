@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 namespace atmo
@@ -11,10 +12,9 @@ namespace atmo
             class ResourceLoader
             {
             public:
-                ResourceLoader() = delete;
-
                 // TODO smart pointer resource system
-                void get(const std::string &path);
+                void load(const std::string &path);
+                std::shared_ptr<void> &get(const std::string &path);
             };
         } // namespace resource
     } // namespace core
