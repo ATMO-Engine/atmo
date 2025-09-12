@@ -39,8 +39,7 @@ namespace atmo
             {
                 std::string extension = split(path, '.').back();
                 try {
-                    _loaders.at(extension)->load(path);
-                    return std::any();
+                    return _loaders.at(extension)->get(path);
                 }
                 catch (const std::exception &e) {
                     throw e;
