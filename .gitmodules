@@ -16,3 +16,9 @@
 [submodule "submodules/clay"]
 	path = submodules/clay
 	url = git@github.com:nicbarker/clay.git
+[submodule "submodules/sdl_ttf"]
+	path = submodules/sdl_ttf
+	url = git@github.com:libsdl-org/SDL_ttf.git
+[submodule "submodules/sdl_image"]
+	path = submodules/sdl_image
+	url = git@github.com:libsdl-org/SDL_image.git

@@ -1,4 +1,5 @@
 #include "engine.hpp"
+#include "flecs/addons/cpp/mixins/pipeline/decl.hpp"
 #include "impl/window.hpp"
 
 void atmo::core::Engine::create_components()
@@ -15,12 +16,25 @@ void atmo::core::Engine::load_prefabs()
 
 void atmo::core::Engine::init_systems()
 {
-    ecs.system<components::Window>("Draw").each(
-        [](flecs::iter &it, size_t, components::Window &window)
-        {
-            impl::WindowManager &wm = static_cast<impl::WindowManager &>(Engine::component_managers[it.entity(0).id()]);
-            wm.draw();
-        });
+    ecs.system<components::Window>("PollEvents")
+        .kind(flecs::PreUpdate)
+        .each(
+            [](flecs::iter &it, size_t, components::Window &window)
+            {
+                impl::WindowManager &wm =
+                    static_cast<impl::WindowManager &>(Engine::component_managers[it.entity(0).id()]);
+                wm.pollEvents(it.delta_time());
+            });
+
+    ecs.system<components::Window>("Draw")
+        .kind(flecs::PostUpdate)
+        .each(
+            [](flecs::iter &it, size_t, components::Window &window)
+            {
+                impl::WindowManager &wm =
+                    static_cast<impl::WindowManager &>(Engine::component_managers[it.entity(0).id()]);
+                wm.draw();
+            });
     // ecs.observer<entities::Script>()
     //     .event(flecs::OnAdd)
     //     .each(

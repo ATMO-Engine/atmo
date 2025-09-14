@@ -1,15 +1,18 @@
-#define CLAY_IMPLEMENTATION
-
 #include <SDL3/SDL.h>
-#include <clay.h>
 #include <spdlog/spdlog.h>
 
 #include "window.hpp"
 
+#define CLAY_IMPLEMENTATION
+#include <clay.h>
+
+void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
+
 atmo::impl::WindowManager::WindowManager(atmo::core::components::Window &window) : is_main(window.main)
 {
     spdlog::info("Creating window...");
-    if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, 0, &sdl_window, &sdl_renderer))
+    if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, 0, &sdl_window,
+                                     &rendererData.renderer))
         spdlog::error("Failed to create window: {}", SDL_GetError());
 
     SDL_SetWindowResizable(sdl_window, true);
@@ -29,9 +32,9 @@ atmo::impl::WindowManager::WindowManager(atmo::core::components::Window &window)
 
 atmo::impl::WindowManager::~WindowManager()
 {
-    if (sdl_renderer) {
-        SDL_DestroyRenderer(sdl_renderer);
-        sdl_renderer = nullptr;
+    if (rendererData.renderer) {
+        SDL_DestroyRenderer(rendererData.renderer);
+        rendererData.renderer = nullptr;
     }
 
     if (sdl_window) {
@@ -44,30 +47,46 @@ atmo::impl::WindowManager::~WindowManager()
     spdlog::info("Window destroyed");
 }
 
+void atmo::impl::WindowManager::pollEvents(float deltaTime)
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_EVENT_QUIT:
+                break;
+            case SDL_EVENT_KEY_UP:
+                break;
+            case SDL_EVENT_WINDOW_RESIZED:
+                Clay_SetLayoutDimensions({(float)event.window.data1, (float)event.window.data2});
+                break;
+            case SDL_EVENT_MOUSE_MOTION:
+                Clay_SetPointerState({event.motion.x, event.motion.y}, event.motion.state & SDL_BUTTON_LMASK);
+                break;
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                Clay_SetPointerState({event.button.x, event.button.y}, event.button.button == SDL_BUTTON_LEFT);
+                break;
+            case SDL_EVENT_MOUSE_WHEEL:
+                Clay_UpdateScrollContainers(true, {event.wheel.x, event.wheel.y}, deltaTime);
+                break;
+            default:
+                break;
+        };
+    }
+}
+
 void atmo::impl::WindowManager::draw()
 {
-    // SDL_Event event;
-    // while (SDL_PollEvent(&event)) {
-    //     if (event.type == SDL_EVENT_QUIT) {
-    //         SDL_Quit();
-    //         exit(0);
-    //     } else if (event.type == SDL_EVENT_WINDOW_RESIZED) {
-    //         int width, height;
-    //         SDL_GetWindowSize(sdl_window, &width, &height);
-    //         Clay_SetViewportSize(clay_arena, {(float)width, (float)height});
-    //     }
-    // }
+    spdlog::debug("Drawing window...");
+    Clay_BeginLayout();
 
-    // SDL_SetRenderDrawColor(sdl_renderer, 30, 30, 30, 255);
-    // SDL_RenderClear(sdl_renderer);
+    // TODO build layout from entities in ecs here (only children of this window)
 
-    // Clay_BeginFrame(clay_arena);
+    auto commands = Clay_EndLayout();
 
-    // // TODO draw stuff here
+    SDL_SetRenderDrawColor(rendererData.renderer, 0, 0, 0, 255);
+    SDL_RenderClear(rendererData.renderer);
 
-    // Clay_EndFrame(clay_arena);
+    SDL_Clay_RenderClayCommands(&rendererData, &commands);
 
-    // Clay_Render(clay_arena, sdl_renderer);
-
-    // SDL_RenderPresent(sdl_renderer);
+    SDL_RenderPresent(rendererData.renderer);
 }

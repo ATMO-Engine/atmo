@@ -7,7 +7,8 @@ int main(int argc, char **argv)
     spdlog::info("Engine initialized");
     auto window = engine.get_ecs().entity("Main Window").is_a(engine.get_prefabs().at("Window"));
 
-    // while (engine.get_ecs().progress(0))
-    //     continue;
+    while (engine.get_ecs().progress()) {
+        // main loop
+    }
     return 0;
 }
