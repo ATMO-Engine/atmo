@@ -15,9 +15,6 @@ set_config("build.compdb", true)
 add_rules("plugin.compile_commands.autoupdate")
 
 local SUBMODULE_PATH = "submodules/"
-if not os.isdir("submodules") then
-    os.exec("git submodule update --init --recursive")
-end
 
 package("spdlog")
     add_deps("cmake")
@@ -110,6 +107,61 @@ on_install(function(package)
 end)
 package_end()
 
+package("libsdl3_ttf")
+add_deps("cmake", "libsdl3", "freetype")
+set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "sdl_ttf"))
+on_install(function (package)
+        local configs = {"-DSDLTTF_SAMPLES=OFF", "-DSDLTTF_VENDORED=OFF"}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
+        table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
+        table.insert(configs, "-DSDLTTF_HARFBUZZ=" .. (package:config("harfbuzz") and "ON" or "OFF"))
+        table.insert(configs, "-DSDLTTF_PLUTOSVG=" .. (package:config("plutosvg") and "ON" or "OFF"))
+        local freetype = package:dep("freetype")
+        if freetype then
+            local fetchinfo = freetype:fetch()
+            if fetchinfo then
+                local includedirs = table.wrap(fetchinfo.includedirs or fetchinfo.sysincludedirs)
+                if #includedirs > 0 then
+                    table.insert(configs, "-DFREETYPE_INCLUDE_DIRS=" .. table.concat(includedirs, ";"))
+                end
+                local libfiles = table.wrap(fetchinfo.libfiles)
+                if #libfiles > 0 then
+                    table.insert(configs, "-DFREETYPE_LIBRARY=" .. libfiles[1])
+                end
+                if not freetype:config("shared") then
+                    local libfiles = {}
+                    for _, dep in ipairs(freetype:librarydeps()) do
+                        local depinfo = dep:fetch()
+                        if depinfo then
+                            table.join2(libfiles, depinfo.libfiles)
+                        end
+                    end
+                    if #libfiles > 0 then
+                        local libraries = ""
+                        for _, libfile in ipairs(libfiles) do
+                            libraries = libraries .. " " .. (libfile:gsub("\\", "/"))
+                        end
+                        io.replace("CMakeLists.txt", "target_link_libraries(${sdl3_ttf_target_name} PRIVATE Freetype::Freetype)",
+                            "target_link_libraries(${sdl3_ttf_target_name} PRIVATE Freetype::Freetype " .. libraries .. ")", {plain = true})
+                    end
+                end
+            end
+        end
+        import("package.tools.cmake").install(package, configs, {packagedeps={"plutovg"}})
+    end)
+package_end()
+
+package("libsdl3_image")
+add_deps("cmake", "libsdl3")
+set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "sdl_image"))
+on_install(function(package)
+    local configs = {"-DBUILD_STATIC_LIBS=ON"}
+    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+    table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
+    import("package.tools.cmake").install(package, configs)
+end)
+package_end()
+
 package("clay")
 set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "clay"))
 on_install(function(package)
@@ -123,12 +175,14 @@ add_requires(
     "flecs", { system = false },
     "glaze", { system = false },
     "libsdl3", { system = false },
+    "libsdl3_ttf", { system = false },
+    "libsdl3_image", { system = false },
     "clay", { system = false }
 )
 
 target("atmo")
     set_kind("binary")
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "clay")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay")
     add_files("src/**.cpp")
     add_includedirs("src")
 
