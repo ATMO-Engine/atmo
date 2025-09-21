@@ -21,6 +21,7 @@ namespace atmo
         public:
             Engine()
             {
+                ecs.init_builtin_components();
                 create_components();
                 load_prefabs();
                 init_systems();
