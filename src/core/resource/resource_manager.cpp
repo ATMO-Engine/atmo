@@ -1,16 +1,11 @@
-#include <any>
 #include <exception>
-#include <format>
 #include <iostream>
 #include <memory>
-#include <ostream>
-#include <sstream>
-#include <utility>
-#include "core/resource/loaders/Ipool.hpp"
-#include "handle.hpp"
+#include "common/utils.hpp"
+#include "core/resource/loaders/script_loader.hpp"
+#include "core/resource/resource_factory.hpp"
+#include "loaders/image_loader.hpp"
 
-#include "core/resource/loaders/image_pool.hpp"
-#include "core/resource/loaders/script_pool.hpp"
 #include "resource_manager.hpp"
 
 namespace atmo
@@ -19,14 +14,15 @@ namespace atmo
     {
         namespace resource
         {
-            ResourceManager::ResourceManager() :
-                _fileTypes({
-                    {"png", ResourceType::PNG},
-                    {"luau", ResourceType::Script}
-                })
+            ResourceManager::ResourceManager() : _factory(ResourceFactory::getInstance())
             {
-                _pools.emplace(ResourceType::PNG, std::make_unique<ImagePool>(ImagePool()));
-                _pools.emplace(ResourceType::Script, std::make_unique<ScriptPool>(ScriptPool()));
+                _pools = {
+                    {"png", Pool()},
+                    {"luau", Pool()}
+                };
+
+                _factory.registerLoader("png", []() {return std::make_shared<ImageLoader>(ImageLoader());});
+                _factory.registerLoader("luau", []() {return std::make_shared<ScriptLoader>(ScriptLoader());});
             }
 
             ResourceManager &ResourceManager::getInstance()
@@ -35,38 +31,16 @@ namespace atmo
                 return instance;
             }
 
-            std::vector<std::string> ResourceManager::split(const std::string &str, char delimiter)
+
+            const Handle ResourceManager::generate(const std::string &path)
             {
-                std::vector<std::string> tokens;
-                std::istringstream stream(str);
-                std::string token;
-
-                while (std::getline(stream, token, delimiter)) {
-                    tokens.push_back(token);
-                }
-                return tokens;
-            }
-
-            const Handle &ResourceManager::generate(const std::string &path)
-            {
-                if (_handleMap.find(path) != _handleMap.end()) {
-                    std::cout << "Already loaded" << std::endl;
-                    return _handleMap.at(path);
-                }
-
-                std::string extension = split(path, '.').back();
+                std::string extension = atmo::common::Utils::splitString(path, '.').back();
                 try {
-                    if (_fileTypes.find(extension) != _fileTypes.end()) {
-                        ResourceType type = _fileTypes.at(extension);
-                        if (_pools.find(type) != _pools.end()) {
-                            Handle newHandle = _pools.at(type)->create(path);
-                            _handleMap.insert(std::make_pair(path, newHandle));
-                            return _handleMap.at(path);
-                        } else {
-                            throw std::exception(std::format("No pools defined for this file extension ({}).", extension).c_str());
-                        }
+                    if (_pools.find(extension) != _pools.end()) {
+                        Handle newHandle = _pools.at(extension).create(path);
+                        return newHandle;
                     } else {
-                        throw std::exception("Invalid file type");
+                        throw std::exception("Invalid file extension");
                     }
                 } catch (const std::exception &e) {
                     std::cout << e.what() << std::endl;
@@ -74,13 +48,35 @@ namespace atmo
                 }
             }
 
-            std::any ResourceManager::getResource(const Handle &handle)
+            std::shared_ptr<Resource> ResourceManager::getResource(const Handle &handle)
             {
-                if (_pools.find(handle.type) != _pools.end()) {
-                    return _pools.at(handle.type)->getFromHandle(handle);
-                    return std::make_any<bool>(true);
-                } else {
-                    throw std::exception(std::format("No matching pool for the handle given (handle type value:{}).", (int)handle.type).c_str());
+                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
+                try {
+                    if (_pools.find(extension) != _pools.end()) {
+                        // create Resource class through a calss that return a Resource class thanks to the path
+                        return _pools.at(extension).getFromHandle(handle);
+                    } else {
+                        throw std::exception("No matching pool for the handle given. Invalid file extension");
+                    }
+                } catch (const std::exception &e) {
+                    std::cout << e.what() << std::endl;
+                    throw e;
+                }
+            }
+
+            void ResourceManager::declareHandle(const Handle &handle)
+            {
+                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
+                try {
+                    if (_pools.find(extension) != _pools.end()) {
+                        // create Resource class through a class that return a Resource class thanks to the path
+                        _pools.at(extension).declareHandle(handle);
+                    } else {
+                        throw std::exception("No matching pool for the handle given. Invalid file extension");
+                    }
+                } catch (const std::exception &e) {
+                    std::cout << e.what() << std::endl;
+                    throw e;
                 }
             }
         } // namespace resource

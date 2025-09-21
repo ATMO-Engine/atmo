@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace atmo
 {
@@ -8,14 +9,9 @@ namespace atmo
     {
         namespace resource
         {
-            enum class ResourceType : std::uint8_t {
-                PNG = 0,
-                Script = 1
-            };
-
             struct Handle
             {
-                ResourceType type;
+                std::string path;
                 std::uint16_t index;
                 std::uint16_t generation;
                 std::uint16_t frameToLive;

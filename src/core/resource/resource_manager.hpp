@@ -5,9 +5,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/resource/loaders/Ipool.hpp"
-#include "handle.hpp"
-#include "loaders/Ipool.hpp"
+#include "core/resource/pool.hpp"
+#include "core/resource/handle.hpp"
+#include "core/resource/resource.hpp"
+#include "core/resource/resource_factory.hpp"
 
 namespace atmo
 {
@@ -28,7 +29,7 @@ namespace atmo
                  * @param path absolute path of the resource you want to load
                  * @return Handle handle associated with the resource
                  */
-                const Handle &generate(const std::string &path);
+                const Handle generate(const std::string &path);
 
                 /**
                  * @brief get the resource associated to the handle if possible,
@@ -37,15 +38,20 @@ namespace atmo
                  * @param handle handle associated to the ressource you want to get
                  * @return std::any ressource ready to use
                  */
-                std::any getResource(const Handle &handle); //TODO: créer l'exception pour les handle périmé
+                std::shared_ptr<Resource> getResource(const Handle &handle); //TODO: créer l'exception pour les handle périmé
+
+                /**
+                 * @brief Declare an handle that is still in use
+                 *
+                 * @param handle handle to be stored inside his pool
+                 */
+                void declareHandle(const Handle &handle);
             private:
                 ResourceManager();
                 ResourceManager &operator=(const ResourceManager &) = delete;
-                std::vector<std::string> split(const std::string &str, char delimiter);
 
-                std::unordered_map<std::string, Handle> _handleMap;
-                std::unordered_map<ResourceType, std::unique_ptr<IPool>> _pools;
-                const std::unordered_map<std::string, ResourceType> _fileTypes;
+                ResourceFactory &_factory;
+                std::unordered_map<std::string, Pool> _pools;
             };
         } // namespace resource
     } // namespace core
