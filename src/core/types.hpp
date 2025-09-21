@@ -1,5 +1,7 @@
 #pragma once
 
+#define INTERNAL
+
 namespace atmo
 {
     namespace core

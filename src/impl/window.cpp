@@ -54,6 +54,8 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
         switch (event.type) {
             case SDL_EVENT_QUIT:
                 break;
+            case SDL_EVENT_KEY_DOWN:
+                break;
             case SDL_EVENT_KEY_UP:
                 break;
             case SDL_EVENT_WINDOW_RESIZED:
