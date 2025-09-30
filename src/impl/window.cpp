@@ -8,9 +8,12 @@
 
 void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
 
-atmo::impl::WindowManager::WindowManager(atmo::core::components::Window &window) : is_main(window.main)
+atmo::impl::WindowManager::WindowManager(const atmo::core::components::Window &window) : is_main(window.main)
 {
     spdlog::info("Creating window...");
+    spdlog::info(" - Title: {}", window.title);
+    spdlog::info(" - Size: {}x{}", window.size.x, window.size.y);
+    spdlog::info(" - Main: {}", window.main ? "true" : "false");
     if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, 0, &sdl_window,
                                      &rendererData.renderer))
         spdlog::error("Failed to create window: {}", SDL_GetError());

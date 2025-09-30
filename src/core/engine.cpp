@@ -1,17 +1,20 @@
 #include "engine.hpp"
-#include "flecs/addons/cpp/mixins/pipeline/decl.hpp"
 #include "impl/window.hpp"
 
 void atmo::core::Engine::create_components()
 {
-    create_managed_component<components::Window, impl::WindowManager>();
+    // create_managed_component<components::Window, impl::WindowManager>();
     // create_component<components::Script>();
 }
 
 void atmo::core::Engine::load_prefabs()
 {
-    prefabs = {{"Window", ecs.prefab("Window").set(components::Window{false, "Atmo Window", {800, 600}})},
-               {"Script", ecs.prefab("Script").set(components::Script{""})}};
+    // prefabs = {{"Window", ecs.prefab("Window").set(components::Window{false, "Atmo Window", {800, 600}})},
+    //            {"Script", ecs.prefab("Script").set(components::Script{""})}};
+
+    prefabs.emplace("Window",
+                    create_managed_prefab<components::Window, impl::WindowManager>(
+                        "Window", components::Window{false, "Atmo Managed Window", {800, 600}}));
 }
 
 void atmo::core::Engine::init_systems()
@@ -21,9 +24,9 @@ void atmo::core::Engine::init_systems()
         .each(
             [](flecs::iter &it, size_t, components::Window &window)
             {
-                impl::WindowManager &wm =
-                    static_cast<impl::WindowManager &>(Engine::component_managers[it.entity(0).id()]);
-                wm.pollEvents(it.delta_time());
+                impl::WindowManager *wm =
+                    static_cast<impl::WindowManager *>(Engine::component_managers[it.entity(0).id()]);
+                wm->pollEvents(it.delta_time());
             });
 
     ecs.system<components::Window>("Draw")
@@ -31,9 +34,9 @@ void atmo::core::Engine::init_systems()
         .each(
             [](flecs::iter &it, size_t, components::Window &window)
             {
-                impl::WindowManager &wm =
-                    static_cast<impl::WindowManager &>(Engine::component_managers[it.entity(0).id()]);
-                wm.draw();
+                impl::WindowManager *wm =
+                    static_cast<impl::WindowManager *>(Engine::component_managers[it.entity(0).id()]);
+                wm->draw();
             });
     // ecs.observer<entities::Script>()
     //     .event(flecs::OnAdd)

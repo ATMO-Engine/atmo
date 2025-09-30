@@ -16,7 +16,7 @@ namespace atmo
         class WindowManager : public core::ComponentManager
         {
         public:
-            WindowManager(atmo::core::components::Window &window);
+            WindowManager(const atmo::core::components::Window &window);
             ~WindowManager();
 
             void pollEvents(float deltaTime);
