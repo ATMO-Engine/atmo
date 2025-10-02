@@ -1,10 +1,11 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
+#include "SDL3/SDL_events.h"
 #include "core/types.hpp"
 
 namespace atmo
@@ -24,12 +25,13 @@ namespace atmo
             class KeyEvent : public Event
             {
             public:
-                KeyEvent(int key) : key(key) {};
+                KeyEvent(int key, bool scancode) : key(key), scancode(scancode) {};
 
                 bool pressed = false;
                 bool just_pressed = false;
                 bool released = false;
-                int key = 0;
+                int key;
+                bool scancode;
             };
 
             class MouseButtonEvent : public Event
@@ -39,7 +41,7 @@ namespace atmo
 
                 bool pressed = false;
                 bool released = false;
-                int button = 0;
+                int button;
             };
 
         public:
@@ -50,20 +52,21 @@ namespace atmo
             }
 
             void addEvent(const std::string &inputName, Event event);
+            void processEvent(const SDL_Event &e);
 
-            INTERNAL void setKeyDown(const std::string &inputName);
             bool isKeyPressed(const std::string &inputName);
             bool isKeyJustPressed(const std::string &inputName);
-            INTERNAL void setKeyUp(const std::string &inputName);
             bool isKeyUp(const std::string &inputName);
 
-            INTERNAL void setMouseButtonDown(int button);
             bool isMouseButtonPressed(int button);
-            INTERNAL void setMouseButtonUp(int button);
             bool isMouseButtonUp(int button);
-            INTERNAL void setMouseMotion(int x, int y);
-            INTERNAL std::pair<types::vector2i, types::vector2i> getLastMouseMotion();
-            INTERNAL types::vector2i getMousePosition();
+            std::pair<types::vector2, types::vector2> getLastMouseMotion();
+            void setMousePosition(float x, float y);
+            types::vector2 getMousePosition();
+
+            std::string consumeText() noexcept;
+            void startTextInput(SDL_Window *window) noexcept;
+            void stopTextInput(SDL_Window *window) noexcept;
 
 
         private:
@@ -71,8 +74,14 @@ namespace atmo
             InputManager(const InputManager &) = delete;
             InputManager &operator=(const InputManager &) = delete;
 
-            std::map<std::string, std::vector<std::shared_ptr<Event>>> inputs;
+            void handleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent);
+            void handleMouseButtonEvent(const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent);
+
+            bool textInput = false;
+
+            std::unordered_map<std::string, std::vector<std::shared_ptr<Event>>> inputs;
             std::vector<std::shared_ptr<Event>> events;
+            std::string textBuffer;
         };
     } // namespace core
 } // namespace atmo
