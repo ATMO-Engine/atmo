@@ -1,14 +1,19 @@
 #include "atmo.hpp"
 
+#include <csignal>
+
+atmo::core::Engine engine;
+
 int main(int argc, char **argv)
 {
-    auto engine = atmo::core::Engine();
+    std::signal(SIGINT, [](int signum) { engine.stop(); });
+    std::signal(SIGTERM, [](int signum) { engine.stop(); });
 
-    spdlog::info("Engine initialized");
-    auto window = engine.get_ecs().entity("Main Window").is_a(engine.get_prefabs().at("Window"));
+    auto window = engine.instantiate_prefab("Window", "MainWindow");
 
     while (engine.get_ecs().progress()) {
-        // main loop
+        continue;
     }
+
     return 0;
 }
