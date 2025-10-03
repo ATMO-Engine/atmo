@@ -16,12 +16,12 @@ namespace atmo
         class WindowManager : public core::ComponentManager
         {
         public:
-            WindowManager(const atmo::core::components::Window &window);
+            WindowManager(const atmo::core::components::Window &window, flecs::entity entity);
             ~WindowManager();
 
             template <typename Component>
             static void registerSystems(
-                flecs::world &ecs, std::unordered_map<flecs::entity_t, ComponentManager *> component_managers
+                flecs::world ecs, std::unordered_map<flecs::entity_t, ComponentManager *> &component_managers
             )
             {
                 ecs.system<Component>("PollEvents")
@@ -46,15 +46,22 @@ namespace atmo
 
             void rename(const std::string &name) noexcept;
             void resize(const core::types::vector2i &size) noexcept;
+            void focus() noexcept;
+            void make_main() noexcept;
 
             core::types::vector2i getSize() const noexcept;
             std::string getTitle() const noexcept;
 
         private:
+            Clay_ElementDeclaration BuildDecl(flecs::entity e);
+            Clay_ElementId getIdForEntity(flecs::entity e);
+            void DeclareEntityUI(flecs::entity e);
+
+            static inline flecs::entity main_window;
+
             SDL_Window *window = nullptr;
             Clay_SDL3RendererData rendererData;
             Clay_Arena clay_arena;
-            bool is_main = false;
         };
     } // namespace impl
 } // namespace atmo

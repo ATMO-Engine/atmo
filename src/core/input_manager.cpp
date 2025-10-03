@@ -1,18 +1,27 @@
 #include "input_manager.hpp"
+#include "spdlog/spdlog.h"
 
-void atmo::core::InputManager::addEvent(const std::string &inputName, Event event)
+void atmo::core::InputManager::addEvent(const std::string &inputName, Event *event)
 {
-    if (inputs.find(inputName) == inputs.end()) {
-        inputs[inputName] = {};
-    }
+    bool internal = false;
+    if (inputName.starts_with("#INTERNAL#"))
+        internal = true;
 
-    auto evt = std::make_shared<Event>(event);
+    std::string tmp = internal ? inputName.substr(10) : inputName;
+
+    if (inputs.find(tmp) == inputs.end())
+        inputs[tmp] = {};
+
+
+    auto evt = std::shared_ptr<Event>(event);
+
+    evt->internal = internal;
 
     events.push_back(evt);
-    inputs[inputName].push_back(evt);
+    inputs[tmp].push_back(evt);
 }
 
-void atmo::core::InputManager::processEvent(const SDL_Event &e)
+void atmo::core::InputManager::processEvent(const SDL_Event &e, float deltaTime)
 {
     switch (e.type) {
         case SDL_EVENT_KEY_DOWN:
@@ -27,6 +36,14 @@ void atmo::core::InputManager::processEvent(const SDL_Event &e)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt))
                     handleMouseButtonEvent(e.button, mouseEvent);
             break;
+        case SDL_EVENT_MOUSE_WHEEL:
+            for (auto evt : events)
+                if (auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt)) {
+                    mouseEvent->scroll.x = e.wheel.x;
+                    mouseEvent->scroll.y = e.wheel.y;
+                    mouseEvent->deltaTime = deltaTime;
+                }
+            break;
         case SDL_EVENT_TEXT_INPUT:
             if (textInput)
                 textBuffer += e.text.text;
@@ -36,63 +53,113 @@ void atmo::core::InputManager::processEvent(const SDL_Event &e)
     }
 }
 
-bool atmo::core::InputManager::isKeyPressed(const std::string &inputName)
+void atmo::core::InputManager::tick()
 {
-    if (inputs.find(inputName) == inputs.end())
-        return false;
+    for (auto &evt : events) {
+        if (evt->getType() == Event::Type::Key) {
+            auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
+            keyEvent->just_pressed = false;
+            keyEvent->just_released = false;
+        }
+        if (evt->getType() == Event::Type::MouseButton) {
+            auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
+            mouseEvent->just_pressed = false;
+            mouseEvent->just_released = false;
+        }
+    }
+}
 
-    for (auto evt : inputs[inputName])
-        if (auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt))
-            if (keyEvent->pressed)
-                return true;
+bool atmo::core::InputManager::isPressed(const std::string &inputName)
+{
+    auto it = inputs.find(inputName);
+    if (it == inputs.end())
+        throw std::runtime_error("Input not found: " + inputName);
+
+    for (auto evt : it->second) {
+        if (evt->getType() == Event::Type::Key) {
+            auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
+            return keyEvent->pressed;
+        }
+        if (evt->getType() == Event::Type::MouseButton) {
+            auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
+            return keyEvent->pressed;
+        }
+    }
 
     return false;
 }
 
-bool atmo::core::InputManager::isKeyJustPressed(const std::string &inputName)
+bool atmo::core::InputManager::isJustPressed(const std::string &inputName)
 {
-    if (inputs.find(inputName) == inputs.end())
-        return false;
+    auto it = inputs.find(inputName);
+    if (it == inputs.end())
+        throw std::runtime_error("Input not found: " + inputName);
 
-    for (auto evt : inputs[inputName])
-        if (auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt))
-            if (keyEvent->just_pressed)
-                return true;
+    for (auto evt : it->second) {
+        if (evt->getType() == Event::Type::Key) {
+            auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
+            return keyEvent->just_pressed;
+        }
+        if (evt->getType() == Event::Type::MouseButton) {
+            auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
+            return keyEvent->just_pressed;
+        }
+    }
 
     return false;
 }
 
-bool atmo::core::InputManager::isKeyUp(const std::string &inputName)
+bool atmo::core::InputManager::isJustReleased(const std::string &inputName)
 {
-    if (inputs.find(inputName) == inputs.end())
-        return false;
+    auto it = inputs.find(inputName);
+    if (it == inputs.end())
+        throw std::runtime_error("Input not found: " + inputName);
 
-    for (auto evt : inputs[inputName])
-        if (auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt))
-            if (keyEvent->released)
-                return true;
+    for (auto evt : it->second) {
+        if (evt->getType() == Event::Type::Key) {
+            auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
+            return keyEvent->just_released;
+        }
+        if (evt->getType() == Event::Type::MouseButton) {
+            auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
+            return keyEvent->just_released;
+        }
+    }
 
     return false;
 }
 
-bool atmo::core::InputManager::isMouseButtonPressed(int button)
+bool atmo::core::InputManager::isReleased(const std::string &inputName)
 {
-    for (auto evt : events)
-        if (auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt))
-            if (mouseEvent->button == button && mouseEvent->pressed)
-                return true;
+    auto it = inputs.find(inputName);
+    if (it == inputs.end())
+        throw std::runtime_error("Input not found: " + inputName);
+
+    for (auto evt : it->second) {
+        if (evt->getType() == Event::Type::Key) {
+            auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
+            return keyEvent->released;
+        }
+        if (evt->getType() == Event::Type::MouseButton) {
+            auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
+            return keyEvent->released;
+        }
+    }
 
     return false;
 }
 
-bool atmo::core::InputManager::isMouseButtonUp(int button)
+void atmo::core::InputManager::setMousePosition(float x, float y)
 {
-    for (auto evt : events)
-        if (auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt))
-            if (mouseEvent->button == button && mouseEvent->released)
-                return true;
+    SDL_WarpMouseInWindow(nullptr, x, y);
+}
 
-    return false;
+atmo::core::types::vector2 atmo::core::InputManager::getMousePosition()
+{
+    atmo::core::types::vector2 pos;
+
+    SDL_GetMouseState(&pos.x, &pos.y);
+    return pos;
 }
 
 void atmo::core::InputManager::handleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent)
@@ -114,7 +181,9 @@ void atmo::core::InputManager::handleMouseButtonEvent(
 {
     if (e.button == mouseEvent->button) {
         mouseEvent->pressed = (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN);
+        mouseEvent->just_pressed = (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN);
         mouseEvent->released = (e.type == SDL_EVENT_MOUSE_BUTTON_UP);
+        mouseEvent->just_released = (e.type == SDL_EVENT_MOUSE_BUTTON_UP);
     }
 }
 
@@ -140,4 +209,26 @@ void atmo::core::InputManager::stopTextInput(SDL_Window *window) noexcept
         SDL_StopTextInput(window);
         textInput = false;
     }
+}
+
+std::pair<atmo::core::types::vector2, float> atmo::core::InputManager::getScrollDelta(const std::string &inputName)
+{
+    auto it = inputs.find(inputName);
+    if (it == inputs.end())
+        throw std::runtime_error("Input not found: " + inputName);
+
+    for (auto evt : it->second) {
+        if (evt->getType() == Event::Type::MouseScroll) {
+            auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt);
+            return {
+                {mouseEvent->scroll.x, mouseEvent->scroll.y},
+                mouseEvent->deltaTime
+            };
+        }
+    }
+
+    return {
+        {0, 0},
+        0.0f
+    };
 }

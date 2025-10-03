@@ -27,6 +27,20 @@ namespace atmo
                 int y = 0;
                 int z = 0;
             } vector3i;
+
+            typedef struct vector4 {
+                float x = 0.0f;
+                float y = 0.0f;
+                float z = 0.0f;
+                float w = 0.0f;
+            } vector4;
+
+            typedef struct vector4i {
+                int x = 0;
+                int y = 0;
+                int z = 0;
+                int w = 0;
+            } vector4i;
         } // namespace types
     } // namespace core
 } // namespace atmo

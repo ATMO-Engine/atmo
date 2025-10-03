@@ -4,6 +4,8 @@
 #include <spdlog/spdlog.h>
 
 #include "core/components.hpp"
+#include "core/input_manager.hpp"
+#include "flecs/addons/cpp/mixins/pipeline/decl.hpp"
 
 namespace atmo
 {
@@ -38,14 +40,17 @@ namespace atmo
 
                 ecs.observer().event(flecs::OnAdd).with(flecs::IsA, prefab).each([this](flecs::entity e) {
                     const T &component = e.get<T>();
-                    component_managers.emplace(e.id(), new Manager(component));
+                    component_managers.emplace(e.id(), new Manager(component, e));
                 });
 
                 ecs.observer().event(flecs::OnRemove).with(flecs::IsA, prefab).each([this](flecs::entity e) {
+                    if (ecs.should_quit())
+                        return;
                     if (Engine::component_managers.find(e.id()) == Engine::component_managers.end())
                         return;
-                    delete Engine::component_managers[e.id()];
+                    auto mngr = Engine::component_managers[e.id()];
                     component_managers.erase(e.id());
+                    delete mngr;
                 });
 
                 return prefab;
@@ -54,8 +59,7 @@ namespace atmo
             inline flecs::entity instantiate_prefab(const std::string &name, const std::string &instance_name = "")
             {
                 if (prefabs.find(name) == prefabs.end()) {
-                    spdlog::error("Prefab '{}' not found", name);
-                    return flecs::entity();
+                    throw std::runtime_error("Prefab not found: " + name);
                 }
 
                 flecs::entity instance;
