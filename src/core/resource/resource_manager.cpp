@@ -2,11 +2,12 @@
 #include <iostream>
 #include <memory>
 #include "common/utils.hpp"
-#include "core/resource/loaders/script_loader.hpp"
 #include "core/resource/resource_factory.hpp"
-#include "loaders/image_loader.hpp"
-
 #include "resource_manager.hpp"
+
+#include "core/resource/loaders/image_loader.hpp"
+#include "core/resource/loaders/script_loader.hpp"
+#include "resource_register.hpp"
 
 namespace atmo
 {
@@ -14,15 +15,11 @@ namespace atmo
     {
         namespace resource
         {
+            using LoaderTypes = std::tuple<ImageLoader, ScriptLoader>;
+
             ResourceManager::ResourceManager() : _factory(ResourceFactory::getInstance())
             {
-                _pools = {
-                    {"png", Pool()},
-                    {"luau", Pool()}
-                };
-
-                _factory.registerLoader("png", []() {return std::make_shared<ImageLoader>(ImageLoader());});
-                _factory.registerLoader("luau", []() {return std::make_shared<ScriptLoader>(ScriptLoader());});
+                _pools = makePoolMap<LoaderTypes>();
             }
 
             ResourceManager &ResourceManager::getInstance()

@@ -8,6 +8,8 @@ namespace atmo
     {
         namespace resource
         {
+            LoaderRegister<ImageLoader> ImageLoader::_register("png");
+
             ImageLoader::ImageLoader() {}
 
             ImageLoader::~ImageLoader()

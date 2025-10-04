@@ -10,6 +10,8 @@ namespace atmo
     {
         namespace resource
         {
+            LoaderRegister<ScriptLoader> ScriptLoader::_register("luau");
+
             ScriptLoader::ScriptLoader() {}
 
             ScriptLoader::~ScriptLoader()

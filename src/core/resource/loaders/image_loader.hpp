@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/resource/resource.hpp"
+#include "core/resource/resource_register.hpp"
 
 namespace atmo
 {
@@ -20,6 +21,12 @@ namespace atmo
                 std::any get() override;
             private:
                 std::string _texture;
+                static LoaderRegister<ImageLoader> _register;
+            };
+
+            template<>
+            struct LoaderExtension<ImageLoader> {
+                static constexpr const char *extension = "png";
             };
         } // namespace resource
     } // namespace core
