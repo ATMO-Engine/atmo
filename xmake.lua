@@ -169,6 +169,16 @@ on_install(function(package)
 end)
 package_end()
 
+package("catch2")
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "catch2"))
+    on_install(function(package)
+        local configs = {"-DBUILD_STATIC_LIBS=ON", "-DBUILD_TESTING=OFF"}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+        import("package.tools.cmake").install(package, configs)
+    end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -177,39 +187,65 @@ add_requires(
     "libsdl3", { system = false },
     "libsdl3_ttf", { system = false },
     "libsdl3_image", { system = false },
-    "clay", { system = false }
+    "clay", { system = false },
+    "catch2", { system = false }
 )
+
+function platform_specifics()
+    if is_plat("macosx") then
+        add_frameworks(
+            "AppKit",
+            "AVFoundation",
+            "AudioToolbox",
+            "Carbon",
+            "Cocoa",
+            "CoreAudio",
+            "CoreFoundation",
+            "CoreGraphics",
+            "CoreHaptics",
+            "CoreMedia",
+            "CoreServices",
+            "CoreVideo",
+            "ForceFeedback",
+            "GameController",
+            "IOKit",
+            "Metal",
+            "MetalKit",
+            "QuartzCore",
+            "UniformTypeIdentifiers"
+        )
+    end
+
+    if is_plat("windows") then
+        add_cxxflags("/utf-8")
+    end
+end
+
+function packages()
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay")
+end
 
 target("atmo")
     set_kind("binary")
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay")
+    packages()
     add_files("src/**.cpp")
     add_includedirs("src")
+    platform_specifics()
 
-if is_plat("macosx") then
-    add_frameworks(
-        "AppKit",
-        "AVFoundation",
-        "AudioToolbox",
-        "Carbon",
-        "Cocoa",
-        "CoreAudio",
-        "CoreFoundation",
-        "CoreGraphics",
-        "CoreHaptics",
-        "CoreMedia",
-        "CoreServices",
-        "CoreVideo",
-        "ForceFeedback",
-        "GameController",
-        "IOKit",
-        "Metal",
-        "MetalKit",
-        "QuartzCore",
-        "UniformTypeIdentifiers"
-    )
-end
-
-if is_plat("windows") then
-    add_cxxflags("/utf-8")
-end
+target("atmo-test")
+    set_kind("binary")
+    set_default(false)
+    add_deps("atmo")
+    packages()
+    add_packages("catch2")
+    add_files("tests/**.cpp")
+    add_files("src/*/*.cpp")
+    add_includedirs("src")
+    platform_specifics()
+    add_defines("CATCH_CONFIG_MAIN")
+    add_tests("atmo-test", {
+        runargs = {
+            "--reporter=JUnit::out=test_results.xml",
+            "--reporter=console::out=-::colour-mode=ansi"
+        }
+    })
