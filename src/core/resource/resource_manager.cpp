@@ -7,6 +7,7 @@
 
 #include "core/resource/loaders/image_loader.hpp"
 #include "core/resource/loaders/script_loader.hpp"
+#include "loaders/font_loader.hpp"
 #include "resource_register.hpp"
 
 namespace atmo
@@ -15,7 +16,7 @@ namespace atmo
     {
         namespace resource
         {
-            using LoaderTypes = std::tuple<ImageLoader, ScriptLoader>;
+            using LoaderTypes = std::tuple<ImageLoader, ScriptLoader, FontLoader>;
 
             ResourceManager::ResourceManager() : _factory(ResourceFactory::getInstance())
             {
