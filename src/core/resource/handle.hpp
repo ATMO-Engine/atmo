@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace atmo
@@ -8,13 +9,12 @@ namespace atmo
     {
         namespace resource
         {
-            class ResourceLoader
+            struct Handle
             {
-            public:
-                ResourceLoader() = delete;
-
-                // TODO smart pointer resource system
-                void get(const std::string &path);
+                std::string path;
+                std::uint16_t index;
+                std::uint16_t generation;
+                std::uint16_t frameToLive;
             };
         } // namespace resource
     } // namespace core
