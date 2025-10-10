@@ -218,6 +218,10 @@ function platform_specifics()
 
     if is_plat("windows") then
         add_cxxflags("/utf-8")
+        add_syslinks(
+            "User32", "Gdi32", "Ole32", "Advapi32", "Shell32", "Comdlg32", "Setupapi",
+            "Winmm", "OleAut32", "Version", "Imm32"
+        )
     end
 end
 
