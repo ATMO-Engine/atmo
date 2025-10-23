@@ -25,3 +25,6 @@
 [submodule "submodules/catch2"]
 	path = submodules/catch2
 	url = git@github.com:catchorg/Catch2.git
+[submodule "submodules/semver"]
+	path = submodules/semver
+	url = git@github.com:Neargye/semver.git
