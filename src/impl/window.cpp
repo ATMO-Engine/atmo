@@ -10,13 +10,15 @@
 
 void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
 
-atmo::impl::WindowManager::WindowManager(const atmo::core::components::Window &window, flecs::entity entity)
+atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 {
     this->entity = entity;
+    const atmo::core::components::Window &window = entity.get<atmo::core::components::Window>();
+
+    SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
     if (!SDL_CreateWindowAndRenderer(
-            window.title.c_str(), window.size.x, window.size.y, 0, &this->window, &rendererData.renderer
-        )) {
+            window.title.c_str(), window.size.x, window.size.y, flags, &this->window, &rendererData.renderer)) {
         spdlog::error("Failed to create window: {}", SDL_GetError());
         throw std::runtime_error("Failed to create window");
     }
@@ -40,17 +42,14 @@ atmo::impl::WindowManager::WindowManager(const atmo::core::components::Window &w
     clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
     Clay_Initialize(
-        clay_arena, {(float)window.size.x, (float)window.size.y},
-        {.errorHandlerFunction = [](Clay_ErrorData errorData) {
+        clay_arena,
+        { (float)window.size.x, (float)window.size.y },
+        { .errorHandlerFunction = [](Clay_ErrorData errorData) {
             spdlog::error("Clay error: {}", errorData.errorText.chars);
-        }}
-    );
+        } });
 
     // TODO add sdl measure text callback here once SDL_ttf is integrated
     // Clay_SetMeasureTextFunction(SDL_MeasureText, state->rendererData.fonts);
-
-    if (window.main)
-        make_main();
 }
 
 atmo::impl::WindowManager::~WindowManager()
@@ -80,10 +79,10 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
                 entity.destruct();
                 break;
             case SDL_EVENT_WINDOW_RESIZED:
-                Clay_SetLayoutDimensions({(float)event.window.data1, (float)event.window.data2});
+                Clay_SetLayoutDimensions({ (float)event.window.data1, (float)event.window.data2 });
                 break;
             case SDL_EVENT_MOUSE_MOTION:
-                Clay_SetPointerState({event.motion.x, event.motion.y}, event.motion.state & SDL_BUTTON_LMASK);
+                Clay_SetPointerState({ event.motion.x, event.motion.y }, event.motion.state & SDL_BUTTON_LMASK);
                 break;
             default:
                 core::InputManager::instance().processEvent(event, deltaTime);
@@ -96,19 +95,19 @@ void atmo::impl::WindowManager::draw()
 {
     if (core::InputManager::instance().isJustPressed("ui_click")) {
         auto pos = core::InputManager::instance().getMousePosition();
-        Clay_SetPointerState({pos.x, pos.y}, true);
+        Clay_SetPointerState({ pos.x, pos.y }, true);
         spdlog::info("Click at {}, {}", pos.x, pos.y);
     }
 
     if (core::InputManager::instance().isJustReleased("ui_click")) {
         auto pos = core::InputManager::instance().getMousePosition();
-        Clay_SetPointerState({pos.x, pos.y}, false);
+        Clay_SetPointerState({ pos.x, pos.y }, false);
         spdlog::info("Release at {}, {}", pos.x, pos.y);
     }
 
     auto scroll = core::InputManager::instance().getScrollDelta("ui_scroll");
     if (scroll.first.x != 0 || scroll.first.y != 0)
-        Clay_UpdateScrollContainers(true, {scroll.first.x, scroll.first.y}, scroll.second);
+        Clay_UpdateScrollContainers(true, { scroll.first.x, scroll.first.y }, scroll.second);
 
     Clay_BeginLayout();
 
@@ -155,9 +154,9 @@ atmo::core::types::vector2i atmo::impl::WindowManager::getSize() const noexcept
     if (window) {
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
-        return {w, h};
+        return { w, h };
     }
-    return {-1, -1};
+    return { -1, -1 };
 }
 
 std::string atmo::impl::WindowManager::getTitle() const noexcept
@@ -173,51 +172,60 @@ Clay_ElementDeclaration atmo::impl::WindowManager::BuildDecl(flecs::entity e)
 
     d.id = getIdForEntity(e);
 
-    if (e.has<core::components::UIStack>()) {
-        auto stack = e.get<core::components::UIStack>();
-        d.layout.layoutDirection = (stack.direction == core::components::UILayoutDirection::Horizontal)
-            ? CLAY_LEFT_TO_RIGHT
-            : CLAY_TOP_TO_BOTTOM;
-        d.layout.childGap = stack.childGap;
-        d.layout.padding = {
-            static_cast<uint16_t>(stack.padding.x), static_cast<uint16_t>(stack.padding.y),
-            static_cast<uint16_t>(stack.padding.z), static_cast<uint16_t>(stack.padding.w)
-        };
-    }
-    if (e.has<core::components::UITransform>()) {
-        auto t = e.get<core::components::UITransform>();
-        d.layout.sizing.width = CLAY_SIZING_FIXED(t.width);
-        d.layout.sizing.height = CLAY_SIZING_FIXED(t.height);
-    }
-    if (e.has<core::components::UIRect>()) {
-        auto rect = e.get<core::components::UIRect>();
-        d.backgroundColor = {rect.color.r * 255, rect.color.g * 255, rect.color.b * 255, rect.color.a * 255};
-        d.border = {
-            .color =
-                {rect.border_color.r * 255,                      rect.border_color.g * 255,rect.border_color.b * 255,
-                        rect.border_color.a * 255                                                                     },
-            .width = {
-                        static_cast<uint16_t>(rect.border_thickness.x), static_cast<uint16_t>(rect.border_thickness.y),
-                        static_cast<uint16_t>(rect.border_thickness.z), static_cast<uint16_t>(rect.border_thickness.w)}
-        };
-        d.cornerRadius = {rect.corner_radius.x, rect.corner_radius.y, rect.corner_radius.z, rect.corner_radius.w};
-    }
 
-    if (e.has<core::components::UIScroll>()) {
-        auto scr = e.get<core::components::UIScroll>();
-        d.clip.horizontal = scr.horizontal;
-        d.clip.vertical = scr.vertical;
-        d.clip.childOffset = {scr.scroll_x, scr.scroll_y};
-    }
+    // if (e.has<core::components::UIStack>()) {
+    //     auto stack = e.get<core::components::UIStack>();
+    //     d.layout.layoutDirection = (stack.direction == core::components::UILayoutDirection::Horizontal)
+    //         ? CLAY_LEFT_TO_RIGHT
+    //         : CLAY_TOP_TO_BOTTOM;
+    //     d.layout.childGap = stack.childGap;
+    //     d.layout.padding = { static_cast<uint16_t>(stack.padding.x),
+    //                          static_cast<uint16_t>(stack.padding.y),
+    //                          static_cast<uint16_t>(stack.padding.z),
+    //                          static_cast<uint16_t>(stack.padding.w) };
+    // }
 
-    if (e.has<core::components::UIImage>()) {
-        auto img = e.get<core::components::UIImage>();
-        // TODO use ressource management system here.
-        d.image.imageData = nullptr;
-        // Optionally: ic.cornerRadius / backgroundColor for tint/backing rect
-    }
+    // if (e.has<core::components::UITransform>()) {
+    //     auto t = e.get<core::components::UITransform>();
+    //     if (t.visible) {
+    //         d.layout.sizing.width = CLAY_SIZING_FIXED(t.width);
+    //         d.layout.sizing.height = CLAY_SIZING_FIXED(t.height);
+    //         if (t.floating) {
+    //             d.floating.attachTo = CLAY_ATTACH_TO_ROOT;
+    //             d.floating.offset = { t.x, t.y };
+    //         }
+    //     }
+    // }
 
-    // TODO: floating, z-index, aspect-ratio, etc…
+    // if (e.has<core::components::UIRect>()) {
+    //     auto rect = e.get<core::components::UIRect>();
+    //     d.backgroundColor = { rect.color.r * 255, rect.color.g * 255, rect.color.b * 255, rect.color.a * 255 };
+    //     d.border = { .color = { rect.border_color.r * 255,
+    //                             rect.border_color.g * 255,
+    //                             rect.border_color.b * 255,
+    //                             rect.border_color.a * 255 },
+    //                  .width = { static_cast<uint16_t>(rect.border_thickness.x),
+    //                             static_cast<uint16_t>(rect.border_thickness.y),
+    //                             static_cast<uint16_t>(rect.border_thickness.z),
+    //                             static_cast<uint16_t>(rect.border_thickness.w) } };
+    //     d.cornerRadius = { rect.corner_radius.x, rect.corner_radius.y, rect.corner_radius.z, rect.corner_radius.w };
+    // }
+
+    // if (e.has<core::components::UIScroll>()) {
+    //     auto scr = e.get<core::components::UIScroll>();
+    //     d.clip.horizontal = scr.horizontal;
+    //     d.clip.vertical = scr.vertical;
+    //     d.clip.childOffset = { scr.scroll_x, scr.scroll_y };
+    // }
+
+    // if (e.has<core::components::UIImage>()) {
+    //     auto img = e.get<core::components::UIImage>();
+    //     // TODO use ressource management system here.
+    //     d.image.imageData = nullptr;
+    //     // Optionally: ic.cornerRadius / backgroundColor for tint/backing rect
+    // }
+
+    // // TODO: floating, z-index, aspect-ratio, etc…
 
     return d;
 }
@@ -225,7 +233,7 @@ Clay_ElementDeclaration atmo::impl::WindowManager::BuildDecl(flecs::entity e)
 Clay_ElementId atmo::impl::WindowManager::getIdForEntity(flecs::entity e)
 {
     std::string path = std::format("#{}", e.id());
-    Clay_String s{false, (int32_t)path.size(), path.c_str()};
+    Clay_String s{ false, (int32_t)path.size(), path.c_str() };
     return Clay_GetElementId(s);
 }
 
@@ -235,14 +243,14 @@ void atmo::impl::WindowManager::DeclareEntityUI(flecs::entity e)
 
     CLAY(decl)
     {
-        if (e.has<core::components::UIText>()) {
-            auto txt = e.get<core::components::UIText>();
-            Clay_TextElementConfig cfg{};
-            cfg.fontSize = (uint16_t)txt.font_size;
-            cfg.textColor = {txt.color.r * 255, txt.color.g * 255, txt.color.b * 255, txt.color.a * 255};
-            Clay_String str{false, (int32_t)txt.content.size(), txt.content.c_str()};
-            CLAY_TEXT(str, &cfg);
-        }
+        // if (e.has<core::components::UIText>()) {
+        //     auto txt = e.get<core::components::UIText>();
+        //     Clay_TextElementConfig cfg{};
+        //     cfg.fontSize = (uint16_t)txt.font_size;
+        //     cfg.textColor = { txt.color.r * 255, txt.color.g * 255, txt.color.b * 255, txt.color.a * 255 };
+        //     Clay_String str{ false, (int32_t)txt.content.size(), txt.content.c_str() };
+        //     CLAY_TEXT(str, &cfg);
+        // }
 
         e.children([this](flecs::entity child) { DeclareEntityUI(child); });
     }

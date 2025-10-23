@@ -75,6 +75,8 @@ set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "flecs"))
 on_install(function(package)
     local configs = {"-DBUILD_STATIC_LIBS=ON", "-DFLECS_CPP_NO_AUTO_REGISTRATION=1"}
     table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+    table.insert(configs, "-DFLECS_CPP_NO_AUTO_REGISTRATION=1")
+    table.insert(configs, "-DFLECS_META=ON")
     import("package.tools.cmake").install(package, configs)
 end)
 package_end()
@@ -179,16 +181,25 @@ package("catch2")
     end)
 package_end()
 
+package("semver")
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "semver"))
+    on_install(function(package)
+        os.cp("include/semver.hpp", package:installdir("include"))
+    end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
-    "flecs", { system = false },
+    "flecs", {configs = {shared = false}, system = false},
     "glaze", { system = false },
     "libsdl3", { system = false },
     "libsdl3_ttf", { system = false },
     "libsdl3_image", { system = false },
     "clay", { system = false },
-    "catch2", { system = false }
+    "catch2", { system = false },
+    "semver", { system = false }
 )
 
 function platform_specifics()
@@ -222,7 +233,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver")
 end
 
 target("atmo")
@@ -249,3 +260,11 @@ target("atmo-test")
             "--reporter=console::out=-::colour-mode=ansi"
         }
     })
+
+target("atmo-export")
+    set_kind("binary")
+    packages()
+    add_files("src/**.cpp")
+    add_includedirs("src")
+    platform_specifics()
+    add_defines("ATMO_EXPORT")

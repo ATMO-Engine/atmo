@@ -9,6 +9,9 @@
 #include "core/components.hpp"
 #include "core/types.hpp"
 
+// macro resulting to SDL_WINDOW_VULKAN on windows and linux, SDL_WINDOW_METAL on macOS
+#define GET_RENDERER_FLAGS()
+
 namespace atmo
 {
     namespace impl
@@ -16,27 +19,25 @@ namespace atmo
         class WindowManager : public core::ComponentManager
         {
         public:
-            WindowManager(const atmo::core::components::Window &window, flecs::entity entity);
+            WindowManager(flecs::entity entity);
             ~WindowManager();
 
-            template <typename Component>
-            static void registerSystems(
-                flecs::world ecs, std::unordered_map<flecs::entity_t, ComponentManager *> &component_managers
-            )
+            static void registerSystems(flecs::world ecs)
             {
-                ecs.system<Component>("PollEvents")
+                ecs.system<core::ComponentManager::Managed, core::components::Window>("PollEvents")
                     .kind(flecs::PreUpdate)
-                    .each([&component_managers](flecs::iter &it, size_t, core::components::Window &window) {
-                        impl::WindowManager *wm =
-                            static_cast<impl::WindowManager *>(component_managers[it.entity(0).id()]);
+                    .each([](flecs::iter &it,
+                             size_t i,
+                             core::ComponentManager::Managed &manager,
+                             core::components::Window &window) {
+                        auto *wm = static_cast<impl::WindowManager *>(manager.ptr);
                         wm->pollEvents(it.delta_time());
                     });
 
-                ecs.system<Component>("Draw")
+                ecs.system<core::ComponentManager::Managed, core::components::Window>("Draw")
                     .kind(flecs::PostUpdate)
-                    .each([&component_managers](flecs::iter &it, size_t, core::components::Window &window) {
-                        impl::WindowManager *wm =
-                            static_cast<impl::WindowManager *>(component_managers[it.entity(0).id()]);
+                    .each([](core::ComponentManager::Managed &manager, core::components::Window &window) {
+                        auto *wm = static_cast<impl::WindowManager *>(manager.ptr);
                         wm->draw();
                     });
             }
@@ -65,4 +66,3 @@ namespace atmo
         };
     } // namespace impl
 } // namespace atmo
-#

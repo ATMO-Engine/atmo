@@ -1,0 +1,129 @@
+@startuml
+title Clay_ElementDeclaration - Full Structure (v0.14)
+
+class Clay_ElementDeclaration {
+    + Clay_ElementId id
+    + Clay_LayoutConfig layout
+    + Clay_Color backgroundColor
+    + Clay_CornerRadius cornerRadius
+    + Clay_AspectRatioElementConfig aspectRatio
+    + Clay_ImageElementConfig image
+    + Clay_FloatingElementConfig floating
+    + Clay_CustomElementConfig custom
+    + Clay_ClipElementConfig clip
+    + Clay_BorderElementConfig border
+    + void* userData
+}
+
+class Clay_LayoutConfig {
+    + Clay_LayoutDirection layoutDirection
+    + float childGap
+    + Clay_Alignment childAlignment
+    + Clay_Padding padding
+    + Clay_ElementSizing sizing
+}
+
+class Clay_Alignment {
+    + Clay_AlignX x
+    + Clay_AlignY y
+}
+
+class Clay_Padding {
+    + float left
+    + float right
+    + float top
+    + float bottom
+}
+
+class Clay_ElementSizing {
+    + Clay_Sizing width
+    + Clay_Sizing height
+}
+
+class Clay_Sizing {
+    + Clay_SizingType type
+    + float value
+}
+
+class Clay_Color {
+    + float r
+    + float g
+    + float b
+    + float a
+}
+
+class Clay_CornerRadius {
+    + float tl
+    + float tr
+    + float br
+    + float bl
+}
+
+class Clay_AspectRatioElementConfig {
+    + float aspectRatio
+}
+
+class Clay_ImageElementConfig {
+    + void* imageData
+    + Clay_Vector2 sourceDimensions
+}
+
+class Clay_Vector2 {
+    + float x
+    + float y
+}
+
+class Clay_FloatingElementConfig {
+    + int32_t zIndex
+    + Clay_AttachPoint element
+    + Clay_AttachPoint parent
+    + Clay_AttachTo attachTo
+    + uint32_t parentId
+    + Clay_Vector2 offset
+    + Clay_PointerCaptureMode pointerCaptureMode
+}
+
+class Clay_CustomElementConfig {
+    + void* customData
+}
+
+class Clay_ClipElementConfig {
+    + bool horizontal
+    + bool vertical
+    + Clay_Vector2 childOffset
+}
+
+class Clay_BorderElementConfig {
+    + Clay_Color color
+    + Clay_BorderWidth width
+}
+
+class Clay_BorderWidth {
+    + uint16_t left
+    + uint16_t right
+    + uint16_t top
+    + uint16_t bottom
+    + uint16_t betweenChildren
+}
+
+Clay_ElementDeclaration --> Clay_LayoutConfig
+Clay_ElementDeclaration --> Clay_Color
+Clay_ElementDeclaration --> Clay_CornerRadius
+Clay_ElementDeclaration --> Clay_AspectRatioElementConfig
+Clay_ElementDeclaration --> Clay_ImageElementConfig
+Clay_ElementDeclaration --> Clay_FloatingElementConfig
+Clay_ElementDeclaration --> Clay_CustomElementConfig
+Clay_ElementDeclaration --> Clay_ClipElementConfig
+Clay_ElementDeclaration --> Clay_BorderElementConfig
+
+Clay_LayoutConfig --> Clay_Alignment
+Clay_LayoutConfig --> Clay_Padding
+Clay_LayoutConfig --> Clay_ElementSizing
+
+Clay_ElementSizing --> Clay_Sizing
+Clay_ImageElementConfig --> Clay_Vector2
+Clay_FloatingElementConfig --> Clay_Vector2
+Clay_ClipElementConfig --> Clay_Vector2
+Clay_BorderElementConfig --> Clay_BorderWidth
+
+@enduml
