@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 
 #include "core/components.hpp"
+#include "core/input_manager.hpp"
 
 namespace atmo
 {
@@ -14,14 +15,12 @@ namespace atmo
         private:
             flecs::world ecs;
             std::map<std::string, flecs::entity> prefabs;
-            std::unordered_map<flecs::entity_t, ComponentManager *> component_managers;
 
         public:
             Engine()
             {
-                component_managers.clear();
-
                 ecs.init_builtin_components();
+                components::register_core_components(ecs);
                 load_prefabs();
             }
 
@@ -30,23 +29,20 @@ namespace atmo
                 ecs.quit();
             }
 
-            template <typename T, typename Manager>
-            inline flecs::entity create_managed_prefab(const std::string &name, T component)
+            template <typename M> inline flecs::entity create_managed_prefab(const std::string &name)
             {
-                Manager::template registerSystems<T>(ecs, component_managers);
-                auto prefab = ecs.prefab(name.c_str()).set<T>(component);
+                M::registerSystems(ecs);
+                auto prefab = ecs.prefab(name.c_str()).set(ComponentManager::Managed{ nullptr });
 
-                ecs.observer().event(flecs::OnAdd).with(flecs::IsA, prefab).each([this](flecs::entity e) {
-                    const T &component = e.get<T>();
-                    component_managers.emplace(e.id(), new Manager(component));
-                });
+                ecs.observer<ComponentManager::Managed>()
+                    .event(flecs::OnAdd)
+                    .with(flecs::IsA, prefab)
+                    .each([](flecs::entity e, ComponentManager::Managed &m) { m.ptr = new M(e); });
 
-                ecs.observer().event(flecs::OnRemove).with(flecs::IsA, prefab).each([this](flecs::entity e) {
-                    if (Engine::component_managers.find(e.id()) == Engine::component_managers.end())
-                        return;
-                    delete Engine::component_managers[e.id()];
-                    component_managers.erase(e.id());
-                });
+                ecs.observer<ComponentManager::Managed>()
+                    .event(flecs::OnRemove)
+                    .with(flecs::IsA, prefab)
+                    .each([](flecs::entity e, ComponentManager::Managed &m) { delete m.ptr; });
 
                 return prefab;
             }
@@ -54,8 +50,7 @@ namespace atmo
             inline flecs::entity instantiate_prefab(const std::string &name, const std::string &instance_name = "")
             {
                 if (prefabs.find(name) == prefabs.end()) {
-                    spdlog::error("Prefab '{}' not found", name);
-                    return flecs::entity();
+                    throw std::runtime_error("Prefab not found: " + name);
                 }
 
                 flecs::entity instance;
@@ -66,14 +61,6 @@ namespace atmo
                 }
 
                 return instance;
-            }
-
-            ComponentManager *get_component_manager(flecs::entity_t id)
-            {
-                if (component_managers.find(id) == component_managers.end())
-                    return nullptr;
-
-                return component_managers[id];
             }
 
             void load_prefabs();

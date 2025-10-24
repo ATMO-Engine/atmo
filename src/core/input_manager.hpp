@@ -18,30 +18,16 @@ namespace atmo
             class Event
             {
             public:
-                Event() = default;
                 virtual ~Event() = default;
-            };
 
-            class KeyEvent : public Event
-            {
-            public:
-                KeyEvent(int key, bool scancode) : key(key), scancode(scancode) {};
+                enum class Type {
+                    Key,
+                    MouseButton,
+                    MouseScroll
+                };
 
-                bool pressed = false;
-                bool just_pressed = false;
-                bool released = false;
-                int key;
-                bool scancode;
-            };
-
-            class MouseButtonEvent : public Event
-            {
-            public:
-                MouseButtonEvent(int button) : button(button) {};
-
-                bool pressed = false;
-                bool released = false;
-                int button;
+                virtual Type getType() const = 0;
+                bool internal = false;
             };
 
         public:
@@ -51,23 +37,69 @@ namespace atmo
                 return instance;
             }
 
-            void addEvent(const std::string &inputName, Event event);
-            void processEvent(const SDL_Event &e);
+            void addEvent(const std::string &inputName, Event *event);
+            void processEvent(const SDL_Event &e, float deltaTime);
+            void tick();
 
-            bool isKeyPressed(const std::string &inputName);
-            bool isKeyJustPressed(const std::string &inputName);
-            bool isKeyUp(const std::string &inputName);
+            bool isPressed(const std::string &inputName);
+            bool isJustPressed(const std::string &inputName);
+            bool isJustReleased(const std::string &inputName);
+            bool isReleased(const std::string &inputName);
 
-            bool isMouseButtonPressed(int button);
-            bool isMouseButtonUp(int button);
             std::pair<types::vector2, types::vector2> getLastMouseMotion();
             void setMousePosition(float x, float y);
             types::vector2 getMousePosition();
+            std::pair<types::vector2, float> getScrollDelta(const std::string &inputName);
 
             std::string consumeText() noexcept;
             void startTextInput(SDL_Window *window) noexcept;
             void stopTextInput(SDL_Window *window) noexcept;
 
+            class KeyEvent : public Event
+            {
+            public:
+                KeyEvent(int key, bool scancode) : key(key), scancode(scancode) {};
+                Type getType() const override
+                {
+                    return Type::Key;
+                }
+
+                bool pressed = false;
+                bool just_pressed = false;
+                bool released = false;
+                bool just_released = false;
+                int key;
+                bool scancode;
+            };
+
+            class MouseButtonEvent : public Event
+            {
+            public:
+                MouseButtonEvent(int button) : button(button) {};
+                Type getType() const override
+                {
+                    return Type::MouseButton;
+                }
+
+                bool pressed = false;
+                bool just_pressed = false;
+                bool released = false;
+                bool just_released = false;
+                int button;
+            };
+
+            class MouseScrollEvent : public Event
+            {
+            public:
+                MouseScrollEvent() {};
+                Type getType() const override
+                {
+                    return Type::MouseScroll;
+                }
+
+                types::vector2 scroll;
+                float deltaTime = 0.0f;
+            };
 
         private:
             InputManager() = default;

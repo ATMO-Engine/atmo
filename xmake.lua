@@ -94,6 +94,8 @@ on_install(function(package)
     table.insert(configs, "-DFLECS_SHARED=OFF")
     table.insert(configs, "-DFLECS_PIC=OFF")
     table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+    table.insert(configs, "-DFLECS_CPP_NO_AUTO_REGISTRATION=1")
+    table.insert(configs, "-DFLECS_META=ON")
     import("package.tools.cmake").install(package, configs)
 
     local pdb = path.join(package:builddir(), "flecs.pdb")
@@ -212,7 +214,7 @@ package_end()
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
-    "flecs", { system = false },
+    "flecs", {configs = {shared = false}, system = false},
     "glaze", { system = false },
     "libsdl3", { system = false },
     "libsdl3_ttf", { system = false },
@@ -284,3 +286,11 @@ target("atmo-test")
             "--reporter=console::out=-::colour-mode=ansi"
         }
     })
+
+target("atmo-export")
+    set_kind("binary")
+    packages()
+    add_files("src/**.cpp")
+    add_includedirs("src")
+    platform_specifics()
+    add_defines("ATMO_EXPORT")
