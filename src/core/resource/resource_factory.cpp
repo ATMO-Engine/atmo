@@ -1,7 +1,7 @@
 #pragma once
 
 #include <exception>
-#include <process.h>
+#include <stdexcept>
 #include <utility>
 
 #include "core/resource/resource_factory.hpp"
@@ -27,7 +27,7 @@ namespace atmo
                 if (_loaders.find(fileExtension) == _loaders.end()) {
                     _loaders.insert(std::make_pair(fileExtension, loader));
                 } else {
-                    throw std::exception("File extension already set");
+                    throw std::runtime_error("Loader for this extension already registered");
                 }
             }
 
