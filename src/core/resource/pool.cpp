@@ -1,13 +1,14 @@
+#include "core/resource/pool.hpp"
 #include <algorithm>
 #include <exception>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include "common/utils.hpp"
 #include "core/resource/resource.hpp"
 #include "core/resource/resource_factory.hpp"
 #include "handle.hpp"
-#include "core/resource/pool.hpp"
 
 namespace atmo
 {
@@ -39,7 +40,8 @@ namespace atmo
                     res->load(path);
 
                     Handle newHandle = {};
-                    newHandle.frameToLive = 1; // TODO: Définir un nombre de frame durant lequel la ressource peut vivre même sans être appelé
+                    newHandle.frameToLive = 1; // TODO: Définir un nombre de frame durant lequel la ressource peut vivre
+                                               // même sans être appelé
                     newHandle.path = path;
 
                     if (!_freeList.empty()) {
@@ -58,8 +60,7 @@ namespace atmo
                     _handles.insert(std::make_pair(path, newHandle));
 
                     return newHandle;
-                }
-                catch (const std::exception &e) {
+                } catch (const std::exception &e) {
                     throw e;
                 }
             }
@@ -67,7 +68,7 @@ namespace atmo
             std::shared_ptr<Resource> Pool::getFromHandle(const Handle &handle)
             {
                 if (handle.generation != _generations.at(handle.index)) {
-                    throw std::exception("Handle périmé");
+                    throw std::runtime_error("Handle périmé");
                 }
                 return _resources.at(handle.index);
             }
@@ -85,9 +86,10 @@ namespace atmo
             void Pool::destroy(const Handle &handle)
             {
                 if (handle.generation != _generations.at(handle.index)) {
-                    throw std::exception("Handle périmé");
+                    throw std::runtime_error("Handle périmé");
                 }
-                _resources.at(handle.index)->destroy(); // TODO: Implementer avec le système de caching (retirer la ressource du vecteur et l'envoyer dans le cache)
+                _resources.at(handle.index)->destroy(); // TODO: Implementer avec le système de caching (retirer la
+                                                        // ressource du vecteur et l'envoyer dans le cache)
                 _generations.at(handle.index) += 1;
                 _freeList.push_back(handle.index);
             }
