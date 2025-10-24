@@ -201,6 +201,14 @@ package("catch2")
     end)
 package_end()
 
+package("semver")
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "semver"))
+    on_install(function(package)
+        os.cp("include/semver.hpp", package:installdir("include"))
+    end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -210,7 +218,8 @@ add_requires(
     "libsdl3_ttf", { system = false },
     "libsdl3_image", { system = false },
     "clay", { system = false },
-    "catch2", { system = false }
+    "catch2", { system = false },
+    "semver", { system = false }
 )
 
 function platform_specifics()
@@ -248,7 +257,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver")
 end
 
 target("atmo")
