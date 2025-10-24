@@ -3,6 +3,41 @@
 #include "impl/window.hpp"
 
 #include <csignal>
+#include <filesystem>
+#include <string>
+
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#else
+#include <unistd.h>
+#endif
+
+static std::filesystem::path get_executable_path()
+{
+#if defined(_WIN32)
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    return std::filesystem::path(buffer);
+#elif defined(__APPLE__)
+    char buffer[4096];
+    uint32_t size = sizeof(buffer);
+    if (_NSGetExecutablePath(buffer, &size) == 0)
+        return std::filesystem::canonical(buffer);
+    std::string dyn(size, '\0');
+    _NSGetExecutablePath(dyn.data(), &size);
+    return std::filesystem::canonical(dyn.c_str());
+#else
+    char buffer[4096];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1) {
+        buffer[len] = '\0';
+        return std::filesystem::path(buffer);
+    }
+    return std::filesystem::current_path();
+#endif
+}
 
 atmo::core::Engine engine;
 
@@ -13,55 +48,17 @@ int main(int argc, char **argv)
 
     ECS_IMPORT(engine.get_ecs(), FlecsMeta);
 
-    atmo::core::InputManager::instance().addEvent(
-        "#INTERNAL#ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT));
+    FileSystem::SetRootPath(get_executable_path());
 
-    atmo::core::InputManager::instance().addEvent(
-        "#INTERNAL#ui_scroll", new atmo::core::InputManager::MouseScrollEvent());
+    atmo::core::InputManager::instance().addEvent("#INTERNAL#ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT));
+
+    atmo::core::InputManager::instance().addEvent("#INTERNAL#ui_scroll", new atmo::core::InputManager::MouseScrollEvent());
+
 
     auto window = engine.instantiate_prefab("window", "MainWindow");
-    atmo::impl::WindowManager *wm =
-        static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
+    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
     wm->rename("Atmo Engine");
     wm->make_main();
-
-    // auto window2 = engine.instantiate_prefab("window", "SubWindow");
-
-    // auto rect = engine.get_ecs()
-    //                 .entity("Rect")
-    //                 .child_of(window)
-    //                 .set<atmo::core::components::UIRect>({ { 0.0f, 0.5f, 0.5f, 1.0f },
-    //                                                        { 10.0f, 10.0f, 10.0f, 10.0f },
-    //                                                        { 2, 2, 2, 2 },
-    //                                                        { 1.0f, 1.0f, 1.0f, 1.0f } })
-    //                 .set<atmo::core::components::UITransform>({ 150.0f, 150.0f, 200.0f, 200.0f, 0.0f, true, true })
-    //                 .set<atmo::core::components::UIStack>(
-    //                     { atmo::core::components::UILayoutDirection::Horizontal, {}, {}, false, 0 });
-
-    // auto subrect =
-    //     engine.get_ecs()
-    //         .entity()
-    //         .child_of(rect)
-    //         .set<atmo::core::components::UIRect>(
-    //             { { 0.5f, 0.0f, 0.5f, 1.0f }, { 5.0f, 5.0f, 5.0f, 5.0f }, { 1, 1, 1, 1 }, { 1.0f, 1.0f, 1.0f, 1.0f }
-    //             })
-    //         .set<atmo::core::components::UITransform>({ 0.0f, 0.0f, 100.0f, 100.0f, 0.0f, true, false });
-    // auto subrect2 =
-    //     engine.get_ecs()
-    //         .entity()
-    //         .child_of(rect)
-    //         .set<atmo::core::components::UIRect>(
-    //             { { 0.5f, 0.0f, 0.5f, 1.0f }, { 5.0f, 5.0f, 5.0f, 5.0f }, { 1, 1, 1, 1 }, { 1.0f, 1.0f, 1.0f, 1.0f }
-    //             })
-    //         .set<atmo::core::components::UITransform>({ 0.0f, 0.0f, 100.0f, 100.0f, 0.0f, true, false });
-    // auto subrect3 =
-    //     engine.get_ecs()
-    //         .entity()
-    //         .child_of(rect)
-    //         .set<atmo::core::components::UIRect>(
-    //             { { 0.5f, 0.0f, 0.5f, 1.0f }, { 5.0f, 5.0f, 5.0f, 5.0f }, { 1, 1, 1, 1 }, { 1.0f, 1.0f, 1.0f, 1.0f }
-    //             })
-    //         .set<atmo::core::components::UITransform>({ 0.0f, 0.0f, 100.0f, 100.0f, 0.0f, true, false });
 
     while (engine.get_ecs().progress()) {
         atmo::core::InputManager::instance().tick();

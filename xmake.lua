@@ -72,12 +72,34 @@ package_end()
 package("flecs")
 add_deps("cmake")
 set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "flecs"))
+
+if is_plat("windows", "mingw") then
+    add_syslinks("wsock32", "ws2_32")
+elseif is_plat("linux") then
+    add_syslinks("pthread")
+elseif is_plat("bsd") then
+    add_syslinks("execinfo", "pthread")
+end
+
+on_load("windows", "mingw", function (package)
+    if not package:config("shared") then
+        package:add("defines", "flecs_STATIC")
+    end
+end)
+
 on_install(function(package)
-    local configs = {"-DBUILD_STATIC_LIBS=ON", "-DFLECS_CPP_NO_AUTO_REGISTRATION=1"}
+    local configs = {}
+    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+    table.insert(configs, "-DFLECS_STATIC=ON")
+    table.insert(configs, "-DFLECS_SHARED=OFF")
+    table.insert(configs, "-DFLECS_PIC=OFF")
     table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
     table.insert(configs, "-DFLECS_CPP_NO_AUTO_REGISTRATION=1")
     table.insert(configs, "-DFLECS_META=ON")
     import("package.tools.cmake").install(package, configs)
+
+    local pdb = path.join(package:builddir(), "flecs.pdb")
+    os.trycp(pdb, package:installdir("lib"))
 end)
 package_end()
 
@@ -157,7 +179,7 @@ package("libsdl3_image")
 add_deps("cmake", "libsdl3")
 set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "sdl_image"))
 on_install(function(package)
-    local configs = {"-DBUILD_STATIC_LIBS=ON"}
+    local configs = {"-DBUILD_STATIC_LIBS=ON", "-DSDLIMAGE_SAMPLES=OFF", "-DSDLIMAGE_TESTS=OFF", "-DSDLIMAGE_VENDORED=OFF"}
     table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
     table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
     import("package.tools.cmake").install(package, configs)
@@ -229,6 +251,10 @@ function platform_specifics()
 
     if is_plat("windows") then
         add_cxxflags("/utf-8")
+        add_syslinks(
+            "User32", "Gdi32", "Ole32", "Advapi32", "Shell32", "Comdlg32", "Setupapi",
+            "Winmm", "OleAut32", "Version", "Imm32"
+        )
     end
 end
 

@@ -9,24 +9,32 @@ namespace atmo
     {
         namespace resource
         {
-            class ImageLoader : public Resource
+
+            struct Bytecode
+            {
+                char *data;
+                size_t size;
+            };
+
+            class ScriptLoader : public Resource
             {
             public:
-                ImageLoader();
-                ~ImageLoader() override;
+                ScriptLoader();
+                ~ScriptLoader() override;
 
                 void load(const std::string &path) override;
                 void destroy() override;
 
                 std::any get() override;
             private:
-                std::string _texture;
-                static LoaderRegister<ImageLoader> _register;
+                Bytecode _script;
+
+                static LoaderRegister<ScriptLoader> _register;
             };
 
             template<>
-            struct LoaderExtension<ImageLoader> {
-                static constexpr const char *extension = "png";
+            struct LoaderExtension<ScriptLoader> {
+                static constexpr const char *extension = "luau";
             };
         } // namespace resource
     } // namespace core
