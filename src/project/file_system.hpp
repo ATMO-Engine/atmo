@@ -104,12 +104,12 @@ class FileSystem
 public:
     static void SetRootPath(std::filesystem::path path)
     {
-        instance.root = path.parent_path();
+        Instance().m_root = path.parent_path();
     }
 
     static std::filesystem::path GetRootPath()
     {
-        return instance.root;
+        return Instance().m_root;
     }
 
     /**
@@ -128,15 +128,15 @@ public:
         if (path.starts_with(PROJECT_PROTOCOL)) {
             std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));
 #if defined(ATMO_EXPORT)
-            auto it = instance.m_index.find(relative_path.string());
-            if (it != instance.m_index.end()) {
+            auto it = Instance().m_index.find(relative_path.string());
+            if (it != Instance().m_index.end()) {
                 const auto &entry = it->second;
-                return File(instance.root.string() + "/" + relative_path.string(), entry.offset, entry.offset + entry.size);
+                return File(Instance().root.string() + "/" + relative_path.string(), entry.offset, entry.offset + entry.size);
             } else {
                 throw std::runtime_error("File not found in packed file system: " + relative_path.string());
             }
 #else
-            return File(instance.root.string() + "/" + relative_path.string());
+            return File(Instance().m_root.string() + "/" + relative_path.string());
 #endif
         }
 
@@ -151,8 +151,12 @@ public:
 private:
     FileSystem() = default;
 
-    static FileSystem instance;
-    static std::filesystem::path root;
+    static FileSystem &Instance()
+    {
+        static FileSystem instance;
+        return instance;
+    }
+    std::filesystem::path m_root;
 
     typedef struct PackedHeader {
         char magic[4];
