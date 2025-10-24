@@ -24,23 +24,23 @@ namespace atmo
                 try {
                     _font = TTF_OpenFont(path.c_str(), 24); // 24 is the font size in pixels
                     if (!_font) {
-                        throw std::exception((std::string("Failed to load font") + SDL_GetError()).c_str());
+                        throw std::runtime_error("Failed to load font: " + path + " Error: " + SDL_GetError());
                     }
-                }
-                catch (const std::exception &e) {
+                } catch (const std::exception &e) {
                     throw e;
                 }
             }
 
             std::any FontLoader::get()
             {
-                return std::make_any<TTF_Font*>(_font);
+                return std::make_any<TTF_Font *>(_font);
             }
 
             void FontLoader::destroy()
             {
                 if (_font != nullptr) {
-                    TTF_CloseFont(_font); // TODO: Implementer avec le système de caching (retirer la ressource du vecteur et l'envoyer dans le cache)
+                    TTF_CloseFont(_font); // TODO: Implementer avec le système de caching (retirer la ressource du
+                                          // vecteur et l'envoyer dans le cache)
                 }
                 _font = nullptr;
             }

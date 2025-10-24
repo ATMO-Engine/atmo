@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/resource/resource.hpp"
 #include "core/resource/handle.hpp"
+#include "core/resource/resource.hpp"
 
 namespace atmo
 {
@@ -26,9 +26,10 @@ namespace atmo
 
                 void declareHandle(const Handle &handle);
                 void destroy(const Handle &handle);
+
             private:
                 std::vector<Handle> _usedHandles;
-                std::unordered_map<std::string, Handle> _handles;
+                std::unordered_map<std::string, Handle> _handles; // TODO : rename map name for better clarity
 
                 std::vector<std::shared_ptr<Resource>> _resources;
                 std::vector<std::uint16_t> _generations;

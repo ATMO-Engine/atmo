@@ -1,9 +1,10 @@
+#include "resource_manager.hpp"
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include "common/utils.hpp"
 #include "core/resource/resource_factory.hpp"
-#include "resource_manager.hpp"
 
 #include "core/resource/loaders/image_loader.hpp"
 #include "core/resource/loaders/script_loader.hpp"
@@ -38,7 +39,7 @@ namespace atmo
                         Handle newHandle = _pools.at(extension).create(path);
                         return newHandle;
                     } else {
-                        throw std::exception("Invalid file extension");
+                        throw std::runtime_error("No matching pool for the path given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
                     std::cout << e.what() << std::endl;
@@ -54,7 +55,7 @@ namespace atmo
                         // create Resource class through a calss that return a Resource class thanks to the path
                         return _pools.at(extension).getFromHandle(handle);
                     } else {
-                        throw std::exception("No matching pool for the handle given. Invalid file extension");
+                        throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
                     std::cout << e.what() << std::endl;
@@ -70,7 +71,7 @@ namespace atmo
                         // create Resource class through a class that return a Resource class thanks to the path
                         _pools.at(extension).declareHandle(handle);
                     } else {
-                        throw std::exception("No matching pool for the handle given. Invalid file extension");
+                        throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
                     std::cout << e.what() << std::endl;
