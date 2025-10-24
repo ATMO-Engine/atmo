@@ -52,6 +52,7 @@ public:
         }
         m_end_offset = static_cast<std::uint64_t>(m_file->tellg());
         m_file->seekg(0, std::ios::beg);
+        m_ownership = true;
     };
 
     ~File()
