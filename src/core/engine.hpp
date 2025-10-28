@@ -21,6 +21,7 @@ namespace atmo
             ~Engine() = default;
 
             void stop();
+            void reset();
             ecs::ECS &getECS();
         };
     } // namespace core

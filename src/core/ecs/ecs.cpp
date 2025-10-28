@@ -15,6 +15,11 @@ void atmo::core::ecs::ECS::stop()
     m_world.quit();
 }
 
+void atmo::core::ecs::ECS::reset()
+{
+    m_world.reset();
+}
+
 void atmo::core::ecs::ECS::loadPrefabs()
 {
     m_prefabs.emplace("window", createManagedPrefab<impl::WindowManager>("window").set<components::Window>({ "Atmo Managed Window", { 800, 600 } }));
