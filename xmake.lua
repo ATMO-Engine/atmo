@@ -289,6 +289,7 @@ target("atmo-test")
 
 target("atmo-export")
     set_kind("binary")
+    set_default(false)
     packages()
     add_files("src/**.cpp")
     add_includedirs("src")

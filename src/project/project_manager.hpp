@@ -108,7 +108,7 @@ public:
     }
 
     /**
-     * @brief Generates a packed .pck file from the current project directory.
+     * @brief Generates a packed .pck file from the current project directory. This file may get appended to an atmo-export executable.
      *
      */
     static void GeneratePackedFile()
@@ -116,13 +116,65 @@ public:
 #if defined(ATMO_EXPORT)
         throw std::runtime_error("Cannot generate packed file from an exported application.");
 #else
-        std::ofstream out(GetCurrentProjectPath() / (std::string(m_instance.m_settings.app.project_name) + std::string(ATMO_PACKED_EXT)), std::ios::binary);
+        std::ofstream out(
+            GetCurrentProjectPath() /
+                std::format(
+                    "%s.%s.%s",
+                    std::string(m_instance.m_settings.app.project_name, ATMO_SETTING_MAX_LENGTH),
+                    m_instance.m_settings.app.project_version.to_string(),
+                    std::string(ATMO_PACKED_EXT, 4)),
+            std::ios::binary);
         if (!out.is_open())
             throw std::runtime_error("Failed to create packed file.");
 
-        WriteProjectSettings(out);
+        WriteStructure(out, &m_instance.m_settings);
 
-        // TODO: Write resources and scenes to the packed file
+        FileSystem::PackedHeader header;
+        header.major = m_instance.m_settings.app.engine_version.major();
+        header.minor = m_instance.m_settings.app.engine_version.minor();
+        header.patch = m_instance.m_settings.app.engine_version.patch();
+
+        std::vector<FileSystem::PackedEntry> entries;
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(GetCurrentProjectPath())) {
+            if (entry.is_regular_file() && entry.path().filename() != ATMO_PROJECT_FILE) {
+                std::ifstream in(entry.path(), std::ios::binary | std::ios::ate);
+                if (!in.is_open()) {
+                    spdlog::warn("Failed to open file for packing: {}", entry.path().string());
+                    continue;
+                }
+                std::streamsize size = in.tellg();
+                in.seekg(0, std::ios::beg);
+                FileSystem::PackedEntry packed_entry;
+                packed_entry.path = strdup(entry.path().lexically_relative(GetCurrentProjectPath()).string().c_str());
+                packed_entry.offset = 0;
+                packed_entry.size = static_cast<uint64_t>(size);
+                entries.push_back(packed_entry);
+                in.close();
+            }
+        }
+
+        uint64_t current_offset = sizeof(ProjectSettings) + sizeof(FileSystem::PackedHeader);
+        for (auto &entry : entries) {
+            entry.offset = current_offset;
+            current_offset += entry.size;
+        }
+
+        header.file_count = static_cast<uint32_t>(entries.size());
+        header.offset_to_files = sizeof(ProjectSettings) + sizeof(FileSystem::PackedHeader) + sizeof(FileSystem::PackedEntry) * entries.size();
+
+        WriteStructure(out, &header);
+        for (const auto &entry : entries) {
+            WriteStructure(out, &entry);
+        }
+        for (const auto &entry : entries) {
+            std::ifstream in(GetCurrentProjectPath() / entry.path, std::ios::binary);
+            if (!in.is_open()) {
+                spdlog::warn("Failed to open file for packing data: {}", entry.path);
+                continue;
+            }
+            out << in.rdbuf();
+            in.close();
+        }
 
         out.close();
 #endif
@@ -144,5 +196,10 @@ private:
     inline static void WriteProjectSettings(std::ofstream &file)
     {
         file.write(reinterpret_cast<const char *>(&m_instance.m_settings), sizeof(ProjectSettings));
+    }
+
+    template <typename T> inline static void WriteStructure(std::ofstream &file, const T *setting)
+    {
+        file.write(reinterpret_cast<const char *>(setting), sizeof(T));
     }
 };
