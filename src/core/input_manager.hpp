@@ -30,30 +30,26 @@ namespace atmo
                 bool internal = false;
             };
 
+            static InputManager instance;
+
         public:
-            static InputManager &instance()
-            {
-                static InputManager instance;
-                return instance;
-            }
+            static void AddEvent(const std::string &inputName, Event *event);
+            static void ProcessEvent(const SDL_Event &e, float deltaTime);
+            static void Tick();
 
-            void addEvent(const std::string &inputName, Event *event);
-            void processEvent(const SDL_Event &e, float deltaTime);
-            void tick();
+            static bool IsPressed(const std::string &inputName);
+            static bool IsJustPressed(const std::string &inputName);
+            static bool IsJustReleased(const std::string &inputName);
+            static bool IsReleased(const std::string &inputName);
 
-            bool isPressed(const std::string &inputName);
-            bool isJustPressed(const std::string &inputName);
-            bool isJustReleased(const std::string &inputName);
-            bool isReleased(const std::string &inputName);
+            static std::pair<types::vector2, types::vector2> GetLastMouseMotion();
+            static void SetMousePosition(float x, float y);
+            static types::vector2 GetMousePosition();
+            static std::pair<types::vector2, float> GetScrollDelta(const std::string &inputName);
 
-            std::pair<types::vector2, types::vector2> getLastMouseMotion();
-            void setMousePosition(float x, float y);
-            types::vector2 getMousePosition();
-            std::pair<types::vector2, float> getScrollDelta(const std::string &inputName);
-
-            std::string consumeText() noexcept;
-            void startTextInput(SDL_Window *window) noexcept;
-            void stopTextInput(SDL_Window *window) noexcept;
+            static std::string ConsumeText() noexcept;
+            static void StartTextInput(SDL_Window *window) noexcept;
+            static void StopTextInput(SDL_Window *window) noexcept;
 
             class KeyEvent : public Event
             {
@@ -98,7 +94,7 @@ namespace atmo
                 }
 
                 types::vector2 scroll;
-                float deltaTime = 0.0f;
+                float delta_time = 0.0f;
             };
 
         private:
@@ -106,14 +102,14 @@ namespace atmo
             InputManager(const InputManager &) = delete;
             InputManager &operator=(const InputManager &) = delete;
 
-            void handleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent);
-            void handleMouseButtonEvent(const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent);
+            static void HandleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent);
+            static void HandleMouseButtonEvent(const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent);
 
-            bool textInput = false;
+            bool m_textInput = false;
 
-            std::unordered_map<std::string, std::vector<std::shared_ptr<Event>>> inputs;
-            std::vector<std::shared_ptr<Event>> events;
-            std::string textBuffer;
+            std::unordered_map<std::string, std::vector<std::shared_ptr<Event>>> m_inputs;
+            std::vector<std::shared_ptr<Event>> m_events;
+            std::string m_textBuffer;
         };
     } // namespace core
 } // namespace atmo
