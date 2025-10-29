@@ -52,16 +52,17 @@ int main(int argc, char **argv)
     FileSystem::SetRootPath(get_executable_path());
     spdlog::info("Executable Path: {}", FileSystem::GetRootPath().string());
 
-    atmo::core::InputManager::instance().addEvent("#INTERNAL#ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT));
-    atmo::core::InputManager::instance().addEvent("#INTERNAL#ui_scroll", new atmo::core::InputManager::MouseScrollEvent());
+    atmo::core::InputManager::AddEvent("#INTERNAL#ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT));
+
+    atmo::core::InputManager::AddEvent("#INTERNAL#ui_scroll", new atmo::core::InputManager::MouseScrollEvent());
 
     auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
     atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
     wm->rename("Atmo Engine");
     wm->make_main();
 
-    while (engine.getECS().progress()) {
-        atmo::core::InputManager::instance().tick();
+    while (engine.get_ecs().progress()) {
+        atmo::core::InputManager::Tick();
     }
 
     return 0;
