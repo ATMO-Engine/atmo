@@ -132,7 +132,7 @@ public:
             auto it = Instance().m_index.find(relative_path.string());
             if (it != Instance().m_index.end()) {
                 const auto &entry = it->second;
-                return File(Instance().root.string() + "/" + relative_path.string(), entry.offset, entry.offset + entry.size);
+                return File(Instance().m_root.string() + "/" + relative_path.string(), entry.offset, entry.offset + entry.size);
             } else {
                 throw std::runtime_error("File not found in packed file system: " + relative_path.string());
             }
