@@ -1,6 +1,5 @@
 #include <SDL3/SDL.h>
 #include <spdlog/spdlog.h>
-#include "core/components.hpp"
 #include "core/input_manager.hpp"
 
 #include "window.hpp"

@@ -36,7 +36,7 @@ namespace atmo
         public:
             virtual ~ComponentManager() = default;
 
-            static void registerSystems(flecs::world ecs) {}
+            static void RegisterSystems(flecs::world ecs) {}
 
             struct Managed {
                 ComponentManager *ptr;

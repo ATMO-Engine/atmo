@@ -6,7 +6,7 @@
 #include <string>
 
 #include "clay_types.hpp"
-#include "core/components.hpp"
+#include "core/ecs/components.hpp"
 #include "core/types.hpp"
 
 // macro resulting to SDL_WINDOW_VULKAN on windows and linux, SDL_WINDOW_METAL on macOS
@@ -22,14 +22,11 @@ namespace atmo
             WindowManager(flecs::entity entity);
             ~WindowManager();
 
-            static void registerSystems(flecs::world ecs)
+            static void RegisterSystems(flecs::world ecs)
             {
                 ecs.system<core::ComponentManager::Managed, core::components::Window>("PollEvents")
                     .kind(flecs::PreUpdate)
-                    .each([](flecs::iter &it,
-                             size_t i,
-                             core::ComponentManager::Managed &manager,
-                             core::components::Window &window) {
+                    .each([](flecs::iter &it, size_t i, core::ComponentManager::Managed &manager, core::components::Window &window) {
                         auto *wm = static_cast<impl::WindowManager *>(manager.ptr);
                         wm->pollEvents(it.delta_time());
                     });
