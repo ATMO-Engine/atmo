@@ -103,6 +103,20 @@ private:
 class FileSystem
 {
 public:
+    typedef struct PackedHeader {
+        char magic[4] = { 'A', 'T', 'M', 'O' };
+        uint32_t version = 1;
+        VERSION_TYPE major, minor, patch = 0;
+        uint32_t file_count = 0;
+        uint64_t offset_to_files = 0;
+    } PackedHeader;
+
+    typedef struct PackedEntry {
+        const char *path = nullptr;
+        uint64_t offset = 0;
+        uint64_t size = 0;
+    } PackedEntry;
+
     static void SetRootPath(std::filesystem::path path)
     {
         Instance().m_root = path.parent_path();
@@ -159,21 +173,8 @@ private:
     }
     std::filesystem::path m_root;
 
-    typedef struct PackedHeader {
-        char magic[4];
-        uint32_t version;
-        VERSION_TYPE major, minor, patch;
-        uint32_t file_count;
-        uint64_t offset_to_files;
-    } PackedHeader;
-
-    typedef struct PackedEntry {
-        const char *path;
-        uint64_t offset;
-        uint64_t size;
-    } PackedEntry;
-
 #if defined(ATMO_EXPORT)
+    PackedHeader header = { 0 };
     std::unordered_map<std::string, PackedEntry> m_index;
 #else
 #endif
