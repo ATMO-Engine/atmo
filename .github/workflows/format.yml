@@ -17,8 +17,8 @@ jobs:
       - name: Install Clang tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format-15
-          sudo ln -sf /usr/bin/clang-format-15 /usr/local/bin/clang-format
+          sudo apt-get install -y clang-format-17
+          sudo ln -sf /usr/bin/clang-format-17 /usr/local/bin/clang-format
 
       - name: Run clang-format check
         run: |
