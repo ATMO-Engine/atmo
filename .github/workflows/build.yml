@@ -1,0 +1,51 @@
+name: build-check
+
+on:
+  push:
+
+jobs:
+  check-compile:
+    name: Linux build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set up XMake
+        uses: xmake-io/setup-xmake@v1
+
+      - name: Run xmake build
+        run: |
+          xmake
+
+  check-compile-macos:
+    name: macOS build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set up XMake
+        uses: xmake-io/setup-xmake@v1
+
+      - name: Run xmake build
+        run: xmake
+
+  check-compile-windows:
+    name: Windows build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set up XMake
+        uses: xmake-io/setup-xmake@v1
+
+      - name: Run xmake build
+        run: xmake
