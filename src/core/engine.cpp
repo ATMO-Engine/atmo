@@ -6,6 +6,11 @@ void atmo::core::Engine::stop()
     m_ecs.stop();
 }
 
+void atmo::core::Engine::reset()
+{
+    m_ecs.reset();
+}
+
 atmo::core::ecs::ECS &atmo::core::Engine::getECS()
 {
     return m_ecs;

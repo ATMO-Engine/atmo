@@ -24,6 +24,7 @@ namespace atmo
                 ECS();
                 ~ECS() = default;
                 void stop();
+                void reset();
 
                 template <typename M> inline flecs::entity createManagedPrefab(const std::string &name)
                 {
