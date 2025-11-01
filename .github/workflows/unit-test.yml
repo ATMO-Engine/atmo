@@ -21,6 +21,7 @@ jobs:
 
       - name: Run unit tests
         run: |
+          xmake -y
           xmake run atmo-test
 
   run-tests-macos:
@@ -40,6 +41,7 @@ jobs:
 
       - name: Run unit tests
         run: |
+          xmake -y
           xmake run atmo-test
 
     run-tests-windows:
@@ -59,4 +61,5 @@ jobs:
 
       - name: Run unit tests
         run: |
+          xmake -y
           xmake run atmo-test

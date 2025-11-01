@@ -20,7 +20,7 @@ jobs:
 
       - name: Run xmake build
         run: |
-          xmake
+          xmake -y
 
   check-compile-macos:
     name: macOS build
@@ -37,7 +37,7 @@ jobs:
           xmake-version: latest
 
       - name: Run xmake build
-        run: xmake
+        run: xmake -y
 
   check-compile-windows:
     name: Windows build
@@ -54,4 +54,4 @@ jobs:
           xmake-version: latest
 
       - name: Run xmake build
-        run: xmake
+        run: xmake -y
