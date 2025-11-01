@@ -13,8 +13,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Set up XMake
-        uses: xmake-io/setup-xmake@v1
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
 
       - name: Run xmake build
         run: |
@@ -29,8 +31,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Set up XMake
-        uses: xmake-io/setup-xmake@v1
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
 
       - name: Run xmake build
         run: xmake
@@ -44,8 +48,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Set up XMake
-        uses: xmake-io/setup-xmake@v1
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
 
       - name: Run xmake build
         run: xmake
