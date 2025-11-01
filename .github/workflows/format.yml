@@ -17,11 +17,6 @@ jobs:
       - name: Install Clang tools
         run: sudo apt-get update && sudo apt-get install -y clang-format
 
-      - name: Setup Xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-
       - name: Run clang-format check
         run: |
           FILES=$(find . -name '*.[ch]pp' -o -name '*.[ch]')
@@ -59,8 +54,8 @@ jobs:
 
       - name: Export compile_commands.json with XMake
         run: |
-          xmake f --export-compile-commands
-          xmake project -k cmakelists
+          xmake f -y
+          xmake project -k compile_commands
 
       - name: Run clang-tidy check
         run: |
