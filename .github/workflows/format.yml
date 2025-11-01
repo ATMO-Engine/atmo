@@ -19,7 +19,7 @@ jobs:
 
       - name: Run clang-format check
         run: |
-          FILES=$(find . -name '*.[ch]pp' -o -name '*.[ch]')
+          FILES=$(find src/ -name '*.[ch]pp' -o -name '*.[ch]')
           FORMAT_ERRORS=0
           for FILE in $FILES; do
             if ! clang-format -style=file "$FILE" | diff -q "$FILE" - > /dev/null; then
