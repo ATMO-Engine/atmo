@@ -36,7 +36,7 @@ namespace atmo
         public:
             virtual ~ComponentManager() = default;
 
-            static void registerSystems(flecs::world ecs) {}
+            static void RegisterSystems(flecs::world ecs) {}
 
             struct Managed {
                 ComponentManager *ptr;
@@ -88,11 +88,11 @@ namespace atmo
 
                 struct Text {
                     std::string content;
-                    Clay_TextElementConfig config;
+                    // Clay_TextElementConfig config;
                 };
                 BEGIN_REFLECT(Text)
                 FIELD(content)
-                FIELD(config)
+                // FIELD(config)
                 END_REFLECT(Text)
             } // namespace UI
 

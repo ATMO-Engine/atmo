@@ -1,24 +1,19 @@
 #include "engine.hpp"
 #include "impl/window.hpp"
 
-void atmo::core::Engine::load_prefabs()
+void atmo::core::Engine::stop()
 {
-    prefabs.emplace(
-        "window",
-        create_managed_prefab<impl::WindowManager>("window").set<components::Window>(
-            { "Atmo Managed Window", { 800, 600 } }));
+    m_ecs.stop();
+}
 
-    { // UI
-        // rect should have:
-        // - Background color
-        // - Image
-        // - Border
-        // - Child alignment
-        // - Padding
-        prefabs.emplace("ui.rect", ecs.prefab("ui.rect"));
-        prefabs.emplace(
-            "ui.label", ecs.prefab("ui.label").set<components::UI::Text>({ "Label", {} }).set<components::UI::UI>({}));
-    }
+void atmo::core::Engine::reset()
+{
+    m_ecs.reset();
+}
+
+atmo::core::ecs::ECS &atmo::core::Engine::getECS()
+{
+    return m_ecs;
 }
 
 // void atmo::core::Engine::init_systems()

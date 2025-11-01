@@ -1,6 +1,5 @@
 #include <SDL3/SDL.h>
 #include <spdlog/spdlog.h>
-#include "core/components.hpp"
 #include "core/input_manager.hpp"
 
 #include "window.hpp"
@@ -17,8 +16,7 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 
     SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
-    if (!SDL_CreateWindowAndRenderer(
-            window.title.c_str(), window.size.x, window.size.y, flags, &this->window, &rendererData.renderer)) {
+    if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &this->window, &rendererData.renderer)) {
         spdlog::error("Failed to create window: {}", SDL_GetError());
         throw std::runtime_error("Failed to create window");
     }
@@ -41,12 +39,9 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
     auto totalMemSize = Clay_MinMemorySize();
     clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
-    Clay_Initialize(
-        clay_arena,
-        { (float)window.size.x, (float)window.size.y },
-        { .errorHandlerFunction = [](Clay_ErrorData errorData) {
-            spdlog::error("Clay error: {}", errorData.errorText.chars);
-        } });
+    Clay_Initialize(clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
+                        spdlog::error("Clay error: {}", errorData.errorText.chars);
+                    } });
 
     // TODO add sdl measure text callback here once SDL_ttf is integrated
     // Clay_SetMeasureTextFunction(SDL_MeasureText, state->rendererData.fonts);
@@ -85,7 +80,7 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
                 Clay_SetPointerState({ event.motion.x, event.motion.y }, event.motion.state & SDL_BUTTON_LMASK);
                 break;
             default:
-                core::InputManager::instance().processEvent(event, deltaTime);
+                core::InputManager::ProcessEvent(event, deltaTime);
                 break;
         };
     }
@@ -93,19 +88,19 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
 
 void atmo::impl::WindowManager::draw()
 {
-    if (core::InputManager::instance().isJustPressed("ui_click")) {
-        auto pos = core::InputManager::instance().getMousePosition();
+    if (core::InputManager::IsJustPressed("ui_click")) {
+        auto pos = core::InputManager::GetMousePosition();
         Clay_SetPointerState({ pos.x, pos.y }, true);
         spdlog::info("Click at {}, {}", pos.x, pos.y);
     }
 
-    if (core::InputManager::instance().isJustReleased("ui_click")) {
-        auto pos = core::InputManager::instance().getMousePosition();
+    if (core::InputManager::IsJustReleased("ui_click")) {
+        auto pos = core::InputManager::GetMousePosition();
         Clay_SetPointerState({ pos.x, pos.y }, false);
         spdlog::info("Release at {}, {}", pos.x, pos.y);
     }
 
-    auto scroll = core::InputManager::instance().getScrollDelta("ui_scroll");
+    auto scroll = core::InputManager::GetScrollDelta("ui_scroll");
     if (scroll.first.x != 0 || scroll.first.y != 0)
         Clay_UpdateScrollContainers(true, { scroll.first.x, scroll.first.y }, scroll.second);
 
