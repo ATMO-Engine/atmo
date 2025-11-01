@@ -1,0 +1,56 @@
+name: build-check
+
+on:
+  pull_request:
+
+jobs:
+  run-tests-linux:
+    name: Linux unit tests
+    runs-on: ubuntu-latest
+    needs: check-compile-linux
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set up XMake
+        uses: xmake-io/setup-xmake@v1
+
+      - name: Run unit tests
+        run: |
+          xmake run atmo-test
+
+  run-tests-macos:
+    name: macOS unit tests
+    runs-on: macos-latest
+    needs: check-compile-macos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set up XMake
+        uses: xmake-io/setup-xmake@v1
+
+      - name: Run unit tests
+        run: |
+          xmake run atmo-test
+
+    run-tests-windows:
+    name: Windows unit tests
+    runs-on: windows-latest
+    needs: check-compile-windows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Set up XMake
+        uses: xmake-io/setup-xmake@v1
+
+      - name: Run unit tests
+        run: |
+          xmake run atmo-test
