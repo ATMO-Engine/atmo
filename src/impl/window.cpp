@@ -80,7 +80,7 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
                 Clay_SetPointerState({ event.motion.x, event.motion.y }, event.motion.state & SDL_BUTTON_LMASK);
                 break;
             default:
-                core::InputManager::instance().processEvent(event, deltaTime);
+                core::InputManager::ProcessEvent(event, deltaTime);
                 break;
         };
     }
@@ -88,19 +88,19 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
 
 void atmo::impl::WindowManager::draw()
 {
-    if (core::InputManager::instance().isJustPressed("ui_click")) {
-        auto pos = core::InputManager::instance().getMousePosition();
+    if (core::InputManager::IsJustPressed("ui_click")) {
+        auto pos = core::InputManager::GetMousePosition();
         Clay_SetPointerState({ pos.x, pos.y }, true);
         spdlog::info("Click at {}, {}", pos.x, pos.y);
     }
 
-    if (core::InputManager::instance().isJustReleased("ui_click")) {
-        auto pos = core::InputManager::instance().getMousePosition();
+    if (core::InputManager::IsJustReleased("ui_click")) {
+        auto pos = core::InputManager::GetMousePosition();
         Clay_SetPointerState({ pos.x, pos.y }, false);
         spdlog::info("Release at {}, {}", pos.x, pos.y);
     }
 
-    auto scroll = core::InputManager::instance().getScrollDelta("ui_scroll");
+    auto scroll = core::InputManager::GetScrollDelta("ui_scroll");
     if (scroll.first.x != 0 || scroll.first.y != 0)
         Clay_UpdateScrollContainers(true, { scroll.first.x, scroll.first.y }, scroll.second);
 

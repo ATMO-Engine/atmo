@@ -1,7 +1,7 @@
 #include "input_manager.hpp"
 #include "spdlog/spdlog.h"
 
-void atmo::core::InputManager::addEvent(const std::string &inputName, Event *event)
+void atmo::core::InputManager::AddEvent(const std::string &inputName, Event *event)
 {
     bool internal = false;
     if (inputName.starts_with("#INTERNAL#"))
@@ -9,53 +9,53 @@ void atmo::core::InputManager::addEvent(const std::string &inputName, Event *eve
 
     std::string tmp = internal ? inputName.substr(10) : inputName;
 
-    if (inputs.find(tmp) == inputs.end())
-        inputs[tmp] = {};
+    if (instance.m_inputs.find(tmp) == instance.m_inputs.end())
+        instance.m_inputs[tmp] = {};
 
 
     auto evt = std::shared_ptr<Event>(event);
 
     evt->internal = internal;
 
-    events.push_back(evt);
-    inputs[tmp].push_back(evt);
+    instance.m_events.push_back(evt);
+    instance.m_inputs[tmp].push_back(evt);
 }
 
-void atmo::core::InputManager::processEvent(const SDL_Event &e, float deltaTime)
+void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
 {
     switch (e.type) {
         case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP:
-            for (auto evt : events)
+            for (auto evt : instance.m_events)
                 if (auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt))
-                    handleKeyboardEvent(e.key, keyEvent);
+                    HandleKeyboardEvent(e.key, keyEvent);
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
-            for (auto evt : events)
+            for (auto evt : instance.m_events)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt))
-                    handleMouseButtonEvent(e.button, mouseEvent);
+                    HandleMouseButtonEvent(e.button, mouseEvent);
             break;
         case SDL_EVENT_MOUSE_WHEEL:
-            for (auto evt : events)
+            for (auto evt : instance.m_events)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt)) {
                     mouseEvent->scroll.x = e.wheel.x;
                     mouseEvent->scroll.y = e.wheel.y;
-                    mouseEvent->deltaTime = deltaTime;
+                    mouseEvent->delta_time = deltaTime;
                 }
             break;
         case SDL_EVENT_TEXT_INPUT:
-            if (textInput)
-                textBuffer += e.text.text;
+            if (instance.m_textInput)
+                instance.m_textBuffer += e.text.text;
             break;
         default:
             break;
     }
 }
 
-void atmo::core::InputManager::tick()
+void atmo::core::InputManager::Tick()
 {
-    for (auto &evt : events) {
+    for (auto &evt : instance.m_events) {
         if (evt->getType() == Event::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
             keyEvent->just_pressed = false;
@@ -69,10 +69,10 @@ void atmo::core::InputManager::tick()
     }
 }
 
-bool atmo::core::InputManager::isPressed(const std::string &inputName)
+bool atmo::core::InputManager::IsPressed(const std::string &inputName)
 {
-    auto it = inputs.find(inputName);
-    if (it == inputs.end())
+    auto it = instance.m_inputs.find(inputName);
+    if (it == instance.m_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -89,10 +89,10 @@ bool atmo::core::InputManager::isPressed(const std::string &inputName)
     return false;
 }
 
-bool atmo::core::InputManager::isJustPressed(const std::string &inputName)
+bool atmo::core::InputManager::IsJustPressed(const std::string &inputName)
 {
-    auto it = inputs.find(inputName);
-    if (it == inputs.end())
+    auto it = instance.m_inputs.find(inputName);
+    if (it == instance.m_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -109,10 +109,10 @@ bool atmo::core::InputManager::isJustPressed(const std::string &inputName)
     return false;
 }
 
-bool atmo::core::InputManager::isJustReleased(const std::string &inputName)
+bool atmo::core::InputManager::IsJustReleased(const std::string &inputName)
 {
-    auto it = inputs.find(inputName);
-    if (it == inputs.end())
+    auto it = instance.m_inputs.find(inputName);
+    if (it == instance.m_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -129,10 +129,10 @@ bool atmo::core::InputManager::isJustReleased(const std::string &inputName)
     return false;
 }
 
-bool atmo::core::InputManager::isReleased(const std::string &inputName)
+bool atmo::core::InputManager::IsReleased(const std::string &inputName)
 {
-    auto it = inputs.find(inputName);
-    if (it == inputs.end())
+    auto it = instance.m_inputs.find(inputName);
+    if (it == instance.m_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -149,12 +149,12 @@ bool atmo::core::InputManager::isReleased(const std::string &inputName)
     return false;
 }
 
-void atmo::core::InputManager::setMousePosition(float x, float y)
+void atmo::core::InputManager::SetMousePosition(float x, float y)
 {
     SDL_WarpMouseInWindow(nullptr, x, y);
 }
 
-atmo::core::types::vector2 atmo::core::InputManager::getMousePosition()
+atmo::core::types::vector2 atmo::core::InputManager::GetMousePosition()
 {
     atmo::core::types::vector2 pos;
 
@@ -162,7 +162,7 @@ atmo::core::types::vector2 atmo::core::InputManager::getMousePosition()
     return pos;
 }
 
-void atmo::core::InputManager::handleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent)
+void atmo::core::InputManager::HandleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent)
 {
     if (keyEvent->scancode && e.scancode == keyEvent->key) {
         keyEvent->pressed = (e.type == SDL_EVENT_KEY_DOWN);
@@ -175,9 +175,7 @@ void atmo::core::InputManager::handleKeyboardEvent(const SDL_KeyboardEvent &e, s
     }
 }
 
-void atmo::core::InputManager::handleMouseButtonEvent(
-    const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent
-)
+void atmo::core::InputManager::HandleMouseButtonEvent(const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent)
 {
     if (e.button == mouseEvent->button) {
         mouseEvent->pressed = (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN);
@@ -188,47 +186,41 @@ void atmo::core::InputManager::handleMouseButtonEvent(
 }
 
 
-std::string atmo::core::InputManager::consumeText() noexcept
+std::string atmo::core::InputManager::ConsumeText() noexcept
 {
-    auto t = textBuffer;
-    textBuffer.clear();
+    auto t = instance.m_textBuffer;
+    instance.m_textBuffer.clear();
     return t;
 }
 
-void atmo::core::InputManager::startTextInput(SDL_Window *window) noexcept
+void atmo::core::InputManager::StartTextInput(SDL_Window *window) noexcept
 {
-    if (!textInput) {
+    if (!instance.m_textInput) {
         SDL_StartTextInput(window);
-        textInput = true;
+        instance.m_textInput = true;
     }
 }
 
-void atmo::core::InputManager::stopTextInput(SDL_Window *window) noexcept
+void atmo::core::InputManager::StopTextInput(SDL_Window *window) noexcept
 {
-    if (textInput) {
+    if (instance.m_textInput) {
         SDL_StopTextInput(window);
-        textInput = false;
+        instance.m_textInput = false;
     }
 }
 
-std::pair<atmo::core::types::vector2, float> atmo::core::InputManager::getScrollDelta(const std::string &inputName)
+std::pair<atmo::core::types::vector2, float> atmo::core::InputManager::GetScrollDelta(const std::string &inputName)
 {
-    auto it = inputs.find(inputName);
-    if (it == inputs.end())
+    auto it = instance.m_inputs.find(inputName);
+    if (it == instance.m_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
         if (evt->getType() == Event::Type::MouseScroll) {
             auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt);
-            return {
-                {mouseEvent->scroll.x, mouseEvent->scroll.y},
-                mouseEvent->deltaTime
-            };
+            return { { mouseEvent->scroll.x, mouseEvent->scroll.y }, mouseEvent->delta_time };
         }
     }
 
-    return {
-        {0, 0},
-        0.0f
-    };
+    return { { 0, 0 }, 0.0f };
 }
