@@ -20,8 +20,8 @@ jobs:
           sudo apt-get install -y wget gnupg software-properties-common
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 17
-          sudo ln -sf /usr/bin/clang-format-17 /usr/local/bin/clang-format
+          sudo ./llvm.sh 18
+          sudo ln -sf /usr/bin/clang-format-18 /usr/local/bin/clang-format
 
       - name: Run clang-format check
         run: |
