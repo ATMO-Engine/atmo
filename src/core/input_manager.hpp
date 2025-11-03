@@ -30,8 +30,6 @@ namespace atmo
                 bool internal = false;
             };
 
-            static InputManager instance;
-
         public:
             static void AddEvent(const std::string &inputName, Event *event);
             static void ProcessEvent(const SDL_Event &e, float deltaTime);
@@ -101,6 +99,8 @@ namespace atmo
             InputManager() = default;
             InputManager(const InputManager &) = delete;
             InputManager &operator=(const InputManager &) = delete;
+
+            static InputManager instance;
 
             static void HandleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent);
             static void HandleMouseButtonEvent(const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent);

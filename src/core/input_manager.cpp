@@ -1,6 +1,8 @@
 #include "input_manager.hpp"
 #include "spdlog/spdlog.h"
 
+atmo::core::InputManager atmo::core::InputManager::instance;
+
 void atmo::core::InputManager::AddEvent(const std::string &inputName, Event *event)
 {
     bool internal = false;
