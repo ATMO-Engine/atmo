@@ -103,6 +103,20 @@ private:
 class FileSystem
 {
 public:
+    typedef struct PackedHeader {
+        char magic[4] = { 'A', 'T', 'M', 'O' };
+        uint32_t version = 1;
+        VERSION_TYPE major, minor, patch = 0;
+        uint32_t file_count = 0;
+        uint64_t offset_to_files = 0;
+    } PackedHeader;
+
+    typedef struct PackedEntry {
+        const char *path = nullptr;
+        uint64_t offset = 0;
+        uint64_t size = 0;
+    } PackedEntry;
+
     static void SetRootPath(std::filesystem::path path)
     {
         Instance().m_root = path.parent_path();
@@ -132,7 +146,7 @@ public:
             auto it = Instance().m_index.find(relative_path.string());
             if (it != Instance().m_index.end()) {
                 const auto &entry = it->second;
-                return File(Instance().root.string() + "/" + relative_path.string(), entry.offset, entry.offset + entry.size);
+                return File(Instance().m_root.string() + "/" + relative_path.string(), entry.offset, entry.offset + entry.size);
             } else {
                 throw std::runtime_error("File not found in packed file system: " + relative_path.string());
             }
@@ -159,21 +173,8 @@ private:
     }
     std::filesystem::path m_root;
 
-    typedef struct PackedHeader {
-        char magic[4];
-        uint32_t version;
-        VERSION_TYPE major, minor, patch;
-        uint32_t file_count;
-        uint64_t offset_to_files;
-    } PackedHeader;
-
-    typedef struct PackedEntry {
-        const char *path;
-        uint64_t offset;
-        uint64_t size;
-    } PackedEntry;
-
 #if defined(ATMO_EXPORT)
+    PackedHeader header = { 0 };
     std::unordered_map<std::string, PackedEntry> m_index;
 #else
 #endif
