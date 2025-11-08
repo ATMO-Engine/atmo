@@ -68,7 +68,7 @@ namespace atmo
             std::shared_ptr<Resource> Pool::getFromHandle(const Handle &handle)
             {
                 if (handle.generation != _generations.at(handle.index)) {
-                    throw std::runtime_error("Handle périmé");
+                    throw HandleOutDated("The handle is out dated");
                 }
                 return _resources.at(handle.index);
             }
@@ -86,7 +86,7 @@ namespace atmo
             void Pool::destroy(const Handle &handle)
             {
                 if (handle.generation != _generations.at(handle.index)) {
-                    throw std::runtime_error("Handle périmé");
+                    throw HandleOutDated("The handle is out dated");
                 }
                 _resources.at(handle.index)->destroy(); // TODO: Implementer avec le système de caching (retirer la
                                                         // ressource du vecteur et l'envoyer dans le cache)

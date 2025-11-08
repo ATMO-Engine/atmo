@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 #include <functional>
 #include <memory>
 #include <string>

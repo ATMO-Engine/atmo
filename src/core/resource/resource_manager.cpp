@@ -1,8 +1,6 @@
 #include "resource_manager.hpp"
 #include <exception>
-#include <iostream>
 #include <memory>
-#include <stdexcept>
 #include "common/utils.hpp"
 #include "core/resource/resource_factory.hpp"
 
@@ -39,10 +37,9 @@ namespace atmo
                         Handle newHandle = _pools.at(extension).create(path);
                         return newHandle;
                     } else {
-                        throw std::runtime_error("No matching pool for the path given. Invalid file extension");
+                        throw InvalidLoader("No loader found for " + extension + " file");
                     }
                 } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
                     throw e;
                 }
             }
@@ -55,10 +52,9 @@ namespace atmo
                         // create Resource class through a calss that return a Resource class thanks to the path
                         return _pools.at(extension).getFromHandle(handle);
                     } else {
-                        throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
+                        throw InvalidLoader("No loader found for " + extension + " file");
                     }
                 } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
                     throw e;
                 }
             }
@@ -71,10 +67,9 @@ namespace atmo
                         // create Resource class through a class that return a Resource class thanks to the path
                         _pools.at(extension).declareHandle(handle);
                     } else {
-                        throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
+                        throw InvalidLoader("No loader found for " + extension + " file");
                     }
                 } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
                     throw e;
                 }
             }

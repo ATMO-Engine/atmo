@@ -1,6 +1,5 @@
-#include <exception>
-#include <stdexcept>
 #include <utility>
+#include <spdlog/spdlog.h>
 
 #include "core/resource/resource_factory.hpp"
 
@@ -25,7 +24,7 @@ namespace atmo
                 if (_loaders.find(fileExtension) == _loaders.end()) {
                     _loaders.insert(std::make_pair(fileExtension, loader));
                 } else {
-                    throw std::runtime_error("Loader for this extension already registered");
+                    spdlog::warn("Loader for this extenstion {} is already registered", fileExtension);
                 }
             }
 

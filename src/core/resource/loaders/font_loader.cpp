@@ -28,7 +28,8 @@ namespace atmo
                         throw std::runtime_error("Failed to load font: " + path);
                     }
                 } catch (const std::exception &e) {
-                    throw e;
+                    std::string expCatch = e.what();
+                    throw LoadException("catched " + expCatch + "during font loading");
                 }
             }
 
