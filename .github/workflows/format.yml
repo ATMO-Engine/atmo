@@ -20,10 +20,9 @@ jobs:
           sudo apt-get install -y wget gnupg
           wget https://apt.llvm.org/llvm.sh
 
-      - name: Install clang-format 21.1
+      - name: Install clang-format 21
         run: |
           sudo apt-get install -y clang-format-21
-          sudo ln -s clang-format-21 /usr/bin/clang-format
           clang-format-21 --version
 
       - name: Run clang-format check
@@ -31,7 +30,7 @@ jobs:
           FILES=$(find src/ -name '*.[ch]pp' -o -name '*.[ch]')
           FORMAT_ERRORS=0
           for FILE in $FILES; do
-            if ! clang-format -style=file "$FILE" | diff -u "$FILE" - > /dev/null; then
+            if ! clang-format-21 -style=file "$FILE" | diff -u "$FILE" - > /dev/null; then
               echo "Formatting issue in $FILE"
               FORMAT_ERRORS=1
             fi
