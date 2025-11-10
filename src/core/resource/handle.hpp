@@ -11,10 +11,9 @@ namespace atmo
         {
             struct Handle
             {
-                std::string path;
+                std::string path; // complete path of the resource the handle handles
                 std::uint16_t index;
                 std::uint16_t generation;
-                std::uint16_t frameToLive;
             };
         } // namespace resource
     } // namespace core

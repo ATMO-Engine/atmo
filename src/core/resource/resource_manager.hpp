@@ -19,7 +19,7 @@ namespace atmo
             class ResourceManager
             {
             public:
-                static ResourceManager &getInstance();
+                static ResourceManager &GetInstance();
 
                 ~ResourceManager() = default;
 
@@ -46,12 +46,17 @@ namespace atmo
                  * @param handle handle to be stored inside his pool
                  */
                 void declareHandle(const Handle &handle);
+
+                /**
+                 * @brief Clear unused handles
+                 */
+                void clear();
             private:
                 ResourceManager();
                 ResourceManager &operator=(const ResourceManager &) = delete;
 
-                ResourceFactory &_factory;
-                std::unordered_map<std::string, Pool> _pools;
+                ResourceFactory &m_factory;
+                std::unordered_map<std::string, Pool> m_pools;
             };
         } // namespace resource
     } // namespace core

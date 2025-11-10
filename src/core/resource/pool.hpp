@@ -26,13 +26,14 @@ namespace atmo
 
                 void declareHandle(const Handle &handle);
                 void destroy(const Handle &handle);
+                void clear();
             private:
-                std::vector<Handle> _usedHandles;
-                std::unordered_map<std::string, Handle> _handles;
+                std::vector<std::string> m_usedHandles; // when adding a handle to this vecteur, add the ".path" value of the handle
+                std::unordered_map<std::string, Handle> m_handles;
 
-                std::vector<std::shared_ptr<Resource>> _resources;
-                std::vector<std::uint16_t> _generations;
-                std::vector<std::uint16_t> _freeList;
+                std::vector<std::shared_ptr<Resource>> m_resources;
+                std::vector<std::uint16_t> m_generations;
+                std::vector<std::uint16_t> m_freeList;
             };
         } // namespace resource
     } // namespace core
