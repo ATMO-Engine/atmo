@@ -19,12 +19,12 @@ namespace atmo
         {
             using LoaderTypes = std::tuple<ImageLoader, ScriptLoader, FontLoader>;
 
-            ResourceManager::ResourceManager() : _factory(ResourceFactory::getInstance())
+            ResourceManager::ResourceManager() : m_factory(ResourceFactory::getInstance())
             {
-                _pools = makePoolMap<LoaderTypes>();
+                m_pools = makePoolMap<LoaderTypes>();
             }
 
-            ResourceManager &ResourceManager::getInstance()
+            ResourceManager &ResourceManager::GetInstance()
             {
                 static ResourceManager instance;
                 return instance;
@@ -35,8 +35,8 @@ namespace atmo
             {
                 std::string extension = atmo::common::Utils::splitString(path, '.').back();
                 try {
-                    if (_pools.find(extension) != _pools.end()) {
-                        Handle newHandle = _pools.at(extension).create(path);
+                    if (m_pools.find(extension) != m_pools.end()) {
+                        Handle newHandle = m_pools.at(extension).create(path);
                         return newHandle;
                     } else {
                         throw std::runtime_error("No matching pool for the path given. Invalid file extension");
@@ -51,9 +51,9 @@ namespace atmo
             {
                 std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
                 try {
-                    if (_pools.find(extension) != _pools.end()) {
+                    if (m_pools.find(extension) != m_pools.end()) {
                         // create Resource class through a calss that return a Resource class thanks to the path
-                        return _pools.at(extension).getFromHandle(handle);
+                        return m_pools.at(extension).getFromHandle(handle);
                     } else {
                         throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
                     }
@@ -67,15 +67,22 @@ namespace atmo
             {
                 std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
                 try {
-                    if (_pools.find(extension) != _pools.end()) {
+                    if (m_pools.find(extension) != m_pools.end()) {
                         // create Resource class through a class that return a Resource class thanks to the path
-                        _pools.at(extension).declareHandle(handle);
+                        m_pools.at(extension).declareHandle(handle);
                     } else {
                         throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
                     std::cout << e.what() << std::endl;
                     throw e;
+                }
+            }
+
+            void ResourceManager::clear()
+            {
+                for (auto pool : m_pools) {
+                    pool.second.clear();
                 }
             }
         } // namespace resource

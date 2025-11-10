@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include "common/utils.hpp"
 #include "core/resource/resource.hpp"
@@ -18,11 +19,11 @@ namespace atmo
         {
             Pool::Pool()
             {
-                _usedHandles = {};
-                _handles = {};
-                _resources = {};
-                _generations = {};
-                _freeList = {};
+                m_usedHandles = {};
+                m_handles = {};
+                m_resources = {};
+                m_generations = {};
+                m_freeList = {};
             }
 
             Pool::~Pool() {}
@@ -30,8 +31,8 @@ namespace atmo
             const Handle Pool::create(const std::string &path)
             {
                 try {
-                    if (_handles.find(path) != _handles.end()) {
-                        return _handles.at(path);
+                    if (m_handles.find(path) != m_handles.end()) {
+                        return m_handles.at(path);
                     }
 
                     std::string extension = atmo::common::Utils::splitString(path, '.').back();
@@ -40,24 +41,24 @@ namespace atmo
                     res->load(path);
 
                     Handle newHandle = {};
-                    newHandle.frameToLive = 1; // TODO: Définir un nombre de frame durant lequel la ressource peut vivre
-                                               // même sans être appelé
                     newHandle.path = path;
 
-                    if (!_freeList.empty()) {
-                        std::uint16_t idx = _freeList.back();
-                        _freeList.pop_back();
-                        _resources.at(idx) = res;
-                        newHandle.generation = _generations.at(idx);
+                    if (!m_freeList.empty()) {
+                        std::uint16_t idx = m_freeList.back();
+                        m_freeList.pop_back();
+                        m_resources.at(idx) = res;
+                        newHandle.generation = m_generations.at(idx);
                         newHandle.index = idx;
                     } else {
-                        newHandle.index = _resources.size();
+                        newHandle.index = m_resources.size();
                         newHandle.generation = 1;
-                        _resources.push_back(res);
-                        _generations.push_back(newHandle.generation);
+                        m_resources.push_back(res);
+                        m_generations.push_back(newHandle.generation);
                     }
 
-                    _handles.insert(std::make_pair(path, newHandle));
+                    m_handles.insert(std::make_pair(path, newHandle));
+
+                    declareHandle(newHandle);
 
                     return newHandle;
                 } catch (const std::exception &e) {
@@ -67,31 +68,46 @@ namespace atmo
 
             std::shared_ptr<Resource> Pool::getFromHandle(const Handle &handle)
             {
-                if (handle.generation != _generations.at(handle.index)) {
+                if (handle.generation != m_generations.at(handle.index)) {
                     throw std::runtime_error("Handle périmé");
                 }
-                return _resources.at(handle.index);
+                return m_resources.at(handle.index);
             }
 
             void Pool::declareHandle(const Handle &handle)
             {
-                auto it = std::find_if(_usedHandles.begin(), _usedHandles.end(), [&handle](const Handle &h) {
-                    return handle.path == h.path;
+                auto path = handle.path;
+                auto it = std::find_if(m_usedHandles.begin(), m_usedHandles.end(), [&path](const std::string &h) {
+                    return path == h;
                 });
-                if (it != _usedHandles.end()) {
-                    _usedHandles.push_back(handle);
+                if (it != m_usedHandles.end()) {
+                    m_usedHandles.push_back(handle.path);
                 }
+            }
+
+            void Pool::clear()
+            {
+                std::unordered_set<std::string> toKeep(m_usedHandles.begin(), m_usedHandles.end());
+                for (auto it = m_handles.begin(); it != m_handles.end();) {
+                    if (toKeep.find(it->first) == toKeep.end()) {
+                        destroy(it->second);
+                        it = m_handles.erase(it);
+                    } else {
+                        it++;
+                    }
+                }
+                m_usedHandles.clear();
             }
 
             void Pool::destroy(const Handle &handle)
             {
-                if (handle.generation != _generations.at(handle.index)) {
+                if (handle.generation != m_generations.at(handle.index)) {
                     throw std::runtime_error("Handle périmé");
                 }
-                _resources.at(handle.index)->destroy(); // TODO: Implementer avec le système de caching (retirer la
+                m_resources.at(handle.index)->destroy(); // TODO: Implementer avec le système de caching (retirer la
                                                         // ressource du vecteur et l'envoyer dans le cache)
-                _generations.at(handle.index) += 1;
-                _freeList.push_back(handle.index);
+                m_generations.at(handle.index) += 1;
+                m_freeList.push_back(handle.index);
             }
         } // namespace resource
     } // namespace core
