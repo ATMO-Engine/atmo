@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <exception>
 #include <string>
 
 namespace atmo
@@ -15,6 +16,27 @@ namespace atmo
             class Resource
             {
             public:
+                class LoadException : public std::exception {
+                    public:
+                        LoadException(const std::string &msg) : m_message("Load exception: " + msg) {};
+                        const char *what() const noexcept override{
+                            return m_message.c_str();
+                        }
+                    private:
+                        std::string m_message;
+                };
+
+                class DestroyException : public std::exception {
+                    public:
+                        DestroyException(const std::string &msg) : m_message("Destroy exception: " + msg){};
+                        const char *what() const noexcept override{
+                            return m_message.c_str();
+                        }
+                    private:
+                        std::string m_message;
+                };
+
+
                 virtual ~Resource() = default;
 
                 virtual void load(const std::string &path) = 0;
