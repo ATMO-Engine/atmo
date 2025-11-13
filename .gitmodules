@@ -28,3 +28,6 @@
 [submodule "submodules/semver"]
 	path = submodules/semver
 	url = git@github.com:Neargye/semver.git
+[submodule "submodules/box2d"]
+	path = submodules/box2d
+	url = git@github.com:erincatto/box2d.git

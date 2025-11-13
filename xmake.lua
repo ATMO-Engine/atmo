@@ -211,6 +211,10 @@ package("semver")
     end)
 package_end()
 
+package("box2d")
+    
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },

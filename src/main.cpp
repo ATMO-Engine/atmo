@@ -55,7 +55,7 @@ static void loop()
 #else // export mode
     throw std::runtime_error("Not implemented yet.");
     while (g_engine->getECS().progress()) {
-        atmo::core::InputManager::instance().tick();
+        atmo::core::InputManager::Tick();
     }
 #endif
 }
@@ -71,9 +71,9 @@ int main(int argc, char **argv)
     FileSystem::SetRootPath(get_executable_path());
     spdlog::info("Executable Path: {}", FileSystem::GetRootPath().string());
 
-    atmo::core::InputManager::AddEvent("#INTERNAL#ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT));
+    atmo::core::InputManager::AddEvent("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
 
-    atmo::core::InputManager::AddEvent("#INTERNAL#ui_scroll", new atmo::core::InputManager::MouseScrollEvent());
+    atmo::core::InputManager::AddEvent("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
 
     // auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
     // atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);

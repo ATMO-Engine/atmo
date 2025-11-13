@@ -12,7 +12,7 @@ namespace atmo
     {
         namespace ecs
         {
-            typedef flecs::entity Entity;
+            using Entity = flecs::entity;
 
             class ECS
             {
