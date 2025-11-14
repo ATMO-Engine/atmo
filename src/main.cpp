@@ -1,12 +1,15 @@
+#include <csignal>
+#include <filesystem>
+#include <iostream>
+#include <string>
 #include "atmo.hpp"
 #include "core/ecs/components.hpp"
+#include "core/event/Ievent.hpp"
+#include "core/event/event_dispatcher.hpp"
+#include "core/event/exemple_listener.hpp"
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
-
-#include <csignal>
-#include <filesystem>
-#include <string>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -60,6 +63,21 @@ static void loop()
 #endif
 }
 
+// Example event class test
+class OtherEvent : public atmo::core::event::IEvent
+{
+public:
+    OtherEvent(int value) : m_value(value) {}
+    int getValue() const
+    {
+        return m_value;
+    }
+
+private:
+    int m_value;
+};
+
+
 int main(int argc, char **argv)
 {
     atmo::core::Engine engine;
@@ -75,6 +93,36 @@ int main(int argc, char **argv)
 
     atmo::core::InputManager::AddEvent("#INTERNAL#ui_scroll", new atmo::core::InputManager::MouseScrollEvent());
 
+    std::cout << "Dispatching EventExemple with value 42" << std::endl;
+
+    atmo::core::event::EventExemple event(42);
+    atmo::core::event::ExempleListener listener;
+
+    std::cout << "Basic dispatch test:" << std::endl;
+    atmo::core::event::EventDispatcher::getInstance().dispatch<atmo::core::event::EventExemple>(event);
+    std::cout << "Listener called: " << (listener.called ? "true" : "false") << std::endl;
+
+    listener.called = false;
+
+    std::cout << "Dispatching OtherEvent test" << std::endl;
+    atmo::core::event::EventDispatcher::getInstance().dispatch<OtherEvent>(event);
+    std::cout << "Listener called: " << (listener.called ? "true" : "false") << std::endl;
+
+    listener.called = false;
+
+    std::cout << "Unsubscribing and dispatching EventExemple again" << std::endl;
+    atmo::core::event::EventDispatcher::getInstance().unsubscribe<atmo::core::event::EventExemple>(listener);
+    atmo::core::event::EventDispatcher::getInstance().dispatch<atmo::core::event::EventExemple>(event);
+    std::cout << "Listener called: " << (listener.called ? "true" : "false") << std::endl;
+
+    std::cout << "EventExemple ID  : " << atmo::core::event::event_id<atmo::core::event::EventExemple>() << "\n";
+    std::cout << "OtherEvent ID    : " << atmo::core::event::event_id<OtherEvent>() << "\n";
+
+    if (atmo::core::event::event_id<atmo::core::event::EventExemple>() == atmo::core::event::event_id<OtherEvent>()) {
+        std::cout << "IDs identiques";
+    } else {
+        std::cout << "IDs différents.\n";
+    }
     // auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
     // atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
     // wm->rename("Atmo Engine");
