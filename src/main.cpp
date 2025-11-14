@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(window);
-    sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    sprite.set<atmo::core::components::Sprite2D>({ "/Users/kapsulon/atmo/assets/atmo.png" });
     sprite.get_mut<atmo::core::components::Transform2D>().position = { 100.0f, 100.0f };
 
     while (g_engine->getECS().progress()) {

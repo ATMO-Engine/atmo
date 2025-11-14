@@ -59,10 +59,13 @@ void atmo::core::ecs::ECS::loadPrefabs()
     }
 
     { // Sprite2D
-        auto sprite2DPrefab = Prefab(m_world, "sprite2d").set<components::Transform2D>({}).set<components::Sprite2D>({ "" });
+        m_world.observer<components::Sprite2D>("Sprite2D_LoadTexture").event(flecs::OnSet).each([](flecs::entity e, components::Sprite2D &sprite) {
+            if (sprite.texture_path.empty())
+                return;
 
-        m_world.system<components::Sprite2D>("Sprite2D_LoadTexture").kind(flecs::OnSet).each([](flecs::entity e, components::Sprite2D &sprite) {
             sprite.m_handle = atmo::core::resource::ResourceManager::getInstance().generate(sprite.texture_path);
+
+            spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
 
             auto res = atmo::core::resource::ResourceManager::getInstance().getResource(sprite.m_handle);
             auto surface = std::any_cast<SDL_Surface *>(res->get());
@@ -78,6 +81,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
                 sprite.m_dest_rect.h = sprite.texture_size.y * transform.g_scale.y;
             });
 
+        // TODO: write a 2d renderer queue
         m_world.system<components::Sprite2D, components::Transform2D, core::ComponentManager::Managed, core::components::Window>("Sprite2D_Render")
             .kind(flecs::OnValidate)
             .term_at(3)
@@ -89,6 +93,15 @@ void atmo::core::ecs::ECS::loadPrefabs()
                      core::components::Window &window) {
                 auto wm = static_cast<impl::WindowManager *>(manager.ptr);
 
+                spdlog::debug(
+                    "Rendering Sprite2D for entity {}: texture_path='{}', position=({}, {}), size=({}, {})",
+                    e.name().c_str(),
+                    sprite.texture_path,
+                    sprite.m_dest_rect.x,
+                    sprite.m_dest_rect.y,
+                    sprite.m_dest_rect.w,
+                    sprite.m_dest_rect.h);
+
                 if (!sprite.m_handle.frameToLive)
                     return;
 
@@ -96,9 +109,11 @@ void atmo::core::ecs::ECS::loadPrefabs()
                 if (!texture)
                     return;
 
+                spdlog::info("Rendering Sprite2D: {} at position ({}, {})", e.name().c_str(), sprite.m_dest_rect.x, sprite.m_dest_rect.y);
                 SDL_RenderTexture(wm->getRenderer(), texture, nullptr, &sprite.m_dest_rect);
             });
 
+        auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
         addPrefab(sprite2DPrefab);
     }
 }
