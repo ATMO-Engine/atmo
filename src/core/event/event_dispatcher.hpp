@@ -1,9 +1,11 @@
 #pragma once
 
-#include <functional>
-#include <string_view>
+#include <algorithm>
+#include <cstdint>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
+
 #include "Ievent.hpp"
 #include "Ievent_listener.hpp"
 
@@ -24,20 +26,22 @@ namespace atmo
             class EventDispatcher
             {
             public:
-                EventDispatcher() = default;
-                ~EventDispatcher() = default;
+                static EventDispatcher &getInstance() noexcept;
+
                 template <typename EventType> void subscribe(IListener &listener)
                 {
                     EventId id = event_id<EventType>();
                     m_table[id].push_back(&listener);
                 }
+
                 template <typename EventType> void unsubscribe(IListener &listener)
                 {
                     EventId id = event_id<EventType>();
                     auto &listeners = m_table[id];
                     listeners.erase(std::remove(listeners.begin(), listeners.end(), &listener), listeners.end());
                 }
-                template <typename EventType> void dispatch(IEvent &event) const
+
+                template <typename EventType> void dispatch(const IEvent &event) const
                 {
                     EventId id = event_id<EventType>();
                     if (m_table.find(id) != m_table.end()) {
@@ -48,6 +52,8 @@ namespace atmo
                 }
 
             private:
+                EventDispatcher() = default;
+                ~EventDispatcher() = default;
                 std::unordered_map<EventId, std::vector<IListener *>> m_table;
             };
         } // namespace event
