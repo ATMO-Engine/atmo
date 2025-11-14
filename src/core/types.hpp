@@ -59,11 +59,9 @@ namespace atmo
                 ecs.component<types::vector2i>().member<int>("x").member<int>("y");
                 ecs.component<types::vector3>().member<float>("x").member<float>("y").member<float>("z");
                 ecs.component<types::vector3i>().member<int>("x").member<int>("y").member<int>("z");
-                ecs.component<types::vector4>().member<float>("x").member<float>("y").member<float>("z").member<float>(
-                    "w");
+                ecs.component<types::vector4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
                 ecs.component<types::vector4i>().member<int>("x").member<int>("y").member<int>("z").member<int>("w");
-                ecs.component<types::rgba>().member<float>("r").member<float>("g").member<float>("b").member<float>(
-                    "a");
+                ecs.component<types::rgba>().member<float>("r").member<float>("g").member<float>("b").member<float>("a");
             }
         } // namespace types
     } // namespace core

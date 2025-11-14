@@ -3,6 +3,7 @@
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
+#include "spdlog/spdlog.h"
 
 #include <csignal>
 #include <filesystem>
@@ -62,6 +63,9 @@ static void loop()
 
 int main(int argc, char **argv)
 {
+    // TODO: remove later
+    spdlog::set_level(spdlog::level::debug);
+
     atmo::core::Engine engine;
     g_engine = &engine;
 
@@ -69,22 +73,26 @@ int main(int argc, char **argv)
     std::signal(SIGTERM, [](int signum) { g_engine->stop(); });
 
     FileSystem::SetRootPath(get_executable_path());
-    spdlog::info("Executable Path: {}", FileSystem::GetRootPath().string());
+    spdlog::debug("Executable Path: {}", FileSystem::GetRootPath().string());
 
     atmo::core::InputManager::AddEvent("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
 
     atmo::core::InputManager::AddEvent("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
 
-    // auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
-    // atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
-    // wm->rename("Atmo Engine");
-    // wm->make_main();
+    // loop();
 
-    // while (g_engine->getECS().progress()) {
-    //     atmo::core::InputManager::instance().tick();
-    // }
+    auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
+    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
+    wm->rename("Atmo Engine");
+    wm->make_main();
 
-    loop();
+    // auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
+    // sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    // sprite.get_mut<atmo::core::components::Transform2D>().position = { 100.0f, 100.0f };
+
+    while (g_engine->getECS().progress()) {
+        atmo::core::InputManager::Tick();
+    }
 
     return 0;
 }

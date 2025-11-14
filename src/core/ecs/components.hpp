@@ -2,12 +2,15 @@
 
 #include <cstdint>
 #include <cstdlib>
-#include <flecs.h>
-
-#include <spdlog/spdlog.h>
 #include <string>
+
+#include <box2d/box2d.h>
+#include <flecs.h>
+#include <spdlog/spdlog.h>
+#include "SDL3/SDL_rect.h"
 #include "clay.h"
 
+#include "core/resource/handle.hpp"
 #include "core/types.hpp"
 #include "luau/luau.hpp"
 
@@ -36,8 +39,6 @@ namespace atmo
         public:
             virtual ~ComponentManager() = default;
 
-            static void RegisterSystems(flecs::world ecs) {}
-
             struct Managed {
                 ComponentManager *ptr;
             };
@@ -55,6 +56,26 @@ namespace atmo
                 return registry;
             }
 
+            struct Transform2D {
+                types::vector2 position{ 0.0f, 0.0f };
+                types::vector2 g_position{ 0.0f, 0.0f };
+
+                float rotation{ 0.0f };
+                float g_rotation{ 0.0f };
+
+                types::vector2 scale{ 1.0f, 1.0f };
+                types::vector2 g_scale{ 1.0f, 1.0f };
+            };
+            BEGIN_REFLECT(Transform2D)
+            FIELD(position)
+            FIELD(rotation)
+            FIELD(scale)
+            END_REFLECT(Transform2D)
+
+            struct PhysicsBody2D {
+                b2BodyId body_id{ b2_nullBodyId };
+            };
+
             struct Window {
                 std::string title;
                 types::vector2i size;
@@ -70,6 +91,16 @@ namespace atmo
             BEGIN_REFLECT(Script)
             FIELD(file)
             END_REFLECT(Script)
+
+            struct Sprite2D {
+                std::string texture_path;
+                resource::Handle m_handle;
+                SDL_FRect m_dest_rect{ 0, 0, 0, 0 };
+                types::vector2 texture_size{ 0.0f, 0.0f };
+            };
+            BEGIN_REFLECT(Sprite2D)
+            FIELD(texture_path)
+            END_REFLECT(Sprite2D)
 
             namespace UI
             {

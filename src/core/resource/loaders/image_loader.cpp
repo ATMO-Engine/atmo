@@ -1,4 +1,5 @@
 #include <exception>
+#include "SDL3_image/SDL_image.h"
 
 #include "core/resource/loaders/image_loader.hpp"
 
@@ -14,27 +15,32 @@ namespace atmo
 
             ImageLoader::~ImageLoader()
             {
-                _texture.clear();
+                destroy();
             }
 
             void ImageLoader::load(const std::string &path)
             {
                 try {
-                    _texture = std::string("test string loaded");
-                }
-                catch (const std::exception &e) {
+                    _surface = IMG_Load(path.c_str());
+                    if (!_surface) {
+                        throw std::runtime_error(std::string("Failed to load image: ") + SDL_GetError());
+                    }
+                } catch (const std::exception &e) {
                     throw e;
                 }
             }
 
             std::any ImageLoader::get()
             {
-                return std::make_any<std::string>(_texture);
+                return std::make_any<SDL_Surface *>(_surface);
             }
 
             void ImageLoader::destroy()
             {
-                _texture.clear();
+                if (_surface) {
+                    SDL_DestroySurface(_surface);
+                    _surface = nullptr;
+                }
             }
         } // namespace resource
     } // namespace core

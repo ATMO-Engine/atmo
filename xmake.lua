@@ -212,7 +212,13 @@ package("semver")
 package_end()
 
 package("box2d")
-    
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "box2d"))
+    on_install(function(package)
+        local configs = {"-DBOX2D_BUILD_UNIT_TESTS=OFF", "-DBOX2D_BUILD_TESTBED=OFF", "-DBOX2D_BUILD_EXAMPLES=OFF"}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+        import("package.tools.cmake").install(package, configs)
+    end)
 package_end()
 
 add_requires(
@@ -225,7 +231,8 @@ add_requires(
     "libsdl3_image", { system = false },
     "clay", { system = false },
     "catch2", { system = false },
-    "semver", { system = false }
+    "semver", { system = false },
+    "box2d", { system = false }
 )
 
 function platform_specifics()
@@ -263,11 +270,12 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d")
 end
 
 target("atmo")
     set_kind("binary")
+    set_default(true)
     packages()
     add_files("src/**.cpp")
     add_includedirs("src")

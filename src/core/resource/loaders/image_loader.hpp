@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDL3/SDL_render.h"
 #include "core/resource/resource.hpp"
 #include "core/resource/resource_register.hpp"
 
@@ -19,13 +20,14 @@ namespace atmo
                 void destroy() override;
 
                 std::any get() override;
+
             private:
-                std::string _texture;
+                SDL_Surface *_surface;
+
                 static LoaderRegister<ImageLoader> _register;
             };
 
-            template<>
-            struct LoaderExtension<ImageLoader> {
+            template <> struct LoaderExtension<ImageLoader> {
                 static constexpr const char *extension = "png";
             };
         } // namespace resource

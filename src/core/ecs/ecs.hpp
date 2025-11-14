@@ -5,6 +5,7 @@
 #include <string>
 
 #include "components.hpp"
+#include "prefab.hpp"
 
 namespace atmo
 {
@@ -18,7 +19,9 @@ namespace atmo
             {
             private:
                 flecs::world m_world;
-                std::map<std::string, flecs::entity> m_prefabs;
+                std::map<std::string, Prefab> m_prefabs;
+
+                void loadPrefabs();
 
             public:
                 ECS();
@@ -26,25 +29,7 @@ namespace atmo
                 void stop();
                 void reset();
 
-                template <typename M> inline flecs::entity createManagedPrefab(const std::string &name)
-                {
-                    M::RegisterSystems(m_world);
-                    auto prefab = m_world.prefab(name.c_str()).set(ComponentManager::Managed{ nullptr });
-
-                    m_world.observer<ComponentManager::Managed>()
-                        .event(flecs::OnAdd)
-                        .with(flecs::IsA, prefab)
-                        .each([](flecs::entity e, ComponentManager::Managed &m) { m.ptr = new M(e); });
-
-                    m_world.observer<ComponentManager::Managed>()
-                        .event(flecs::OnRemove)
-                        .with(flecs::IsA, prefab)
-                        .each([](flecs::entity e, ComponentManager::Managed &m) { delete m.ptr; });
-
-                    return prefab;
-                }
-
-                void loadPrefabs();
+                void addPrefab(Prefab &prefab);
 
                 Entity instantiatePrefab(const std::string &name, const std::string &instance_name = "");
 

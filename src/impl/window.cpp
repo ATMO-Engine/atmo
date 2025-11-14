@@ -86,6 +86,11 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
     }
 }
 
+void atmo::impl::WindowManager::beginDraw()
+{
+    SDL_RenderClear(rendererData.renderer);
+}
+
 void atmo::impl::WindowManager::draw()
 {
     if (core::InputManager::IsJustPressed("ui_click")) {
@@ -111,7 +116,6 @@ void atmo::impl::WindowManager::draw()
     auto commands = Clay_EndLayout();
 
     SDL_SetRenderDrawColor(rendererData.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(rendererData.renderer);
 
     SDL_Clay_RenderClayCommands(&rendererData, &commands);
 
