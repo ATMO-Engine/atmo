@@ -29,7 +29,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
 {
     m_world.system<components::Transform2D, components::Transform2D>("Transform2D_GenerateGlobal")
         .kind(flecs::PreUpdate)
-        .term_at(2)
+        .term_at(1)
         .cascade(flecs::ChildOf)
         .each([](flecs::entity e, components::Transform2D &t, const components::Transform2D &parent_t) {
             t.g_position = { parent_t.g_position.x + t.position.x, parent_t.g_position.y + t.position.y };
@@ -38,7 +38,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
         });
 
     { // Window
-        auto windowPrefab = Prefab("window").managed<impl::WindowManager>(components::Window{ "Atmo Managed Window", { 800, 600 } });
+        auto windowPrefab = Prefab(m_world, "window").managed<impl::WindowManager>(components::Window{ "Atmo Managed Window", { 800, 600 } });
 
         m_world.system<core::ComponentManager::Managed, core::components::Window>("PollEvents")
             .kind(flecs::PreUpdate)
@@ -59,7 +59,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
     }
 
     { // Sprite2D
-        auto sprite2DPrefab = Prefab("sprite2d").set<components::Transform2D>({}).set<components::Sprite2D>({ "" });
+        auto sprite2DPrefab = Prefab(m_world, "sprite2d").set<components::Transform2D>({}).set<components::Sprite2D>({ "" });
 
         m_world.system<components::Sprite2D>("Sprite2D_LoadTexture").kind(flecs::OnSet).each([](flecs::entity e, components::Sprite2D &sprite) {
             sprite.m_handle = atmo::core::resource::ResourceManager::getInstance().generate(sprite.texture_path);
@@ -81,8 +81,6 @@ void atmo::core::ecs::ECS::loadPrefabs()
         m_world.system<components::Sprite2D, components::Transform2D, core::ComponentManager::Managed, core::components::Window>("Sprite2D_Render")
             .kind(flecs::OnValidate)
             .term_at(3)
-            .cascade(flecs::ChildOf)
-            .term_at(4)
             .cascade(flecs::ChildOf)
             .each([](flecs::entity e,
                      components::Sprite2D &sprite,

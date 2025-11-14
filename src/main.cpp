@@ -82,13 +82,14 @@ int main(int argc, char **argv)
     // loop();
 
     auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
-    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
+    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
     wm->rename("Atmo Engine");
     wm->make_main();
 
-    // auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
-    // sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
-    // sprite.get_mut<atmo::core::components::Transform2D>().position = { 100.0f, 100.0f };
+    auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
+    sprite.child_of(window);
+    sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    sprite.get_mut<atmo::core::components::Transform2D>().position = { 100.0f, 100.0f };
 
     while (g_engine->getECS().progress()) {
         atmo::core::InputManager::Tick();

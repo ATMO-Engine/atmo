@@ -34,8 +34,9 @@ namespace atmo
             public:
                 std::string name;
                 flecs::entity entity;
+                flecs::world &world;
 
-                Prefab(const std::string &name) : name(name), entity(flecs::world().prefab(name.c_str())) {}
+                Prefab(flecs::world &world, const std::string &name) : name(name), entity(world.prefab(name.c_str())), world(world) {}
                 ~Prefab() = default;
 
                 template <typename M> inline Prefab &set(const M &component)
@@ -50,21 +51,20 @@ namespace atmo
                     return *this;
                 }
 
-                template <typename Manager, typename Managed> inline Prefab managed(const Managed &component)
+                template <typename Manager, typename Managed> inline Prefab managed(Managed component)
                 {
-                    entity.world()
-                        .observer<ComponentManager::Managed>()
+                    world.observer<ComponentManager::Managed>()
                         .event(flecs::OnAdd)
                         .with(flecs::IsA, entity)
                         .each([](flecs::entity e, ComponentManager::Managed &m) { m.ptr = new Manager(e); });
 
-                    entity.world()
-                        .observer<ComponentManager::Managed>()
+                    world.observer<ComponentManager::Managed>()
                         .event(flecs::OnRemove)
                         .with(flecs::IsA, entity)
                         .each([](flecs::entity e, ComponentManager::Managed &m) { delete m.ptr; });
 
                     entity.set(component);
+                    entity.add<ComponentManager::Managed>();
 
                     return *this;
                 }
