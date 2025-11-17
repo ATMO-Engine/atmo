@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Ievent.hpp"
 #include "Ievent_listener.hpp"
 
 namespace atmo
@@ -41,7 +40,7 @@ namespace atmo
                     listeners.erase(std::remove(listeners.begin(), listeners.end(), &listener), listeners.end());
                 }
 
-                template <typename EventType> void dispatch(const IEvent &event) const
+                template <typename EventType> void dispatch(const EventType &event) const
                 {
                     EventId id = event_id<EventType>();
                     if (m_table.find(id) != m_table.end()) {
