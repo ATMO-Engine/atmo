@@ -25,34 +25,36 @@ namespace atmo
             class EventDispatcher
             {
             public:
-                static EventDispatcher &getInstance() noexcept;
-
-                template <typename EventType> void subscribe(IListener &listener)
+                template <typename EventType> static void Subscribe(IListener &listener)
                 {
                     EventId id = event_id<EventType>();
-                    m_table[id].push_back(&listener);
+                    getInstance().m_table[id].push_back(&listener);
                 }
 
-                template <typename EventType> void unsubscribe(IListener &listener)
+                template <typename EventType> static void Unsubscribe(IListener &listener)
                 {
                     EventId id = event_id<EventType>();
-                    auto &listeners = m_table[id];
+                    auto &listeners = getInstance().m_table[id];
                     listeners.erase(std::remove(listeners.begin(), listeners.end(), &listener), listeners.end());
                 }
 
-                template <typename EventType> void dispatch(const EventType &event) const
+                template <typename EventType> static void Dispatch(const EventType *event)
                 {
                     EventId id = event_id<EventType>();
-                    if (m_table.find(id) != m_table.end()) {
-                        for (auto listener : m_table.at(id)) {
+                    if (getInstance().m_table.find(id) != getInstance().m_table.end()) {
+                        for (auto listener : getInstance().m_table.at(id)) {
                             listener->onEvent(event);
+                            if (event->isConsumed())
+                                break;
                         }
                     }
+                    delete event;
                 }
 
             private:
                 EventDispatcher() = default;
                 ~EventDispatcher() = default;
+                static EventDispatcher &getInstance();
                 std::unordered_map<EventId, std::vector<IListener *>> m_table;
             };
         } // namespace event

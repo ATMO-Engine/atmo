@@ -6,7 +6,7 @@ namespace atmo
     {
         namespace event
         {
-            EventDispatcher &EventDispatcher::getInstance() noexcept
+            EventDispatcher &EventDispatcher::getInstance()
             {
                 static EventDispatcher instance;
                 return instance;
