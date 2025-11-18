@@ -3,6 +3,8 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <string>
+#include <utility>
 #include "common/utils.hpp"
 #include "core/resource/resource_factory.hpp"
 
@@ -21,7 +23,7 @@ namespace atmo
 
             ResourceManager::ResourceManager() : m_factory(ResourceFactory::getInstance())
             {
-                m_pools = makePoolMap<LoaderTypes>();
+                m_pools = std::move(makePoolMap<LoaderTypes>());
             }
 
             ResourceManager &ResourceManager::GetInstance()
@@ -37,6 +39,7 @@ namespace atmo
                 try {
                     if (m_pools.find(extension) != m_pools.end()) {
                         Handle newHandle = m_pools.at(extension).create(path);
+                        m_pools.at(extension).declareHandle(newHandle);
                         return newHandle;
                     } else {
                         throw std::runtime_error("No matching pool for the path given. Invalid file extension");
@@ -52,7 +55,8 @@ namespace atmo
                 std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
                 try {
                     if (m_pools.find(extension) != m_pools.end()) {
-                        // create Resource class through a calss that return a Resource class thanks to the path
+                        // TODO: if we decide that this function can generate a resource call the generate method
+                        m_pools.at(extension).declareHandle(handle);
                         return m_pools.at(extension).getFromHandle(handle);
                     } else {
                         throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
@@ -81,7 +85,7 @@ namespace atmo
 
             void ResourceManager::clear()
             {
-                for (auto pool : m_pools) {
+                for (std::pair<const std::string, Pool> &pool : m_pools) {
                     pool.second.clear();
                 }
             }

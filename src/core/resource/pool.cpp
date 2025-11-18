@@ -1,7 +1,9 @@
 #include "core/resource/pool.hpp"
 #include <algorithm>
+#include <basetsd.h>
 #include <exception>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -24,6 +26,9 @@ namespace atmo
                 m_resources = {};
                 m_generations = {};
                 m_freeList = {};
+
+                m_resourceMutex = std::make_unique<std::mutex>();
+                m_handleManagementMutex = std::make_unique<std::mutex>();
             }
 
             Pool::~Pool() {}
@@ -31,6 +36,8 @@ namespace atmo
             const Handle Pool::create(const std::string &path)
             {
                 try {
+                    std::scoped_lock lock(*m_resourceMutex);
+
                     if (m_handles.find(path) != m_handles.end()) {
                         return m_handles.at(path);
                     }
@@ -58,8 +65,6 @@ namespace atmo
 
                     m_handles.insert(std::make_pair(path, newHandle));
 
-                    declareHandle(newHandle);
-
                     return newHandle;
                 } catch (const std::exception &e) {
                     throw e;
@@ -68,6 +73,7 @@ namespace atmo
 
             std::shared_ptr<Resource> Pool::getFromHandle(const Handle &handle)
             {
+                std::scoped_lock lock(*m_resourceMutex);
                 if (handle.generation != m_generations.at(handle.index)) {
                     throw std::runtime_error("Handle périmé");
                 }
@@ -76,6 +82,7 @@ namespace atmo
 
             void Pool::declareHandle(const Handle &handle)
             {
+                std::scoped_lock lock(*m_handleManagementMutex);
                 auto path = handle.path;
                 auto it = std::find_if(m_usedHandles.begin(), m_usedHandles.end(), [&path](const std::string &h) {
                     return path == h;
@@ -87,6 +94,8 @@ namespace atmo
 
             void Pool::clear()
             {
+                std::scoped_lock lock(*m_handleManagementMutex, *m_resourceMutex);
+
                 std::unordered_set<std::string> toKeep(m_usedHandles.begin(), m_usedHandles.end());
                 for (auto it = m_handles.begin(); it != m_handles.end();) {
                     if (toKeep.find(it->first) == toKeep.end()) {
@@ -97,6 +106,22 @@ namespace atmo
                     }
                 }
                 m_usedHandles.clear();
+            }
+
+            void Pool::clearHandle(const Handle &handle)
+            {
+                std::scoped_lock lock(*m_handleManagementMutex, *m_resourceMutex);
+
+                auto itMap = m_handles.find(handle.path);
+                if (itMap != m_handles.end()) {
+                    m_handles.erase(itMap);
+                }
+
+                auto itVector = std::find(m_usedHandles.begin(), m_usedHandles.end(), handle.path);
+                if (itVector != m_usedHandles.end()) {
+                    m_usedHandles.erase(itVector);
+                }
+                destroy(handle);
             }
 
             void Pool::destroy(const Handle &handle)
