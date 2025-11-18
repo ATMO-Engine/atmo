@@ -12,6 +12,11 @@ namespace atmo
             {
             public:
                 virtual ~IEvent() = default;
+                bool isConsumed() const;
+                void consume();
+
+            private:
+                bool m_consumed = false;
             };
         } // namespace event
     } // namespace core

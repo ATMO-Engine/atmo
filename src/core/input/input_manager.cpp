@@ -3,7 +3,12 @@
 
 atmo::core::InputManager atmo::core::InputManager::instance;
 
-void atmo::core::InputManager::AddEvent(const std::string &inputName, Event *event)
+atmo::core::InputManager::InputManager()
+{
+    core::event::EventDispatcher::Subscribe<InputEvent>(p_inputListener);
+}
+
+void atmo::core::InputManager::AddInput(const std::string &inputName, Input *event)
 {
     bool internal = false;
     if (inputName.starts_with("#INTERNAL#"))
@@ -11,16 +16,16 @@ void atmo::core::InputManager::AddEvent(const std::string &inputName, Event *eve
 
     std::string tmp = internal ? inputName.substr(10) : inputName;
 
-    if (instance.m_inputs.find(tmp) == instance.m_inputs.end())
-        instance.m_inputs[tmp] = {};
+    if (instance.p_inputs.find(tmp) == instance.p_inputs.end())
+        instance.p_inputs[tmp] = {};
 
 
-    auto evt = std::shared_ptr<Event>(event);
+    auto evt = std::shared_ptr<Input>(event);
 
     evt->internal = internal;
 
-    instance.m_events.push_back(evt);
-    instance.m_inputs[tmp].push_back(evt);
+    instance.p_events.push_back(evt);
+    instance.p_inputs[tmp].push_back(evt);
 }
 
 void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
@@ -28,18 +33,18 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
     switch (e.type) {
         case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP:
-            for (auto evt : instance.m_events)
+            for (auto evt : instance.p_events)
                 if (auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt))
                     HandleKeyboardEvent(e.key, keyEvent);
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
-            for (auto evt : instance.m_events)
+            for (auto evt : instance.p_events)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt))
                     HandleMouseButtonEvent(e.button, mouseEvent);
             break;
         case SDL_EVENT_MOUSE_WHEEL:
-            for (auto evt : instance.m_events)
+            for (auto evt : instance.p_events)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt)) {
                     mouseEvent->scroll.x = e.wheel.x;
                     mouseEvent->scroll.y = e.wheel.y;
@@ -47,8 +52,8 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
                 }
             break;
         case SDL_EVENT_TEXT_INPUT:
-            if (instance.m_textInput)
-                instance.m_textBuffer += e.text.text;
+            if (instance.p_textInput)
+                instance.p_textBuffer += e.text.text;
             break;
         default:
             break;
@@ -57,13 +62,13 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
 
 void atmo::core::InputManager::Tick()
 {
-    for (auto &evt : instance.m_events) {
-        if (evt->getType() == Event::Type::Key) {
+    for (auto &evt : instance.p_events) {
+        if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
             keyEvent->just_pressed = false;
             keyEvent->just_released = false;
         }
-        if (evt->getType() == Event::Type::MouseButton) {
+        if (evt->getType() == Input::Type::MouseButton) {
             auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
             mouseEvent->just_pressed = false;
             mouseEvent->just_released = false;
@@ -73,16 +78,16 @@ void atmo::core::InputManager::Tick()
 
 bool atmo::core::InputManager::IsPressed(const std::string &inputName)
 {
-    auto it = instance.m_inputs.find(inputName);
-    if (it == instance.m_inputs.end())
+    auto it = instance.p_inputs.find(inputName);
+    if (it == instance.p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
-        if (evt->getType() == Event::Type::Key) {
+        if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
             return keyEvent->pressed;
         }
-        if (evt->getType() == Event::Type::MouseButton) {
+        if (evt->getType() == Input::Type::MouseButton) {
             auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
             return keyEvent->pressed;
         }
@@ -93,16 +98,16 @@ bool atmo::core::InputManager::IsPressed(const std::string &inputName)
 
 bool atmo::core::InputManager::IsJustPressed(const std::string &inputName)
 {
-    auto it = instance.m_inputs.find(inputName);
-    if (it == instance.m_inputs.end())
+    auto it = instance.p_inputs.find(inputName);
+    if (it == instance.p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
-        if (evt->getType() == Event::Type::Key) {
+        if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
             return keyEvent->just_pressed;
         }
-        if (evt->getType() == Event::Type::MouseButton) {
+        if (evt->getType() == Input::Type::MouseButton) {
             auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
             return keyEvent->just_pressed;
         }
@@ -113,16 +118,16 @@ bool atmo::core::InputManager::IsJustPressed(const std::string &inputName)
 
 bool atmo::core::InputManager::IsJustReleased(const std::string &inputName)
 {
-    auto it = instance.m_inputs.find(inputName);
-    if (it == instance.m_inputs.end())
+    auto it = instance.p_inputs.find(inputName);
+    if (it == instance.p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
-        if (evt->getType() == Event::Type::Key) {
+        if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
             return keyEvent->just_released;
         }
-        if (evt->getType() == Event::Type::MouseButton) {
+        if (evt->getType() == Input::Type::MouseButton) {
             auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
             return keyEvent->just_released;
         }
@@ -133,16 +138,16 @@ bool atmo::core::InputManager::IsJustReleased(const std::string &inputName)
 
 bool atmo::core::InputManager::IsReleased(const std::string &inputName)
 {
-    auto it = instance.m_inputs.find(inputName);
-    if (it == instance.m_inputs.end())
+    auto it = instance.p_inputs.find(inputName);
+    if (it == instance.p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
-        if (evt->getType() == Event::Type::Key) {
+        if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
             return keyEvent->released;
         }
-        if (evt->getType() == Event::Type::MouseButton) {
+        if (evt->getType() == Input::Type::MouseButton) {
             auto keyEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
             return keyEvent->released;
         }
@@ -190,39 +195,46 @@ void atmo::core::InputManager::HandleMouseButtonEvent(const SDL_MouseButtonEvent
 
 std::string atmo::core::InputManager::ConsumeText() noexcept
 {
-    auto t = instance.m_textBuffer;
-    instance.m_textBuffer.clear();
+    auto t = instance.p_textBuffer;
+    instance.p_textBuffer.clear();
     return t;
 }
 
 void atmo::core::InputManager::StartTextInput(SDL_Window *window) noexcept
 {
-    if (!instance.m_textInput) {
+    if (!instance.p_textInput) {
         SDL_StartTextInput(window);
-        instance.m_textInput = true;
+        instance.p_textInput = true;
     }
 }
 
 void atmo::core::InputManager::StopTextInput(SDL_Window *window) noexcept
 {
-    if (instance.m_textInput) {
+    if (instance.p_textInput) {
         SDL_StopTextInput(window);
-        instance.m_textInput = false;
+        instance.p_textInput = false;
     }
 }
 
 std::pair<atmo::core::types::vector2, float> atmo::core::InputManager::GetScrollDelta(const std::string &inputName)
 {
-    auto it = instance.m_inputs.find(inputName);
-    if (it == instance.m_inputs.end())
+    auto it = instance.p_inputs.find(inputName);
+    if (it == instance.p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
-        if (evt->getType() == Event::Type::MouseScroll) {
+        if (evt->getType() == Input::Type::MouseScroll) {
             auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt);
             return { { mouseEvent->scroll.x, mouseEvent->scroll.y }, mouseEvent->delta_time };
         }
     }
 
     return { { 0, 0 }, 0.0f };
+}
+
+void atmo::core::InputManager::InputListener::onEvent(const event::IEvent *event)
+{
+    // const InputEvent *inputEvent = static_cast<const InputEvent *>(event);
+    // InputManager::ProcessEvent(inputEvent->sdlEvent, inputEvent->delta);
+    spdlog::info("InputEvent received in InputListener.");
 }
