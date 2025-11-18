@@ -13,7 +13,7 @@ namespace atmo
             {
             public:
                 virtual ~IListener() = default;
-                virtual void onEvent(const IEvent *event) = 0;
+                virtual void onEvent(IEvent *event) = 0;
             };
         } // namespace event
     } // namespace core

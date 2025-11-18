@@ -232,9 +232,8 @@ std::pair<atmo::core::types::vector2, float> atmo::core::InputManager::GetScroll
     return { { 0, 0 }, 0.0f };
 }
 
-void atmo::core::InputManager::InputListener::onEvent(const event::IEvent *event)
+void atmo::core::InputManager::InputListener::onEvent(event::IEvent *event)
 {
-    // const InputEvent *inputEvent = static_cast<const InputEvent *>(event);
-    // InputManager::ProcessEvent(inputEvent->sdlEvent, inputEvent->delta);
-    spdlog::info("InputEvent received in InputListener.");
+    auto inputEvent = static_cast<InputManager::InputEvent *>(event);
+    InputManager::ProcessEvent(inputEvent->sdlEvent, inputEvent->delta);
 }

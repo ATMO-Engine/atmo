@@ -38,7 +38,7 @@ namespace atmo
             public:
                 InputListener() = default;
                 ~InputListener() override = default;
-                void onEvent(const event::IEvent *event) override;
+                void onEvent(event::IEvent *event) override;
             };
 
         public:
