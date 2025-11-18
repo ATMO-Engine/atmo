@@ -38,7 +38,7 @@ namespace atmo
                     listeners.erase(std::remove(listeners.begin(), listeners.end(), &listener), listeners.end());
                 }
 
-                template <typename EventType> static void Dispatch(const EventType *event)
+                template <typename EventType> static void Dispatch(EventType *event)
                 {
                     EventId id = event_id<EventType>();
                     if (getInstance().m_table.find(id) != getInstance().m_table.end()) {
