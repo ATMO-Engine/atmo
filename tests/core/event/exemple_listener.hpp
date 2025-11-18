@@ -38,5 +38,5 @@ public:
     bool called = false;
     ExempleListener();
     ~ExempleListener() override;
-    void onEvent(const atmo::core::event::IEvent &event) override;
+    void onEvent(atmo::core::event::IEvent *event) override;
 };
