@@ -54,7 +54,7 @@ jobs:
           xmake -y
           xmake run atmo-test
 
-    run-tests-windows:
+  run-tests-windows:
     name: Windows unit tests
     runs-on: windows-latest
     needs: check-compile-windows
