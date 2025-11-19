@@ -36,7 +36,6 @@ jobs:
   run-tests-macos:
     name: macOS unit tests
     runs-on: macos-latest
-    needs: check-compile-linux
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -56,7 +55,6 @@ jobs:
   run-tests-windows:
     name: Windows unit tests
     runs-on: windows-latest
-    needs: check-compile-macos
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
