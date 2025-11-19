@@ -212,16 +212,16 @@ package("semver")
 package_end()
 
 add_requires(
-    "spdlog",
-    "luau",
-    "flecs", {configs = {shared = false}},
-    "glaze",
-    "libsdl3",
-    "libsdl3_ttf",
-    "libsdl3_image",
-    "clay",
-    "catch2",
-    "semver"
+    "spdlog", {system = false},
+    "luau", {system = false},
+    "flecs", {system = false, configs = {shared = false}},
+    "glaze", {system = false},
+    "libsdl3", {system = false},
+    "libsdl3_ttf", {system = false},
+    "libsdl3_image", {system = false},
+    "clay", {system = false},
+    "catch2", {system = false},
+    "semver", {system = false}
 )
 
 function platform_specifics()
