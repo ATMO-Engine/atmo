@@ -1,4 +1,5 @@
 #include "ecs.hpp"
+#include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "flecs/addons/cpp/mixins/pipeline/decl.hpp"
@@ -30,7 +31,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
     m_world.system<components::Transform2D, components::Transform2D>("Transform2D_GenerateGlobal")
         .kind(flecs::PreUpdate)
         .term_at(1)
-        .cascade(flecs::ChildOf)
+        .up()
         .each([](flecs::entity e, components::Transform2D &t, const components::Transform2D &parent_t) {
             t.g_position = { parent_t.g_position.x + t.position.x, parent_t.g_position.y + t.position.y };
             t.g_rotation = parent_t.g_rotation + t.rotation;
@@ -69,38 +70,33 @@ void atmo::core::ecs::ECS::loadPrefabs()
 
             auto res = atmo::core::resource::ResourceManager::getInstance().getResource(sprite.m_handle);
             auto surface = std::any_cast<SDL_Surface *>(res->get());
+
+            spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
+
             sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
         });
 
         m_world.system<components::Sprite2D, components::Transform2D>("Sprite2D_UpdateDestRect")
             .kind(flecs::OnValidate)
             .each([](flecs::entity e, components::Sprite2D &sprite, components::Transform2D &transform) {
-                sprite.m_dest_rect.x = transform.g_position.x;
-                sprite.m_dest_rect.y = transform.g_position.y;
-                sprite.m_dest_rect.w = sprite.texture_size.x * transform.g_scale.x;
-                sprite.m_dest_rect.h = sprite.texture_size.y * transform.g_scale.y;
+                sprite.m_dest_rect.x = transform.g_position.x + transform.position.x;
+                sprite.m_dest_rect.y = transform.g_position.y + transform.position.y;
+                sprite.m_dest_rect.w = sprite.texture_size.x * (transform.g_scale.x + transform.scale.x);
+                sprite.m_dest_rect.h = sprite.texture_size.y * (transform.g_scale.y + transform.scale.y);
             });
 
-        // TODO: write a 2d renderer queue
-        m_world.system<components::Sprite2D, components::Transform2D, core::ComponentManager::Managed, core::components::Window>("Sprite2D_Render")
+        m_world.system<components::Sprite2D, components::Transform2D, ComponentManager::Managed, components::Window>("Sprite2D_Render")
             .kind(flecs::OnValidate)
+            .term_at(2)
+            .up()
             .term_at(3)
-            .cascade(flecs::ChildOf)
+            .up()
             .each([](flecs::entity e,
                      components::Sprite2D &sprite,
                      components::Transform2D &transform,
-                     core::ComponentManager::Managed &manager,
+                     ComponentManager::Managed &manager,
                      core::components::Window &window) {
                 auto wm = static_cast<impl::WindowManager *>(manager.ptr);
-
-                spdlog::debug(
-                    "Rendering Sprite2D for entity {}: texture_path='{}', position=({}, {}), size=({}, {})",
-                    e.name().c_str(),
-                    sprite.texture_path,
-                    sprite.m_dest_rect.x,
-                    sprite.m_dest_rect.y,
-                    sprite.m_dest_rect.w,
-                    sprite.m_dest_rect.h);
 
                 if (!sprite.m_handle.frameToLive)
                     return;
@@ -109,8 +105,8 @@ void atmo::core::ecs::ECS::loadPrefabs()
                 if (!texture)
                     return;
 
-                spdlog::info("Rendering Sprite2D: {} at position ({}, {})", e.name().c_str(), sprite.m_dest_rect.x, sprite.m_dest_rect.y);
-                SDL_RenderTexture(wm->getRenderer(), texture, nullptr, &sprite.m_dest_rect);
+                SDL_RenderTextureRotated(
+                    wm->getRenderer(), texture, nullptr, &sprite.m_dest_rect, transform.g_rotation + transform.rotation, nullptr, SDL_FLIP_NONE);
             });
 
         auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});

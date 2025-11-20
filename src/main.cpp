@@ -5,6 +5,7 @@
 #include "impl/window.hpp"
 #include "spdlog/spdlog.h"
 
+#include <chrono>
 #include <csignal>
 #include <filesystem>
 #include <string>
@@ -72,12 +73,23 @@ int main(int argc, char **argv)
     std::signal(SIGINT, [](int signum) { g_engine->stop(); });
     std::signal(SIGTERM, [](int signum) { g_engine->stop(); });
 
-    FileSystem::SetRootPath(get_executable_path());
-    spdlog::debug("Executable Path: {}", FileSystem::GetRootPath().string());
+    atmo::project::FileSystem::SetRootPath(get_executable_path());
+    spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
 
     atmo::core::InputManager::AddEvent("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
 
     atmo::core::InputManager::AddEvent("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
+
+    atmo::core::InputManager::AddEvent("rotate_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_Q, true), true);
+    atmo::core::InputManager::AddEvent("rotate_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_E, true), true);
+
+    atmo::core::InputManager::AddEvent("move_up", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_W, true), true);
+    atmo::core::InputManager::AddEvent("move_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_A, true), true);
+    atmo::core::InputManager::AddEvent("move_down", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_S, true), true);
+    atmo::core::InputManager::AddEvent("move_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_D, true), true);
+
+    atmo::core::InputManager::AddEvent("zoom_in", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_R, true), true);
+    atmo::core::InputManager::AddEvent("zoom_out", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_F, true), true);
 
     // loop();
 
@@ -89,10 +101,42 @@ int main(int argc, char **argv)
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(window);
     sprite.set<atmo::core::components::Sprite2D>({ "/Users/kapsulon/atmo/assets/atmo.png" });
-    sprite.get_mut<atmo::core::components::Transform2D>().position = { 100.0f, 100.0f };
+    auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
+    sprite_transform->position = { 100.0f, 100.0f };
 
-    while (g_engine->getECS().progress()) {
+    auto last_time = std::chrono::steady_clock::now();
+    float deltaTime = 0.0f;
+    while (g_engine->getECS().progress(deltaTime)) {
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<float> dt = current_time - last_time;
+        last_time = current_time;
+        deltaTime = dt.count();
+
         atmo::core::InputManager::Tick();
+
+        if (atmo::core::InputManager::IsPressed("rotate_left"))
+            sprite_transform->rotation -= 1.0f * deltaTime * 60.0f;
+
+        if (atmo::core::InputManager::IsPressed("rotate_right"))
+            sprite_transform->rotation += 1.0f * deltaTime * 60.0f;
+
+        atmo::core::types::vector2 move_delta{ 0, 0 };
+        move_delta.y = (atmo::core::InputManager::IsPressed("move_up") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_down") ? 1 : 0);
+        move_delta.x = (atmo::core::InputManager::IsPressed("move_left") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_right") ? 1 : 0);
+        if (move_delta.x != 0 || move_delta.y != 0) {
+            float length = std::sqrt(move_delta.x * move_delta.x + move_delta.y * move_delta.y);
+            move_delta.x /= length;
+            move_delta.y /= length;
+
+            sprite_transform->position.x += move_delta.x * 500.0f * deltaTime;
+            sprite_transform->position.y += move_delta.y * 500.0f * deltaTime;
+        }
+
+        float zoom_delta = (atmo::core::InputManager::IsPressed("zoom_in") ? 1 : 0) + (atmo::core::InputManager::IsPressed("zoom_out") ? -1 : 0);
+        if (zoom_delta != 0) {
+            sprite_transform->scale.x += zoom_delta * 0.001f;
+            sprite_transform->scale.y += zoom_delta * 0.001f;
+        }
     }
 
     return 0;
