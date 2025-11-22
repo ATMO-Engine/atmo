@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include "common/utils.hpp"
 #include "core/resource/resource_factory.hpp"
+#include "spdlog/spdlog.h"
 
 #include "core/resource/loaders/image_loader.hpp"
 #include "core/resource/loaders/script_loader.hpp"
@@ -81,8 +82,10 @@ namespace atmo
 
             void ResourceManager::clear()
             {
-                for (auto pool : m_pools) {
+                for (auto &pool : m_pools) {
+                    spdlog::info(pool.first + " clear start");
                     pool.second.clear();
+                    spdlog::info(pool.first + " clear ended");
                 }
             }
         } // namespace resource

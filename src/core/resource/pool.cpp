@@ -10,6 +10,7 @@
 #include "core/resource/resource.hpp"
 #include "core/resource/resource_factory.hpp"
 #include "handle.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo
 {
@@ -78,9 +79,13 @@ namespace atmo
             {
                 auto path = handle.path;
                 auto it = std::find_if(m_usedHandles.begin(), m_usedHandles.end(), [&path](const std::string &h) {
+                    if (path == h) {
+                        spdlog::info(path + " already in declared list");
+                    }
                     return path == h;
                 });
-                if (it != m_usedHandles.end()) {
+
+                if (it == m_usedHandles.end()) {
                     m_usedHandles.push_back(handle.path);
                 }
             }
@@ -90,6 +95,7 @@ namespace atmo
                 std::unordered_set<std::string> toKeep(m_usedHandles.begin(), m_usedHandles.end());
                 for (auto it = m_handles.begin(); it != m_handles.end();) {
                     if (toKeep.find(it->first) == toKeep.end()) {
+                        spdlog::info("clear: " + it->first);
                         destroy(it->second);
                         it = m_handles.erase(it);
                     } else {
