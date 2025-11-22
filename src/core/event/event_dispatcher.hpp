@@ -40,7 +40,7 @@ namespace atmo
 
                 template <typename EventType> static void Dispatch(EventType *event)
                 {
-                    EventId id = event_id<EventType>();
+                    EventId id = event->id;
                     if (getInstance().m_table.find(id) != getInstance().m_table.end()) {
                         for (auto listener : getInstance().m_table.at(id)) {
                             listener->onEvent(event);

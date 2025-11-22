@@ -17,6 +17,17 @@ namespace atmo
     {
         class InputManager
         {
+        public:
+            class InputEvent : public impl::SDLEvent
+            {
+            public:
+                InputEvent(const SDL_Event sdlEvent) : impl::SDLEvent(sdlEvent)
+                {
+                    id = atmo::core::event::event_id<InputEvent>();
+                }
+                ~InputEvent() override = default;
+            };
+
         private:
             class Input
             {
@@ -36,9 +47,10 @@ namespace atmo
             class InputListener : public event::IListener
             {
             public:
-                InputListener() = default;
+                InputListener();
                 ~InputListener() override = default;
                 void onEvent(event::IEvent *event) override;
+                void onEvent(InputManager::InputEvent *event);
             };
 
         public:
@@ -59,13 +71,6 @@ namespace atmo
             static std::string ConsumeText() noexcept;
             static void StartTextInput(SDL_Window *window) noexcept;
             static void StopTextInput(SDL_Window *window) noexcept;
-
-            class InputEvent : public impl::SDLEvent
-            {
-            public:
-                InputEvent(const SDL_Event sdlEvent) : impl::SDLEvent(sdlEvent) {}
-                ~InputEvent() override = default;
-            };
 
             class KeyEvent : public Input
             {
