@@ -15,7 +15,7 @@ namespace atmo
         namespace event
         {
             using EventId = uint32_t;
-            template <typename EventType> EventId event_id()
+            template <typename EventType> static EventId event_id()
             {
                 static const EventId id = static_cast<EventId>(typeid(EventType).hash_code());
                 return id;
@@ -43,7 +43,7 @@ namespace atmo
                     EventId id = event->id;
                     if (getInstance().m_table.find(id) != getInstance().m_table.end()) {
                         for (auto listener : getInstance().m_table.at(id)) {
-                            listener->onEvent(event);
+                            listener->callback(event);
                             if (event->isConsumed())
                                 break;
                         }

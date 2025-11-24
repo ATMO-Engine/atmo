@@ -1,4 +1,5 @@
 #include "input_manager.hpp"
+#include <iostream>
 #include "spdlog/spdlog.h"
 
 atmo::core::InputManager atmo::core::InputManager::instance;
@@ -236,14 +237,6 @@ atmo::core::InputManager::InputListener::InputListener()
 {
     atmo::core::event::EventDispatcher::Subscribe<InputEvent>(*this);
     handlers[atmo::core::event::event_id<InputEvent>()] = [this](event::IEvent *event) { onEvent(static_cast<InputManager::InputEvent *>(event)); };
-}
-
-void atmo::core::InputManager::InputListener::onEvent(event::IEvent *event)
-{
-    auto it = handlers.find(event->id);
-    if (it != handlers.end()) {
-        it->second(event);
-    }
 }
 
 void atmo::core::InputManager::InputListener::onEvent(InputManager::InputEvent *event)

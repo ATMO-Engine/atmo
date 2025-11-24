@@ -23,7 +23,7 @@ namespace atmo
             public:
                 InputEvent(const SDL_Event sdlEvent) : impl::SDLEvent(sdlEvent)
                 {
-                    id = atmo::core::event::event_id<InputEvent>();
+                    id = event::event_id<InputEvent>();
                 }
                 ~InputEvent() override = default;
             };
@@ -49,7 +49,6 @@ namespace atmo
             public:
                 InputListener();
                 ~InputListener() override = default;
-                void onEvent(event::IEvent *event) override;
                 void onEvent(InputManager::InputEvent *event);
             };
 

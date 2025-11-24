@@ -15,8 +15,8 @@ namespace atmo
             {
             public:
                 virtual ~IListener() = default;
-                virtual void onEvent(IEvent *event) = 0;
                 std::unordered_map<EventId, std::function<void(event::IEvent *)>> handlers;
+                void callback(event::IEvent *event);
             };
         } // namespace event
     } // namespace core
