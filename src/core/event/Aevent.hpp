@@ -9,10 +9,10 @@ namespace atmo
         namespace event
         {
             using EventId = uint32_t;
-            class IEvent
+            class AEvent
             {
             public:
-                virtual ~IEvent() = default;
+                virtual ~AEvent() = default;
                 bool isConsumed() const;
                 void consume();
 

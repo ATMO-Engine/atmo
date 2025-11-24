@@ -1,4 +1,4 @@
-#include "Ievent.hpp"
+#include "Aevent.hpp"
 
 namespace atmo
 {
@@ -6,12 +6,12 @@ namespace atmo
     {
         namespace event
         {
-            bool IEvent::isConsumed() const
+            bool AEvent::isConsumed() const
             {
                 return m_consumed;
             }
 
-            void IEvent::consume()
+            void AEvent::consume()
             {
                 m_consumed = true;
             }

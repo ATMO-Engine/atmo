@@ -236,7 +236,7 @@ std::pair<atmo::core::types::vector2, float> atmo::core::InputManager::GetScroll
 atmo::core::InputManager::InputListener::InputListener()
 {
     atmo::core::event::EventDispatcher::Subscribe<InputEvent>(*this);
-    handlers[atmo::core::event::event_id<InputEvent>()] = [this](event::IEvent *event) { onEvent(static_cast<InputManager::InputEvent *>(event)); };
+    handlers[atmo::core::event::event_id<InputEvent>()] = [this](event::AEvent *event) { onEvent(static_cast<InputManager::InputEvent *>(event)); };
 }
 
 void atmo::core::InputManager::InputListener::onEvent(InputManager::InputEvent *event)

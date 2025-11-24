@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Ievent_listener.hpp"
+#include "Aevent_listener.hpp"
 
 namespace atmo
 {
@@ -25,13 +25,13 @@ namespace atmo
             class EventDispatcher
             {
             public:
-                template <typename EventType> static void Subscribe(IListener &listener)
+                template <typename EventType> static void Subscribe(AListener &listener)
                 {
                     EventId id = event_id<EventType>();
                     getInstance().m_table[id].push_back(&listener);
                 }
 
-                template <typename EventType> static void Unsubscribe(IListener &listener)
+                template <typename EventType> static void Unsubscribe(AListener &listener)
                 {
                     EventId id = event_id<EventType>();
                     auto &listeners = getInstance().m_table[id];
@@ -55,7 +55,7 @@ namespace atmo
                 EventDispatcher() = default;
                 ~EventDispatcher() = default;
                 static EventDispatcher &getInstance();
-                std::unordered_map<EventId, std::vector<IListener *>> m_table;
+                std::unordered_map<EventId, std::vector<AListener *>> m_table;
             };
         } // namespace event
     } // namespace core

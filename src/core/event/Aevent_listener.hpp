@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <unordered_map>
-#include "core/event/Ievent.hpp"
+#include "core/event/Aevent.hpp"
 
 namespace atmo
 {
@@ -11,12 +11,12 @@ namespace atmo
         namespace event
         {
             using EventId = uint32_t;
-            class IListener
+            class AListener
             {
             public:
-                virtual ~IListener() = default;
-                std::unordered_map<EventId, std::function<void(event::IEvent *)>> handlers;
-                void callback(event::IEvent *event);
+                virtual ~AListener() = default;
+                std::unordered_map<EventId, std::function<void(event::AEvent *)>> handlers;
+                void callback(event::AEvent *event);
             };
         } // namespace event
     } // namespace core

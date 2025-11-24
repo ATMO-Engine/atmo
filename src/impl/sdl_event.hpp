@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SDL3/SDL_events.h"
-#include "core/event/Ievent.hpp"
+#include "core/event/Aevent.hpp"
 
 namespace atmo
 {
@@ -9,7 +9,7 @@ namespace atmo
     {
         namespace impl
         {
-            class SDLEvent : public event::IEvent
+            class SDLEvent : public event::AEvent
             {
             public:
                 SDLEvent(const SDL_Event sdlEvent);

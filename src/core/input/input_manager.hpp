@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 #include "SDL3/SDL_events.h"
-#include "core/event/Ievent.hpp"
+#include "core/event/Aevent.hpp"
 #include "core/event/event_dispatcher.hpp"
 #include "core/types.hpp"
 #include "impl/sdl_event.hpp"
@@ -44,7 +44,7 @@ namespace atmo
                 bool internal = false;
             };
 
-            class InputListener : public event::IListener
+            class InputListener : public event::AListener
             {
             public:
                 InputListener();

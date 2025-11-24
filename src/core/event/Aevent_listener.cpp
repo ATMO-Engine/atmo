@@ -1,4 +1,4 @@
-#include "Ievent_listener.hpp"
+#include "Aevent_listener.hpp"
 
 namespace atmo
 {
@@ -6,7 +6,7 @@ namespace atmo
     {
         namespace event
         {
-            void IListener::callback(event::IEvent *event)
+            void AListener::callback(event::AEvent *event)
             {
                 EventId id = event->id;
                 if (handlers.find(id) != handlers.end()) {
