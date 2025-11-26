@@ -18,13 +18,24 @@ namespace atmo
         class InputManager
         {
         public:
+            /**
+             * @brief SDL input event class that wraps an SDL_Event.
+             */
             class InputEvent : public impl::SDLEvent
             {
             public:
+                /**
+                 * @brief Constructs an InputEvent from an SDL_Event.
+                 *
+                 * @param sdlEvent The SDL_Event to wrap.
+                 */
                 InputEvent(const SDL_Event sdlEvent) : impl::SDLEvent(sdlEvent)
                 {
                     id = event::event_id<InputEvent>();
                 }
+                /**
+                 * @brief Virtual destructor for InputEvent.
+                 */
                 ~InputEvent() override = default;
             };
 
@@ -44,11 +55,25 @@ namespace atmo
                 bool internal = false;
             };
 
+            /**
+             * @brief Listener class for input events.
+             */
             class InputListener : public event::AListener
             {
             public:
+                /**
+                 * @brief Constructs an InputListener and subscribes to InputEvent.
+                 */
                 InputListener();
+                /**
+                 * @brief Virtual destructor for InputListener.
+                 */
                 ~InputListener() override = default;
+                /**
+                 * @brief Handles InputEvent events.
+                 *
+                 * @param event Pointer to the InputEvent to be handled.
+                 */
                 void onEvent(InputManager::InputEvent *event);
             };
 
