@@ -4,7 +4,7 @@
 #include <spdlog/spdlog.h>
 
 #include "core/ecs/ecs.hpp"
-#include "core/input_manager.hpp"
+#include "core/input/input_manager.hpp"
 #include "project/project_manager.hpp"
 
 namespace atmo

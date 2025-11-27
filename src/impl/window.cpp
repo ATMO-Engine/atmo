@@ -1,6 +1,7 @@
 #include <SDL3/SDL.h>
 #include <spdlog/spdlog.h>
-#include "core/input_manager.hpp"
+#include "core/event/event_dispatcher.hpp"
+#include "core/input/input_manager.hpp"
 
 #include "window.hpp"
 
@@ -80,7 +81,7 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
                 Clay_SetPointerState({ event.motion.x, event.motion.y }, event.motion.state & SDL_BUTTON_LMASK);
                 break;
             default:
-                core::InputManager::ProcessEvent(event, deltaTime);
+                atmo::core::event::EventDispatcher::Dispatch(new atmo::core::InputManager::InputEvent(event));
                 break;
         };
     }
