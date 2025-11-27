@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
     atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
     wm->rename("Atmo Engine");
-    wm->make_main();
+    wm->makeMain();
 
     while (g_engine->getECS().progress()) {
         atmo::core::InputManager::Tick();

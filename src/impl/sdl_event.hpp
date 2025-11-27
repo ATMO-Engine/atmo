@@ -28,7 +28,7 @@ namespace atmo
                 /**
                  * @brief The underlying SDL_Event.
                  */
-                SDL_Event sdlEvent;
+                SDL_Event sdl_event;
                 /**
                  * @brief Time delta associated with the event.
                  */
