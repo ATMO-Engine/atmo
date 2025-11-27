@@ -17,30 +17,30 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 
     SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
-    if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &this->window, &rendererData.renderer)) {
+    if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &this->m_window, &m_rendererData.renderer)) {
         spdlog::error("Failed to create window: {}", SDL_GetError());
         throw std::runtime_error("Failed to create window");
     }
 
-    SDL_SetWindowResizable(this->window, true);
+    SDL_SetWindowResizable(this->m_window, true);
 
-    rendererData.textEngine = TTF_CreateRendererTextEngine(rendererData.renderer);
-    if (!rendererData.textEngine) {
+    m_rendererData.text_engine = TTF_CreateRendererTextEngine(m_rendererData.renderer);
+    if (!m_rendererData.text_engine) {
         spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
         throw std::runtime_error("Failed to create text engine from renderer");
     }
 
-    rendererData.fonts = (TTF_Font **)SDL_calloc(1, sizeof(TTF_Font *));
-    if (!rendererData.fonts) {
+    m_rendererData.fonts = (TTF_Font **)SDL_calloc(1, sizeof(TTF_Font *));
+    if (!m_rendererData.fonts) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate memory for the font array: %s", SDL_GetError());
         spdlog::error("Failed to allocate memory for the font array: {}", SDL_GetError());
         throw std::runtime_error("Failed to allocate memory for the font array");
     }
 
     auto totalMemSize = Clay_MinMemorySize();
-    clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
+    m_clayArena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
-    Clay_Initialize(clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
+    Clay_Initialize(m_clayArena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
                         spdlog::error("Clay error: {}", errorData.errorText.chars);
                     } });
 
@@ -50,17 +50,17 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 
 atmo::impl::WindowManager::~WindowManager()
 {
-    if (rendererData.renderer) {
-        SDL_DestroyRenderer(rendererData.renderer);
-        rendererData.renderer = nullptr;
+    if (m_rendererData.renderer) {
+        SDL_DestroyRenderer(m_rendererData.renderer);
+        m_rendererData.renderer = nullptr;
     }
 
-    if (window) {
-        SDL_DestroyWindow(window);
-        window = nullptr;
+    if (m_window) {
+        SDL_DestroyWindow(m_window);
+        m_window = nullptr;
     }
 
-    SDL_free(clay_arena.memory);
+    SDL_free(m_clayArena.memory);
 
     if (main_window == entity)
         entity.world().quit();
@@ -89,7 +89,7 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
 
 void atmo::impl::WindowManager::beginDraw()
 {
-    SDL_RenderClear(rendererData.renderer);
+    SDL_RenderClear(m_rendererData.renderer);
 }
 
 void atmo::impl::WindowManager::draw()
@@ -112,48 +112,48 @@ void atmo::impl::WindowManager::draw()
 
     Clay_BeginLayout();
 
-    entity.children([this](flecs::entity child) { DeclareEntityUI(child); });
+    entity.children([this](flecs::entity child) { declareEntityUi(child); });
 
     auto commands = Clay_EndLayout();
 
-    SDL_SetRenderDrawColor(rendererData.renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(m_rendererData.renderer, 0, 0, 0, 255);
 
-    SDL_Clay_RenderClayCommands(&rendererData, &commands);
+    SDL_Clay_RenderClayCommands(&m_rendererData, &commands);
 
-    SDL_RenderPresent(rendererData.renderer);
+    SDL_RenderPresent(m_rendererData.renderer);
 }
 
 void atmo::impl::WindowManager::rename(const std::string &name) noexcept
 {
-    if (window)
-        SDL_SetWindowTitle(window, name.c_str());
+    if (m_window)
+        SDL_SetWindowTitle(m_window, name.c_str());
 }
 
 void atmo::impl::WindowManager::resize(const atmo::core::types::vector2i &size) noexcept
 {
-    if (window)
-        SDL_SetWindowSize(window, size.x, size.y);
+    if (m_window)
+        SDL_SetWindowSize(m_window, size.x, size.y);
 }
 
 void atmo::impl::WindowManager::focus() noexcept
 {
-    if (window) {
-        SDL_RaiseWindow(window);
+    if (m_window) {
+        SDL_RaiseWindow(m_window);
     }
 }
 
-void atmo::impl::WindowManager::make_main() noexcept
+void atmo::impl::WindowManager::makeMain() noexcept
 {
-    if (window && main_window != entity) {
+    if (m_window && main_window != entity) {
         main_window = entity;
     }
 }
 
 atmo::core::types::vector2i atmo::impl::WindowManager::getSize() const noexcept
 {
-    if (window) {
+    if (m_window) {
         int w, h;
-        SDL_GetWindowSize(window, &w, &h);
+        SDL_GetWindowSize(m_window, &w, &h);
         return { w, h };
     }
     return { -1, -1 };
@@ -161,12 +161,12 @@ atmo::core::types::vector2i atmo::impl::WindowManager::getSize() const noexcept
 
 std::string atmo::impl::WindowManager::getTitle() const noexcept
 {
-    if (window)
-        return std::string(SDL_GetWindowTitle(window));
+    if (m_window)
+        return std::string(SDL_GetWindowTitle(m_window));
     return "";
 }
 
-Clay_ElementDeclaration atmo::impl::WindowManager::BuildDecl(flecs::entity e)
+Clay_ElementDeclaration atmo::impl::WindowManager::buildDecl(flecs::entity e)
 {
     Clay_ElementDeclaration d{};
 
@@ -237,9 +237,9 @@ Clay_ElementId atmo::impl::WindowManager::getIdForEntity(flecs::entity e)
     return Clay_GetElementId(s);
 }
 
-void atmo::impl::WindowManager::DeclareEntityUI(flecs::entity e)
+void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
 {
-    Clay_ElementDeclaration decl = BuildDecl(e);
+    Clay_ElementDeclaration decl = buildDecl(e);
 
     CLAY(decl)
     {
@@ -252,6 +252,6 @@ void atmo::impl::WindowManager::DeclareEntityUI(flecs::entity e)
         //     CLAY_TEXT(str, &cfg);
         // }
 
-        e.children([this](flecs::entity child) { DeclareEntityUI(child); });
+        e.children([this](flecs::entity child) { declareEntityUi(child); });
     }
 }

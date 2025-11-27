@@ -9,9 +9,9 @@ namespace atmo
     {
         namespace resource
         {
-            LoaderRegister<ImageLoader> ImageLoader::_register("png");
+            LoaderRegister<ImageLoader> ImageLoader::m_register("png");
 
-            ImageLoader::ImageLoader() {}
+            ImageLoader::ImageLoader() : m_surface(nullptr) {}
 
             ImageLoader::~ImageLoader()
             {
@@ -21,8 +21,8 @@ namespace atmo
             void ImageLoader::load(const std::string &path)
             {
                 try {
-                    _surface = IMG_Load(path.c_str());
-                    if (!_surface) {
+                    m_surface = IMG_Load(path.c_str());
+                    if (!m_surface) {
                         throw std::runtime_error(std::string("Failed to load image: ") + SDL_GetError());
                     }
                 } catch (const std::exception &e) {
@@ -32,14 +32,14 @@ namespace atmo
 
             std::any ImageLoader::get()
             {
-                return std::make_any<SDL_Surface *>(_surface);
+                return std::make_any<SDL_Surface *>(m_surface);
             }
 
             void ImageLoader::destroy()
             {
-                if (_surface) {
-                    SDL_DestroySurface(_surface);
-                    _surface = nullptr;
+                if (m_surface) {
+                    SDL_DestroySurface(m_surface);
+                    m_surface = nullptr;
                 }
             }
         } // namespace resource

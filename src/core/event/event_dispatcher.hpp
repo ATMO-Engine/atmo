@@ -45,7 +45,7 @@ namespace atmo
                 template <typename EventType> static void Subscribe(AListener &listener)
                 {
                     EventId id = event_id<EventType>();
-                    getInstance().m_table[id].push_back(&listener);
+                    GetInstance().m_table[id].push_back(&listener);
                 }
 
                 /**
@@ -57,7 +57,7 @@ namespace atmo
                 template <typename EventType> static void Unsubscribe(AListener &listener)
                 {
                     EventId id = event_id<EventType>();
-                    auto &listeners = getInstance().m_table[id];
+                    auto &listeners = GetInstance().m_table[id];
                     listeners.erase(std::remove(listeners.begin(), listeners.end(), &listener), listeners.end());
                 }
 
@@ -70,8 +70,8 @@ namespace atmo
                 template <typename EventType> static void Dispatch(EventType *event)
                 {
                     EventId id = event->id;
-                    if (getInstance().m_table.find(id) != getInstance().m_table.end()) {
-                        for (auto listener : getInstance().m_table.at(id)) {
+                    if (GetInstance().m_table.find(id) != GetInstance().m_table.end()) {
+                        for (auto listener : GetInstance().m_table.at(id)) {
                             listener->callback(event);
                             if (event->isConsumed())
                                 break;
@@ -94,7 +94,7 @@ namespace atmo
                  *
                  * @return Reference to the singleton EventDispatcher instance.
                  */
-                static EventDispatcher &getInstance();
+                static EventDispatcher &GetInstance();
                 /**
                  * @brief Table mapping event IDs to their subscribed listeners.
                  */

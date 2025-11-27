@@ -11,9 +11,6 @@
 #include "core/resource/resource_manager.hpp"
 #include "core/types.hpp"
 
-// macro resulting to SDL_WINDOW_VULKAN on windows and linux, SDL_WINDOW_METAL on macOS
-#define GET_RENDERER_FLAGS()
-
 namespace atmo
 {
     namespace impl
@@ -31,42 +28,41 @@ namespace atmo
             void rename(const std::string &name) noexcept;
             void resize(const core::types::vector2i &size) noexcept;
             void focus() noexcept;
-            void make_main() noexcept;
+            void makeMain() noexcept;
 
             core::types::vector2i getSize() const noexcept;
             std::string getTitle() const noexcept;
 
             inline SDL_Renderer *getRenderer() const noexcept
             {
-                return rendererData.renderer;
+                return m_rendererData.renderer;
             }
 
             inline SDL_Texture *getTextureFromHandle(const core::resource::Handle &handle)
             {
-                if (texture_cache.find(handle) != texture_cache.end()) {
-                    return texture_cache[handle];
+                if (m_textureCache.find(handle) != m_textureCache.end()) {
+                    return m_textureCache[handle];
                 }
 
-                auto res = core::resource::ResourceManager::getInstance().getResource(handle);
+                auto res = core::resource::ResourceManager::GetInstance().getResource(handle);
                 auto surface = std::any_cast<SDL_Surface *>(res->get());
 
-                SDL_Texture *texture = SDL_CreateTextureFromSurface(rendererData.renderer, surface);
-                texture_cache[handle] = texture;
+                SDL_Texture *texture = SDL_CreateTextureFromSurface(m_rendererData.renderer, surface);
+                m_textureCache[handle] = texture;
                 return texture;
             }
 
         private:
-            Clay_ElementDeclaration BuildDecl(flecs::entity e);
+            Clay_ElementDeclaration buildDecl(flecs::entity e);
             Clay_ElementId getIdForEntity(flecs::entity e);
-            void DeclareEntityUI(flecs::entity e);
+            void declareEntityUi(flecs::entity e);
 
             static inline flecs::entity main_window;
 
-            SDL_Window *window = nullptr;
-            Clay_SDL3RendererData rendererData;
-            Clay_Arena clay_arena;
-
-            std::map<core::resource::Handle, SDL_Texture *> texture_cache;
+            SDL_Window *m_window = nullptr;
+            Clay_SDL3RendererData m_rendererData;
+            Clay_Arena m_clayArena;
+            std::map<core::resource::handle, SDL_Texture *> m_textureCache;
         };
     } // namespace impl
 } // namespace atmo

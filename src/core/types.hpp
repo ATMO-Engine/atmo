@@ -10,43 +10,43 @@ namespace atmo
     {
         namespace types
         {
-            typedef struct vector2 {
+            typedef struct Vector2 {
                 float x = 0.0f;
                 float y = 0.0f;
             } vector2;
 
-            typedef struct vector2i {
+            typedef struct Vector2i {
                 int x = 0;
                 int y = 0;
             } vector2i;
 
-            typedef struct vector3 {
+            typedef struct Vector3 {
                 float x = 0.0f;
                 float y = 0.0f;
                 float z = 0.0f;
             } vector3;
 
-            typedef struct vector3i {
+            typedef struct Vector3i {
                 int x = 0;
                 int y = 0;
                 int z = 0;
             } vector3i;
 
-            typedef struct vector4 {
+            typedef struct Vector4 {
                 float x = 0.0f;
                 float y = 0.0f;
                 float z = 0.0f;
                 float w = 0.0f;
             } vector4;
 
-            typedef struct rgba {
+            typedef struct Rgba {
                 float r = 1.0f;
                 float g = 1.0f;
                 float b = 1.0f;
                 float a = 1.0f;
             } rgba;
 
-            typedef struct vector4i {
+            typedef struct Vector4i {
                 int x = 0;
                 int y = 0;
                 int z = 0;

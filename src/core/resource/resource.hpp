@@ -9,8 +9,7 @@ namespace atmo
     {
         namespace resource
         {
-            template<typename T>
-            struct LoaderExtension;
+            template <typename T> struct LoaderExtension;
 
             class Resource
             {
