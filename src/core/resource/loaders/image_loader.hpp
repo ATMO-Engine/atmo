@@ -22,9 +22,9 @@ namespace atmo
                 std::any get() override;
 
             private:
-                SDL_Surface *_surface;
+                SDL_Surface *m_surface;
 
-                static LoaderRegister<ImageLoader> _register;
+                static LoaderRegister<ImageLoader> m_register;
             };
 
             template <> struct LoaderExtension<ImageLoader> {

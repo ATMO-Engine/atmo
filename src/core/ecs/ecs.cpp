@@ -64,11 +64,11 @@ void atmo::core::ecs::ECS::loadPrefabs()
             if (sprite.texture_path.empty())
                 return;
 
-            sprite.m_handle = atmo::core::resource::ResourceManager::getInstance().generate(sprite.texture_path);
+            sprite.m_handle = atmo::core::resource::ResourceManager::GetInstance().generate(sprite.texture_path);
 
             spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
 
-            auto res = atmo::core::resource::ResourceManager::getInstance().getResource(sprite.m_handle);
+            auto res = atmo::core::resource::ResourceManager::GetInstance().getResource(sprite.m_handle);
             auto surface = std::any_cast<SDL_Surface *>(res->get());
 
             spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
@@ -98,7 +98,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
                      core::components::Window &window) {
                 auto wm = static_cast<impl::WindowManager *>(manager.ptr);
 
-                if (!sprite.m_handle.frameToLive)
+                if (!sprite.m_handle.frame_to_live)
                     return;
 
                 SDL_Texture *texture = wm->getTextureFromHandle(sprite.m_handle);

@@ -94,7 +94,7 @@ int main(int argc, char **argv)
     auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
     atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
     wm->rename("Atmo Engine");
-    wm->make_main();
+    wm->makeMain();
 
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(window);
