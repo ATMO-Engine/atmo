@@ -9,13 +9,13 @@ namespace atmo
     {
         class Utils
         {
-            public:
-                ~Utils() = default;
+        public:
+            ~Utils() = default;
 
-                static std::vector<std::string> splitString(const std::string &str, char delimiter);
-            private:
-                Utils() = default;
+            static std::vector<std::string> SplitString(const std::string &str, char delimiter);
 
-            };
-    } // namespace core
+        private:
+            Utils() = default;
+        };
+    } // namespace common
 } // namespace atmo

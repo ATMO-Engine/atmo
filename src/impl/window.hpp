@@ -9,9 +9,6 @@
 #include "core/ecs/components.hpp"
 #include "core/types.hpp"
 
-// macro resulting to SDL_WINDOW_VULKAN on windows and linux, SDL_WINDOW_METAL on macOS
-#define GET_RENDERER_FLAGS()
-
 namespace atmo
 {
     namespace impl
@@ -45,21 +42,21 @@ namespace atmo
             void rename(const std::string &name) noexcept;
             void resize(const core::types::vector2i &size) noexcept;
             void focus() noexcept;
-            void make_main() noexcept;
+            void makeMain() noexcept;
 
             core::types::vector2i getSize() const noexcept;
             std::string getTitle() const noexcept;
 
         private:
-            Clay_ElementDeclaration BuildDecl(flecs::entity e);
+            Clay_ElementDeclaration buildDecl(flecs::entity e);
             Clay_ElementId getIdForEntity(flecs::entity e);
-            void DeclareEntityUI(flecs::entity e);
+            void declareEntityUi(flecs::entity e);
 
             static inline flecs::entity main_window;
 
-            SDL_Window *window = nullptr;
-            Clay_SDL3RendererData rendererData;
-            Clay_Arena clay_arena;
+            SDL_Window *m_window = nullptr;
+            Clay_SDL3RendererData m_rendererData;
+            Clay_Arena m_clayArena;
         };
     } // namespace impl
 } // namespace atmo

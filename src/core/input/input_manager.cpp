@@ -241,5 +241,5 @@ atmo::core::InputManager::InputListener::InputListener()
 
 void atmo::core::InputManager::InputListener::onEvent(InputManager::InputEvent *event)
 {
-    InputManager::ProcessEvent(event->sdlEvent, event->delta);
+    InputManager::ProcessEvent(event->sdl_event, event->delta);
 }

@@ -21,14 +21,14 @@ namespace atmo
                 void destroy() override;
 
                 std::any get() override;
+
             private:
-                TTF_Font *_font;
+                TTF_Font *m_font;
 
                 static LoaderRegister<FontLoader> _register;
             };
 
-            template<>
-            struct LoaderExtension<FontLoader> {
+            template <> struct LoaderExtension<FontLoader> {
                 static constexpr const char *extension = "ttf";
             };
         } // namespace resource

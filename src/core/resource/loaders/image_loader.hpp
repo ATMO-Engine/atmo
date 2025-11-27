@@ -19,13 +19,13 @@ namespace atmo
                 void destroy() override;
 
                 std::any get() override;
+
             private:
-                std::string _texture;
+                std::string m_texture;
                 static LoaderRegister<ImageLoader> _register;
             };
 
-            template<>
-            struct LoaderExtension<ImageLoader> {
+            template <> struct LoaderExtension<ImageLoader> {
                 static constexpr const char *extension = "png";
             };
         } // namespace resource
