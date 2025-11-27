@@ -1,4 +1,5 @@
 #include <csignal>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -63,8 +64,18 @@ static void loop()
 
 int main(int argc, char **argv)
 {
-    // TODO: remove later
+#if defined(ATMO_DEBUG)
     spdlog::set_level(spdlog::level::debug);
+#endif
+
+    if (SDL_Init(
+            SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA) !=
+        true) {
+        spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
+        return 1;
+    }
+
+    std::atexit(SDL_Quit);
 
     atmo::core::Engine engine;
     g_engine = &engine;

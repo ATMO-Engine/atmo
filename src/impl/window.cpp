@@ -15,14 +15,23 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
     this->entity = entity;
     const atmo::core::components::Window &window = entity.get<atmo::core::components::Window>();
 
-    SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
-    if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &this->m_window, &m_rendererData.renderer)) {
-        spdlog::error("Failed to create window: {}", SDL_GetError());
-        throw std::runtime_error("Failed to create window");
+    m_window = SDL_CreateWindow(window.title.c_str(), window.size.x, window.size.y, flags);
+
+    if (!m_window) {
+        spdlog::error("Failed to create SDL window: {}", SDL_GetError());
+        throw std::runtime_error("Failed to create SDL window");
     }
 
-    SDL_SetWindowResizable(this->m_window, true);
+    m_rendererData.renderer = SDL_CreateRenderer(m_window, "metal,vulkan");
+
+    if (!m_rendererData.renderer) {
+        spdlog::error("Failed to create SDL renderer: {}", SDL_GetError());
+        throw std::runtime_error("Failed to create SDL renderer");
+    }
+
+    SDL_SetWindowResizable(m_window, true);
 
     m_rendererData.text_engine = TTF_CreateRendererTextEngine(m_rendererData.renderer);
     if (!m_rendererData.text_engine) {

@@ -285,6 +285,9 @@ target("atmo")
     add_files("src/**.cpp")
     add_includedirs("src")
     platform_specifics()
+    if is_mode("debug") then
+        add_defines("ATMO_DEBUG")
+    end
 
 target("atmo-test")
     set_kind("binary")
