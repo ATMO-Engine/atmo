@@ -61,7 +61,6 @@ static void loop()
 #endif
 }
 
-
 int main(int argc, char **argv)
 {
     // TODO: remove later
@@ -77,19 +76,18 @@ int main(int argc, char **argv)
     spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
-
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
 
-    atmo::core::InputManager::AddInput("rotate_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_Q, true), true);
-    atmo::core::InputManager::AddInput("rotate_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_E, true), true);
+    atmo::core::InputManager::AddInput("rotate_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_Q, true), false);
+    atmo::core::InputManager::AddInput("rotate_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_E, true), false);
 
-    atmo::core::InputManager::AddInput("move_up", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_W, true), true);
-    atmo::core::InputManager::AddInput("move_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_A, true), true);
-    atmo::core::InputManager::AddInput("move_down", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_S, true), true);
-    atmo::core::InputManager::AddInput("move_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_D, true), true);
+    atmo::core::InputManager::AddInput("move_up", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_W, true), false);
+    atmo::core::InputManager::AddInput("move_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_A, true), false);
+    atmo::core::InputManager::AddInput("move_down", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_S, true), false);
+    atmo::core::InputManager::AddInput("move_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_D, true), false);
 
-    atmo::core::InputManager::AddInput("zoom_in", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_R, true), true);
-    atmo::core::InputManager::AddInput("zoom_out", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_F, true), true);
+    atmo::core::InputManager::AddInput("zoom_in", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_R, true), false);
+    atmo::core::InputManager::AddInput("zoom_out", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_F, true), false);
 
     // loop();
 

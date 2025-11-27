@@ -6,6 +6,8 @@ namespace atmo
     {
         namespace scene
         {
+            Scene::Scene(flecs::world &world, flecs::entity root) : m_world(world), m_box2d_world(b2_nullWorldId) {}
+
             void Scene::init()
             {
                 // TODO: Initialize the Box2D world using the ProjectManager's m_settings (ProjectSettings)

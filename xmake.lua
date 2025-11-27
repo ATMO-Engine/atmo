@@ -1,4 +1,7 @@
-add_rules("mode.debug", "mode.release")
+set_policy("check.auto_ignore_flags", false)
+
+add_rules("mode.release", "mode.debug")
+set_allowedmodes("release", "debug")
 
 set_languages("c++23")
 
@@ -6,6 +9,8 @@ if is_mode("debug") then
     set_policy("build.sanitizer.address", true)
     set_policy("build.sanitizer.undefined", true)
 end
+
+set_policy("build.warning", true)
 
 if is_mode("release") then
     set_optimize("fastest")
