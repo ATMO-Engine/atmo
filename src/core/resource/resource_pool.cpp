@@ -72,7 +72,7 @@ namespace atmo
 
             std::shared_ptr<Resource> ResourcePool::getFromHandle(const Handle &handle)
             {
-                std::shared_lock lock(*m_resourceMutex);
+                std::unique_lock lock(*m_resourceMutex);
                 if (handle->generation != m_generations.at(handle->index)) {
                     throw std::runtime_error("Handle périmé");
                 }
