@@ -4,6 +4,7 @@
 #include <exception>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <stdexcept>
 #include <string>
 #include "common/utils.hpp"
@@ -34,8 +35,8 @@ namespace atmo
             const Handle ResourcePool::create(const std::string &path)
             {
                 try {
-                    std::scoped_lock lock(*m_resourceMutex);
-
+                    std::unique_lock lock(*m_resourceMutex);
+                    // TODO: May use boost in order to allow a read-only shared lock then upgrade if the resource must be created
                     if (m_handles.find(path) != m_handles.end()) {
                         return m_handles.at(path);
                     }
@@ -71,7 +72,7 @@ namespace atmo
 
             std::shared_ptr<Resource> ResourcePool::getFromHandle(const Handle &handle)
             {
-                std::scoped_lock lock(*m_resourceMutex);
+                std::shared_lock lock(*m_resourceMutex);
                 if (handle->generation != m_generations.at(handle->index)) {
                     throw std::runtime_error("Handle périmé");
                 }
@@ -80,6 +81,7 @@ namespace atmo
 
             void ResourcePool::clear()
             {
+                std::unique_lock lock(*m_resourceMutex);
                 for (auto it = m_handles.begin(); it != m_handles.end();) {
                     if (it->second.use_count() == 1) {
                         spdlog::info("\tclear: " + it->first);
