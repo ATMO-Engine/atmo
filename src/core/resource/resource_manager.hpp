@@ -3,9 +3,8 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
-#include "core/resource/pool.hpp"
+#include "core/resource/resource_pool.hpp"
 #include "core/resource/handle.hpp"
 #include "core/resource/resource.hpp"
 #include "core/resource/resource_factory.hpp"
@@ -41,13 +40,6 @@ namespace atmo
                 std::shared_ptr<Resource> getResource(const Handle &handle); //TODO: créer l'exception pour les handle périmé
 
                 /**
-                 * @brief Declare an handle that is still in use
-                 *
-                 * @param handle handle to be stored inside his pool
-                 */
-                void declareHandle(const Handle &handle);
-
-                /**
                  * @brief Clear unused handles
                  */
                 void clear();
@@ -56,7 +48,7 @@ namespace atmo
                 ResourceManager &operator=(const ResourceManager &) = delete;
 
                 ResourceFactory &m_factory;
-                std::unordered_map<std::string, Pool> m_pools;
+                std::unordered_map<std::string, ResourcePool> m_pools;
             };
         } // namespace resource
     } // namespace core

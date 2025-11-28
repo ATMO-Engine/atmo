@@ -16,29 +16,26 @@ namespace atmo
     {
         namespace resource
         {
-            class Pool
+            class ResourcePool
             {
             public:
-                Pool();
-                ~Pool();
+                ResourcePool();
+                ~ResourcePool();
 
-                Pool(const Pool&) = delete;
-                Pool& operator=(const Pool&) = delete;
+                ResourcePool(const ResourcePool&) = delete;
+                ResourcePool& operator=(const ResourcePool&) = delete;
 
-                Pool(Pool&&) noexcept = default;
-                Pool& operator=(Pool&&) noexcept = default;
+                ResourcePool(ResourcePool&&) noexcept = default;
+                ResourcePool& operator=(ResourcePool&&) noexcept = default;
 
 
                 const Handle create(const std::string &path);
                 std::shared_ptr<Resource> getFromHandle(const Handle &handle);
 
-                void declareHandle(const Handle &handle);
                 void clear();
                 void clearHandle(const Handle &handle);
             private:
                 void destroy(const Handle &handle);
-
-                std::vector<std::string> m_usedHandles; // when adding a handle to this vecteur, add the ".path" value of the handle
                 std::unordered_map<std::string, Handle> m_handles;
 
                 std::vector<std::shared_ptr<Resource>> m_resources;

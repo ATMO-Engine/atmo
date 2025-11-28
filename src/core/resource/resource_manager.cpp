@@ -1,12 +1,13 @@
 #include "resource_manager.hpp"
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include "common/utils.hpp"
 #include "core/resource/resource_factory.hpp"
+#include "resource_pool.hpp"
+#include "spdlog/spdlog.h"
 
 #include "core/resource/loaders/image_loader.hpp"
 #include "core/resource/loaders/script_loader.hpp"
@@ -39,54 +40,38 @@ namespace atmo
                 try {
                     if (m_pools.find(extension) != m_pools.end()) {
                         Handle newHandle = m_pools.at(extension).create(path);
-                        m_pools.at(extension).declareHandle(newHandle);
                         return newHandle;
                     } else {
                         throw std::runtime_error("No matching pool for the path given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
+                    spdlog::error(e.what());
                     throw e;
                 }
             }
 
             std::shared_ptr<Resource> ResourceManager::getResource(const Handle &handle)
             {
-                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
+                std::string extension = atmo::common::Utils::splitString(handle->path, '.').back();
                 try {
                     if (m_pools.find(extension) != m_pools.end()) {
-                        // TODO: if we decide that this function can generate a resource call the generate method
-                        m_pools.at(extension).declareHandle(handle);
                         return m_pools.at(extension).getFromHandle(handle);
                     } else {
                         throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
-                    throw e;
-                }
-            }
-
-            void ResourceManager::declareHandle(const Handle &handle)
-            {
-                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
-                try {
-                    if (m_pools.find(extension) != m_pools.end()) {
-                        // create Resource class through a class that return a Resource class thanks to the path
-                        m_pools.at(extension).declareHandle(handle);
-                    } else {
-                        throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
-                    }
-                } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
+                    spdlog::error(e.what());
                     throw e;
                 }
             }
 
             void ResourceManager::clear()
             {
-                for (std::pair<const std::string, Pool> &pool : m_pools) {
+                spdlog::info("Clear handles started");
+                for (std::pair<const std::string, ResourcePool> &pool : m_pools) {
+                    spdlog::info(pool.first + " clear start:");
                     pool.second.clear();
+                    spdlog::info(pool.first + " clear ended");
                 }
             }
         } // namespace resource
