@@ -276,10 +276,9 @@ target("atmo-test")
     packages()
     add_packages("catch2")
     add_files("tests/**.cpp")
-    add_files("src/*/**.cpp")
+    add_files("src/**.cpp", {excludes = { "src/main.cpp" }})
     add_includedirs("src")
     platform_specifics()
-    add_defines("CATCH_CONFIG_MAIN")
     add_tests("atmo-test", {
         runargs = {
             "--reporter=JUnit::out=test_results.xml",
