@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "core/resource/resource_factory.hpp"
-#include "core/resource/pool.hpp"
+#include "core/resource/resource_pool.hpp"
 #include "core/resource/resource.hpp"
 
 template<typename T>
@@ -19,8 +19,8 @@ public:
 
 template<typename Tuple, std::size_t... I>
 auto createPoolMap(std::index_sequence<I...>) {
-    return std::unordered_map<std::string, atmo::core::resource::Pool>{
-        {atmo::core::resource::LoaderExtension<std::tuple_element_t<I, Tuple>>::extension, atmo::core::resource::Pool()}...
+    return std::unordered_map<std::string, atmo::core::resource::ResourcePool>{
+        {atmo::core::resource::LoaderExtension<std::tuple_element_t<I, Tuple>>::extension, atmo::core::resource::ResourcePool()}...
     };
 }
 

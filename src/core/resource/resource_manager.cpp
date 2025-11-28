@@ -1,6 +1,5 @@
 #include "resource_manager.hpp"
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include "common/utils.hpp"
@@ -43,14 +42,14 @@ namespace atmo
                         throw std::runtime_error("No matching pool for the path given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
+                    spdlog::error(e.what());
                     throw e;
                 }
             }
 
             std::shared_ptr<Resource> ResourceManager::getResource(const Handle &handle)
             {
-                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
+                std::string extension = atmo::common::Utils::splitString(handle->path, '.').back();
                 try {
                     if (m_pools.find(extension) != m_pools.end()) {
                         // create Resource class through a calss that return a Resource class thanks to the path
@@ -59,31 +58,16 @@ namespace atmo
                         throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
                     }
                 } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
-                    throw e;
-                }
-            }
-
-            void ResourceManager::declareHandle(const Handle &handle)
-            {
-                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
-                try {
-                    if (m_pools.find(extension) != m_pools.end()) {
-                        // create Resource class through a class that return a Resource class thanks to the path
-                        m_pools.at(extension).declareHandle(handle);
-                    } else {
-                        throw std::runtime_error("No matching pool for the handle given. Invalid file extension");
-                    }
-                } catch (const std::exception &e) {
-                    std::cout << e.what() << std::endl;
+                    spdlog::error(e.what());
                     throw e;
                 }
             }
 
             void ResourceManager::clear()
             {
+                spdlog::info("Clear handles started");
                 for (auto &pool : m_pools) {
-                    spdlog::info(pool.first + " clear start");
+                    spdlog::info(pool.first + " clear start:");
                     pool.second.clear();
                     spdlog::info(pool.first + " clear ended");
                 }

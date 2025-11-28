@@ -15,20 +15,18 @@ namespace atmo
     {
         namespace resource
         {
-            class Pool
+            class ResourcePool
             {
             public:
-                Pool();
-                ~Pool();
+                ResourcePool();
+                ~ResourcePool();
 
                 const Handle create(const std::string &path);
                 std::shared_ptr<Resource> getFromHandle(const Handle &handle);
 
-                void declareHandle(const Handle &handle);
                 void destroy(const Handle &handle);
                 void clear();
             private:
-                std::vector<std::string> m_usedHandles; // when adding a handle to this vecteur, add the ".path" value of the handle
                 std::unordered_map<std::string, Handle> m_handles;
 
                 std::vector<std::shared_ptr<Resource>> m_resources;
