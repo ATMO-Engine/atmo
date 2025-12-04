@@ -1,5 +1,7 @@
 #include <SDL3/SDL.h>
 #include <spdlog/spdlog.h>
+#include "clay.h"
+#include "core/ecs/components.hpp"
 #include "core/event/event_dispatcher.hpp"
 #include "core/input/input_manager.hpp"
 
@@ -248,7 +250,18 @@ Clay_ElementId atmo::impl::WindowManager::getIdForEntity(flecs::entity e)
 
 void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
 {
+    using Rect = atmo::core::components::UI::Rect;
+
     Clay_ElementDeclaration decl = buildDecl(e);
+
+    if (e.has<Rect>()) {
+        auto &rect = e.get<Rect>();
+
+        decl.layout.sizing.width = CLAY_SIZING_FIXED(rect.size.x);
+        decl.layout.sizing.height = CLAY_SIZING_FIXED(rect.size.y);
+
+        decl.backgroundColor = (Clay_Color){ rect.color.r, rect.color.g, rect.color.b, rect.color.a };
+    }
 
     CLAY(decl)
     {

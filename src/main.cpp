@@ -113,6 +113,10 @@ int main(int argc, char **argv)
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
 
+    auto testRect = engine.getECS().instantiatePrefab("rect_ui", "TestRect");
+    testRect.child_of(window);
+    testRect.set<atmo::core::components::UI::Rect>({ .size = { 200.0f, 100.0f }, .color = { 1.0f, 0.0f, 0.0f, 1.0f } });
+
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
     while (g_engine->getECS().progress(deltaTime)) {

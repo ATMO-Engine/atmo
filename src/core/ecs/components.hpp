@@ -125,6 +125,15 @@ namespace atmo
                 FIELD(content)
                 // FIELD(config)
                 END_REFLECT(Text)
+
+                struct Rect {
+                    types::vector2 size{ 100.0f, 50.0f };
+                    types::rgba color{ 1.0f, 0.0f, 0.0f, 1.0f };
+                };
+                BEGIN_REFLECT(Rect)
+                FIELD(size)
+                FIELD(color)
+                END_REFLECT(Rect)
             } // namespace UI
 
             static void register_core_components(flecs::world ecs)

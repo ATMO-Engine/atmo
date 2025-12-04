@@ -112,6 +112,13 @@ void atmo::core::ecs::ECS::loadPrefabs()
         auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
         addPrefab(sprite2DPrefab);
     }
+    { // Rect UI
+        atmo::core::components::UI::Rect defaultRect{ .size = { 100.0f, 50.0f }, .color = { 1.0f, 0.0f, 0.0f, 1.0f } };
+
+        auto rectPrefab = Prefab(m_world, "rect_ui").set(components::Transform2D{}).set(defaultRect);
+
+        addPrefab(rectPrefab);
+    }
 }
 
 void atmo::core::ecs::ECS::addPrefab(Prefab &prefab)
