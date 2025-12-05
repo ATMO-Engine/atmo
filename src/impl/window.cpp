@@ -100,6 +100,7 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
 
 void atmo::impl::WindowManager::beginDraw()
 {
+    SDL_SetRenderDrawColor(m_rendererData.renderer, 0, 0, 0, 255);
     SDL_RenderClear(m_rendererData.renderer);
 }
 
@@ -126,8 +127,6 @@ void atmo::impl::WindowManager::draw()
     entity.children([this](flecs::entity child) { declareEntityUi(child); });
 
     auto commands = Clay_EndLayout();
-
-    SDL_SetRenderDrawColor(m_rendererData.renderer, 0, 0, 0, 255);
 
     SDL_Clay_RenderClayCommands(&m_rendererData, &commands);
 

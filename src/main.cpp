@@ -68,9 +68,7 @@ int main(int argc, char **argv)
     spdlog::set_level(spdlog::level::debug);
 #endif
 
-    if (SDL_Init(
-            SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA) !=
-        true) {
+    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR) != true) {
         spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
         return 1;
     }
@@ -109,13 +107,13 @@ int main(int argc, char **argv)
 
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(window);
-    sprite.set<atmo::core::components::Sprite2D>({ "/Users/kapsulon/atmo/assets/atmo.png" });
+    sprite.set<atmo::core::components::Sprite2D>({ "/Users/albericdesaegher/taftaf/ATMO/atmo/assets/atmo.png" });
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
 
     auto testRect = engine.getECS().instantiatePrefab("rect_ui", "TestRect");
     testRect.child_of(window);
-    testRect.set<atmo::core::components::UI::Rect>({ .size = { 200.0f, 100.0f }, .color = { 1.0f, 0.0f, 0.0f, 1.0f } });
+    testRect.set<atmo::core::components::UI::Rect>({ .size = { 200.0f, 100.0f }, .color = { 255.0f, 0.0f, 0.0f, 255.0f } });
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
