@@ -6,7 +6,6 @@
 #include <box2d/box2d.h>
 #include <flecs.h>
 #include <spdlog/spdlog.h>
-#include <windef.h>
 #include "SDL3/SDL_rect.h"
 #include "clay.h"
 
@@ -138,8 +137,8 @@ namespace atmo
                 END_REFLECT(Padding)
 
                 struct Position {
-                    Padding padding{0, 0};
-                    types::vector2 size{0.0f, 0.0f};
+                    Padding padding{ 0, 0 };
+                    types::vector2 size{ 0.0f, 0.0f };
                 };
                 BEGIN_REFLECT(Position)
                 FIELD(padding)
