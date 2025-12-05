@@ -14,27 +14,37 @@
 void SDL_Clay_RenderClayCommands(Clay_SDLRendererData *rendererData, Clay_RenderCommandArray *rcommands);
 static Clay_Dimensions SDL_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData)
 {
-    TTF_Font **fonts = static_cast<TTF_Font **>(userData);
-    TTF_Font *font = fonts[config->fontId];
+    Clay_Dimensions result{ 0.0f, 0.0f };
 
+    if (!config || !userData || !text.chars || text.length <= 0) {
+        return result;
+    }
+
+    TTF_Font **fonts = static_cast<TTF_Font **>(userData);
+
+    if (config->fontId < 0 || config->fontId > 0) {
+        spdlog::warn("MeasureText: invalid fontId={} (only fontId=0 is valid for now)", (int)config->fontId);
+        return result;
+    }
+
+    TTF_Font *font = fonts[0];
     if (!font) {
-        return Clay_Dimensions{ 0.0f, 0.0f };
+        spdlog::warn("MeasureText: font[0] is null");
+        return result;
     }
 
     TTF_SetFontSize(font, config->fontSize);
 
     int w = 0, h = 0;
-
     if (!TTF_GetStringSize(font, text.chars, text.length, &w, &h)) {
         spdlog::error("Failed to measure text: {}", SDL_GetError());
-        return Clay_Dimensions{ 0.0f, 0.0f };
+        return result;
     }
 
-    spdlog::info("MeasureText: len={} -> {}x{}", text.length, w, h);
-
-    return Clay_Dimensions{ (float)w, (float)h };
+    result.width = (float)w;
+    result.height = (float)h;
+    return result;
 }
-
 
 atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 {
@@ -298,27 +308,17 @@ void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
     }
 
     if (e.has<core::components::UI::Text>()) {
-        // Laisse Clay dimensionner l'élément à la taille de son contenu
         decl.layout.sizing.width = CLAY_SIZING_FIT(0, 10000);
         decl.layout.sizing.height = CLAY_SIZING_FIT(0, 10000);
-        decl.backgroundColor = (Clay_Color){ 50, 50, 50, 255 };
     }
 
     CLAY(decl)
     {
         if (e.has<core::components::UI::Text>()) {
-            auto txt = e.get<core::components::UI::Text>();
-
-            Clay_TextElementConfig cfg{};
-            cfg.fontId = 0;
-            cfg.fontSize = (uint16_t)txt.font_size;
-            // cfg.textColor = (Clay_Color){255.0f, txt.font_color.g * 255.0f, txt.font_color.b * 255.0f, txt.font_color.a * 255.0f };
-            cfg.textColor = (Clay_Color){ 1.0f * 255.0f, 0.0f * 255.0f, 0.0f * 255.0f, 0.0f * 255.0f };
+            auto &txt = e.get_mut<core::components::UI::Text>();
 
             Clay_String str{ false, (int32_t)txt.content.size(), txt.content.c_str() };
-            spdlog::info("Drawing text '{}' with size {}", txt.content, cfg.fontSize);
-            SDL_SetRenderDrawBlendMode(m_rendererData.renderer, SDL_BLENDMODE_BLEND);
-            CLAY_TEXT(str, &cfg);
+            CLAY_TEXT(str, &txt.text_config);
         }
         e.children([this](flecs::entity child) { declareEntityUi(child); });
     }

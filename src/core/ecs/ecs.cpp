@@ -118,9 +118,17 @@ void atmo::core::ecs::ECS::loadPrefabs()
 
         auto textPrefab = Prefab(m_world, "ui.label")
                               .set(components::Transform2D{})
-                              .set(components::UI::Text{ .content = "Hello, Atmo!", .font_size = 24, .font_color = { 0.0f, 0.0f, 0.0f, 1.0f } })
-                              .set(defaultText)
-                              .set(atmo::core::components::UI::Element{}).set(elem);
+                              .set(atmo::core::components::UI::Element{})
+                              .set(elem)
+                              .set(
+                                  components::UI::Text{ .content = "Hello, Atmo!",
+                                                        .text_config =
+                                                            Clay_TextElementConfig{
+                                                                .fontId = 0,
+                                                                .fontSize = 24,
+                                                                .textColor = { 255, 255, 255, 255 },
+                                                            } })
+                              .set(defaultText);
 
         addPrefab(textPrefab);
     }
@@ -128,9 +136,8 @@ void atmo::core::ecs::ECS::loadPrefabs()
         atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
         atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::RECT;
 
-        auto rectPrefab = Prefab(m_world, "ui.layout.rect")
-            .set(components::Transform2D{}).set(defaultRect)
-            .set(atmo::core::components::UI::Element{}).set(elem);
+        auto rectPrefab =
+            Prefab(m_world, "ui.layout.rect").set(components::Transform2D{}).set(defaultRect).set(atmo::core::components::UI::Element{}).set(elem);
 
         addPrefab(rectPrefab);
     }
@@ -140,9 +147,12 @@ void atmo::core::ecs::ECS::loadPrefabs()
         atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::HBOX;
 
         auto HBoxPrefab = Prefab(m_world, "ui.layout.Hbox")
-            .set(components::Transform2D{}).set(defaultRect)
-            .set(components::UI::Container{}).set(defaultContainer)
-            .set(atmo::core::components::UI::Element{}).set(elem);
+                              .set(components::Transform2D{})
+                              .set(defaultRect)
+                              .set(components::UI::Container{})
+                              .set(defaultContainer)
+                              .set(atmo::core::components::UI::Element{})
+                              .set(elem);
 
         addPrefab(HBoxPrefab);
     }
@@ -152,9 +162,12 @@ void atmo::core::ecs::ECS::loadPrefabs()
         atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::VBOX;
 
         auto VBoxPrefab = Prefab(m_world, "ui.layout.Vbox")
-            .set(components::Transform2D{}).set(defaultRect)
-            .set(components::UI::Container{}).set(defaultContainer)
-            .set(atmo::core::components::UI::Element{}).set(elem);
+                              .set(components::Transform2D{})
+                              .set(defaultRect)
+                              .set(components::UI::Container{})
+                              .set(defaultContainer)
+                              .set(atmo::core::components::UI::Element{})
+                              .set(elem);
 
         addPrefab(VBoxPrefab);
     }

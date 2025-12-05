@@ -115,26 +115,25 @@ int main(int argc, char **argv)
 
     auto VRect = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect");
     VRect.child_of(window);
-    VRect.set(
-        atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 1.0f, 0.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    VRect.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 1.0f, 0.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
     VRect.set(atmo::core::components::UI::Container{ .gap = 16 });
-    VRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = {1000, 1000} });
+    VRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 1000, 1000 } });
 
     auto testRect = engine.getECS().instantiatePrefab("ui.layout.rect", "TestRect");
-    testRect.child_of(VRect);
-    testRect.set(
-        atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    testRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 51, 0, 0 }, .size = {300, 300} });
+    testRect.child_of(window);
+    testRect.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    testRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 51, 0, 0 }, .size = { 300, 300 } });
 
     auto testRect2 = engine.getECS().instantiatePrefab("ui.layout.rect", "Test2Rect");
     testRect2.child_of(VRect);
-    testRect2.set(
-        atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.9f, 0.0f, 0.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    testRect2.set<atmo::core::components::UI::Position>({ .padding = { 100, 0, 0, 0 }, .size = {400, 200} });
+    testRect2.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.9f, 0.0f, 0.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    testRect2.set<atmo::core::components::UI::Position>({ .padding = { 100, 0, 0, 0 }, .size = { 400, 200 } });
 
-    //auto textLabel = engine.getECS().instantiatePrefab("ui.label", "TestLabel");
-    //textLabel.child_of(window);
-    //textLabel.set(atmo::core::components::UI::Text{ .content = "Welcome to Atmo!", .font_size = 132, .font_color = { 1.0f, 0.0f, 0.0f, 1.0f } });
+    auto textLabel = engine.getECS().instantiatePrefab("ui.label", "TestLabel");
+    textLabel.child_of(window);
+    textLabel.set(
+        atmo::core::components::UI::Text{ .content = "Atmo",
+                                          .text_config = Clay_TextElementConfig{ .fontId = 0, .fontSize = 48, .textColor = { 255, 0, 0, 255 } } });
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;

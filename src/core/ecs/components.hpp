@@ -154,13 +154,10 @@ namespace atmo
 
                 struct Text {
                     std::string content;
-                    uint32_t font_size{ 16 };
-                    types::rgba font_color{ 1.0f, 1.0f, 1.0f, 1.0f };
+                    Clay_TextElementConfig text_config;
                 };
                 BEGIN_REFLECT(Text)
                 FIELD(content)
-                FIELD(font_size)
-                FIELD(font_color)
                 END_REFLECT(Text)
             } // namespace UI
 
