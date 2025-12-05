@@ -1,7 +1,6 @@
 #include <csignal>
 #include <cstdlib>
 #include <filesystem>
-#include <iostream>
 #include <string>
 #include "SDL3_ttf/SDL_ttf.h"
 #include "atmo.hpp"
@@ -110,19 +109,32 @@ int main(int argc, char **argv)
 
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(window);
-    sprite.set<atmo::core::components::Sprite2D>({ "/Users/albericdesaegher/taftaf/ATMO/atmo/assets/atmo.png" });
+    sprite.set<atmo::core::components::Sprite2D>({ "C:/Users/rapha/ATMO/atmo/assets/atmo.png" });
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
 
-    auto testRect = engine.getECS().instantiatePrefab("ui.layout.rect", "TestRect");
-    testRect.child_of(window);
-    testRect.set(
-        atmo::core::components::UI::UI{ .visible = false, .modulate = { 0.0f, 255.0f, 0.0f, 255.0f }, .self_modulate = { 255.0f, 255.0f, 255.0f, 255.0f } });
-    testRect.set<atmo::core::components::Transform2D>({ .scale = { 500.0f, 650.0f } });
+    auto VRect = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect");
+    VRect.child_of(window);
+    VRect.set(
+        atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 1.0f, 0.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    VRect.set(atmo::core::components::UI::Container{ .gap = 16 });
+    VRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = {1000, 1000} });
 
-    auto textLabel = engine.getECS().instantiatePrefab("ui.label", "TestLabel");
-    textLabel.child_of(window);
-    textLabel.set(atmo::core::components::UI::Text{ .content = "Welcome to Atmo!", .font_size = 132, .font_color = { 1.0f, 0.0f, 0.0f, 1.0f } });
+    auto testRect = engine.getECS().instantiatePrefab("ui.layout.rect", "TestRect");
+    testRect.child_of(VRect);
+    testRect.set(
+        atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    testRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 51, 0, 0 }, .size = {300, 300} });
+
+    auto testRect2 = engine.getECS().instantiatePrefab("ui.layout.rect", "Test2Rect");
+    testRect2.child_of(VRect);
+    testRect2.set(
+        atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.9f, 0.0f, 0.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    testRect2.set<atmo::core::components::UI::Position>({ .padding = { 100, 0, 0, 0 }, .size = {400, 200} });
+
+    //auto textLabel = engine.getECS().instantiatePrefab("ui.label", "TestLabel");
+    //textLabel.child_of(window);
+    //textLabel.set(atmo::core::components::UI::Text{ .content = "Welcome to Atmo!", .font_size = 132, .font_color = { 1.0f, 0.0f, 0.0f, 1.0f } });
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;

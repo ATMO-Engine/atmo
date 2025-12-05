@@ -1,12 +1,12 @@
 #pragma once
 
 #include <cstdint>
-#include <cstdlib>
 #include <string>
 
 #include <box2d/box2d.h>
 #include <flecs.h>
 #include <spdlog/spdlog.h>
+#include <windef.h>
 #include "SDL3/SDL_rect.h"
 #include "clay.h"
 
@@ -104,6 +104,13 @@ namespace atmo
 
             namespace UI
             {
+                enum Element {
+                    RECT = 0,
+                    LABEL = 1,
+                    HBOX = 2,
+                    VBOX = 4
+                };
+
                 // Clay_ElementDeclaration decl;
                 // Clay_TextElementConfig textConfig;
                 struct UI {
@@ -116,6 +123,34 @@ namespace atmo
                 FIELD(modulate)
                 FIELD(self_modulate)
                 END_REFLECT(UI)
+
+                struct Padding {
+                    uint16_t left = 0;
+                    uint16_t top = 0;
+                    uint16_t right = 0;
+                    uint16_t bottom = 0;
+                };
+                BEGIN_REFLECT(Padding)
+                FIELD(left)
+                FIELD(top)
+                FIELD(right)
+                FIELD(bottom)
+                END_REFLECT(Padding)
+
+                struct Position {
+                    Padding padding{0, 0};
+                    types::vector2 size{0.0f, 0.0f};
+                };
+                BEGIN_REFLECT(Position)
+                FIELD(padding)
+                END_REFLECT(Position)
+
+                struct Container {
+                    uint16_t gap = 0;
+                };
+                BEGIN_REFLECT(Container)
+                FIELD(gap)
+                END_REFLECT(Container)
 
                 struct Text {
                     std::string content;
