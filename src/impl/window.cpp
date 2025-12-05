@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <spdlog/spdlog.h>
 #include "clay.h"
 #include "core/ecs/components.hpp"
@@ -10,7 +11,30 @@
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
 
-void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
+void SDL_Clay_RenderClayCommands(Clay_SDLRendererData *rendererData, Clay_RenderCommandArray *rcommands);
+static Clay_Dimensions SDL_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData)
+{
+    TTF_Font **fonts = static_cast<TTF_Font **>(userData);
+    TTF_Font *font = fonts[config->fontId];
+
+    if (!font) {
+        return Clay_Dimensions{ 0.0f, 0.0f };
+    }
+
+    TTF_SetFontSize(font, config->fontSize);
+
+    int w = 0, h = 0;
+
+    if (!TTF_GetStringSize(font, text.chars, text.length, &w, &h)) {
+        spdlog::error("Failed to measure text: {}", SDL_GetError());
+        return Clay_Dimensions{ 0.0f, 0.0f };
+    }
+
+    spdlog::info("MeasureText: len={} -> {}x{}", text.length, w, h);
+
+    return Clay_Dimensions{ (float)w, (float)h };
+}
+
 
 atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 {
@@ -48,6 +72,13 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
         throw std::runtime_error("Failed to allocate memory for the font array");
     }
 
+    m_rendererData.fonts[0] = TTF_OpenFont("/Users/albericdesaegher/taftaf/ATMO/atmo/assets/font.ttf", 24);
+
+    if (!m_rendererData.fonts[0]) {
+        spdlog::error("Failed to load font: {}", SDL_GetError());
+        throw std::runtime_error("Failed to load font");
+    }
+
     auto totalMemSize = Clay_MinMemorySize();
     m_clayArena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
@@ -55,8 +86,7 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
                         spdlog::error("Clay error: {}", errorData.errorText.chars);
                     } });
 
-    // TODO add sdl measure text callback here once SDL_ttf is integrated
-    // Clay_SetMeasureTextFunction(SDL_MeasureText, state->rendererData.fonts);
+    Clay_SetMeasureTextFunction(SDL_MeasureText, m_rendererData.fonts);
 }
 
 atmo::impl::WindowManager::~WindowManager()
@@ -249,30 +279,47 @@ Clay_ElementId atmo::impl::WindowManager::getIdForEntity(flecs::entity e)
 
 void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
 {
-    using Rect = atmo::core::components::UI::Rect;
 
     Clay_ElementDeclaration decl = buildDecl(e);
 
-    if (e.has<Rect>()) {
-        auto &rect = e.get<Rect>();
+    if (e.has<core::components::UI::UI>()) {
+        auto &ui = e.get<core::components::UI::UI>();
 
-        decl.layout.sizing.width = CLAY_SIZING_FIXED(rect.size.x);
-        decl.layout.sizing.height = CLAY_SIZING_FIXED(rect.size.y);
+        if (!ui.visible)
+            return;
+        decl.backgroundColor = (Clay_Color){ ui.modulate.r * 255, ui.modulate.g * 255, ui.modulate.b * 255, ui.modulate.a * 255 };
+    }
 
-        decl.backgroundColor = (Clay_Color){ rect.color.r, rect.color.g, rect.color.b, rect.color.a };
+    if (e.has<core::components::Transform2D>()) {
+        auto &trans = e.get<core::components::Transform2D>();
+
+        decl.layout.sizing.width = CLAY_SIZING_FIXED(trans.scale.x);
+        decl.layout.sizing.height = CLAY_SIZING_FIXED(trans.scale.y);
+    }
+
+    if (e.has<core::components::UI::Text>()) {
+        // Laisse Clay dimensionner l'élément à la taille de son contenu
+        decl.layout.sizing.width = CLAY_SIZING_FIT(0, 10000);
+        decl.layout.sizing.height = CLAY_SIZING_FIT(0, 10000);
+        decl.backgroundColor = (Clay_Color){ 50, 50, 50, 255 };
     }
 
     CLAY(decl)
     {
-        // if (e.has<core::components::UIText>()) {
-        //     auto txt = e.get<core::components::UIText>();
-        //     Clay_TextElementConfig cfg{};
-        //     cfg.fontSize = (uint16_t)txt.font_size;
-        //     cfg.textColor = { txt.color.r * 255, txt.color.g * 255, txt.color.b * 255, txt.color.a * 255 };
-        //     Clay_String str{ false, (int32_t)txt.content.size(), txt.content.c_str() };
-        //     CLAY_TEXT(str, &cfg);
-        // }
+        if (e.has<core::components::UI::Text>()) {
+            auto txt = e.get<core::components::UI::Text>();
 
+            Clay_TextElementConfig cfg{};
+            cfg.fontId = 0;
+            cfg.fontSize = (uint16_t)txt.font_size;
+            // cfg.textColor = (Clay_Color){255.0f, txt.font_color.g * 255.0f, txt.font_color.b * 255.0f, txt.font_color.a * 255.0f };
+            cfg.textColor = (Clay_Color){ 1.0f * 255.0f, 0.0f * 255.0f, 0.0f * 255.0f, 0.0f * 255.0f };
+
+            Clay_String str{ false, (int32_t)txt.content.size(), txt.content.c_str() };
+            spdlog::info("Drawing text '{}' with size {}", txt.content, cfg.fontSize);
+            SDL_SetRenderDrawBlendMode(m_rendererData.renderer, SDL_BLENDMODE_BLEND);
+            CLAY_TEXT(str, &cfg);
+        }
         e.children([this](flecs::entity child) { declareEntityUi(child); });
     }
 }

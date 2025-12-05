@@ -60,7 +60,7 @@ namespace atmo
             static inline flecs::entity main_window;
 
             SDL_Window *m_window = nullptr;
-            Clay_SDL3RendererData m_rendererData;
+            Clay_SDLRendererData m_rendererData;
             Clay_Arena m_clayArena;
             std::map<core::resource::handle, SDL_Texture *> m_textureCache;
         };

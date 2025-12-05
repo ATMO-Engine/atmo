@@ -13,7 +13,7 @@
 static int NUM_CIRCLE_SEGMENTS = 16;
 
 // all rendering is performed by a single SDL call, avoiding multiple RenderRect + plumbing choice for circles.
-static void SDL_Clay_RenderFillRoundedRect(Clay_SDL3RendererData *rendererData, const SDL_FRect rect, const float cornerRadius, const Clay_Color _color)
+static void SDL_Clay_RenderFillRoundedRect(Clay_SDLRendererData *rendererData, const SDL_FRect rect, const float cornerRadius, const Clay_Color _color)
 {
     const SDL_FColor color = { _color.r / 255, _color.g / 255, _color.b / 255, _color.a / 255 };
 
@@ -139,7 +139,7 @@ static void SDL_Clay_RenderFillRoundedRect(Clay_SDL3RendererData *rendererData, 
 }
 
 static void SDL_Clay_RenderArc(
-    Clay_SDL3RendererData *rendererData, const SDL_FPoint center, const float radius, const float startAngle, const float endAngle, const float thickness,
+    Clay_SDLRendererData *rendererData, const SDL_FPoint center, const float radius, const float startAngle, const float endAngle, const float thickness,
     const Clay_Color color)
 {
     SDL_SetRenderDrawColor(rendererData->renderer, color.r, color.g, color.b, color.a);
@@ -167,7 +167,7 @@ static void SDL_Clay_RenderArc(
 
 SDL_Rect currentClippingRectangle;
 
-void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands)
+void SDL_Clay_RenderClayCommands(Clay_SDLRendererData *rendererData, Clay_RenderCommandArray *rcommands)
 {
     for (size_t i = 0; i < rcommands->length; i++) {
         Clay_RenderCommand *rcmd = Clay_RenderCommandArray_Get(rcommands, i);

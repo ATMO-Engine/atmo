@@ -112,10 +112,19 @@ void atmo::core::ecs::ECS::loadPrefabs()
         auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
         addPrefab(sprite2DPrefab);
     }
-    { // Rect UI
-        atmo::core::components::UI::Rect defaultRect{ .size = { 100.0f, 50.0f }, .color = { 1.0f, 0.0f, 0.0f, 1.0f } };
+    { // Text UI
+        atmo::core::components::UI::UI defaultText{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 0.0f, 0.0f, 0.0f, 0.0f } };
+        auto textPrefab = Prefab(m_world, "ui.label")
+                              .set(components::Transform2D{})
+                              .set(components::UI::Text{ .content = "Hello, Atmo!", .font_size = 24, .font_color = { 0.0f, 0.0f, 0.0f, 1.0f } })
+                              .set(defaultText);
 
-        auto rectPrefab = Prefab(m_world, "rect_ui").set(components::Transform2D{}).set(defaultRect);
+        addPrefab(textPrefab);
+    }
+    { // Rect UI
+        atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
+
+        auto rectPrefab = Prefab(m_world, "ui.layout.rect").set(components::Transform2D{}).set(defaultRect);
 
         addPrefab(rectPrefab);
     }

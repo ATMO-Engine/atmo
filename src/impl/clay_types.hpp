@@ -7,4 +7,4 @@ typedef struct {
     SDL_Renderer *renderer;
     TTF_TextEngine *text_engine;
     TTF_Font **fonts;
-} Clay_SDL3RendererData;
+} Clay_SDLRendererData;

@@ -119,21 +119,14 @@ namespace atmo
 
                 struct Text {
                     std::string content;
-                    // Clay_TextElementConfig config;
+                    uint32_t font_size{ 16 };
+                    types::rgba font_color{ 1.0f, 1.0f, 1.0f, 1.0f };
                 };
                 BEGIN_REFLECT(Text)
                 FIELD(content)
-                // FIELD(config)
+                FIELD(font_size)
+                FIELD(font_color)
                 END_REFLECT(Text)
-
-                struct Rect {
-                    types::vector2 size{ 100.0f, 50.0f };
-                    types::rgba color{ 1.0f, 0.0f, 0.0f, 1.0f };
-                };
-                BEGIN_REFLECT(Rect)
-                FIELD(size)
-                FIELD(color)
-                END_REFLECT(Rect)
             } // namespace UI
 
             static void register_core_components(flecs::world ecs)
