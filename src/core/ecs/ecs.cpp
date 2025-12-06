@@ -115,6 +115,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
     { // Text UI
         atmo::core::components::UI::UI defaultText{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 0.0f, 0.0f, 0.0f, 0.0f } };
         atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::LABEL;
+        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
         atmo::core::components::UI::Text txt = components::UI::Text{};
         txt.content = "Hello, Atmo!";
         txt.text_config.textColor = { 255, 255, 255, 255 };
@@ -122,7 +123,7 @@ void atmo::core::ecs::ECS::loadPrefabs()
         txt.text_config.fontSize = 24;
 
         auto textPrefab = Prefab(m_world, "ui.label")
-                              .set(components::UI::Position{})
+                              .set(pos)
                               .set(elem)
                               .set(txt)
                               .set(defaultText);
@@ -131,33 +132,36 @@ void atmo::core::ecs::ECS::loadPrefabs()
     }
     { // Rect UI
         atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
+        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
         atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::RECT;
 
-        auto rectPrefab = Prefab(m_world, "ui.layout.rect").set(components::UI::Position{}).set(defaultRect).set(elem);
+        auto rectPrefab = Prefab(m_world, "ui.layout.rect").set(pos).set(defaultRect).set(elem);
 
         addPrefab(rectPrefab);
     }
     { // HBox UI
         atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
+        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
         atmo::core::components::UI::Container defaultContainer{ .gap = 8 };
         atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::HBOX;
 
-        auto HBoxPrefab = Prefab(m_world, "ui.layout.Hbox").set(components::UI::Position{}).set(defaultRect).set(defaultContainer).set(elem);
+        auto HBoxPrefab = Prefab(m_world, "ui.layout.Hbox").set(pos).set(defaultRect).set(defaultContainer).set(elem);
 
         addPrefab(HBoxPrefab);
     }
     { // VBox UI
         atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
+        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
         atmo::core::components::UI::Container defaultContainer{ .gap = 8 };
         atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::VBOX;
 
-        auto VBoxPrefab = Prefab(m_world, "ui.layout.Vbox").set(components::UI::Position{}).set(defaultRect).set(defaultContainer).set(elem);
+        auto VBoxPrefab = Prefab(m_world, "ui.layout.Vbox").set(pos).set(defaultRect).set(defaultContainer).set(elem);
 
         addPrefab(VBoxPrefab);
     }
     { // Button UI
         atmo::core::components::UI::UI defaultButton{ .visible = true, .modulate = { 0.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
-        atmo::core::components::UI::Position buttonPosition{ .size = { 150, 50} };
+        atmo::core::components::UI::Position buttonPosition{ .size = { 100, 100} };
         atmo::core::components::UI::Text buttonText{};
         buttonText.content = "Button";
         buttonText.text_config.fontId = 0;

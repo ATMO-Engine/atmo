@@ -62,7 +62,7 @@ static void loop()
 #endif
 }
 
-int ui(atmo::core::Engine &engine, flecs::entity &window)
+void ui(atmo::core::Engine &engine, flecs::entity &window)
 {
     auto HRect = engine.getECS().instantiatePrefab("ui.layout.Hbox", "HRect");
     HRect.child_of(window);
