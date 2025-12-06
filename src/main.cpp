@@ -74,14 +74,18 @@ void ui(atmo::core::Engine &engine, flecs::entity &window)
     auto VRect = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect");
     VRect.child_of(HRect);
     VRect.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    VRect.set(atmo::core::components::UI::Container{ .gap = 0 });
+    VRect.set(atmo::core::components::UI::Container{ .gap = 32 });
     VRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.25, 1 } });
 
     auto btn = engine.getECS().instantiatePrefab("ui.input.button", "button");
     btn.child_of(VRect);
     btn.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.6f, 0.7f, 0.5f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    btn.set(atmo::core::components::UI::Container{ .gap = 0 });
     btn.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.1, 0.1 } });
+
+    auto label = engine.getECS().instantiatePrefab("ui.label", "label");
+    label.child_of(VRect);
+    label.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    label.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.3, 0.3 } });
 
 
     auto VRect2 = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect2");
