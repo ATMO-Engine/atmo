@@ -104,11 +104,11 @@ namespace atmo
             namespace UI
             {
                 enum Element {
-                    RECT = 0,
-                    LABEL = 1,
-                    HBOX = 2,
-                    VBOX = 4,
-                    BUTTON = 8
+                    RECT,
+                    LABEL,
+                    HBOX,
+                    VBOX,
+                    BUTTON
                 };
 
                 // Clay_ElementDeclaration decl;

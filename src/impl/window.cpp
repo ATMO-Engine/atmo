@@ -330,7 +330,6 @@ void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
             decl.layout.layoutDirection = CLAY_TOP_TO_BOTTOM;
         }
         if (type == core::components::UI::Element::BUTTON) {
-            spdlog::debug("Declaring button {}", e.name().c_str());
             bool isHover = Clay_PointerOver(decl.id);
             if (isHover) {
                 decl.backgroundColor = { 200, 200, 200, 255 };

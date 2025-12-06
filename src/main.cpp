@@ -129,11 +129,14 @@ int main(int argc, char **argv)
     testRect2.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.9f, 0.0f, 0.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
     testRect2.set<atmo::core::components::UI::Position>({ .padding = { 100, 0, 0, 0 }, .size = { 400, 200 } });
 
+    atmo::core::components::UI::Text txt = atmo::core::components::UI::Text{};
+        txt.content = "Atmo et tout les morceaux!";
+        txt.text_config.textColor = { 255, 0, 0, 255 };
+        txt.text_config.fontId = 0;
+        txt.text_config.fontSize = 48;
     auto textLabel = engine.getECS().instantiatePrefab("ui.label", "TestLabel");
     textLabel.child_of(VRect);
-    textLabel.set(
-        atmo::core::components::UI::Text{ .content = "Atmo et tout les morceaux!",
-                                          .text_config = Clay_TextElementConfig{ .fontId = 0, .fontSize = 48, .textColor = { 255, 0, 0, 255 } } });
+    textLabel.set(txt);
 
     auto buttonRect = engine.getECS().instantiatePrefab("ui.input.button", "ButtonRect");
     buttonRect.child_of(VRect);
