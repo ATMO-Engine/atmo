@@ -77,7 +77,11 @@ void ui(atmo::core::Engine &engine, flecs::entity &window)
     VRect.set(atmo::core::components::UI::Container{ .gap = 0 });
     VRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.25, 1 } });
 
-
+    auto btn = engine.getECS().instantiatePrefab("ui.input.button", "button");
+    btn.child_of(VRect);
+    btn.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.6f, 0.7f, 0.5f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
+    btn.set(atmo::core::components::UI::Container{ .gap = 0 });
+    btn.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.1, 0.1 } });
 
 
     auto VRect2 = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect2");
