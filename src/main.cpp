@@ -135,6 +135,9 @@ int main(int argc, char **argv)
         atmo::core::components::UI::Text{ .content = "Atmo et tout les morceaux!",
                                           .text_config = Clay_TextElementConfig{ .fontId = 0, .fontSize = 48, .textColor = { 255, 0, 0, 255 } } });
 
+    auto buttonRect = engine.getECS().instantiatePrefab("ui.input.button", "ButtonRect");
+    buttonRect.child_of(VRect);
+
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
     while (g_engine->getECS().progress(deltaTime)) {

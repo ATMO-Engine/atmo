@@ -157,6 +157,26 @@ void atmo::core::ecs::ECS::loadPrefabs()
 
         addPrefab(VBoxPrefab);
     }
+    { // Button UI
+        atmo::core::components::UI::UI defaultButton{ .visible = true, .modulate = { 0.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
+        atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::BUTTON;
+        atmo::core::components::UI::Position buttonPosition{ .size = { 150, 50 } };
+        atmo::core::components::UI::Text buttonText{ .content = "Button",
+                                                     .text_config = Clay_TextElementConfig{
+                                                         .fontId = 0,
+                                                         .fontSize = 24,
+                                                         .textColor = { 0, 0, 0, 255 },
+                                                     } };
+
+        auto buttonPrefab = Prefab(m_world, "ui.input.button").set(buttonPosition).set(defaultButton).set(elem).set(buttonText).set(components::UI::Input{});
+
+        m_world.observer<components::UI::Input>("Button_Hovered").event(flecs::OnSet).each([](flecs::entity e, components::UI::Input &input) {
+            if (input.hovered) {
+                spdlog::info("Button {} is hovered", e.name().c_str());
+            }
+        });
+        addPrefab(buttonPrefab);
+    }
 }
 
 void atmo::core::ecs::ECS::addPrefab(Prefab &prefab)

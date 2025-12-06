@@ -107,7 +107,8 @@ namespace atmo
                     RECT = 0,
                     LABEL = 1,
                     HBOX = 2,
-                    VBOX = 4
+                    VBOX = 4,
+                    BUTTON = 8
                 };
 
                 // Clay_ElementDeclaration decl;
@@ -158,6 +159,11 @@ namespace atmo
                 BEGIN_REFLECT(Text)
                 FIELD(content)
                 END_REFLECT(Text)
+
+                struct Input {
+                    bool hovered{ false };
+                    bool pressed{ false };
+                };
             } // namespace UI
 
             static void register_core_components(flecs::world ecs)

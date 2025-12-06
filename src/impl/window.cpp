@@ -1,6 +1,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <spdlog/spdlog.h>
+#include <stdbool.h>
 #include "clay.h"
 #include "core/ecs/components.hpp"
 #include "core/event/event_dispatcher.hpp"
@@ -327,6 +328,13 @@ void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
         }
         if (type == core::components::UI::Element::VBOX) {
             decl.layout.layoutDirection = CLAY_TOP_TO_BOTTOM;
+        }
+        if (type == core::components::UI::Element::BUTTON) {
+            spdlog::debug("Declaring button {}", e.name().c_str());
+            bool isHover = Clay_PointerOver(decl.id);
+            if (isHover) {
+                decl.backgroundColor = { 200, 200, 200, 255 };
+            }
         }
     }
 
