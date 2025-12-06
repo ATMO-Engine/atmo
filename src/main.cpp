@@ -130,7 +130,7 @@ int main(int argc, char **argv)
     testRect2.set<atmo::core::components::UI::Position>({ .padding = { 100, 0, 0, 0 }, .size = { 400, 200 } });
 
     auto textLabel = engine.getECS().instantiatePrefab("ui.label", "TestLabel");
-    textLabel.child_of(window);
+    textLabel.child_of(VRect);
     textLabel.set(
         atmo::core::components::UI::Text{ .content = "Atmo",
                                           .text_config = Clay_TextElementConfig{ .fontId = 0, .fontSize = 48, .textColor = { 255, 0, 0, 255 } } });
