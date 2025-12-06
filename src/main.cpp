@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(window);
-    sprite.set<atmo::core::components::Sprite2D>({ "C:/Users/rapha/ATMO/atmo/assets/atmo.png" });
+    sprite.set<atmo::core::components::Sprite2D>({ "/Users/albericdesaegher/taftaf/ATMO/atmo/assets/atmo.png" });
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
 
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     auto textLabel = engine.getECS().instantiatePrefab("ui.label", "TestLabel");
     textLabel.child_of(VRect);
     textLabel.set(
-        atmo::core::components::UI::Text{ .content = "Atmo",
+        atmo::core::components::UI::Text{ .content = "Atmo et tout les morceaux!",
                                           .text_config = Clay_TextElementConfig{ .fontId = 0, .fontSize = 48, .textColor = { 255, 0, 0, 255 } } });
 
     auto last_time = std::chrono::steady_clock::now();

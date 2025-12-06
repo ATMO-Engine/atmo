@@ -82,7 +82,7 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
         throw std::runtime_error("Failed to allocate memory for the font array");
     }
 
-    m_rendererData.fonts[0] = TTF_OpenFont("C:/Users/rapha/ATMO/atmo/assets/font.ttf", 24);
+    m_rendererData.fonts[0] = TTF_OpenFont("/Users/albericdesaegher/taftaf/ATMO/atmo/assets/font.ttf", 24);
 
     if (!m_rendererData.fonts[0]) {
         spdlog::error("Failed to load font: {}", SDL_GetError());
@@ -330,12 +330,10 @@ void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
         }
     }
 
-    //if (e.has<core::components::UI::Text>()) {
-    //    // Laisse Clay dimensionner l'élément à la taille de son contenu
-    //    decl.layout.sizing.width = CLAY_SIZING_FIT(0, 10000);
-    //    decl.layout.sizing.height = CLAY_SIZING_FIT(0, 10000);
-    //    decl.backgroundColor = { 50, 50, 50, 255 };
-    //}
+    if (e.has<core::components::UI::Text>()) {
+        decl.layout.sizing.width = CLAY_SIZING_FIT(0, 10000);
+        decl.layout.sizing.height = CLAY_SIZING_FIT(0, 10000);
+    }
 
     CLAY(decl)
     {
