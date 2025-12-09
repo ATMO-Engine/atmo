@@ -5,6 +5,7 @@
 #include <string>
 #include "atmo.hpp"
 #include "core/ecs/components.hpp"
+#include "core/scene/scene_manager.hpp"
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
@@ -102,12 +103,16 @@ int main(int argc, char **argv)
 
     // loop();
 
-    auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
+    atmo::core::scene::Scene scene = engine.getECS().createScene("main", false);
+
+    // TODO: find out how to stop scene switching from needing to close and reopen window
+
+    auto window = engine.getECS().instantiatePrefab(scene, "window", "MainWindow");
     atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
     wm->rename("Atmo Engine");
     wm->makeMain();
 
-    auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
+    auto sprite = engine.getECS().instantiatePrefab(scene, "sprite2d", "TestSprite");
     sprite.child_of(window);
     sprite.set<atmo::core::components::Sprite2D>({ "/Users/kapsulon/atmo/assets/atmo.png" });
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();

@@ -56,6 +56,12 @@ namespace atmo
                 return registry;
             }
 
+            struct Scene {
+                std::string scene_name;
+                bool singleton{ false };
+                b2WorldId world_id{ b2_nullWorldId };
+            };
+
             struct Transform2D {
                 types::vector2 position{ 0.0f, 0.0f };
                 types::vector2 g_position{ 0.0f, 0.0f };

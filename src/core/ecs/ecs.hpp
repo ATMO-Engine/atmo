@@ -5,6 +5,7 @@
 #include <string>
 
 #include "components.hpp"
+#include "core/scene/scene_manager.hpp"
 #include "prefab.hpp"
 
 namespace atmo
@@ -20,6 +21,7 @@ namespace atmo
             private:
                 flecs::world m_world;
                 std::map<std::string, Prefab> m_prefabs;
+                scene::SceneManager m_scene_manager;
 
                 void loadPrefabs();
 
@@ -29,9 +31,13 @@ namespace atmo
                 void stop();
                 void reset();
 
+                scene::Scene createScene(const std::string &scene_name, bool singleton);
+                void changeScene(scene::Scene scene);
+                void changeSceneToFile(std::string_view scene_path);
+
                 void addPrefab(Prefab &prefab);
 
-                Entity instantiatePrefab(const std::string &name, const std::string &instance_name = "");
+                Entity instantiatePrefab(scene::Scene scene, const std::string &name, const std::string &instance_name = "");
 
                 bool progress(float delta_time = 0.0f) const
                 {
