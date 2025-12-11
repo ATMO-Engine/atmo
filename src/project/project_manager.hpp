@@ -181,6 +181,11 @@ namespace atmo
 #endif
             };
 
+            static ProjectSettings &GetSettings()
+            {
+                return Instance().m_settings;
+            }
+
         private:
             ProjectManager() = default;
             ~ProjectManager() = default;

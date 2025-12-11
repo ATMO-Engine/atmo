@@ -70,9 +70,6 @@ atmo::impl::WindowManager::~WindowManager()
     }
 
     SDL_free(m_clayArena.memory);
-
-    if (main_window == entity)
-        entity.world().quit();
 }
 
 void atmo::impl::WindowManager::pollEvents(float deltaTime)
@@ -148,13 +145,6 @@ void atmo::impl::WindowManager::focus() noexcept
 {
     if (m_window) {
         SDL_RaiseWindow(m_window);
-    }
-}
-
-void atmo::impl::WindowManager::makeMain() noexcept
-{
-    if (m_window && main_window != entity) {
-        main_window = entity;
     }
 }
 

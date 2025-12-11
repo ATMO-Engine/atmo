@@ -12,9 +12,10 @@ namespace atmo
     {
         namespace ecs
         {
-            ECS::ECS() : m_scene_manager(m_world)
+            ECS::ECS()
             {
                 reset();
+                m_scene_manager.setWorld(m_world);
             }
 
             void ECS::stop()
@@ -31,6 +32,11 @@ namespace atmo
                 m_world.init_builtin_components();
                 components::register_core_components(m_world);
                 loadPrefabs();
+
+                m_world.observer<components::Window>().event(flecs::OnRemove).each([this](flecs::entity e, components::Window &window) {
+                    if (e == m_main_window)
+                        this->stop();
+                });
             }
 
             void ECS::loadPrefabs()
@@ -130,7 +136,17 @@ namespace atmo
 
             void ECS::changeScene(scene::Scene scene)
             {
-                m_scene_manager.changeScene(scene);
+                scene::Scene current = m_scene_manager.getCurrentScene();
+
+                try {
+                    m_scene_manager.changeScene(scene);
+                } catch (const scene::SceneManager::SwitchToSingletonSceneException &e) {
+                    return;
+                }
+
+                m_main_window.child_of(scene);
+
+                this->kill(current);
             }
 
             void ECS::changeSceneToFile(std::string_view scene_path)
@@ -138,6 +154,22 @@ namespace atmo
                 m_scene_manager.changeSceneToFile(scene_path);
             }
 
+            void ECS::kill(flecs::entity entity)
+            {
+                entity.children([this](flecs::entity target) { this->kill(target); });
+
+                entity.destruct();
+            }
+
+            flecs::entity ECS::getMainWindow() const
+            {
+                return m_main_window;
+            }
+
+            void ECS::setMainWindow(flecs::entity window)
+            {
+                m_main_window = window;
+            }
 
             void ECS::addPrefab(Prefab &prefab)
             {

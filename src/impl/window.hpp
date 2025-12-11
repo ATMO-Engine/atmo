@@ -57,8 +57,6 @@ namespace atmo
             Clay_ElementId getIdForEntity(flecs::entity e);
             void declareEntityUi(flecs::entity e);
 
-            static inline flecs::entity main_window;
-
             SDL_Window *m_window = nullptr;
             Clay_SDL3RendererData m_rendererData;
             Clay_Arena m_clayArena;

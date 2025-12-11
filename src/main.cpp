@@ -9,6 +9,7 @@
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
+#include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
 #if defined(_WIN32)
@@ -103,14 +104,13 @@ int main(int argc, char **argv)
 
     // loop();
 
-    atmo::core::scene::Scene scene = engine.getECS().createScene("main", false);
-
-    // TODO: find out how to stop scene switching from needing to close and reopen window
+    atmo::core::scene::Scene scene = engine.getECS().createScene("__loading", false);
 
     auto window = engine.getECS().instantiatePrefab(scene, "window", "MainWindow");
     atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
-    wm->rename("Atmo Engine");
-    wm->makeMain();
+    wm->rename(atmo::project::ProjectManager::GetSettings().app.project_name);
+
+    engine.getECS().setMainWindow(window);
 
     auto sprite = engine.getECS().instantiatePrefab(scene, "sprite2d", "TestSprite");
     sprite.child_of(window);

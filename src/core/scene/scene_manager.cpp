@@ -1,4 +1,5 @@
 #include "scene_manager.hpp"
+#include <algorithm>
 #include "core/ecs/components.hpp"
 #include "spdlog/spdlog.h"
 
@@ -8,7 +9,10 @@ namespace atmo
     {
         namespace scene
         {
-            SceneManager::SceneManager(flecs::world &world) : m_world(world), m_current(nullptr) {}
+            void SceneManager::setWorld(flecs::world &world)
+            {
+                m_world = world;
+            }
 
             Scene SceneManager::loadSceneFromFile(std::string_view file_path)
             {
@@ -38,8 +42,9 @@ namespace atmo
 
             void SceneManager::changeScene(Scene scene)
             {
-                if (m_current.is_valid()) {
-                    m_current.destruct();
+                if (std::find(m_singletons.begin(), m_singletons.end(), scene) != m_singletons.end()) {
+                    spdlog::error("Cannot change to a singleton scene: {}", scene.name().c_str());
+                    throw SwitchToSingletonSceneException();
                 }
 
                 m_current = scene;
