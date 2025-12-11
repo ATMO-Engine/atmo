@@ -3,7 +3,6 @@
 #include "core/ecs/components.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
-#include "flecs/addons/cpp/mixins/pipeline/decl.hpp"
 #include "impl/window.hpp"
 
 namespace atmo
@@ -27,7 +26,12 @@ namespace atmo
             {
                 m_world.reset();
 
-                ECS_IMPORT(m_world, FlecsMeta);
+                // ECS_IMPORT(m_world, FlecsMeta);
+
+#if defined(ATMO_DEBUG)
+                m_world.import <flecs::stats>();
+                m_world.set<flecs::Rest>({});
+#endif
 
                 m_world.init_builtin_components();
                 components::register_core_components(m_world);
@@ -94,8 +98,8 @@ namespace atmo
                         .each([](flecs::entity e, components::Sprite2D &sprite, components::Transform2D &transform) {
                             sprite.m_dest_rect.x = transform.g_position.x + transform.position.x;
                             sprite.m_dest_rect.y = transform.g_position.y + transform.position.y;
-                            sprite.m_dest_rect.w = sprite.texture_size.x * (transform.g_scale.x + transform.scale.x);
-                            sprite.m_dest_rect.h = sprite.texture_size.y * (transform.g_scale.y + transform.scale.y);
+                            sprite.m_dest_rect.w = sprite.texture_size.x * (transform.g_scale.x * transform.scale.x);
+                            sprite.m_dest_rect.h = sprite.texture_size.y * (transform.g_scale.y * transform.scale.y);
                         });
 
                     m_world.system<components::Sprite2D, components::Transform2D, ComponentManager::Managed, components::Window>("Sprite2D_Render")
@@ -129,7 +133,7 @@ namespace atmo
 
             scene::Scene ECS::createScene(const std::string &scene_name, bool singleton)
             {
-                scene::Scene scene = m_world.entity().set<components::Scene>({ scene_name, singleton });
+                scene::Scene scene = m_world.entity(scene_name.c_str()).set<components::Scene>({ singleton });
 
                 return scene;
             }
@@ -146,7 +150,8 @@ namespace atmo
 
                 m_main_window.child_of(scene);
 
-                this->kill(current);
+                if (current.is_valid())
+                    this->kill(current);
             }
 
             void ECS::changeSceneToFile(std::string_view scene_path)

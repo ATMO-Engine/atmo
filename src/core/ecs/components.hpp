@@ -57,10 +57,12 @@ namespace atmo
             }
 
             struct Scene {
-                std::string scene_name;
                 bool singleton{ false };
                 b2WorldId world_id{ b2_nullWorldId };
             };
+            BEGIN_REFLECT(Scene)
+            FIELD(singleton)
+            END_REFLECT(Scene)
 
             struct Transform2D {
                 types::vector2 position{ 0.0f, 0.0f };
@@ -135,12 +137,13 @@ namespace atmo
 
             static void register_core_components(flecs::world ecs)
             {
-                flecs::opaque<std::string>(ecs)
-                    .as_type(ecs_id(ecs_string_t))
-                    .serialize([](const ecs_serializer_t *s, const std::string *v) { return s->value(*v); })
-                    .assign_string([](std::string *dst, const char *src) { *dst = src ? src : ""; })
-                    .assign_null([](std::string *dst) { *dst = {}; })
-                    .clear([](std::string *dst) { dst->clear(); });
+                ecs.component<std::string>()
+                    .opaque(flecs::String)
+                    .serialize([](const flecs::serializer *s, const std::string *data) {
+                        const char *str = data->c_str();
+                        return s->value(flecs::String, &str);
+                    })
+                    .assign_string([](std::string *data, const char *value) { *data = value; });
 
                 types::register_core_types(ecs);
 

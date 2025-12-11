@@ -102,8 +102,6 @@ int main(int argc, char **argv)
     atmo::core::InputManager::AddInput("zoom_in", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_R, true), false);
     atmo::core::InputManager::AddInput("zoom_out", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_F, true), false);
 
-    // loop();
-
     atmo::core::scene::Scene scene = engine.getECS().createScene("__loading", false);
 
     auto window = engine.getECS().instantiatePrefab(scene, "window", "MainWindow");
@@ -111,12 +109,30 @@ int main(int argc, char **argv)
     wm->rename(atmo::project::ProjectManager::GetSettings().app.project_name);
 
     engine.getECS().setMainWindow(window);
+    engine.getECS().changeScene(scene);
 
     auto sprite = engine.getECS().instantiatePrefab(scene, "sprite2d", "TestSprite");
     sprite.child_of(window);
-    sprite.set<atmo::core::components::Sprite2D>({ "/Users/kapsulon/atmo/assets/atmo.png" });
+    sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
+    sprite_transform->scale = { 0.25f, 0.25f };
+
+    // TODO: remove after testing
+    auto tmp = engine.getECS().createScene("TestScene", false);
+    auto sprite2 = engine.getECS().instantiatePrefab(tmp, "sprite2d", "TestSprite2");
+    sprite2.child_of(window);
+    sprite2.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    auto sprite2_transform = sprite2.get_ref<atmo::core::components::Transform2D>();
+    sprite2_transform->position = { 400.0f, 100.0f };
+    sprite2_transform->scale = { 0.5f, 0.5f };
+    auto sprite3 = engine.getECS().instantiatePrefab(tmp, "sprite2d", "TestSprite3");
+    sprite3.child_of(window);
+    sprite3.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    auto sprite3_transform = sprite3.get_ref<atmo::core::components::Transform2D>();
+    sprite3_transform->position = { 700.0f, 100.0f };
+    sprite3_transform->scale = { 0.75f, 0.75f };
+    engine.getECS().changeScene(tmp);
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
@@ -128,29 +144,34 @@ int main(int argc, char **argv)
 
         atmo::core::InputManager::Tick();
 
-        if (atmo::core::InputManager::IsPressed("rotate_left"))
-            sprite_transform->rotation -= 1.0f * deltaTime * 60.0f;
-
-        if (atmo::core::InputManager::IsPressed("rotate_right"))
-            sprite_transform->rotation += 1.0f * deltaTime * 60.0f;
-
-        atmo::core::types::vector2 move_delta{ 0, 0 };
-        move_delta.y = (atmo::core::InputManager::IsPressed("move_up") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_down") ? 1 : 0);
-        move_delta.x = (atmo::core::InputManager::IsPressed("move_left") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_right") ? 1 : 0);
-        if (move_delta.x != 0 || move_delta.y != 0) {
-            float length = std::sqrt(move_delta.x * move_delta.x + move_delta.y * move_delta.y);
-            move_delta.x /= length;
-            move_delta.y /= length;
-
-            sprite_transform->position.x += move_delta.x * 500.0f * deltaTime;
-            sprite_transform->position.y += move_delta.y * 500.0f * deltaTime;
+        // print warning if slower than 1 second per frame
+        if (deltaTime > 1.0f) {
+            spdlog::warn("Frame time is too high: {} seconds", deltaTime);
         }
 
-        float zoom_delta = (atmo::core::InputManager::IsPressed("zoom_in") ? 1 : 0) + (atmo::core::InputManager::IsPressed("zoom_out") ? -1 : 0);
-        if (zoom_delta != 0) {
-            sprite_transform->scale.x += zoom_delta * 0.001f;
-            sprite_transform->scale.y += zoom_delta * 0.001f;
-        }
+        // if (atmo::core::InputManager::IsPressed("rotate_left"))
+        //     sprite_transform->rotation -= 1.0f * deltaTime * 60.0f;
+
+        // if (atmo::core::InputManager::IsPressed("rotate_right"))
+        //     sprite_transform->rotation += 1.0f * deltaTime * 60.0f;
+
+        // atmo::core::types::vector2 move_delta{ 0, 0 };
+        // move_delta.y = (atmo::core::InputManager::IsPressed("move_up") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_down") ? 1 : 0);
+        // move_delta.x = (atmo::core::InputManager::IsPressed("move_left") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_right") ? 1 : 0);
+        // if (move_delta.x != 0 || move_delta.y != 0) {
+        //     float length = std::sqrt(move_delta.x * move_delta.x + move_delta.y * move_delta.y);
+        //     move_delta.x /= length;
+        //     move_delta.y /= length;
+
+        //     sprite_transform->position.x += move_delta.x * 500.0f * deltaTime;
+        //     sprite_transform->position.y += move_delta.y * 500.0f * deltaTime;
+        // }
+
+        // float zoom_delta = (atmo::core::InputManager::IsPressed("zoom_in") ? 1 : 0) + (atmo::core::InputManager::IsPressed("zoom_out") ? -1 : 0);
+        // if (zoom_delta != 0) {
+        //     sprite_transform->scale.x += zoom_delta * 0.001f;
+        //     sprite_transform->scale.y += zoom_delta * 0.001f;
+        // }
     }
 
     return 0;
