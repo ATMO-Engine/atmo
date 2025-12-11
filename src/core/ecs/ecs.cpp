@@ -36,11 +36,6 @@ namespace atmo
                 m_world.init_builtin_components();
                 components::register_core_components(m_world);
                 loadPrefabs();
-
-                m_world.observer<components::Window>().event(flecs::OnRemove).each([this](flecs::entity e, components::Window &window) {
-                    if (e == m_main_window)
-                        this->stop();
-                });
             }
 
             void ECS::loadPrefabs()
@@ -54,6 +49,12 @@ namespace atmo
                         t.g_rotation = parent_t.g_rotation + t.rotation;
                         t.g_scale = { parent_t.g_scale.x * t.scale.x, parent_t.g_scale.y * t.scale.y };
                     });
+
+                { // Scene
+                    auto scenePrefab = Prefab(m_world, "scene").set(components::Scene{ false });
+
+                    addPrefab(scenePrefab);
+                }
 
                 { // Window
                     auto windowPrefab = Prefab(m_world, "window").managed<impl::WindowManager>(components::Window{ "Atmo Managed Window", { 800, 600 } });
@@ -131,27 +132,25 @@ namespace atmo
                 }
             }
 
-            scene::Scene ECS::createScene(const std::string &scene_name, bool singleton)
+            flecs::entity ECS::createScene(const std::string &scene_name, bool singleton)
             {
-                scene::Scene scene = m_world.entity(scene_name.c_str()).set<components::Scene>({ singleton });
+                flecs::entity scene = instantiatePrefab("scene", scene_name).set<components::Scene>({ singleton });
 
                 return scene;
             }
 
-            void ECS::changeScene(scene::Scene scene)
+            void ECS::changeScene(flecs::entity scene)
             {
-                scene::Scene current = m_scene_manager.getCurrentScene();
+                flecs::entity current = m_scene_manager.getCurrentScene();
+
+                if (current && scene == current)
+                    return;
 
                 try {
                     m_scene_manager.changeScene(scene);
                 } catch (const scene::SceneManager::SwitchToSingletonSceneException &e) {
                     return;
                 }
-
-                m_main_window.child_of(scene);
-
-                if (current.is_valid())
-                    this->kill(current);
             }
 
             void ECS::changeSceneToFile(std::string_view scene_path)
@@ -159,29 +158,12 @@ namespace atmo
                 m_scene_manager.changeSceneToFile(scene_path);
             }
 
-            void ECS::kill(flecs::entity entity)
-            {
-                entity.children([this](flecs::entity target) { this->kill(target); });
-
-                entity.destruct();
-            }
-
-            flecs::entity ECS::getMainWindow() const
-            {
-                return m_main_window;
-            }
-
-            void ECS::setMainWindow(flecs::entity window)
-            {
-                m_main_window = window;
-            }
-
             void ECS::addPrefab(Prefab &prefab)
             {
                 m_prefabs.emplace(prefab.name, prefab);
             }
 
-            Entity ECS::instantiatePrefab(scene::Scene scene, const std::string &name, const std::string &instance_name)
+            Entity ECS::instantiatePrefab(const std::string &name, const std::string &instance_name)
             {
                 if (m_prefabs.find(name) == m_prefabs.end()) {
                     throw std::runtime_error("Prefab not found: " + name);
@@ -193,8 +175,6 @@ namespace atmo
                 } else {
                     instance = m_world.entity(instance_name.c_str()).is_a(m_prefabs.at(name).entity);
                 }
-
-                instance.child_of(scene);
 
                 return instance;
             }

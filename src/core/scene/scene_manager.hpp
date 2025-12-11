@@ -11,25 +11,25 @@ namespace atmo
     {
         namespace scene
         {
-            using Scene = flecs::entity;
-
             class SceneManager
             {
             private:
                 flecs::world m_world;
-                Scene m_current;
-                std::vector<Scene> m_singletons;
+                flecs::entity m_current;
+                bool m_initialized{ false };
+                std::vector<flecs::entity> m_singletons;
 
-                Scene loadSceneFromFile(std::string_view file_path);
+                flecs::entity loadSceneFromFile(std::string_view file_path);
+                flecs::entity getRoot();
 
             public:
                 ~SceneManager() = default;
 
                 void setWorld(flecs::world &world);
 
-                Scene getCurrentScene() const;
+                flecs::entity getCurrentScene() const;
 
-                void changeScene(Scene scene);
+                void changeScene(flecs::entity scene);
                 void changeSceneToFile(std::string_view file_path);
                 void loadSingleton(std::string_view file_path);
 

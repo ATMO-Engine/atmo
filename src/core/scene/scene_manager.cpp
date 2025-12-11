@@ -14,14 +14,15 @@ namespace atmo
                 m_world = world;
             }
 
-            Scene SceneManager::loadSceneFromFile(std::string_view file_path)
+            flecs::entity SceneManager::loadSceneFromFile(std::string_view file_path)
             {
                 project::File file = project::FileSystem::OpenFile(file_path);
 
-                Scene scene = m_world.entity();
+                flecs::entity scene = m_world.entity();
+
                 scene.from_json(file.readAll().c_str());
 
-                if (!scene.is_valid() || !scene.has<components::Scene>()) {
+                if (!scene.is_valid()) {
                     spdlog::error("Failed to load scene from file: {}", file_path);
                     throw std::runtime_error("Failed to load scene from file: " + std::string(file_path));
                 }
@@ -31,28 +32,39 @@ namespace atmo
 
             void SceneManager::loadSingleton(std::string_view file_path)
             {
-                Scene singleton = loadSceneFromFile(file_path);
+                flecs::entity singleton = loadSceneFromFile(file_path);
                 m_singletons.push_back(singleton);
             }
 
-            Scene SceneManager::getCurrentScene() const
+            flecs::entity SceneManager::getCurrentScene() const
             {
                 return m_current;
             }
 
-            void SceneManager::changeScene(Scene scene)
+            flecs::entity SceneManager::getRoot()
+            {
+                static flecs::entity root = m_world.entity("_Root");
+                return root;
+            }
+
+            void SceneManager::changeScene(flecs::entity scene)
             {
                 if (std::find(m_singletons.begin(), m_singletons.end(), scene) != m_singletons.end()) {
                     spdlog::error("Cannot change to a singleton scene: {}", scene.name().c_str());
                     throw SwitchToSingletonSceneException();
                 }
 
+                flecs::entity old_scene = m_current;
                 m_current = scene;
+                m_current.child_of(getRoot());
+                if (m_initialized)
+                    old_scene.destruct();
+                m_initialized = true;
             }
 
             void SceneManager::changeSceneToFile(std::string_view file_path)
             {
-                Scene scene = loadSceneFromFile(file_path);
+                flecs::entity scene = loadSceneFromFile(file_path);
 
                 changeScene(scene);
             }
