@@ -5,10 +5,10 @@ set_allowedmodes("release", "debug")
 
 set_languages("c++23")
 
---if is_mode("debug") then
+if is_mode("debug") then
     set_policy("build.sanitizer.address", true)
     set_policy("build.sanitizer.undefined", true)
---end
+end
 
 set_policy("build.warning", true)
 
