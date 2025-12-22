@@ -66,54 +66,68 @@ void ui(atmo::core::Engine &engine, flecs::entity &window)
 {
     auto HRect = engine.getECS().instantiatePrefab("ui.layout.Hbox", "HRect");
     HRect.child_of(window);
-    HRect.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    HRect.set(atmo::core::components::UI::Container{ .gap = 0 });
-    HRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 1, 1 } });
+    HRect.set(
+        atmo::core::components::UI::UI{
+            .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    HRect.set<atmo::core::components::Transform2D>({ .scale = { 1, 1 } });
+    HRect.set(atmo::core::components::UI::HBox{ .gap = 0 });
 
 
     auto VRect = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect");
     VRect.child_of(HRect);
-    VRect.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    VRect.set(atmo::core::components::UI::Container{ .gap = 32 });
-    VRect.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.25, 1 } });
+    VRect.set(
+        atmo::core::components::UI::UI{
+            .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    VRect.set<atmo::core::components::Transform2D>({ .scale = { 1, 1 } });
+    VRect.set(atmo::core::components::UI::VBox{ .gap = 32 });
 
     auto btn = engine.getECS().instantiatePrefab("ui.input.button", "button");
     btn.child_of(VRect);
-    btn.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.6f, 0.7f, 0.5f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    btn.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.1, 0.1 } });
+    btn.set(
+        atmo::core::components::UI::UI{
+            .visible = true, .modulate = { 0.6f, 0.7f, 0.5f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    btn.set<atmo::core::components::Transform2D>({ .scale = { 0.1, 0.1 } });
 
-    auto label = engine.getECS().instantiatePrefab("ui.label", "label");
-    label.child_of(VRect);
-    label.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    label.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.3, 0.3 } });
+    // auto label = engine.getECS().instantiatePrefab("ui.label", "label");
+    // label.child_of(VRect);
+    // label.set(
+    //     atmo::core::components::UI::UI{
+    //         .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    // label.set<atmo::core::components::Transform2D>({ .scale = { 0.3, 0.3 } });
 
 
     auto VRect2 = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect2");
     VRect2.child_of(HRect);
-    VRect2.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    VRect2.set(atmo::core::components::UI::Container{ .gap = 0 });
-    VRect2.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.55, 1 } });
+    VRect2.set(
+        atmo::core::components::UI::UI{
+            .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    VRect2.set<atmo::core::components::Transform2D>({ .scale = { 0.55, 1 } });
+    VRect2.set(atmo::core::components::UI::VBox{ .gap = 0 });
 
     auto VRect21 = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect21");
     VRect21.child_of(VRect2);
-    VRect21.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    VRect21.set(atmo::core::components::UI::Container{ .gap = 0 });
-    VRect21.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 1, 0.6 } });
+    VRect21.set(
+        atmo::core::components::UI::UI{
+            .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    VRect21.set<atmo::core::components::Transform2D>({ .scale = { 1, 0.6 } });
+    VRect21.set(atmo::core::components::UI::VBox{ .gap = 0 });
 
     auto VRect22 = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect22");
     VRect22.child_of(VRect2);
-    VRect22.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.6f, 0.6f, 0.6f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    VRect22.set(atmo::core::components::UI::Container{ .gap = 0 });
-    VRect22.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = {1, 0.4 } });
-
-
+    VRect22.set(
+        atmo::core::components::UI::UI{
+            .visible = true, .modulate = { 0.6f, 0.6f, 0.6f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    VRect22.set<atmo::core::components::Transform2D>({ .scale = { 1, 0.4 } });
+    VRect22.set(atmo::core::components::UI::VBox{ .gap = 0 });
 
 
     auto VRect3 = engine.getECS().instantiatePrefab("ui.layout.Vbox", "VRect3");
     VRect3.child_of(HRect);
-    VRect3.set(atmo::core::components::UI::UI{ .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } });
-    VRect3.set(atmo::core::components::UI::Container{ .gap = 0 });
-    VRect3.set<atmo::core::components::UI::Position>({ .padding = { 0, 0, 0, 0 }, .size = { 0.20, 1 } });
+    VRect3.set(
+        atmo::core::components::UI::UI{
+            .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 } });
+    VRect3.set<atmo::core::components::Transform2D>({ .scale = { 0.20, 1 } });
+    VRect3.set(atmo::core::components::UI::VBox{ .gap = 0 });
 }
 
 int main(int argc, char **argv)

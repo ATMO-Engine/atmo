@@ -83,7 +83,7 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
         throw std::runtime_error("Failed to allocate memory for the font array");
     }
 
-    m_rendererData.fonts[0] = TTF_OpenFont("C:/Users/rapha/ATMO/atmo/assets/font.ttf", 24);
+    m_rendererData.fonts[0] = TTF_OpenFont("/Users/albericdesaegher/taftaf/ATMO/atmo/assets/font.ttf", 24);
 
     if (!m_rendererData.fonts[0]) {
         spdlog::error("Failed to load font: {}", SDL_GetError());
@@ -299,47 +299,41 @@ void atmo::impl::WindowManager::declareEntityUi(flecs::entity e)
             return;
         }
         decl.backgroundColor = { ui.modulate.r * 255, ui.modulate.g * 255, ui.modulate.b * 255, ui.modulate.a * 255 };
+        decl.layout.padding = { ui.padding.left, ui.padding.right, ui.padding.top, ui.padding.bottom };
     }
 
-    if (e.has<core::components::UI::Position>()) {
-        auto &pos = e.get<core::components::UI::Position>();
+    if (e.has<core::components::Transform2D>()) {
 
-        decl.layout.sizing.width = CLAY_SIZING_PERCENT(pos.size.x);
-        decl.layout.sizing.height = CLAY_SIZING_PERCENT(pos.size.y);
-        decl.layout.padding = { pos.padding.left, pos.padding.right, pos.padding.top, pos.padding.bottom };
-    }
+        auto &transform = e.get<core::components::Transform2D>();
 
-    if (e.has<core::components::UI::Text>()) {
-        decl.layout.sizing.width = CLAY_SIZING_FIT(0, 10000);
-        decl.layout.sizing.height = CLAY_SIZING_FIT(0, 10000);
-    }
-
-    if (e.has<core::components::UI::Container>()) {
-        auto &cont = e.get<core::components::UI::Container>();
-
-        decl.layout.childGap = { cont.gap };
-    }
-
-    if (e.has<core::components::UI::Element>()) {
-        auto &type = e.get<core::components::UI::Element>();
-
-        if (type == core::components::UI::Element::HBOX) {
-            decl.layout.layoutDirection = CLAY_LEFT_TO_RIGHT;
-        }
-        if (type == core::components::UI::Element::VBOX) {
-            decl.layout.layoutDirection = CLAY_TOP_TO_BOTTOM;
-        }
-        if (type == core::components::UI::Element::BUTTON) {
-            bool isHover = Clay_PointerOver(decl.id);
-            if (isHover) {
-                decl.backgroundColor = { 200, 200, 200, 255 };
-            }
-        }
+        decl.layout.sizing.width = CLAY_SIZING_PERCENT(transform.scale.x);
+        decl.layout.sizing.height = CLAY_SIZING_PERCENT(transform.scale.y);
     }
 
     if (e.has<core::components::UI::Text>()) {
         decl.layout.sizing.width = CLAY_SIZING_FIT(0, 10000);
         decl.layout.sizing.height = CLAY_SIZING_FIT(0, 10000);
+    }
+
+    if (e.has<core::components::UI::HBox>()) {
+        auto &box = e.get<core::components::UI::HBox>();
+
+        decl.layout.layoutDirection = CLAY_LEFT_TO_RIGHT;
+        decl.layout.childGap = box.gap;
+    }
+
+    if (e.has<core::components::UI::VBox>()) {
+        auto &box = e.get<core::components::UI::VBox>();
+
+        decl.layout.layoutDirection = CLAY_TOP_TO_BOTTOM;
+        decl.layout.childGap = box.gap;
+    }
+
+    if (e.has<core::components::UI::Button>()) {
+        bool isHover = Clay_PointerOver(decl.id);
+        if (isHover) {
+            decl.backgroundColor = { 200, 200, 200, 255 };
+        }
     }
 
     CLAY(decl)

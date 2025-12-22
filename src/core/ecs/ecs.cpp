@@ -113,68 +113,73 @@ void atmo::core::ecs::ECS::loadPrefabs()
         addPrefab(sprite2DPrefab);
     }
     { // Text UI
-        atmo::core::components::UI::UI defaultText{ .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 0.0f, 0.0f, 0.0f, 0.0f } };
-        atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::LABEL;
-        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
+        atmo::core::components::UI::UI defaultText{
+            .visible = true, .modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .self_modulate = { 0.0f, 0.0f, 0.0f, 0.0f }, .padding = { 0, 0, 0, 0 }
+        };
+        atmo::core::components::Transform2D pos{ .position = { 0.0f, 0.0f }, .scale = { 1.0f, 1.0f } };
         atmo::core::components::UI::Text txt = components::UI::Text{};
         txt.content = "Hello, Atmo!";
         txt.text_config.textColor = { 255, 255, 255, 255 };
         txt.text_config.fontId = 0;
         txt.text_config.fontSize = 24;
 
-        auto textPrefab = Prefab(m_world, "ui.label")
-                              .set(pos)
-                              .set(elem)
-                              .set(txt)
-                              .set(defaultText);
+        auto textPrefab = Prefab(m_world, "ui.label").set(defaultText).set(pos).set(txt);
 
         addPrefab(textPrefab);
     }
     { // Rect UI
-        atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
-        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
-        atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::RECT;
+        atmo::core::components::UI::UI defaultRect{
+            .visible = true, .modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 }
+        };
+        atmo::core::components::Transform2D pos{ .position = { 0.0f, 0.0f }, .scale = { 1.0f, 1.0f } };
+        atmo::core::components::UI::Rect elem = atmo::core::components::UI::Rect{};
 
-        auto rectPrefab = Prefab(m_world, "ui.layout.rect").set(pos).set(defaultRect).set(elem);
+        auto rectPrefab = Prefab(m_world, "ui.layout.rect").set(defaultRect).set(pos).set(elem);
 
         addPrefab(rectPrefab);
     }
     { // HBox UI
-        atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
-        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
-        atmo::core::components::UI::Container defaultContainer{ .gap = 8 };
-        atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::HBOX;
+        atmo::core::components::UI::UI defaultRect{
+            .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 }
+        };
+        atmo::core::components::Transform2D pos{ .scale = { 100, 100 } };
+        atmo::core::components::UI::HBox elem = atmo::core::components::UI::HBox{ .gap = 8 };
 
-        auto HBoxPrefab = Prefab(m_world, "ui.layout.Hbox").set(pos).set(defaultRect).set(defaultContainer).set(elem);
+        auto HBoxPrefab = Prefab(m_world, "ui.layout.Hbox").set(defaultRect).set(pos).set(elem);
 
         addPrefab(HBoxPrefab);
     }
     { // VBox UI
-        atmo::core::components::UI::UI defaultRect{ .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
-        atmo::core::components::UI::Position pos{ .padding= {0, 0, 0, 0}, .size = { 100, 100} };
-        atmo::core::components::UI::Container defaultContainer{ .gap = 8 };
-        atmo::core::components::UI::Element elem = atmo::core::components::UI::Element::VBOX;
+        atmo::core::components::UI::UI defaultRect{
+            .visible = true, .modulate = { 0.3f, 0.3f, 0.3f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 }
+        };
+        atmo::core::components::Transform2D pos{ .scale = { 100, 100 } };
+        atmo::core::components::UI::VBox elem = atmo::core::components::UI::VBox{ .gap = 8 };
 
-        auto VBoxPrefab = Prefab(m_world, "ui.layout.Vbox").set(pos).set(defaultRect).set(defaultContainer).set(elem);
+        auto VBoxPrefab = Prefab(m_world, "ui.layout.Vbox").set(defaultRect).set(pos).set(elem);
 
         addPrefab(VBoxPrefab);
     }
     { // Button UI
-        atmo::core::components::UI::UI defaultButton{ .visible = true, .modulate = { 0.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f } };
-        atmo::core::components::UI::Position buttonPosition{ .size = { 100, 100} };
+        atmo::core::components::UI::UI defaultButton{
+            .visible = true, .modulate = { 0.0f, 1.0f, 1.0f, 1.0f }, .self_modulate = { 1.0f, 1.0f, 1.0f, 1.0f }, .padding = { 0, 0, 0, 0 }
+        };
+        atmo::core::components::Transform2D buttonPosition{ .scale = { 100, 50 } };
+        atmo::core::components::UI::Button elem = atmo::core::components::UI::Button{};
         atmo::core::components::UI::Text buttonText{};
         buttonText.content = "Button";
         buttonText.text_config.fontId = 0;
-        buttonText.text_config.fontSize = 24,
-        buttonText.text_config.textColor = { 0, 0, 0, 255 };
+        buttonText.text_config.fontSize = 24, buttonText.text_config.textColor = { 0, 0, 0, 255 };
 
-        auto buttonPrefab = Prefab(m_world, "ui.input.button").set(buttonPosition).set(defaultButton).set(atmo::core::components::UI::Element::BUTTON).set(buttonText).set(components::UI::Input{});
 
-        m_world.observer<components::UI::Input>("Button_Hovered").event(flecs::OnSet).each([](flecs::entity e, components::UI::Input &input) {
-            if (input.hovered) {
-                spdlog::info("Button {} is hovered", e.name().c_str());
-            }
-        });
+        auto buttonPrefab = Prefab(m_world, "ui.input.button").set(buttonPosition).set(defaultButton).set(elem);
+
+        auto label = m_world.entity("ui.label").child_of(buttonPrefab.entity).set(atmo::core::components::UI::UI{ .visible = true }).set(buttonText);
+        // m_world.observer<components::UI::Input>("Button_Hovered").event(flecs::OnSet).each([](flecs::entity e, components::UI::Input &input) {
+        //     if (input.hovered) {
+        //         spdlog::info("Button {} is hovered", e.name().c_str());
+        //     }
+        // });
         addPrefab(buttonPrefab);
     }
 }

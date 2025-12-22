@@ -103,26 +103,8 @@ namespace atmo
 
             namespace UI
             {
-                enum Element {
-                    RECT,
-                    LABEL,
-                    HBOX,
-                    VBOX,
-                    BUTTON
-                };
-
                 // Clay_ElementDeclaration decl;
                 // Clay_TextElementConfig textConfig;
-                struct UI {
-                    bool visible{ true };
-                    types::rgba modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
-                    types::rgba self_modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
-                };
-                BEGIN_REFLECT(UI)
-                FIELD(visible)
-                FIELD(modulate)
-                FIELD(self_modulate)
-                END_REFLECT(UI)
 
                 struct Padding {
                     uint16_t left = 0;
@@ -137,20 +119,26 @@ namespace atmo
                 FIELD(bottom)
                 END_REFLECT(Padding)
 
-                struct Position {
-                    Padding padding{ 0, 0 , 0, 0};
-                    types::vector2 size{ 0.0f, 0.0f };
+                struct UI {
+                    bool visible{ true };
+                    types::rgba modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
+                    types::rgba self_modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
+                    Padding padding{ 0, 0, 0, 0 };
                 };
-                BEGIN_REFLECT(Position)
-                FIELD(padding)
-                END_REFLECT(Position)
+                BEGIN_REFLECT(UI)
+                FIELD(visible)
+                FIELD(modulate)
+                FIELD(self_modulate)
+                END_REFLECT(UI)
 
-                struct Container {
-                    uint16_t gap = 0;
-                };
-                BEGIN_REFLECT(Container)
-                FIELD(gap)
-                END_REFLECT(Container)
+                // struct Position {
+                //     Padding padding{ 0, 0 , 0, 0};
+                //     types::vector2 size{ 0.0f, 0.0f };
+                // };
+                // BEGIN_REFLECT(Position)
+                // FIELD(padding)
+                // END_REFLECT(Position)
+
 
                 struct Text {
                     std::string content;
@@ -160,10 +148,32 @@ namespace atmo
                 FIELD(content)
                 END_REFLECT(Text)
 
-                struct Input {
-                    bool hovered{ false };
-                    bool pressed{ false };
+                struct Rect {
                 };
+                BEGIN_REFLECT(Rect)
+                END_REFLECT(Rect)
+
+                struct HBox {
+                    uint16_t gap = 0;
+                };
+                BEGIN_REFLECT(HBox)
+                END_REFLECT(HBox)
+
+                struct VBox {
+                    uint16_t gap = 0;
+                };
+                BEGIN_REFLECT(VBox)
+                END_REFLECT(VBox)
+
+                struct Button {
+                };
+                BEGIN_REFLECT(Button)
+                END_REFLECT(Button)
+
+                // struct Input {
+                //     bool hovered{ false };
+                //     bool pressed{ false };
+                // };
             } // namespace UI
 
             static void register_core_components(flecs::world ecs)
