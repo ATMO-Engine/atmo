@@ -212,16 +212,16 @@ package("semver")
 package_end()
 
 add_requires(
-    "spdlog", {system = false},
-    "luau", {system = false},
-    "flecs", {system = false, configs = {shared = false}},
-    "glaze", {system = false},
-    "libsdl3", {system = false},
-    "libsdl3_ttf", {system = false},
-    "libsdl3_image", {system = false},
-    "clay", {system = false},
-    "catch2", {system = false},
-    "semver", {system = false}
+    "spdlog", { system = false },
+    "luau", { system = false },
+    "flecs", {configs = {shared = false}, system = false},
+    "glaze", { system = false },
+    "libsdl3", { system = false },
+    "libsdl3_ttf", { system = false },
+    "libsdl3_image", { system = false },
+    "clay", { system = false },
+    "catch2", { system = false },
+    "semver", { system = false }
 )
 
 function platform_specifics()
@@ -272,11 +272,16 @@ target("atmo")
 target("atmo-test")
     set_kind("binary")
     set_default(false)
+
+    if is_plat("windows") then
+        add_ldflags("/SUBSYSTEM:CONSOLE", {force = true})
+    end
+
     add_deps("atmo")
     packages()
     add_packages("catch2")
     add_files("tests/**.cpp")
-    add_files("src/**.cpp", {excludes = { "src/main.cpp" }})
+    add_files("src/*/**.cpp")
     add_includedirs("src")
     platform_specifics()
     add_tests("atmo-test", {
