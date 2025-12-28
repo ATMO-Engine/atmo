@@ -10,18 +10,11 @@ namespace atmo
     {
         namespace resource
         {
-            LoaderRegister<ScriptLoader> ScriptLoader::_register("luau");
-
             ScriptLoader::ScriptLoader() {}
 
-            ScriptLoader::~ScriptLoader()
-            {
-                if (_script.data != nullptr) {
-                    free(_script.data);
-                }
-            }
+            ScriptLoader::~ScriptLoader() {}
 
-            void ScriptLoader::load(const std::string &path)
+            Bytecode *ScriptLoader::load(const std::string &path)
             {
                 try {
                     std::ifstream luaFile(path);
@@ -35,23 +28,21 @@ namespace atmo
                     Bytecode newRessource;
                     newRessource.data = bytecode;
                     newRessource.size = bytecodeSize;
+
+                    Bytecode *res = &newRessource;
+                    return res;
                 }
                 catch (const std::exception &e) {
                     throw e;
                 }
             }
 
-            std::any ScriptLoader::get()
+            void ScriptLoader::destroy(Bytecode *res)
             {
-                return std::make_any<Bytecode>(_script);
-            }
-
-            void ScriptLoader::destroy()
-            {
-                if (_script.data != nullptr) {
-                    free(_script.data); // TODO: Implementer avec le système de caching (retirer la ressource du vecteur et l'envoyer dans le cache)
+                if (res->data != nullptr) {
+                    free(res->data); // TODO: Implementer avec le système de caching (retirer la ressource du vecteur et l'envoyer dans le cache)
                 }
-                _script.data = nullptr;
+                res->data = nullptr;
             }
         } // namespace resource
     } // namespace core

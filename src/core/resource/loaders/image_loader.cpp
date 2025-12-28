@@ -8,33 +8,25 @@ namespace atmo
     {
         namespace resource
         {
-            LoaderRegister<ImageLoader> ImageLoader::_register("png");
-
             ImageLoader::ImageLoader() {}
 
-            ImageLoader::~ImageLoader()
-            {
-                _texture.clear();
-            }
+            ImageLoader::~ImageLoader() {}
 
-            void ImageLoader::load(const std::string &path)
+            std::string *ImageLoader::load(const std::string &path)
             {
                 try {
-                    _texture = std::string("test string loaded");
+                    std::string texture = std::string("test string loaded");
+                    std::string *res = &texture;
+                    return res;
                 }
                 catch (const std::exception &e) {
                     throw e;
                 }
             }
 
-            std::any ImageLoader::get()
+            void ImageLoader::destroy(std::string *res)
             {
-                return std::make_any<std::string>(_texture);
-            }
-
-            void ImageLoader::destroy()
-            {
-                _texture.clear();
+                res->clear();
             }
         } // namespace resource
     } // namespace core

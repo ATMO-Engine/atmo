@@ -3,7 +3,6 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include "core/resource/resource.hpp"
-#include "core/resource/resource_register.hpp"
 
 namespace atmo
 {
@@ -11,25 +10,14 @@ namespace atmo
     {
         namespace resource
         {
-            class FontLoader : public Resource
+            class FontLoader : public Resource<TTF_Font>
             {
             public:
                 FontLoader();
                 ~FontLoader() override;
 
-                void load(const std::string &path) override;
-                void destroy() override;
-
-                std::any get() override;
-            private:
-                TTF_Font *_font;
-
-                static LoaderRegister<FontLoader> _register;
-            };
-
-            template<>
-            struct LoaderExtension<FontLoader> {
-                static constexpr const char *extension = "ttf";
+                TTF_Font *load(const std::string &path) override;
+                void destroy(TTF_Font *res) override;
             };
         } // namespace resource
     } // namespace core

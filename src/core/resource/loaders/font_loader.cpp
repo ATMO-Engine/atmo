@@ -1,5 +1,6 @@
 #include <exception>
 #include <stdexcept>
+#include "SDL3_ttf/SDL_ttf.h"
 
 #include "core/resource/loaders/font_loader.hpp"
 
@@ -9,41 +10,31 @@ namespace atmo
     {
         namespace resource
         {
-            LoaderRegister<FontLoader> FontLoader::_register("ttf");
-
             FontLoader::FontLoader() {}
 
-            FontLoader::~FontLoader()
-            {
-                if (_font != nullptr) {
-                    TTF_CloseFont(_font);
-                }
-            }
+            FontLoader::~FontLoader() {}
 
-            void FontLoader::load(const std::string &path)
+            TTF_Font *FontLoader::load(const std::string &path)
             {
                 try {
-                    _font = TTF_OpenFont(path.c_str(), 24); // 24 is the font size in pixels
-                    if (!_font) {
+                    TTF_Font *res = TTF_OpenFont(path.c_str(), 24); // 24 is the font size in pixels
+                    if (!res) {
                         throw std::runtime_error("Failed to load font: " + path);
+                    } else {
+                        return res;
                     }
                 } catch (const std::exception &e) {
                     throw e;
                 }
             }
 
-            std::any FontLoader::get()
+            void FontLoader::destroy(TTF_Font *res)
             {
-                return std::make_any<TTF_Font *>(_font);
-            }
-
-            void FontLoader::destroy()
-            {
-                if (_font != nullptr) {
-                    TTF_CloseFont(_font); // TODO: Implementer avec le système de caching (retirer la ressource du
+                if (res != nullptr) {
+                    TTF_CloseFont(res); // TODO: Implementer avec le système de caching (retirer la ressource du
                                           // vecteur et l'envoyer dans le cache)
                 }
-                _font = nullptr;
+                res = nullptr;
             }
         } // namespace resource
     } // namespace core

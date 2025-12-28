@@ -10,14 +10,20 @@ namespace atmo
     {
         namespace resource
         {
-            struct __Handle
+            struct StoreHandle
             {
-                std::string path; // complete path of the resource the handle handles
                 std::uint16_t index;
                 std::uint16_t generation;
             };
 
-            using Handle = std::shared_ptr<__Handle>;
+            template<typename T>
+            struct __Handle
+            {
+                std::string assetId; // complete path of the resource the handle handles
+            };
+
+            template<typename T>
+            using Handle = std::shared_ptr<__Handle<T>>;
         } // namespace resource
     } // namespace core
 } // namespace atmo
