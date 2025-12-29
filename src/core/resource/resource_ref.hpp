@@ -1,7 +1,7 @@
 #pragma once
 
 #include "handle.hpp"
-#include "resource_pool.hpp"
+
 namespace atmo
 {
     namespace core
@@ -9,12 +9,15 @@ namespace atmo
         namespace resource
         {
             template<typename T>
+            class ResourcePool;
+
+            template<typename T>
             class ResourceRef
             {
                 public:
                     ResourceRef() = default;
 
-                    ResourceRef(ResourcePool<T> *pool, Handle<T> handle) : m_pool(pool), m_handle(handle)
+                    ResourceRef(ResourcePool<T> *pool, StoreHandle handle) : m_pool(pool), m_handle(handle)
                     {
                         retain();
                     }
@@ -49,18 +52,18 @@ namespace atmo
                     T *get() const
                     {
                         if (m_pool) {
-                            m_pool->get(m_handle);
+                            m_pool->getAsset(m_handle);
                         } else {
                             return nullptr;
                         }
                     }
 
-                    T *operator->() const { return get(); }
-                    T &operator*() const { return *get(); }
+                    T *operator->() const { return getAsset(); }
+                    T &operator*() const { return *getAsset(); }
 
                 private:
                     ResourcePool<T> *m_pool = nullptr;
-                    Handle<T> m_handle{};
+                    StoreHandle m_handle{};
 
                     void retain()
                     {

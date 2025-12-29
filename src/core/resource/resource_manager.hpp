@@ -1,13 +1,14 @@
 #pragma once
 
-#include <mutex>
-#include <shared_mutex>
+#include <exception>
 #include <string>
 #include <unordered_map>
 
 #include "core/resource/loader_dispatcher.hpp"
 #include "handle.hpp"
 #include "i_resource_pool.hpp"
+#include "resource_ref.hpp"
+#include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 #include "common/utils.hpp"
 #include "core/resource/handle.hpp"
@@ -31,24 +32,6 @@ namespace atmo
                 void registerPool(IPoolGarbageCollector* pool);
 
                 /**
-                 * @brief If needed generate the resource associated to the path given and give the Handle
-                 *
-                 * @param path absolute path of the resource you want to load
-                 * @return Handle handle associated with the resource
-                 */
-                template<typename T>
-                const Handle<T> generate(const std::string &path)
-                {
-                    std::string extension = atmo::common::Utils::splitString(path, '.').back();
-                    try {
-                        Handle<T> newHandle = getPool<T>().create(path);
-                    } catch (const std::exception &e) {
-                        spdlog::error(e.what());
-                        throw e;
-                    }
-                }
-
-                /**
                  * @brief get the resource associated to the handle if possible,
                  *        throw an exception if the handle is outdated
                  *
@@ -56,14 +39,27 @@ namespace atmo
                  * @return std::any ressource ready to use
                  */
                 template<typename T>
-                T getResource(const Handle<T> &handle) //TODO: créer l'exception pour les handle périmé
+                ResourceRef<T> getResource(const std::string &path) //TODO: créer l'exception pour les handle périmé
                 {
-                    std::string extension = atmo::common::Utils::splitString(handle->path, '.').back();
-                    try {
-                        getPool<T>().getFromHandle(handle);
-                    } catch (const std::exception &e) {
-                        spdlog::error(e.what());
-                        throw e;
+                    ResourceTypeStore<T> store = getPool<T>();
+
+                    if (store.mapHandle.find(path) != store.mapHandle.end()) {
+                        try {
+                            ResourceRef<T> ref = store.pool.getRef(store.mapHandle.at(path));
+                            return ref;
+                        } catch (std::exception) {
+                            StoreHandle newHandle = store.pool.create(path);
+                            store.mapHandle.at(path) = newHandle;
+
+                            ResourceRef<T> ref = store.pool.getRef(store.mapHandle.at(path));
+                            return ref;
+                        }
+                    } else {
+                        StoreHandle newHandle = store.pool.create(path);
+                        store.mapHandle.insert(std::pair<std::string, StoreHandle>(path, newHandle));
+
+                        ResourceRef<T> ref = store.pool.getRef(newHandle);
+                        return  ref;
                     }
                 }
 
@@ -80,15 +76,13 @@ namespace atmo
                 struct ResourceTypeStore {
                     ResourcePool<T> pool;
                     std::unordered_map<std::string, StoreHandle> mapHandle;
-                    std::mutex mutex;
                 };
 
                 template<typename T>
                 ResourceTypeStore<T>& getPool()
                 {
                     static ResourceTypeStore<T> store = {.pool = ResourcePool<T>(createLoader<T>()),
-                                                         .mapHandle = {},
-                                                         .mutex = std::mutex()};
+                                                         .mapHandle = {}};
                     return store;
                 }
 
