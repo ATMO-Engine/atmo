@@ -13,7 +13,7 @@ namespace atmo
 
             ResourceFactory::ResourceFactory() {}
 
-            ResourceFactory &ResourceFactory::getInstance()
+            ResourceFactory &ResourceFactory::GetInstance()
             {
                 static ResourceFactory instance;
                 return instance;
@@ -21,8 +21,8 @@ namespace atmo
 
             void ResourceFactory::registerLoader(const std::string &fileExtension, Loader loader)
             {
-                if (_loaders.find(fileExtension) == _loaders.end()) {
-                    _loaders.insert(std::make_pair(fileExtension, loader));
+                if (m_loaders.find(fileExtension) == m_loaders.end()) {
+                    m_loaders.insert(std::make_pair(fileExtension, loader));
                 } else {
                     spdlog::warn("Loader for this extenstion {} is already registered", fileExtension);
                 }
@@ -30,8 +30,8 @@ namespace atmo
 
             std::shared_ptr<Resource> ResourceFactory::create(const std::string &fileExtension)
             {
-                auto it = _loaders.find(fileExtension);
-                if (it != _loaders.end()) {
+                auto it = m_loaders.find(fileExtension);
+                if (it != m_loaders.end()) {
                     return (it->second());
                 } else {
                     return nullptr;

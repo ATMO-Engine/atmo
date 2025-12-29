@@ -9,13 +9,12 @@ namespace atmo
     {
         namespace resource
         {
-            struct Handle
-            {
+            typedef struct Handle {
                 std::string path;
                 std::uint16_t index;
                 std::uint16_t generation;
-                std::uint16_t frameToLive;
-            };
+                std::uint16_t frame_to_live;
+            } handle;
         } // namespace resource
     } // namespace core
 } // namespace atmo

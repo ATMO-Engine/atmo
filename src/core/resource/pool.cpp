@@ -18,46 +18,46 @@ namespace atmo
         {
             Pool::Pool()
             {
-                _usedHandles = {};
-                _handles = {};
-                _resources = {};
-                _generations = {};
-                _freeList = {};
+                m_usedHandles = {};
+                m_handles = {};
+                m_resources = {};
+                m_generations = {};
+                m_freeList = {};
             }
 
             Pool::~Pool() {}
 
-            const Handle Pool::create(const std::string &path)
+            const handle Pool::create(const std::string &path)
             {
                 try {
-                    if (_handles.find(path) != _handles.end()) {
-                        return _handles.at(path);
+                    if (m_handles.find(path) != m_handles.end()) {
+                        return m_handles.at(path);
                     }
 
-                    std::string extension = atmo::common::Utils::splitString(path, '.').back();
-                    ResourceFactory &fac = ResourceFactory::getInstance();
+                    std::string extension = atmo::common::Utils::SplitString(path, '.').back();
+                    ResourceFactory &fac = ResourceFactory::GetInstance();
                     std::shared_ptr<Resource> res = fac.create(extension);
                     res->load(path);
 
-                    Handle newHandle = {};
-                    newHandle.frameToLive = 1; // TODO: Définir un nombre de frame durant lequel la ressource peut vivre
-                                               // même sans être appelé
+                    handle newHandle = {};
+                    newHandle.frame_to_live = 1; // TODO: Définir un nombre de frame durant lequel la ressource peut vivre
+                                                 // même sans être appelé
                     newHandle.path = path;
 
-                    if (!_freeList.empty()) {
-                        std::uint16_t idx = _freeList.back();
-                        _freeList.pop_back();
-                        _resources.at(idx) = res;
-                        newHandle.generation = _generations.at(idx);
+                    if (!m_freeList.empty()) {
+                        std::uint16_t idx = m_freeList.back();
+                        m_freeList.pop_back();
+                        m_resources.at(idx) = res;
+                        newHandle.generation = m_generations.at(idx);
                         newHandle.index = idx;
                     } else {
-                        newHandle.index = _resources.size();
+                        newHandle.index = m_resources.size();
                         newHandle.generation = 1;
-                        _resources.push_back(res);
-                        _generations.push_back(newHandle.generation);
+                        m_resources.push_back(res);
+                        m_generations.push_back(newHandle.generation);
                     }
 
-                    _handles.insert(std::make_pair(path, newHandle));
+                    m_handles.insert(std::make_pair(path, newHandle));
 
                     return newHandle;
                 } catch (const std::exception &e) {
@@ -65,33 +65,31 @@ namespace atmo
                 }
             }
 
-            std::shared_ptr<Resource> Pool::getFromHandle(const Handle &handle)
+            std::shared_ptr<Resource> Pool::getFromHandle(const handle &handle)
             {
-                if (handle.generation != _generations.at(handle.index)) {
+                if (handle.generation != m_generations.at(handle.index)) {
                     throw HandleOutDated("The handle is out dated");
                 }
-                return _resources.at(handle.index);
+                return m_resources.at(handle.index);
             }
 
-            void Pool::declareHandle(const Handle &handle)
+            void Pool::declareHandle(const handle &handle)
             {
-                auto it = std::find_if(_usedHandles.begin(), _usedHandles.end(), [&handle](const Handle &h) {
-                    return handle.path == h.path;
-                });
-                if (it != _usedHandles.end()) {
-                    _usedHandles.push_back(handle);
+                auto it = std::find_if(m_usedHandles.begin(), m_usedHandles.end(), [&handle](const resource::handle &h) { return handle.path == h.path; });
+                if (it != m_usedHandles.end()) {
+                    m_usedHandles.push_back(handle);
                 }
             }
 
-            void Pool::destroy(const Handle &handle)
+            void Pool::destroy(const handle &handle)
             {
-                if (handle.generation != _generations.at(handle.index)) {
+                if (handle.generation != m_generations.at(handle.index)) {
                     throw HandleOutDated("The handle is out dated");
                 }
-                _resources.at(handle.index)->destroy(); // TODO: Implementer avec le système de caching (retirer la
-                                                        // ressource du vecteur et l'envoyer dans le cache)
-                _generations.at(handle.index) += 1;
-                _freeList.push_back(handle.index);
+                m_resources.at(handle.index)->destroy(); // TODO: Implementer avec le système de caching (retirer la
+                                                         // ressource du vecteur et l'envoyer dans le cache)
+                m_generations.at(handle.index) += 1;
+                m_freeList.push_back(handle.index);
             }
         } // namespace resource
     } // namespace core

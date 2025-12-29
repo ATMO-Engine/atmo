@@ -14,13 +14,13 @@ namespace atmo
 
             ImageLoader::~ImageLoader()
             {
-                _texture.clear();
+                m_texture.clear();
             }
 
             void ImageLoader::load(const std::string &path)
             {
                 try {
-                    _texture = std::string("test string loaded");
+                    m_texture = std::string("test string loaded");
                 }
                 catch (const std::exception &e) {
                     std::string expCatch = e.what();
@@ -30,12 +30,12 @@ namespace atmo
 
             std::any ImageLoader::get()
             {
-                return std::make_any<std::string>(_texture);
+                return std::make_any<std::string>(m_texture);
             }
 
             void ImageLoader::destroy()
             {
-                _texture.clear();
+                m_texture.clear();
             }
         } // namespace resource
     } // namespace core

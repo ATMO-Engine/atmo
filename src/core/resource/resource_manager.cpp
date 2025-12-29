@@ -17,24 +17,24 @@ namespace atmo
         {
             using LoaderTypes = std::tuple<ImageLoader, ScriptLoader, FontLoader>;
 
-            ResourceManager::ResourceManager() : _factory(ResourceFactory::getInstance())
+            ResourceManager::ResourceManager() : m_factory(ResourceFactory::GetInstance())
             {
-                _pools = makePoolMap<LoaderTypes>();
+                m_pools = makePoolMap<LoaderTypes>();
             }
 
-            ResourceManager &ResourceManager::getInstance()
+            ResourceManager &ResourceManager::GetInstance()
             {
                 static ResourceManager instance;
                 return instance;
             }
 
 
-            const Handle ResourceManager::generate(const std::string &path)
+            const handle ResourceManager::generate(const std::string &path)
             {
-                std::string extension = atmo::common::Utils::splitString(path, '.').back();
+                std::string extension = atmo::common::Utils::SplitString(path, '.').back();
                 try {
-                    if (_pools.find(extension) != _pools.end()) {
-                        Handle newHandle = _pools.at(extension).create(path);
+                    if (m_pools.find(extension) != m_pools.end()) {
+                        handle newHandle = m_pools.at(extension).create(path);
                         return newHandle;
                     } else {
                         throw InvalidLoader("No loader found for " + extension + " file");
@@ -44,13 +44,13 @@ namespace atmo
                 }
             }
 
-            std::shared_ptr<Resource> ResourceManager::getResource(const Handle &handle)
+            std::shared_ptr<Resource> ResourceManager::getResource(const handle &handle)
             {
-                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
+                std::string extension = atmo::common::Utils::SplitString(handle.path, '.').back();
                 try {
-                    if (_pools.find(extension) != _pools.end()) {
+                    if (m_pools.find(extension) != m_pools.end()) {
                         // create Resource class through a calss that return a Resource class thanks to the path
-                        return _pools.at(extension).getFromHandle(handle);
+                        return m_pools.at(extension).getFromHandle(handle);
                     } else {
                         throw InvalidLoader("No loader found for " + extension + " file");
                     }
@@ -59,13 +59,13 @@ namespace atmo
                 }
             }
 
-            void ResourceManager::declareHandle(const Handle &handle)
+            void ResourceManager::declareHandle(const handle &handle)
             {
-                std::string extension = atmo::common::Utils::splitString(handle.path, '.').back();
+                std::string extension = atmo::common::Utils::SplitString(handle.path, '.').back();
                 try {
-                    if (_pools.find(extension) != _pools.end()) {
+                    if (m_pools.find(extension) != m_pools.end()) {
                         // create Resource class through a class that return a Resource class thanks to the path
-                        _pools.at(extension).declareHandle(handle);
+                        m_pools.at(extension).declareHandle(handle);
                     } else {
                         throw InvalidLoader("No loader found for " + extension + " file");
                     }

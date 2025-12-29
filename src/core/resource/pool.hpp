@@ -7,8 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/resource/resource.hpp"
 #include "core/resource/handle.hpp"
+#include "core/resource/resource.hpp"
 
 namespace atmo
 {
@@ -33,18 +33,19 @@ namespace atmo
                 Pool();
                 ~Pool();
 
-                const Handle create(const std::string &path);
-                std::shared_ptr<Resource> getFromHandle(const Handle &handle);
+                const handle create(const std::string &path);
+                std::shared_ptr<Resource> getFromHandle(const handle &handle);
 
-                void declareHandle(const Handle &handle);
-                void destroy(const Handle &handle);
+                void declareHandle(const handle &handle);
+                void destroy(const handle &handle);
+
             private:
-                std::vector<Handle> _usedHandles;
-                std::unordered_map<std::string, Handle> _handles;
+                std::vector<handle> m_usedHandles;
+                std::unordered_map<std::string, handle> m_handles;
 
-                std::vector<std::shared_ptr<Resource>> _resources;
-                std::vector<std::uint16_t> _generations;
-                std::vector<std::uint16_t> _freeList;
+                std::vector<std::shared_ptr<Resource>> m_resources;
+                std::vector<std::uint16_t> m_generations;
+                std::vector<std::uint16_t> m_freeList;
             };
         } // namespace resource
     } // namespace core

@@ -7,7 +7,7 @@ namespace atmo
 {
     namespace common
     {
-        std::vector<std::string> Utils::splitString(const std::string &str, char delimiter)
+        std::vector<std::string> Utils::SplitString(const std::string &str, char delimiter)
         {
             std::vector<std::string> tokens;
             std::istringstream stream(str);
@@ -18,5 +18,5 @@ namespace atmo
             }
             return tokens;
         }
-    } // namespace core
+    } // namespace common
 } // namespace atmo
