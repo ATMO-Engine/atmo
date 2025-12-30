@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <exception>
 #include <string>
 #include <unordered_map>
@@ -8,9 +9,6 @@
 #include "handle.hpp"
 #include "i_resource_pool.hpp"
 #include "resource_ref.hpp"
-#include "spdlog/common.h"
-#include "spdlog/spdlog.h"
-#include "common/utils.hpp"
 #include "core/resource/handle.hpp"
 
 namespace atmo
@@ -68,6 +66,16 @@ namespace atmo
                  */
                 void clear(uint64_t currentFrame);
 
+                void increaseTick(uint64_t current)
+                {
+                    m_currentTick = current;
+                }
+
+                uint64_t getTick()
+                {
+                    return m_currentTick;
+                }
+
             private:
                 ResourceManager();
                 ResourceManager &operator=(const ResourceManager &) = delete;
@@ -87,6 +95,8 @@ namespace atmo
                 }
 
                 std::vector<IPoolGarbageCollector *> m_gcPools;
+
+                uint64_t m_currentTick;
             };
         } // namespace resource
     } // namespace core

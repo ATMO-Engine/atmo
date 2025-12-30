@@ -39,39 +39,36 @@ namespace atmo
                     for (uint32_t i = 0; i < m_entries.size(); ++i) {
                         auto& e = m_entries[i];
                         if (e.resource != nullptr) {
-                            if (e.pendingDestroy && currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
-                                destroyEntry(i);
+                            if (e.strongRefs == 0 && e.residentRefs == 0) {
+                                if (e.pendingDestroy && currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
+                                    destroyEntry(i);
+                                }
                             }
                         }
                     }
                 }
 
-                void destroyEntry(int index)
+                void retain(StoreHandle handle)
                 {
-                    if (m_entries[index].resource != nullptr) {
-                        m_entries[index].resource->destroy(); // TODO: Implementer avec le système de caching (retirer la
-                                                            // ressource du vecteur et l'envoyer dans le cache)
-                        m_entries[index].generation += 1;
-                        m_freeList.push_back(index);
-                    }
-                }
-
-                void retain(Handle<T> handle)
-                {
+                    m_entries[handle.index].lastUsedFrame = ResourceManager::GetInstance().getTick();
                     m_entries[handle.index].strongRefs++;
                 }
 
-                void release(Handle<T> handle)
+                void release(StoreHandle handle)
                 {
+                    m_entries[handle.index].lastUsedFrame = ResourceManager::GetInstance().getTick();
                     m_entries[handle.index].strongRefs--;
                 }
 
-                void pin(Handle<T> handle) {
+                void pin(StoreHandle handle)
+                {
+                    m_entries[handle.index].lastUsedFrame = ResourceManager::GetInstance().getTick();
                     m_entries[handle.index].residentRefs++;
                 }
 
-                void unpin(Handle<T> handle)
+                void unpin(StoreHandle handle)
                 {
+                    m_entries[handle.index].lastUsedFrame = ResourceManager::GetInstance().getTick();
                     m_entries[handle.index].residentRefs--;
                 }
 
@@ -85,13 +82,23 @@ namespace atmo
                             std::uint16_t idx = m_freeList.back();
                             m_freeList.pop_back();
                             m_entries.at(idx).resource = res;
-                            newHandle.generation = m_entries.at(idx).generation;
+                            m_entries.at(idx).lastUsedFrame = ResourceManager::GetInstance().getTick();
+                            m_entries.at(idx).strongRefs = 0;
+                            m_entries.at(idx).residentRefs = 0;
+
                             newHandle.index = idx;
+                            newHandle.generation = m_entries.at(idx).generation;
                         } else {
+                            Entry newRes = {.resource = nullptr, .generation = 1,
+                                            .residentRefs = 0, .strongRefs = 0,
+                                            .lastUsedFrame = 0};
+                            newRes.resource = std::make_shared<T>(res);
+                            newRes.lastUsedFrame = ResourceManager::GetInstance().getTick();
+
                             newHandle.index = m_entries.size();
                             newHandle.generation = 1;
-                            m_entries.push_back(res).resource;
-                            m_entries.push_back(newHandle.generation).generation;
+
+                            m_entries.push_back(newRes);
                         }
 
                         return newHandle;
@@ -109,30 +116,40 @@ namespace atmo
                     return ref;
                 }
 
-                T getAsset(const Handle<T> &handle)
+                T getAsset(const StoreHandle &handle)
                 {
-                    if (handle->generation != m_entries.at(handle->index).generation) {
+                    if (handle.generation != m_entries.at(handle.index).generation) {
                         throw std::runtime_error("Handle périmé");
                     }
-                    return m_entries.at(handle->index).resource;
+                    return m_entries.at(handle.index).resource;
                 }
 
-                void destroy(const Handle<T> &handle)
+                void destroyEntry(int index)
                 {
-                    if (handle->generation != m_entries.at(handle->index).generation) {
+                    if (m_entries[index].resource != nullptr) {
+                        m_entries[index].resource->destroy(); // TODO: Implementer avec le système de caching (retirer la
+                                                            // ressource du vecteur et l'envoyer dans le cache)
+                        m_entries[index].generation += 1;
+                        m_freeList.push_back(index);
+                    }
+                }
+
+                void destroy(const StoreHandle &handle)
+                {
+                    if (handle.generation != m_entries.at(handle.index).generation) {
                         throw std::runtime_error("Handle périmé");
                     }
-                    m_entries.at(handle->index).resource->destroy(); // TODO: Implementer avec le système de caching (retirer la
+                    m_entries.at(handle.index).resource->destroy(); // TODO: Implementer avec le système de caching (retirer la
                                                             // ressource du vecteur et l'envoyer dans le cache)
-                    m_entries.at(handle->index).generation += 1;
-                    m_freeList.push_back(handle->index);
+                    m_entries.at(handle.index).generation += 1;
+                    m_freeList.push_back(handle.index);
                 }
 
             private:
                 struct Entry
                 {
                     std::shared_ptr<T> resource;
-                    uint32_t generation = 0;
+                    uint32_t generation = 1;
 
                     uint32_t strongRefs = 0;
                     uint32_t residentRefs = 0;
