@@ -8,6 +8,7 @@
 #include "core/resource/loader_dispatcher.hpp"
 #include "handle.hpp"
 #include "i_resource_pool.hpp"
+#include "resource_pool.hpp"
 #include "resource_ref.hpp"
 #include "core/resource/handle.hpp"
 
@@ -17,17 +18,18 @@ namespace atmo
     {
         namespace resource
         {
-            template<typename T>
-            class ResourcePool;
 
             class ResourceManager
             {
             public:
                 static ResourceManager &GetInstance();
 
-                ~ResourceManager() = default;
-
-                void registerPool(IPoolGarbageCollector* pool);
+                ~ResourceManager()
+                {
+                    for (auto pool : m_gcPools) {
+                        delete pool;
+                    }
+                }
 
                 /**
                  * @brief get the resource associated to the handle if possible,
@@ -39,24 +41,24 @@ namespace atmo
                 template<typename T>
                 ResourceRef<T> getResource(const std::string &path) //TODO: créer l'exception pour les handle périmé
                 {
-                    ResourceTypeStore<T> store = getPool<T>();
+                    ResourceTypeStore<T> &store = getPool<T>();
 
                     if (store.mapHandle.find(path) != store.mapHandle.end()) {
                         try {
-                            ResourceRef<T> ref = store.pool.getRef(store.mapHandle.at(path));
+                            ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
                             return ref;
-                        } catch (std::exception) {
-                            StoreHandle newHandle = store.pool.create(path);
+                        } catch (const std::exception &e) {
+                            StoreHandle newHandle = store.pool->create(path, m_currentTick);
                             store.mapHandle.at(path) = newHandle;
 
-                            ResourceRef<T> ref = store.pool.getRef(store.mapHandle.at(path));
+                            ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
                             return ref;
                         }
                     } else {
-                        StoreHandle newHandle = store.pool.create(path);
+                        StoreHandle newHandle = store.pool->create(path, m_currentTick);
                         store.mapHandle.insert(std::pair<std::string, StoreHandle>(path, newHandle));
 
-                        ResourceRef<T> ref = store.pool.getRef(newHandle);
+                        ResourceRef<T> ref = store.pool->getRef(newHandle, m_currentTick);
                         return  ref;
                     }
                 }
@@ -82,17 +84,23 @@ namespace atmo
 
                 template<typename T>
                 struct ResourceTypeStore {
-                    ResourcePool<T> pool;
+                    ResourcePool<T> *pool = nullptr;
                     std::unordered_map<std::string, StoreHandle> mapHandle;
                 };
 
                 template<typename T>
                 ResourceTypeStore<T>& getPool()
                 {
-                    static ResourceTypeStore<T> store = {.pool = ResourcePool<T>(createLoader<T>()),
+                    static ResourceTypeStore<T> store = {.pool = nullptr,
                                                          .mapHandle = {}};
+                    if (!store.pool) {
+                        store.pool = new ResourcePool<T>(createLoader<T>());
+                        registerPool(store.pool);
+                    }
                     return store;
                 }
+
+                void registerPool(IPoolGarbageCollector* pool);
 
                 std::vector<IPoolGarbageCollector *> m_gcPools;
 

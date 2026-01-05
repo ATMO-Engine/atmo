@@ -15,9 +15,8 @@ namespace atmo
             std::string *ImageLoader::load(const std::string &path)
             {
                 try {
-                    std::string texture = std::string("test string loaded");
-                    std::string *res = &texture;
-                    return res;
+                    std::string *texture = new std::string("test string loaded");
+                    return texture;
                 }
                 catch (const std::exception &e) {
                     throw e;

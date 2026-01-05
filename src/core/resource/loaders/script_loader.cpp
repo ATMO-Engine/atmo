@@ -25,12 +25,10 @@ namespace atmo
                     size_t bytecodeSize = 0;
                     char *bytecode = atmo::luau::Luau::compile(source, &bytecodeSize);
 
-                    Bytecode newRessource;
-                    newRessource.data = bytecode;
-                    newRessource.size = bytecodeSize;
-
-                    Bytecode *res = &newRessource;
-                    return res;
+                    Bytecode *newRessource = new Bytecode{};
+                    newRessource->data = bytecode;
+                    newRessource->size = bytecodeSize;
+                    return newRessource;
                 }
                 catch (const std::exception &e) {
                     throw e;

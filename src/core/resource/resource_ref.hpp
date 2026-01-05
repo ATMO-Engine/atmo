@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <memory>
 #include "handle.hpp"
 
 namespace atmo
@@ -17,14 +19,14 @@ namespace atmo
                 public:
                     ResourceRef() = default;
 
-                    ResourceRef(ResourcePool<T> *pool, StoreHandle handle) : m_pool(pool), m_handle(handle)
+                    ResourceRef(ResourcePool<T> *pool, StoreHandle handle, uint64_t tick) : m_pool(pool), m_handle(handle)
                     {
-                        retain();
+                        retain(tick);
                     }
 
-                    ResourceRef(const ResourceRef &other) : m_pool(other.m_pool), m_handle(other.m_handle)
+                    ResourceRef(const ResourceRef &other, uint64_t tick) : m_pool(other.m_pool), m_handle(other.m_handle)
                     {
-                        retain();
+                        retain(tick);
                     }
 
                     ResourceRef(ResourceRef &&other) noexcept : m_pool(other.m_pool), m_handle(other.m_handle)
@@ -32,49 +34,36 @@ namespace atmo
                         other.m_pool = nullptr;
                     }
 
-                    ResourceRef& operator=(const ResourceRef& rhs)
-                    {
-                        if (this != &rhs)
-                        {
-                            release();
-                            m_pool = rhs.m_pool;
-                            m_handle = rhs.m_handle;
-                            retain();
-                        }
-                        return *this;
-                    }
-
                     ~ResourceRef()
                     {
                         release();
                     }
 
-                    T *get() const
+                    std::shared_ptr<T> get() const
                     {
                         if (m_pool) {
-                            m_pool->getAsset(m_handle);
+                            return m_pool->getAsset(m_handle);
                         } else {
                             return nullptr;
                         }
                     }
 
-                    T *operator->() const { return getAsset(); }
-                    T &operator*() const { return *getAsset(); }
-
+                    T *operator->() const { return get(); }
+                    T &operator*() const { return *get(); }
                 private:
                     ResourcePool<T> *m_pool = nullptr;
                     StoreHandle m_handle{};
 
-                    void retain()
+                    void retain(uint64_t tick)
                     {
                         if (m_pool) {
-                            m_pool->retain();
+                            m_pool->retain(m_handle, tick);
                         }
                     }
 
                     void release() {
                         if (m_pool) {
-                            m_pool->release();
+                            m_pool->release(m_handle);
                         }
                     }
             };
