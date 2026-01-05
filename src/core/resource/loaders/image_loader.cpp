@@ -21,8 +21,7 @@ namespace atmo
             {
                 try {
                     m_texture = std::string("test string loaded");
-                }
-                catch (const std::exception &e) {
+                } catch (const std::exception &e) {
                     std::string expCatch = e.what();
                     throw LoadException("catched " + expCatch + "during font loading");
                 }

@@ -15,24 +15,30 @@ namespace atmo
             class Resource
             {
             public:
-                class LoadException : public std::exception {
-                    public:
-                        LoadException(const std::string &msg) : m_message("Load exception: " + msg) {};
-                        const char *what() const noexcept override{
-                            return m_message.c_str();
-                        }
-                    private:
-                        std::string m_message;
+                class LoadException : public std::exception
+                {
+                public:
+                    LoadException(const std::string &msg) : m_message("Load exception: " + msg) {};
+                    const char *what() const noexcept override
+                    {
+                        return m_message.c_str();
+                    }
+
+                private:
+                    std::string m_message;
                 };
 
-                class DestroyException : public std::exception {
-                    public:
-                        DestroyException(const std::string &msg) : m_message("Destroy exception: " + msg){};
-                        const char *what() const noexcept override{
-                            return m_message.c_str();
-                        }
-                    private:
-                        std::string m_message;
+                class DestroyException : public std::exception
+                {
+                public:
+                    DestroyException(const std::string &msg) : m_message("Destroy exception: " + msg) {};
+                    const char *what() const noexcept override
+                    {
+                        return m_message.c_str();
+                    }
+
+                private:
+                    std::string m_message;
                 };
 
 

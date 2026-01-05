@@ -1,5 +1,5 @@
-#include <utility>
 #include <spdlog/spdlog.h>
+#include <utility>
 
 #include "core/resource/resource_factory.hpp"
 

@@ -18,14 +18,17 @@ namespace atmo
             class ResourceManager
             {
             public:
-                class InvalidLoader : public std::exception {
-                    public:
-                        InvalidLoader(const std::string &msg) : m_message("Invalid loader: " + msg) {};
-                        const char *what() const noexcept override{
-                            return m_message.c_str();
-                        }
-                    private:
-                        std::string m_message;
+                class InvalidLoader : public std::exception
+                {
+                public:
+                    InvalidLoader(const std::string &msg) : m_message("Invalid loader: " + msg) {};
+                    const char *what() const noexcept override
+                    {
+                        return m_message.c_str();
+                    }
+
+                private:
+                    std::string m_message;
                 };
 
                 static ResourceManager &GetInstance();

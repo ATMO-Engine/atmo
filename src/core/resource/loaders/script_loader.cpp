@@ -35,8 +35,7 @@ namespace atmo
                     Bytecode newRessource;
                     newRessource.data = bytecode;
                     newRessource.size = bytecodeSize;
-                }
-                catch (const std::exception &e) {
+                } catch (const std::exception &e) {
                     std::string expCatch = e.what();
                     throw LoadException("catched " + expCatch + "during font loading");
                 }

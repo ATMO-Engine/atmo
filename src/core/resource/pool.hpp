@@ -19,16 +19,18 @@ namespace atmo
             class Pool
             {
             public:
-                class HandleOutDated : public std::exception {
-                    public:
-                        HandleOutDated(const std::string &msg) : m_message(msg) {};
-                        const char *what() const noexcept override {
-                            return m_message.c_str();
-                        }
-                    private:
-                        std::string m_message;
-                };
+                class HandleOutDated : public std::exception
+                {
+                public:
+                    HandleOutDated(const std::string &msg) : m_message(msg) {};
+                    const char *what() const noexcept override
+                    {
+                        return m_message.c_str();
+                    }
 
+                private:
+                    std::string m_message;
+                };
 
                 Pool();
                 ~Pool();
