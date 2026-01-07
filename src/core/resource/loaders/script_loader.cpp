@@ -23,7 +23,7 @@ namespace atmo
                     luaFile.close();
 
                     size_t bytecodeSize = 0;
-                    char *bytecode = atmo::luau::Luau::compile(source, &bytecodeSize);
+                    char *bytecode = atmo::luau::Luau::Compile(source, &bytecodeSize);
 
                     Bytecode *newRessource = new Bytecode{};
                     newRessource->data = bytecode;

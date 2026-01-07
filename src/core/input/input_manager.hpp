@@ -6,7 +6,10 @@
 #include <utility>
 #include <vector>
 #include "SDL3/SDL_events.h"
+#include "core/event/Aevent.hpp"
+#include "core/event/event_dispatcher.hpp"
 #include "core/types.hpp"
+#include "impl/sdl_event.hpp"
 
 namespace atmo
 {
@@ -14,11 +17,33 @@ namespace atmo
     {
         class InputManager
         {
-        private:
-            class Event
+        public:
+            /**
+             * @brief SDL input event class that wraps an SDL_Event.
+             */
+            class InputEvent : public impl::SDLEvent
             {
             public:
-                virtual ~Event() = default;
+                /**
+                 * @brief Constructs an InputEvent from an SDL_Event.
+                 *
+                 * @param sdlEvent The SDL_Event to wrap.
+                 */
+                InputEvent(const SDL_Event sdlEvent) : impl::SDLEvent(sdlEvent)
+                {
+                    id = event::event_id<InputEvent>();
+                }
+                /**
+                 * @brief Virtual destructor for InputEvent.
+                 */
+                ~InputEvent() override = default;
+            };
+
+        private:
+            class Input
+            {
+            public:
+                virtual ~Input() = default;
 
                 enum class Type {
                     Key,
@@ -30,8 +55,30 @@ namespace atmo
                 bool internal = false;
             };
 
+            /**
+             * @brief Listener class for input events.
+             */
+            class InputListener : public event::AListener
+            {
+            public:
+                /**
+                 * @brief Constructs an InputListener and subscribes to InputEvent.
+                 */
+                InputListener();
+                /**
+                 * @brief Virtual destructor for InputListener.
+                 */
+                ~InputListener() override = default;
+                /**
+                 * @brief Handles InputEvent events.
+                 *
+                 * @param event Pointer to the InputEvent to be handled.
+                 */
+                void onEvent(InputManager::InputEvent *event);
+            };
+
         public:
-            static void AddEvent(const std::string &inputName, Event *event);
+            static void AddInput(const std::string &inputName, Input *event);
             static void ProcessEvent(const SDL_Event &e, float deltaTime);
             static void Tick();
 
@@ -49,7 +96,7 @@ namespace atmo
             static void StartTextInput(SDL_Window *window) noexcept;
             static void StopTextInput(SDL_Window *window) noexcept;
 
-            class KeyEvent : public Event
+            class KeyEvent : public Input
             {
             public:
                 KeyEvent(int key, bool scancode) : key(key), scancode(scancode) {};
@@ -66,7 +113,7 @@ namespace atmo
                 bool scancode;
             };
 
-            class MouseButtonEvent : public Event
+            class MouseButtonEvent : public Input
             {
             public:
                 MouseButtonEvent(int button) : button(button) {};
@@ -82,7 +129,7 @@ namespace atmo
                 int button;
             };
 
-            class MouseScrollEvent : public Event
+            class MouseScrollEvent : public Input
             {
             public:
                 MouseScrollEvent() {};
@@ -95,21 +142,22 @@ namespace atmo
                 float delta_time = 0.0f;
             };
 
-        private:
-            InputManager() = default;
+        protected:
+            InputManager();
             InputManager(const InputManager &) = delete;
             InputManager &operator=(const InputManager &) = delete;
 
             static InputManager instance;
+            InputListener p_inputListener;
 
             static void HandleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent);
             static void HandleMouseButtonEvent(const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent);
 
-            bool m_textInput = false;
+            bool p_textInput = false;
 
-            std::unordered_map<std::string, std::vector<std::shared_ptr<Event>>> m_inputs;
-            std::vector<std::shared_ptr<Event>> m_events;
-            std::string m_textBuffer;
+            std::unordered_map<std::string, std::vector<std::shared_ptr<Input>>> p_inputs;
+            std::vector<std::shared_ptr<Input>> p_events;
+            std::string p_textBuffer;
         };
     } // namespace core
 } // namespace atmo

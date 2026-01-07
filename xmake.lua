@@ -272,14 +272,18 @@ target("atmo")
 target("atmo-test")
     set_kind("binary")
     set_default(false)
+
+    if is_plat("windows") then
+        add_ldflags("/SUBSYSTEM:CONSOLE", {force = true})
+    end
+
     add_deps("atmo")
     packages()
     add_packages("catch2")
     add_files("tests/**.cpp")
-    add_files("src/*/*.cpp")
+    add_files("src/*/**.cpp")
     add_includedirs("src")
     platform_specifics()
-    add_defines("CATCH_CONFIG_MAIN")
     add_tests("atmo-test", {
         runargs = {
             "--reporter=JUnit::out=test_results.xml",

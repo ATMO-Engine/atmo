@@ -1,0 +1,97 @@
+name: format-check
+
+on:
+  pull_request:
+
+jobs:
+  clang-checks:
+    name: Clang Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install LLVM apt repo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+
+      - name: Install clang-format 21
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-21
+          clang-format-21 --version
+
+      - name: Run clang-format check
+        run: |
+          FILES=$(find src/ -name '*.[ch]pp' -o -name '*.[ch]')
+          FORMAT_ERRORS=0
+          for FILE in $FILES; do
+            if ! clang-format-21 -style=file "$FILE" | diff -u "$FILE" - > /dev/null; then
+              echo "Formatting issue in $FILE"
+              FORMAT_ERRORS=1
+            fi
+          done
+          if [ "$FORMAT_ERRORS" -ne 0 ]; then
+            echo "❌ Clang-format check failed."
+            exit 1
+          else
+            echo "✅ Clang-format check passed."
+          fi
+
+  clang-tidy:
+    name: Clang Tidy Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Clang tools
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy
+
+      - name: Install SDL3 build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential git make pkg-config cmake ninja-build \
+            libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+            libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
+            libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
+            libpipewire-0.3-dev libwayland-dev
+
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Export compile_commands.json with XMake
+        run: |
+          xmake f -y
+          xmake project -k compile_commands
+
+      - name: Run clang-tidy check
+        run: |
+          FILES=$(find src -name '*.cpp')
+          TIDY_ERRORS=0
+          for FILE in $FILES; do
+            if ! clang-tidy "$FILE" --config-file=.clang-tidy -p .; then
+              echo "Clang-tidy issue in $FILE"
+              TIDY_ERRORS=1
+            fi
+          done
+          if [ "$TIDY_ERRORS" -ne 0 ]; then
+            echo "❌ Clang-tidy check failed."
+            exit 1
+          else
+            echo "✅ Clang-tidy check passed."
+          fi
