@@ -126,11 +126,6 @@ int main(int argc, char **argv)
 
         atmo::core::InputManager::Tick();
 
-        // print warning if slower than 1 second per frame
-        if (deltaTime > 1.0f) {
-            spdlog::warn("Frame time is too high: {} seconds", deltaTime);
-        }
-
         // if (atmo::core::InputManager::IsPressed("rotate_left"))
         //     sprite_transform->rotation -= 1.0f * deltaTime * 60.0f;
 
