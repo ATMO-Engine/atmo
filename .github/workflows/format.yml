@@ -74,24 +74,5 @@ jobs:
         with:
           xmake-version: latest
 
-      - name: Export compile_commands.json with XMake
-        run: |
-          xmake f -y
-          xmake project -k compile_commands
-
       - name: Run clang-tidy check
-        run: |
-          FILES=$(find src -name '*.cpp')
-          TIDY_ERRORS=0
-          for FILE in $FILES; do
-            if ! clang-tidy "$FILE" --config-file=.clang-tidy -p .; then
-              echo "Clang-tidy issue in $FILE"
-              TIDY_ERRORS=1
-            fi
-          done
-          if [ "$TIDY_ERRORS" -ne 0 ]; then
-            echo "❌ Clang-tidy check failed."
-            exit 1
-          else
-            echo "✅ Clang-tidy check passed."
-          fi
+        run: xmake check clang.tidy
