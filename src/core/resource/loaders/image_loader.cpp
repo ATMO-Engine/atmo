@@ -1,4 +1,5 @@
 #include <exception>
+#include <stdexcept>
 #include "SDL3_image/SDL_image.h"
 
 #include "core/resource/loaders/image_loader.hpp"
