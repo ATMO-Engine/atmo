@@ -77,7 +77,7 @@ jobs:
       - name: Export compile_commands.json with XMake
         run: |
           xmake f -y
-          xmake project -k compile_commands
+          xmake
 
       - name: Run clang-tidy check
         run: run-clang-tidy -j $(nproc)
