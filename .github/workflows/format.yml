@@ -74,5 +74,10 @@ jobs:
         with:
           xmake-version: latest
 
+      - name: Export compile_commands.json with XMake
+        run: |
+          xmake f -y
+          xmake project -k compile_commands
+
       - name: Run clang-tidy check
-        run: xmake check clang.tidy
+        run: run-clang-tidy.py -j $(nproc)
