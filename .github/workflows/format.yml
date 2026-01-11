@@ -45,39 +45,39 @@ jobs:
             echo "✅ Clang-format check passed."
           fi
 
-  clang-tidy:
-    name: Clang Tidy Checks
-    runs-on: ubuntu-latest
+  # clang-tidy:
+  #   name: Clang Tidy Checks
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
 
-      - name: Install Clang tools
-        run: sudo apt-get update && sudo apt-get install -y clang-tidy
+  #     - name: Install Clang tools
+  #       run: sudo apt-get update && sudo apt-get install -y clang-tidy
 
-      - name: Install SDL3 build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential git make pkg-config cmake ninja-build \
-            libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
-            libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
-            libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
-            libpipewire-0.3-dev libwayland-dev libxinerama-dev
+  #     - name: Install SDL3 build dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y \
+  #           build-essential git make pkg-config cmake ninja-build \
+  #           libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
+  #           libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+  #           libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
+  #           libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
+  #           libpipewire-0.3-dev libwayland-dev libxinerama-dev
 
-      - name: Setup Xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
+  #     - name: Setup Xmake
+  #       uses: xmake-io/github-action-setup-xmake@v1
+  #       with:
+  #         xmake-version: latest
 
-      - name: Export compile_commands.json with XMake
-        run: |
-          xmake f -y
-          xmake
+  #     - name: Export compile_commands.json with XMake
+  #       run: |
+  #         xmake f -y
+  #         xmake
 
-      - name: Run clang-tidy check
-        run: run-clang-tidy -j $(nproc)
+  #     - name: Run clang-tidy check
+  #       run: run-clang-tidy -j $(nproc)

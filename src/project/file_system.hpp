@@ -47,7 +47,7 @@ namespace atmo
         public:
             explicit File(std::ifstream *base, std::uint64_t start, std::uint64_t end) : m_file(base), m_start_offset(start), m_end_offset(end) {}
 
-            explicit File(std::string_view path)
+            explicit File(std::string_view path) : m_start_offset(0), m_ownership(true)
             {
                 m_file = new std::ifstream(path.data(), std::ios::binary | std::ios::ate);
                 if (!m_file->is_open()) {
@@ -56,7 +56,6 @@ namespace atmo
                 }
                 m_end_offset = static_cast<std::uint64_t>(m_file->tellg());
                 m_file->seekg(0, std::ios::beg);
-                m_ownership = true;
             };
 
             ~File()
@@ -118,10 +117,10 @@ namespace atmo
         public:
             typedef struct PackedHeader {
                 char magic[4] = { 'A', 'T', 'M', 'O' };
-                uint32_t version = 1;
-                VERSION_TYPE major, minor, patch = 0;
-                uint32_t file_count = 0;
-                uint64_t offset_to_files = 0;
+                uint32_t version{ 1 };
+                VERSION_TYPE major{ 0 }, minor{ 0 }, patch{ 0 };
+                uint32_t file_count{ 0 };
+                uint64_t offset_to_files{ 0 };
             } PackedHeader;
 
             typedef struct PackedEntry {
@@ -159,7 +158,7 @@ namespace atmo
                     auto it = Instance().m_index.find(relative_path.string());
                     if (it != Instance().m_index.end()) {
                         const auto &entry = it->second;
-                        return File(Instance().m_root.string() + "/" + relative_path.string(), entry.offset, entry.offset + entry.size);
+                        return File(Instance().resources, entry.offset, entry.offset + entry.size);
                     } else {
                         throw std::runtime_error("File not found in packed file system: " + relative_path.string());
                     }
@@ -178,10 +177,27 @@ namespace atmo
 
         private:
             FileSystem() = default;
+            ~FileSystem()
+            {
+#if defined(ATMO_EXPORT)
+                if (resources) {
+                    resources->close();
+                    delete resources;
+                }
+#endif
+            }
 
             static FileSystem &Instance()
             {
                 static FileSystem instance;
+#if defined(ATMO_EXPORT)
+                if (instance.resources == nullptr) {
+                    instance.resources = new std::ifstream((instance.m_root).string(), std::ios::binary);
+                    if (!instance.resources->is_open()) {
+                        throw std::runtime_error("Failed to open packed resources file. (" + instance.m_root.string() + ")");
+                    }
+                }
+#endif
                 return instance;
             }
             std::filesystem::path m_root;
@@ -189,6 +205,7 @@ namespace atmo
 #if defined(ATMO_EXPORT)
             PackedHeader header = { 0 };
             std::unordered_map<std::string, PackedEntry> m_index;
+            std::ifstream *resources = nullptr;
 #else
 #endif
         };
