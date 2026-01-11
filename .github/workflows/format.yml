@@ -80,4 +80,4 @@ jobs:
           xmake project -k compile_commands
 
       - name: Run clang-tidy check
-        run: run-clang-tidy.py -j $(nproc)
+        run: run-clang-tidy -j $(nproc)
