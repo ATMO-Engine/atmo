@@ -1,1 +1,6 @@
-{}
+{
+  "atmo": {
+    "new_project": "New Project",
+    "open_project": "Open Project"
+  }
+}
