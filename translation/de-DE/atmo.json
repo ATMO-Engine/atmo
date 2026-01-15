@@ -1,7 +1,7 @@
 {
   "atmo": {
-    "create": "Create",
-    "create_new_project": "Create New Project",
+    "create": "Erstellen",
+    "create_new_project": "Neues Projekt erstellen",
     "open_project": "Projekt öffnen"
   }
 }
