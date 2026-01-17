@@ -1,4 +1,4 @@
-add_rules("mode.debug", "mode.release")
+add_rules("mode.debug", "mode.release", "mode.profile")
 
 set_languages("c++23")
 
@@ -8,6 +8,10 @@ if is_mode("debug") then
 end
 
 if is_mode("release") then
+    set_optimize("fastest")
+end
+
+if is_mode("profile") then
     set_optimize("fastest")
 end
 
@@ -211,6 +215,14 @@ package("semver")
     end)
 package_end()
 
+package("tracy")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy"))
+    on_install(function (package)
+        os.cp("public/*", package:installdir("include"))
+    end)
+package_end()
+
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -221,7 +233,8 @@ add_requires(
     "libsdl3_image", { system = false },
     "clay", { system = false },
     "catch2", { system = false },
-    "semver", { system = false }
+    "semver", { system = false },
+    "tracy", { system = false }
 )
 
 function platform_specifics()
@@ -259,7 +272,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "tracy")
 end
 
 target("atmo")
@@ -268,6 +281,10 @@ target("atmo")
     add_files("src/**.cpp")
     add_includedirs("src")
     platform_specifics()
+    if is_mode("debug") or is_mode("profile") then
+        add_defines("TRACY_ENABLE")
+        add_files(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy/public/TracyClient.cpp"))
+    end
 
 target("atmo-test")
     set_kind("binary")

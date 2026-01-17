@@ -16,6 +16,8 @@
 #include <unistd.h>
 #endif
 
+#include "tracy/Tracy.hpp"
+
 static std::filesystem::path get_executable_path()
 {
 #if defined(_WIN32)
@@ -82,6 +84,7 @@ int main(int argc, char **argv)
     wm->makeMain();
 
     while (g_engine->getECS().progress()) {
+        FrameMark;
         atmo::core::InputManager::Tick();
     }
 
