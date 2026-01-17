@@ -1,4 +1,6 @@
 #include <exception>
+#include <stdexcept>
+#include "SDL3_image/SDL_image.h"
 
 #include "core/resource/loaders/image_loader.hpp"
 
@@ -8,19 +10,22 @@ namespace atmo
     {
         namespace resource
         {
-            LoaderRegister<ImageLoader> ImageLoader::_register("png");
+            LoaderRegister<ImageLoader> ImageLoader::m_register("png");
 
-            ImageLoader::ImageLoader() {}
+            ImageLoader::ImageLoader() : m_surface(nullptr) {}
 
             ImageLoader::~ImageLoader()
             {
-                m_texture.clear();
+                destroy();
             }
 
             void ImageLoader::load(const std::string &path)
             {
                 try {
-                    m_texture = std::string("test string loaded");
+                    m_surface = IMG_Load(path.c_str());
+                    if (!m_surface) {
+                        throw std::runtime_error(std::string("Failed to load image: ") + SDL_GetError());
+                    }
                 } catch (const std::exception &e) {
                     throw e;
                 }
@@ -28,12 +33,15 @@ namespace atmo
 
             std::any ImageLoader::get()
             {
-                return std::make_any<std::string>(m_texture);
+                return std::make_any<SDL_Surface *>(m_surface);
             }
 
             void ImageLoader::destroy()
             {
-                m_texture.clear();
+                if (m_surface) {
+                    SDL_DestroySurface(m_surface);
+                    m_surface = nullptr;
+                }
             }
         } // namespace resource
     } // namespace core

@@ -9,24 +9,17 @@ atmo::core::InputManager::InputManager()
     core::event::EventDispatcher::Subscribe<InputEvent>(p_inputListener);
 }
 
-void atmo::core::InputManager::AddInput(const std::string &inputName, Input *event)
+void atmo::core::InputManager::AddInput(const std::string &inputName, Input *event, bool internal)
 {
-    bool internal = false;
-    if (inputName.starts_with("#INTERNAL#"))
-        internal = true;
-
-    std::string tmp = internal ? inputName.substr(10) : inputName;
-
-    if (instance.p_inputs.find(tmp) == instance.p_inputs.end())
-        instance.p_inputs[tmp] = {};
-
+    if (instance.p_inputs.find(inputName) == instance.p_inputs.end())
+        instance.p_inputs[inputName] = {};
 
     auto evt = std::shared_ptr<Input>(event);
 
     evt->internal = internal;
 
     instance.p_events.push_back(evt);
-    instance.p_inputs[tmp].push_back(evt);
+    instance.p_inputs[inputName].push_back(evt);
 }
 
 void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)

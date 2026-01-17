@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDL3/SDL_render.h"
 #include "core/resource/resource.hpp"
 #include "core/resource/resource_register.hpp"
 
@@ -21,8 +22,9 @@ namespace atmo
                 std::any get() override;
 
             private:
-                std::string m_texture;
-                static LoaderRegister<ImageLoader> _register;
+                SDL_Surface *m_surface;
+
+                static LoaderRegister<ImageLoader> m_register;
             };
 
             template <> struct LoaderExtension<ImageLoader> {

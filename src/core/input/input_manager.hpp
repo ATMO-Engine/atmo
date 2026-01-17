@@ -78,7 +78,7 @@ namespace atmo
             };
 
         public:
-            static void AddInput(const std::string &inputName, Input *event);
+            static void AddInput(const std::string &inputName, Input *event, bool internal = false);
             static void ProcessEvent(const SDL_Event &e, float deltaTime);
             static void Tick();
 
