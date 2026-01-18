@@ -50,6 +50,23 @@ namespace atmo
 
                     T *operator->() const { return get(); }
                     T &operator*() const { return *get(); }
+
+                    /**
+                     * @brief Pin the resource so it cannot be destroyed until unpin is called.
+                     * This method has to be called to make sure the resource stay alive as long as the entity is alive.
+                     * This method increase a counter of pinned ressources so for each pin() called unpin() has to be called whenever the resource is no longer used by the entity
+                     */
+                    void pin() {
+                        m_pool->pin(m_handle);
+                    }
+
+                    /**
+                     * @brief Unpin the resource so it can be freed later by the resource manager.
+                     * This method has to be called whenever an entity is destroyed or doesn't use the resource anymore.
+                     */
+                    void unpin() {
+                        m_pool->unpin(m_handle);
+                    }
                 private:
                     ResourcePool<T> *m_pool = nullptr;
                     StoreHandle m_handle{};

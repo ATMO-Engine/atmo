@@ -66,15 +66,13 @@ namespace atmo
                     m_entries[handle.index].strongRefs--;
                 }
 
-                void pin(StoreHandle handle, uint64_t tick)
+                void pin(StoreHandle handle)
                 {
-                    m_entries[handle.index].lastUsedFrame = tick;
                     m_entries[handle.index].residentRefs++;
                 }
 
-                void unpin(StoreHandle handle, uint64_t tick)
+                void unpin(StoreHandle handle)
                 {
-                    m_entries[handle.index].lastUsedFrame = tick;
                     m_entries[handle.index].residentRefs--;
                 }
 
@@ -148,6 +146,7 @@ namespace atmo
                         m_loader->destroy(m_entries[index].resource.get());// TODO: Implementer avec le système de caching (retirer la
                                                             // ressource du vecteur et l'envoyer dans le cache)
                         m_entries[index].generation += 1;
+                        m_entries[index].resource = nullptr;
                         m_freeList.push_back(index);
                     }
                 }

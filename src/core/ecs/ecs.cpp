@@ -89,6 +89,8 @@ namespace atmo
                             atmo::core::resource::ResourceManager::GetInstance().
                                 getResource<SDL_Surface>(sprite.m_handle.assetId);
 
+                        res.pin();
+
                         spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
 
                         std::shared_ptr<SDL_Surface> surface = res.get();
@@ -130,6 +132,21 @@ namespace atmo
 
                     auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
                     addPrefab(sprite2DPrefab);
+
+                    m_world.observer<components::Sprite2D>("Sprite2D_remove")
+                        .event(flecs::OnRemove)
+                        .each([](flecs::entity e, components::Sprite2D &sprite) {
+                            if (sprite.texture_path.empty())
+                                return;
+
+                            atmo::core::resource::ResourceRef<SDL_Surface> res =
+                                atmo::core::resource::ResourceManager::GetInstance().
+                                    getResource<SDL_Surface>(sprite.m_handle.assetId);
+
+                            res.unpin();
+
+                            spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
+                    });
                 }
             }
 
