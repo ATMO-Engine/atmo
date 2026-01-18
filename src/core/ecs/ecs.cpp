@@ -83,11 +83,10 @@ namespace atmo
                         if (sprite.texture_path.empty())
                             return;
 
-                        sprite.m_handle = atmo::core::resource::Handle<SDL_Surface>{.assetId = sprite.texture_path};
+                        sprite.m_handle = atmo::core::resource::Handle<SDL_Surface>{ .assetId = sprite.texture_path };
 
                         atmo::core::resource::ResourceRef<SDL_Surface> res =
-                            atmo::core::resource::ResourceManager::GetInstance().
-                                getResource<SDL_Surface>(sprite.m_handle.assetId);
+                            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
 
                         res.pin();
 
@@ -133,19 +132,16 @@ namespace atmo
                     auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
                     addPrefab(sprite2DPrefab);
 
-                    m_world.observer<components::Sprite2D>("Sprite2D_remove")
-                        .event(flecs::OnRemove)
-                        .each([](flecs::entity e, components::Sprite2D &sprite) {
-                            if (sprite.texture_path.empty())
-                                return;
+                    m_world.observer<components::Sprite2D>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2D &sprite) {
+                        if (sprite.texture_path.empty())
+                            return;
 
-                            atmo::core::resource::ResourceRef<SDL_Surface> res =
-                                atmo::core::resource::ResourceManager::GetInstance().
-                                    getResource<SDL_Surface>(sprite.m_handle.assetId);
+                        atmo::core::resource::ResourceRef<SDL_Surface> res =
+                            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
 
-                            res.unpin();
+                        res.unpin();
 
-                            spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
+                        spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
                     });
                 }
             }

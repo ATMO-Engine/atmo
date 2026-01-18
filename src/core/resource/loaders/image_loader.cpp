@@ -22,16 +22,12 @@ namespace atmo
                     if (!surface) {
                         throw std::runtime_error(std::string("Failed to load image: ") + SDL_GetError());
                     }
-                    return std::shared_ptr<SDL_Surface>(
-                        surface,
-                        [](SDL_Surface *s) {
-                            if (s) {
-                                SDL_DestroySurface(s);
-                            }
+                    return std::shared_ptr<SDL_Surface>(surface, [](SDL_Surface *s) {
+                        if (s) {
+                            SDL_DestroySurface(s);
                         }
-                    );
-                }
-                catch (const std::exception &e) {
+                    });
+                } catch (const std::exception &e) {
                     throw e;
                 }
             }

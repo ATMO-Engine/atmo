@@ -9,8 +9,7 @@ namespace atmo
     {
         namespace resource
         {
-            struct Bytecode
-            {
+            struct Bytecode {
                 char *data;
                 size_t size;
             };

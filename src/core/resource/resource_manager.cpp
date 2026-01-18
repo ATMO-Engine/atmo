@@ -7,9 +7,7 @@ namespace atmo
     {
         namespace resource
         {
-            ResourceManager::ResourceManager()
-            {
-            }
+            ResourceManager::ResourceManager() {}
 
             ResourceManager &ResourceManager::GetInstance()
             {

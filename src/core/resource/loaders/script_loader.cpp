@@ -34,19 +34,15 @@ namespace atmo
                     Bytecode *newRessource = new Bytecode{};
                     newRessource->data = bytecode;
                     newRessource->size = bytecodeSize;
-                    return std::shared_ptr<Bytecode>(
-                        newRessource,
-                        [](Bytecode *b) {
-                            if (b) {
-                                if (b->data) {
-                                    free(b->data);
-                                }
-                                delete b;
+                    return std::shared_ptr<Bytecode>(newRessource, [](Bytecode *b) {
+                        if (b) {
+                            if (b->data) {
+                                free(b->data);
                             }
+                            delete b;
                         }
-                    );
-                }
-                catch (const std::exception &e) {
+                    });
+                } catch (const std::exception &e) {
                     throw e;
                 }
             }

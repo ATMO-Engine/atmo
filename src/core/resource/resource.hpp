@@ -9,8 +9,7 @@ namespace atmo
     {
         namespace resource
         {
-            template<typename T>
-            class Resource
+            template <typename T> class Resource
             {
             public:
                 virtual ~Resource() = default;

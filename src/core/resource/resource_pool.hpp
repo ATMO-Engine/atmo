@@ -1,19 +1,19 @@
 #pragma once
 
 #include <cstdint>
+#include <exception>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
-#include <exception>
-#include <stdexcept>
 
 #include "spdlog/spdlog.h"
 
-#include "resource_ref.hpp"
-#include "core/resource/resource.hpp"
 #include "core/resource/handle.hpp"
+#include "core/resource/resource.hpp"
 #include "i_resource_pool.hpp"
+#include "resource_ref.hpp"
 
 namespace atmo
 {
@@ -21,8 +21,7 @@ namespace atmo
     {
         namespace resource
         {
-            template<typename T>
-            class ResourcePool : public IPoolGarbageCollector
+            template <typename T> class ResourcePool : public IPoolGarbageCollector
             {
             public:
                 ResourcePool(std::unique_ptr<Resource<T>> loader) : m_loader(std::move(loader))
@@ -34,7 +33,7 @@ namespace atmo
                 ~ResourcePool()
                 {
                     for (uint32_t i = 0; i < m_entries.size(); ++i) {
-                        auto& e = m_entries[i];
+                        auto &e = m_entries[i];
                         if (e.resource != nullptr) {
                             destroyEntry(i);
                             spdlog::debug("Class destructed, destroy entry: " + std::to_string(i));
@@ -47,7 +46,7 @@ namespace atmo
                     constexpr uint64_t GRACE_FRAMES = 120;
 
                     for (uint32_t i = 0; i < m_entries.size(); ++i) {
-                        auto& e = m_entries[i];
+                        auto &e = m_entries[i];
                         if (e.resource != nullptr) {
                             if (e.strongRefs == 0 && e.residentRefs == 0) {
                                 if (currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
@@ -99,9 +98,7 @@ namespace atmo
                             newHandle.index = idx;
                             newHandle.generation = m_entries.at(idx).generation;
                         } else {
-                            Entry newRes = {.resource = nullptr, .generation = 1,
-                                            .strongRefs = 0, .residentRefs = 0,
-                                            .lastUsedFrame = 0};
+                            Entry newRes = { .resource = nullptr, .generation = 1, .strongRefs = 0, .residentRefs = 0, .lastUsedFrame = 0 };
                             newRes.resource = res;
                             newRes.lastUsedFrame = tick;
 
@@ -135,8 +132,7 @@ namespace atmo
                 }
 
             private:
-                struct Entry
-                {
+                struct Entry {
                     std::shared_ptr<T> resource;
                     uint32_t generation = 1;
 
@@ -148,8 +144,8 @@ namespace atmo
                 void destroyEntry(int index)
                 {
                     if (m_entries[index].resource != nullptr) {
-                        m_entries[index].resource.reset();// TODO: Implementer avec le système de caching (retirer la
-                                                          // ressource du vecteur et l'envoyer dans le cache)
+                        m_entries[index].resource.reset(); // TODO: Implementer avec le système de caching (retirer la
+                                                           // ressource du vecteur et l'envoyer dans le cache)
                         if (m_entries[index].resource != nullptr) {
                             throw std::runtime_error("Shared pointer has been stored outside the resource manager, so the resource couldn't be destroyed");
                         }

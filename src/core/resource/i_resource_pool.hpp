@@ -10,9 +10,9 @@ namespace atmo
         {
             class IPoolGarbageCollector
             {
-                public:
-                    virtual ~IPoolGarbageCollector() = default;
-                    virtual void collectGarbage(uint64_t currentFrame) = 0;
+            public:
+                virtual ~IPoolGarbageCollector() = default;
+                virtual void collectGarbage(uint64_t currentFrame) = 0;
             };
         } // namespace resource
     } // namespace core

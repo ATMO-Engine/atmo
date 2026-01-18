@@ -45,10 +45,8 @@ namespace atmo
                     return m_textureCache[handle];
                 }
 
-                //auto res = core::resource::ResourceManager::GetInstance().getResource(handle);
                 atmo::core::resource::ResourceRef<SDL_Surface> res =
-                    atmo::core::resource::ResourceManager::GetInstance()
-                        .getResource<SDL_Surface>(handle.assetId);
+                    atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(handle.assetId);
                 std::shared_ptr<SDL_Surface> surface = res.get();
 
                 SDL_Texture *texture = SDL_CreateTextureFromSurface(m_rendererData.renderer, surface.get());

@@ -22,14 +22,11 @@ namespace atmo
                     if (!res) {
                         throw std::runtime_error("Failed to load font: " + path);
                     } else {
-                        return std::shared_ptr<TTF_Font>(
-                            res,
-                            [](TTF_Font *f) {
-                                if (f) {
-                                    TTF_CloseFont(f);
-                                }
+                        return std::shared_ptr<TTF_Font>(res, [](TTF_Font *f) {
+                            if (f) {
+                                TTF_CloseFont(f);
                             }
-                        );
+                        });
                     }
                 } catch (const std::exception &e) {
                     throw e;
