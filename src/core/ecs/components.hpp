@@ -14,6 +14,7 @@
 #include "core/types.hpp"
 #include "luau/luau.hpp"
 
+#include "SDL3/SDL_render.h"
 
 #define BEGIN_REFLECT(Type)                     \
     namespace                                   \
@@ -102,7 +103,7 @@ namespace atmo
 
             struct Sprite2D {
                 std::string texture_path;
-                resource::Handle m_handle;
+                resource::Handle<SDL_Surface> m_handle;
                 SDL_FRect m_dest_rect{ 0, 0, 0, 0 };
                 types::vector2 texture_size{ 0.0f, 0.0f };
             };

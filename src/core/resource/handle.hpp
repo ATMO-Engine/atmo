@@ -25,7 +25,7 @@ namespace atmo
             template<typename T>
             inline bool operator==(const Handle<T> &a, const Handle<T> &b)
             {
-                return a.path == b.path && a.index == b.index && a.generation == b.generation;
+                return a.assetId == b.assetId;
             }
 
             template<typename T>
@@ -37,11 +37,7 @@ namespace atmo
             template<typename T>
             inline bool operator<(const Handle<T> &a, const Handle<T> &b)
             {
-                if (a.path != b.path)
-                    return a.path < b.path;
-                if (a.index != b.index)
-                    return a.index < b.index;
-                return a.generation < b.generation;
+                return a.assetId < b.assetId;
             }
         } // namespace resource
     } // namespace core

@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <clay.h>
 #include <flecs.h>
+#include <memory>
 #include <string>
 
 #include "clay_types.hpp"
@@ -38,16 +39,19 @@ namespace atmo
                 return m_rendererData.renderer;
             }
 
-            inline SDL_Texture *getTextureFromHandle(const core::resource::Handle &handle)
+            inline SDL_Texture *getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle)
             {
                 if (m_textureCache.find(handle) != m_textureCache.end()) {
                     return m_textureCache[handle];
                 }
 
-                auto res = core::resource::ResourceManager::GetInstance().getResource(handle);
-                auto surface = std::any_cast<SDL_Surface *>(res->get());
+                //auto res = core::resource::ResourceManager::GetInstance().getResource(handle);
+                atmo::core::resource::ResourceRef<SDL_Surface> res =
+                    atmo::core::resource::ResourceManager::GetInstance()
+                        .getResource<SDL_Surface>(handle.assetId);
+                std::shared_ptr<SDL_Surface> surface = res.get();
 
-                SDL_Texture *texture = SDL_CreateTextureFromSurface(m_rendererData.renderer, surface);
+                SDL_Texture *texture = SDL_CreateTextureFromSurface(m_rendererData.renderer, surface.get());
                 m_textureCache[handle] = texture;
                 return texture;
             }
@@ -60,7 +64,7 @@ namespace atmo
             SDL_Window *m_window = nullptr;
             Clay_SDL3RendererData m_rendererData;
             Clay_Arena m_clayArena;
-            std::map<core::resource::handle, SDL_Texture *> m_textureCache;
+            std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> m_textureCache;
         };
     } // namespace impl
 } // namespace atmo

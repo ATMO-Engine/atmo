@@ -1,5 +1,4 @@
 #include <memory>
-#include <string>
 #include <spdlog/spdlog.h>
 #include "core/resource/loaders/image_loader.hpp"
 #include "core/resource/loaders/script_loader.hpp"
@@ -29,7 +28,7 @@ namespace atmo {
             }
 
             template<>
-            inline std::unique_ptr<Resource<std::string>> createLoader()
+            inline std::unique_ptr<Resource<SDL_Surface>> createLoader()
             {
                 return std::make_unique<ImageLoader>();
             }
