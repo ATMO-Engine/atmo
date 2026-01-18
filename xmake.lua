@@ -282,6 +282,8 @@ target("atmo")
     add_includedirs("src")
     platform_specifics()
     if is_mode("debug") or is_mode("profile") then
+        add_defines("ATMO_PROFILING")
+        add_defines("ATMO_PROFILER_TRACY")
         add_defines("TRACY_ENABLE")
         add_files(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy/public/TracyClient.cpp"))
     end
