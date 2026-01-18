@@ -150,7 +150,9 @@ namespace atmo
                     if (m_entries[index].resource != nullptr) {
                         m_entries[index].resource.reset();// TODO: Implementer avec le système de caching (retirer la
                                                           // ressource du vecteur et l'envoyer dans le cache)
-                        m_entries[index].resource = nullptr;
+                        if (m_entries[index].resource != nullptr) {
+                            throw std::runtime_error("Shared pointer has been stored outside the resource manager, so the resource couldn't be destroyed");
+                        }
                         spdlog::debug("Resource at index {} deleted successfully", std::to_string(index));
                         m_entries[index].generation += 1;
                         spdlog::debug("here");
