@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "core/resource/resource.hpp"
 
 namespace atmo
@@ -20,8 +21,7 @@ namespace atmo
                 ScriptLoader();
                 ~ScriptLoader() override;
 
-                Bytecode *load(const std::string &path) override;
-                void destroy(Bytecode *res) override;
+                std::shared_ptr<Bytecode> load(const std::string &path) override;
             };
         } // namespace resource
     } // namespace core

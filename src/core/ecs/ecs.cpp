@@ -145,7 +145,7 @@ namespace atmo
 
                             res.unpin();
 
-                            spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
+                            spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
                     });
                 }
             }

@@ -1,8 +1,11 @@
 #include <exception>
 #include <fstream>
+#include <memory>
+#include <stdexcept>
 
 #include "core/resource/loaders/script_loader.hpp"
 #include "luau/luau.hpp"
+#include "script_loader.hpp"
 
 namespace atmo
 {
@@ -14,10 +17,13 @@ namespace atmo
 
             ScriptLoader::~ScriptLoader() {}
 
-            Bytecode *ScriptLoader::load(const std::string &path)
+            std::shared_ptr<Bytecode> ScriptLoader::load(const std::string &path)
             {
                 try {
                     std::ifstream luaFile(path);
+                    if (!luaFile) {
+                        throw std::runtime_error("Failed to open script file: " + path);
+                    }
 
                     std::string source((std::istreambuf_iterator<char>(luaFile)), std::istreambuf_iterator<char>());
                     luaFile.close();
@@ -28,19 +34,21 @@ namespace atmo
                     Bytecode *newRessource = new Bytecode{};
                     newRessource->data = bytecode;
                     newRessource->size = bytecodeSize;
-                    return newRessource;
+                    return std::shared_ptr<Bytecode>(
+                        newRessource,
+                        [](Bytecode *b) {
+                            if (b) {
+                                if (b->data) {
+                                    free(b->data);
+                                }
+                                delete b;
+                            }
+                        }
+                    );
                 }
                 catch (const std::exception &e) {
                     throw e;
                 }
-            }
-
-            void ScriptLoader::destroy(Bytecode *res)
-            {
-                if (res->data != nullptr) {
-                    free(res->data); // TODO: Implementer avec le système de caching (retirer la ressource du vecteur et l'envoyer dans le cache)
-                }
-                res->data = nullptr;
             }
         } // namespace resource
     } // namespace core

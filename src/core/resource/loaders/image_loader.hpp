@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "SDL3/SDL_render.h"
 #include "core/resource/resource.hpp"
 
@@ -15,8 +16,7 @@ namespace atmo
                 ImageLoader();
                 ~ImageLoader() override;
 
-                SDL_Surface *load(const std::string &path) override;
-                void destroy(SDL_Surface *res) override;
+                std::shared_ptr<SDL_Surface> load(const std::string &path) override;
             };
         } // namespace resource
     } // namespace core

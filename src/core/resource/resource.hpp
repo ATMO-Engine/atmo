@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 namespace atmo
@@ -14,8 +15,7 @@ namespace atmo
             public:
                 virtual ~Resource() = default;
 
-                virtual T *load(const std::string &path) = 0;
-                virtual void destroy(T *res) = 0;
+                virtual std::shared_ptr<T> load(const std::string &path) = 0;
             };
         } // namespace resource
     } // namespace core

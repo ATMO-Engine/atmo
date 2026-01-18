@@ -1,4 +1,5 @@
 #include <exception>
+#include <memory>
 #include <stdexcept>
 #include "SDL3_image/SDL_image.h"
 
@@ -14,25 +15,24 @@ namespace atmo
 
             ImageLoader::~ImageLoader() {}
 
-            SDL_Surface *ImageLoader::load(const std::string &path)
+            std::shared_ptr<SDL_Surface> ImageLoader::load(const std::string &path)
             {
                 try {
                     SDL_Surface *surface = IMG_Load(path.c_str());
                     if (!surface) {
                         throw std::runtime_error(std::string("Failed to load image: ") + SDL_GetError());
                     }
-                    return surface;
+                    return std::shared_ptr<SDL_Surface>(
+                        surface,
+                        [](SDL_Surface *s) {
+                            if (s) {
+                                SDL_DestroySurface(s);
+                            }
+                        }
+                    );
                 }
                 catch (const std::exception &e) {
                     throw e;
-                }
-            }
-
-            void ImageLoader::destroy(SDL_Surface *res)
-            {
-                if (res) {
-                    SDL_DestroySurface(res);
-                    res = nullptr;
                 }
             }
         } // namespace resource

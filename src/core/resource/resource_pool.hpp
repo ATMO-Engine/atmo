@@ -8,6 +8,8 @@
 #include <exception>
 #include <stdexcept>
 
+#include "spdlog/spdlog.h"
+
 #include "resource_ref.hpp"
 #include "core/resource/resource.hpp"
 #include "core/resource/handle.hpp"
@@ -35,6 +37,7 @@ namespace atmo
                         auto& e = m_entries[i];
                         if (e.resource != nullptr) {
                             destroyEntry(i);
+                            spdlog::debug("Class destructed, destroy entry: " + std::to_string(i));
                         }
                     }
                 }
@@ -48,6 +51,7 @@ namespace atmo
                         if (e.resource != nullptr) {
                             if (e.strongRefs == 0 && e.residentRefs == 0) {
                                 if (currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
+                                    spdlog::debug("Destroy entry: " + std::to_string(i));
                                     destroyEntry(i);
                                 }
                             }
@@ -68,25 +72,26 @@ namespace atmo
 
                 void pin(StoreHandle handle)
                 {
+                    spdlog::debug("Pinned index: {}", handle.index);
                     m_entries[handle.index].residentRefs++;
                 }
 
                 void unpin(StoreHandle handle)
                 {
+                    spdlog::debug("Unpinned index: {}", handle.index);
                     m_entries[handle.index].residentRefs--;
                 }
 
                 const StoreHandle create(const std::string &path, uint64_t tick)
                 {
                     try {
-                        T *res = m_loader->load(path);
-                        std::shared_ptr<T> ptr(res);
+                        std::shared_ptr<T> res = m_loader->load(path);
 
-                        StoreHandle newHandle;
+                        StoreHandle newHandle = {};
                         if (!m_freeList.empty()) {
                             std::uint16_t idx = m_freeList.back();
                             m_freeList.pop_back();
-                            m_entries.at(idx).resource = ptr;
+                            m_entries.at(idx).resource = res;
                             m_entries.at(idx).lastUsedFrame = tick;
                             m_entries.at(idx).strongRefs = 0;
                             m_entries.at(idx).residentRefs = 0;
@@ -97,7 +102,7 @@ namespace atmo
                             Entry newRes = {.resource = nullptr, .generation = 1,
                                             .strongRefs = 0, .residentRefs = 0,
                                             .lastUsedFrame = 0};
-                            newRes.resource = ptr;
+                            newRes.resource = res;
                             newRes.lastUsedFrame = tick;
 
                             newHandle.index = m_entries.size();
@@ -143,10 +148,12 @@ namespace atmo
                 void destroyEntry(int index)
                 {
                     if (m_entries[index].resource != nullptr) {
-                        m_loader->destroy(m_entries[index].resource.get());// TODO: Implementer avec le système de caching (retirer la
-                                                            // ressource du vecteur et l'envoyer dans le cache)
-                        m_entries[index].generation += 1;
+                        m_entries[index].resource.reset();// TODO: Implementer avec le système de caching (retirer la
+                                                          // ressource du vecteur et l'envoyer dans le cache)
                         m_entries[index].resource = nullptr;
+                        spdlog::debug("Resource at index {} deleted successfully", std::to_string(index));
+                        m_entries[index].generation += 1;
+                        spdlog::debug("here");
                         m_freeList.push_back(index);
                     }
                 }
