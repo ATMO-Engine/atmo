@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDL3/SDL_render.h"
 #include "core/resource/resource.hpp"
 
 namespace atmo
@@ -8,14 +9,14 @@ namespace atmo
     {
         namespace resource
         {
-            class ImageLoader : public Resource<std::string>
+            class ImageLoader : public Resource<SDL_Surface>
             {
             public:
                 ImageLoader();
                 ~ImageLoader() override;
 
-                std::string *load(const std::string &path) override;
-                void destroy(std::string *res) override;
+                SDL_Surface *load(const std::string &path) override;
+                void destroy(SDL_Surface *res) override;
             };
         } // namespace resource
     } // namespace core
