@@ -15,14 +15,23 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
     this->entity = entity;
     const atmo::core::components::Window &window = entity.get<atmo::core::components::Window>();
 
-    SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
-    if (!SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &this->m_window, &m_rendererData.renderer)) {
-        spdlog::error("Failed to create window: {}", SDL_GetError());
-        throw std::runtime_error("Failed to create window");
+    m_window = SDL_CreateWindow(window.title.c_str(), window.size.x, window.size.y, flags);
+
+    if (!m_window) {
+        spdlog::error("Failed to create SDL window: {}", SDL_GetError());
+        throw std::runtime_error("Failed to create SDL window");
     }
 
-    SDL_SetWindowResizable(this->m_window, true);
+    m_rendererData.renderer = SDL_CreateRenderer(m_window, "metal,vulkan");
+
+    if (!m_rendererData.renderer) {
+        spdlog::error("Failed to create SDL renderer: {}", SDL_GetError());
+        throw std::runtime_error("Failed to create SDL renderer");
+    }
+
+    SDL_SetWindowResizable(m_window, true);
 
     m_rendererData.text_engine = TTF_CreateRendererTextEngine(m_rendererData.renderer);
     if (!m_rendererData.text_engine) {
@@ -61,9 +70,6 @@ atmo::impl::WindowManager::~WindowManager()
     }
 
     SDL_free(m_clayArena.memory);
-
-    if (main_window == entity)
-        entity.world().quit();
 }
 
 void atmo::impl::WindowManager::pollEvents(float deltaTime)
@@ -85,6 +91,11 @@ void atmo::impl::WindowManager::pollEvents(float deltaTime)
                 break;
         };
     }
+}
+
+void atmo::impl::WindowManager::beginDraw()
+{
+    SDL_RenderClear(m_rendererData.renderer);
 }
 
 void atmo::impl::WindowManager::draw()
@@ -112,7 +123,6 @@ void atmo::impl::WindowManager::draw()
     auto commands = Clay_EndLayout();
 
     SDL_SetRenderDrawColor(m_rendererData.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(m_rendererData.renderer);
 
     SDL_Clay_RenderClayCommands(&m_rendererData, &commands);
 
@@ -135,13 +145,6 @@ void atmo::impl::WindowManager::focus() noexcept
 {
     if (m_window) {
         SDL_RaiseWindow(m_window);
-    }
-}
-
-void atmo::impl::WindowManager::makeMain() noexcept
-{
-    if (m_window && main_window != entity) {
-        main_window = entity;
     }
 }
 
