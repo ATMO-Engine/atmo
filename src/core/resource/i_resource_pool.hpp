@@ -1,7 +1,6 @@
 #pragma once
 
-#include <memory>
-#include <string>
+#include <cstdint>
 
 namespace atmo
 {
@@ -9,12 +8,11 @@ namespace atmo
     {
         namespace resource
         {
-            template <typename T> class Resource
+            class IPoolGarbageCollector
             {
             public:
-                virtual ~Resource() = default;
-
-                virtual std::shared_ptr<T> load(const std::string &path) = 0;
+                virtual ~IPoolGarbageCollector() = default;
+                virtual void collectGarbage(uint64_t currentFrame) = 0;
             };
         } // namespace resource
     } // namespace core
