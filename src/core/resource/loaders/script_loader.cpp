@@ -34,7 +34,7 @@ namespace atmo
 
                     Bytecode *newRessource = new Bytecode{};
                     if (!newRessource) {
-                    throw LoadException("Failed to load bytecode: " + path);
+                        throw LoadException("Failed to load bytecode: " + path);
                     }
                     newRessource->data = bytecode;
                     newRessource->size = bytecodeSize;
