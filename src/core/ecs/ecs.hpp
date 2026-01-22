@@ -1,10 +1,14 @@
 #pragma once
 
+#include <exception>
 #include <flecs.h>
 #include <map>
+#include <stdexcept>
 #include <string>
 
 #include "components.hpp"
+#include "core/scene/scene_manager.hpp"
+#include "prefab.hpp"
 
 namespace atmo
 {
@@ -12,13 +16,16 @@ namespace atmo
     {
         namespace ecs
         {
-            typedef flecs::entity Entity;
+            using Entity = flecs::entity;
 
             class ECS
             {
             private:
                 flecs::world m_world;
-                std::map<std::string, flecs::entity> m_prefabs;
+                std::map<std::string, Prefab> m_prefabs;
+                scene::SceneManager m_scene_manager;
+
+                void loadPrefabs();
 
             public:
                 ECS();
@@ -26,25 +33,11 @@ namespace atmo
                 void stop();
                 void reset();
 
-                template <typename M> inline flecs::entity createManagedPrefab(const std::string &name)
-                {
-                    M::RegisterSystems(m_world);
-                    auto prefab = m_world.prefab(name.c_str()).set(ComponentManager::Managed{ nullptr });
+                flecs::entity createScene(const std::string &scene_name, bool singleton);
+                void changeScene(flecs::entity scene);
+                void changeSceneToFile(std::string_view scene_path);
 
-                    m_world.observer<ComponentManager::Managed>()
-                        .event(flecs::OnAdd)
-                        .with(flecs::IsA, prefab)
-                        .each([](flecs::entity e, ComponentManager::Managed &m) { m.ptr = new M(e); });
-
-                    m_world.observer<ComponentManager::Managed>()
-                        .event(flecs::OnRemove)
-                        .with(flecs::IsA, prefab)
-                        .each([](flecs::entity e, ComponentManager::Managed &m) { delete m.ptr; });
-
-                    return prefab;
-                }
-
-                void loadPrefabs();
+                void addPrefab(Prefab &prefab);
 
                 Entity instantiatePrefab(const std::string &name, const std::string &instance_name = "");
 

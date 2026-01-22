@@ -1,13 +1,15 @@
 #pragma once
 
-#include <memory>
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
 #include "core/resource/handle.hpp"
-#include "core/resource/pool.hpp"
-#include "core/resource/resource.hpp"
-#include "core/resource/resource_factory.hpp"
+#include "core/resource/loader_dispatcher.hpp"
+#include "handle.hpp"
+#include "i_resource_pool.hpp"
+#include "resource_pool.hpp"
+#include "resource_ref.hpp"
 
 namespace atmo
 {
@@ -15,33 +17,18 @@ namespace atmo
     {
         namespace resource
         {
+
             class ResourceManager
             {
             public:
-                class InvalidLoader : public std::exception
-                {
-                public:
-                    InvalidLoader(const std::string &msg) : m_message("Invalid loader: " + msg) {};
-                    const char *what() const noexcept override
-                    {
-                        return m_message.c_str();
-                    }
-
-                private:
-                    std::string m_message;
-                };
-
                 static ResourceManager &GetInstance();
 
-                ~ResourceManager() = default;
-
-                /**
-                 * @brief If needed generate the resource associated to the path given and give the Handle
-                 *
-                 * @param path absolute path of the resource you want to load
-                 * @return Handle handle associated with the resource
-                 */
-                const handle generate(const std::string &path);
+                ~ResourceManager()
+                {
+                    for (auto pool : m_gcPools) {
+                        delete pool;
+                    }
+                }
 
                 /**
                  * @brief get the resource associated to the handle if possible,
@@ -50,21 +37,70 @@ namespace atmo
                  * @param handle handle associated to the ressource you want to get
                  * @return std::any ressource ready to use
                  */
-                std::shared_ptr<Resource> getResource(const handle &handle); // TODO: créer l'exception pour les handle périmé
+                template <typename T> ResourceRef<T> getResource(const std::string &path) // TODO: créer l'exception pour les handle périmé
+                {
+                    ResourceTypeStore<T> &store = getPool<T>();
+
+                    if (store.mapHandle.find(path) != store.mapHandle.end()) {
+                        try {
+                            ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
+                            return ref;
+                        } catch (const ResourcePool<T>::HandleOutDated &e) {
+                            StoreHandle newHandle = store.pool->create(path, m_currentTick);
+                            store.mapHandle.at(path) = newHandle;
+
+                            ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
+                            return ref;
+                        }
+                    } else {
+                        StoreHandle newHandle = store.pool->create(path, m_currentTick);
+                        store.mapHandle.insert(std::pair<std::string, StoreHandle>(path, newHandle));
+
+                        ResourceRef<T> ref = store.pool->getRef(newHandle, m_currentTick);
+                        return ref;
+                    }
+                }
+
 
                 /**
-                 * @brief Declare an handle that is still in use
-                 *
-                 * @param handle handle to be stored inside his pool
+                 * @brief Clear unused handles
                  */
-                void declareHandle(const handle &handle);
+                void clear(uint64_t currentFrame);
+
+                void increaseTick(uint64_t current)
+                {
+                    m_currentTick = current;
+                }
+
+                uint64_t getTick()
+                {
+                    return m_currentTick;
+                }
 
             private:
                 ResourceManager();
                 ResourceManager &operator=(const ResourceManager &) = delete;
 
-                ResourceFactory &m_factory;
-                std::unordered_map<std::string, Pool> m_pools;
+                template <typename T> struct ResourceTypeStore {
+                    ResourcePool<T> *pool = nullptr;
+                    std::unordered_map<std::string, StoreHandle> mapHandle;
+                };
+
+                template <typename T> ResourceTypeStore<T> &getPool()
+                {
+                    static ResourceTypeStore<T> store = { .pool = nullptr, .mapHandle = {} };
+                    if (!store.pool) {
+                        store.pool = new ResourcePool<T>(createLoader<T>());
+                        registerPool(store.pool);
+                    }
+                    return store;
+                }
+
+                void registerPool(IPoolGarbageCollector *pool);
+
+                std::vector<IPoolGarbageCollector *> m_gcPools;
+
+                uint64_t m_currentTick;
             };
         } // namespace resource
     } // namespace core

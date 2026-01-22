@@ -1,8 +1,11 @@
 #include <exception>
 #include <fstream>
+#include <memory>
+#include <stdexcept>
 
 #include "core/resource/loaders/script_loader.hpp"
 #include "luau/luau.hpp"
+#include "script_loader.hpp"
 
 namespace atmo
 {
@@ -10,21 +13,18 @@ namespace atmo
     {
         namespace resource
         {
-            LoaderRegister<ScriptLoader> ScriptLoader::_register("luau");
-
             ScriptLoader::ScriptLoader() {}
 
-            ScriptLoader::~ScriptLoader()
-            {
-                if (m_script.data != nullptr) {
-                    free(m_script.data);
-                }
-            }
+            ScriptLoader::~ScriptLoader() {}
 
-            void ScriptLoader::load(const std::string &path)
+            std::shared_ptr<Bytecode> ScriptLoader::load(const std::string &path)
             {
+                Bytecode *newRessource = nullptr;
                 try {
                     std::ifstream luaFile(path);
+                    if (!luaFile) {
+                        throw std::runtime_error("Failed to open script file: " + path);
+                    }
 
                     std::string source((std::istreambuf_iterator<char>(luaFile)), std::istreambuf_iterator<char>());
                     luaFile.close();
@@ -32,26 +32,26 @@ namespace atmo
                     size_t bytecodeSize = 0;
                     char *bytecode = atmo::luau::Luau::Compile(source, &bytecodeSize);
 
-                    Bytecode newRessource;
-                    newRessource.data = bytecode;
-                    newRessource.size = bytecodeSize;
+                    Bytecode *newRessource = new Bytecode{};
+                    if (!newRessource) {
+                    throw LoadException("Failed to load bytecode: " + path);
+                    }
+                    newRessource->data = bytecode;
+                    newRessource->size = bytecodeSize;
+                    return std::shared_ptr<Bytecode>(newRessource, [](Bytecode *b) {
+                        if (b) {
+                            if (b->data) {
+                                free(b->data);
+                            }
+                            delete b;
+                        }
+                    });
+                } catch (const LoadException &e) {
+                    throw e;
                 } catch (const std::exception &e) {
                     std::string expCatch = e.what();
-                    throw LoadException("catched " + expCatch + "during font loading");
+                    throw LoadException("catched " + expCatch + "during script loading");
                 }
-            }
-
-            std::any ScriptLoader::get()
-            {
-                return std::make_any<Bytecode>(m_script);
-            }
-
-            void ScriptLoader::destroy()
-            {
-                if (m_script.data != nullptr) {
-                    free(m_script.data); // TODO: Implementer avec le système de caching (retirer la ressource du vecteur et l'envoyer dans le cache)
-                }
-                m_script.data = nullptr;
             }
         } // namespace resource
     } // namespace core
