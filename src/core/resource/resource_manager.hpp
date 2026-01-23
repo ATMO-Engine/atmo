@@ -45,7 +45,7 @@ namespace atmo
                         try {
                             ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
                             return ref;
-                        } catch (const ResourcePool<T>::HandleOutDated &e) {
+                        } catch (const typename ResourcePool<T>::HandleOutDated &e) {
                             StoreHandle newHandle = store.pool->create(path, m_currentTick);
                             store.mapHandle.at(path) = newHandle;
 

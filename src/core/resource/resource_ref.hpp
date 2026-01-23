@@ -42,7 +42,7 @@ namespace atmo
                     if (m_pool) {
                         try {
                             return m_pool->getAsset(m_handle);
-                        } catch (const ResourcePool<T>::HandleOutDated &e) {
+                        } catch (const typename ResourcePool<T>::HandleOutDated &e) {
                             return nullptr;
                         }
                     } else {
