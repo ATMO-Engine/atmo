@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <exception>
 #include <string>
 #include <unordered_map>
 
@@ -46,7 +45,7 @@ namespace atmo
                         try {
                             ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
                             return ref;
-                        } catch (const std::exception &e) {
+                        } catch (const typename ResourcePool<T>::HandleOutDated &e) {
                             StoreHandle newHandle = store.pool->create(path, m_currentTick);
                             store.mapHandle.at(path) = newHandle;
 
@@ -61,6 +60,7 @@ namespace atmo
                         return ref;
                     }
                 }
+
 
                 /**
                  * @brief Clear unused handles

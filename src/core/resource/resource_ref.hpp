@@ -40,7 +40,11 @@ namespace atmo
                 std::shared_ptr<T> get() const
                 {
                     if (m_pool) {
-                        return m_pool->getAsset(m_handle);
+                        try {
+                            return m_pool->getAsset(m_handle);
+                        } catch (const typename ResourcePool<T>::HandleOutDated &e) {
+                            return nullptr;
+                        }
                     } else {
                         return nullptr;
                     }

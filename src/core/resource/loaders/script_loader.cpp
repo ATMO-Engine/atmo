@@ -19,6 +19,7 @@ namespace atmo
 
             std::shared_ptr<Bytecode> ScriptLoader::load(const std::string &path)
             {
+                Bytecode *newRessource = nullptr;
                 try {
                     std::ifstream luaFile(path);
                     if (!luaFile) {
@@ -32,6 +33,9 @@ namespace atmo
                     char *bytecode = atmo::luau::Luau::Compile(source, &bytecodeSize);
 
                     Bytecode *newRessource = new Bytecode{};
+                    if (!newRessource) {
+                        throw LoadException("Failed to load bytecode: " + path);
+                    }
                     newRessource->data = bytecode;
                     newRessource->size = bytecodeSize;
                     return std::shared_ptr<Bytecode>(newRessource, [](Bytecode *b) {
@@ -42,8 +46,11 @@ namespace atmo
                             delete b;
                         }
                     });
-                } catch (const std::exception &e) {
+                } catch (const LoadException &e) {
                     throw e;
+                } catch (const std::exception &e) {
+                    std::string expCatch = e.what();
+                    throw LoadException("catched " + expCatch + "during script loading");
                 }
             }
         } // namespace resource

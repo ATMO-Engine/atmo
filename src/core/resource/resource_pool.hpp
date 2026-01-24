@@ -24,6 +24,19 @@ namespace atmo
             template <typename T> class ResourcePool : public IPoolGarbageCollector
             {
             public:
+                class HandleOutDated : public std::exception
+                {
+                public:
+                    HandleOutDated(const std::string &msg) : m_message(msg) {};
+                    const char *what() const noexcept override
+                    {
+                        return m_message.c_str();
+                    }
+
+                private:
+                    std::string m_message;
+                };
+
                 ResourcePool(std::unique_ptr<Resource<T>> loader) : m_loader(std::move(loader))
                 {
                     m_entries = {};
@@ -117,7 +130,7 @@ namespace atmo
                 ResourceRef<T> getRef(StoreHandle &handle, uint64_t tick)
                 {
                     if (handle.generation != m_entries.at(handle.index).generation) {
-                        throw std::runtime_error("Handle périmé");
+                        throw HandleOutDated("Handle " + std::to_string(handle.index) + " out dated");
                     }
                     ResourceRef<T> ref(this, handle, tick);
                     return ref;
@@ -126,7 +139,7 @@ namespace atmo
                 std::shared_ptr<T> getAsset(const StoreHandle &handle)
                 {
                     if (handle.generation != m_entries.at(handle.index).generation) {
-                        throw std::runtime_error("Handle périmé");
+                        throw HandleOutDated("Handle " + std::to_string(handle.index) + " out dated");
                     }
                     return m_entries.at(handle.index).resource;
                 }
