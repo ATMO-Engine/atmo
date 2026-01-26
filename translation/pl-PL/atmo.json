@@ -1,0 +1,7 @@
+{
+  "atmo": {
+    "create": "Create",
+    "create_new_project": "Create New Project",
+    "open_project": "Open Project"
+  }
+}
