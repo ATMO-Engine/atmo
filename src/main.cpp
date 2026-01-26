@@ -64,11 +64,28 @@ static void loop()
 #endif
 }
 
+static int handleArgs()
+{
+    if (atmo::core::args::ArgManager::HasArg("help") || atmo::core::args::ArgManager::HasArg("h")) {
+#if !defined(ATMO_EXPORT)
+        std::cout << ATMO_ASCII_ART << std::endl;
+        std::cout << "Atmo Engine Usage:" << std::endl;
+        std::cout << "  --help, -h           Show this help message" << std::endl;
+        std::cout << "  --export <path>      Export the project at <path>" << std::endl;
+#endif
+        return 1;
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
 #if defined(ATMO_DEBUG)
     spdlog::set_level(spdlog::level::debug);
 #endif
+
+    atmo::core::args::ArgManager::Parse(argc, argv);
 
     if (SDL_Init(
             SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA) !=
@@ -87,6 +104,10 @@ int main(int argc, char **argv)
 
     atmo::project::FileSystem::SetRootPath(get_executable_path());
     spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
+
+    if (int res = handleArgs(); res != 0) {
+        return res;
+    }
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
