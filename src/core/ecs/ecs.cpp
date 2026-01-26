@@ -1,4 +1,5 @@
 #include "ecs.hpp"
+#include <memory>
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
 #include "core/resource/resource_manager.hpp"
@@ -82,12 +83,16 @@ namespace atmo
                         if (sprite.texture_path.empty())
                             return;
 
-                        sprite.m_handle = atmo::core::resource::ResourceManager::GetInstance().generate(sprite.texture_path);
+                        sprite.m_handle = atmo::core::resource::Handle<SDL_Surface>{ .assetId = sprite.texture_path };
+
+                        atmo::core::resource::ResourceRef<SDL_Surface> res =
+                            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
+
+                        res.pin();
 
                         spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
 
-                        auto res = atmo::core::resource::ResourceManager::GetInstance().getResource(sprite.m_handle);
-                        auto surface = std::any_cast<SDL_Surface *>(res->get());
+                        std::shared_ptr<SDL_Surface> surface = res.get();
 
                         spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
 
@@ -116,9 +121,6 @@ namespace atmo
                                  core::components::Window &window) {
                             auto wm = static_cast<impl::WindowManager *>(manager.ptr);
 
-                            if (!sprite.m_handle.frame_to_live)
-                                return;
-
                             SDL_Texture *texture = wm->getTextureFromHandle(sprite.m_handle);
                             if (!texture)
                                 return;
@@ -129,6 +131,18 @@ namespace atmo
 
                     auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
                     addPrefab(sprite2DPrefab);
+
+                    m_world.observer<components::Sprite2D>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2D &sprite) {
+                        if (sprite.texture_path.empty())
+                            return;
+
+                        atmo::core::resource::ResourceRef<SDL_Surface> res =
+                            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
+
+                        res.unpin();
+
+                        spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
+                    });
                 }
             }
 

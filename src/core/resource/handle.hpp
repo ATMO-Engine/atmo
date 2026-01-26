@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 namespace atmo
@@ -9,30 +10,28 @@ namespace atmo
     {
         namespace resource
         {
-            typedef struct Handle {
-                std::string path;
+            struct StoreHandle {
                 std::uint16_t index;
                 std::uint16_t generation;
-                std::uint16_t frame_to_live;
-            } handle;
+            };
 
-            inline bool operator==(const handle &a, const handle &b)
+            template <typename T> struct Handle {
+                std::string assetId; // complete path of the resource the handle handles
+            };
+
+            template <typename T> inline bool operator==(const Handle<T> &a, const Handle<T> &b)
             {
-                return a.path == b.path && a.index == b.index && a.generation == b.generation;
+                return a.assetId == b.assetId;
             }
 
-            inline bool operator!=(const handle &a, const handle &b)
+            template <typename T> inline bool operator!=(const Handle<T> &a, const Handle<T> &b)
             {
                 return !(a == b);
             }
 
-            inline bool operator<(const handle &a, const handle &b)
+            template <typename T> inline bool operator<(const Handle<T> &a, const Handle<T> &b)
             {
-                if (a.path != b.path)
-                    return a.path < b.path;
-                if (a.index != b.index)
-                    return a.index < b.index;
-                return a.generation < b.generation;
+                return a.assetId < b.assetId;
             }
         } // namespace resource
     } // namespace core

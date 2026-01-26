@@ -1,5 +1,5 @@
 #include <exception>
-#include <stdexcept>
+#include <memory>
 #include "SDL3_image/SDL_image.h"
 
 #include "core/resource/loaders/image_loader.hpp"
@@ -10,38 +10,27 @@ namespace atmo
     {
         namespace resource
         {
-            LoaderRegister<ImageLoader> ImageLoader::m_register("png");
+            ImageLoader::ImageLoader() {}
 
-            ImageLoader::ImageLoader() : m_surface(nullptr) {}
+            ImageLoader::~ImageLoader() {}
 
-            ImageLoader::~ImageLoader()
+            std::shared_ptr<SDL_Surface> ImageLoader::load(const std::string &path)
             {
-                destroy();
-            }
-
-            void ImageLoader::load(const std::string &path)
-            {
+                SDL_Surface *surface = nullptr;
                 try {
-                    m_surface = IMG_Load(path.c_str());
-                    if (!m_surface) {
-                        throw std::runtime_error(std::string("Failed to load image: ") + SDL_GetError());
-                    }
+                    surface = IMG_Load(path.c_str());
                 } catch (const std::exception &e) {
                     throw e;
                 }
-            }
 
-            std::any ImageLoader::get()
-            {
-                return std::make_any<SDL_Surface *>(m_surface);
-            }
-
-            void ImageLoader::destroy()
-            {
-                if (m_surface) {
-                    SDL_DestroySurface(m_surface);
-                    m_surface = nullptr;
+                if (!surface) {
+                    throw LoadException(std::string("Failed to load image: ") + SDL_GetError());
                 }
+                return std::shared_ptr<SDL_Surface>(surface, [](SDL_Surface *s) {
+                    if (s) {
+                        SDL_DestroySurface(s);
+                    }
+                });
             }
         } // namespace resource
     } // namespace core

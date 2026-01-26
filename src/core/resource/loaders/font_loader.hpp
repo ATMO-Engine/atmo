@@ -1,9 +1,9 @@
 #pragma once
 
 #include <SDL3_ttf/SDL_ttf.h>
+#include <memory>
 
 #include "core/resource/resource.hpp"
-#include "core/resource/resource_register.hpp"
 
 namespace atmo
 {
@@ -11,25 +11,13 @@ namespace atmo
     {
         namespace resource
         {
-            class FontLoader : public Resource
+            class FontLoader : public Resource<TTF_Font>
             {
             public:
                 FontLoader();
                 ~FontLoader() override;
 
-                void load(const std::string &path) override;
-                void destroy() override;
-
-                std::any get() override;
-
-            private:
-                TTF_Font *m_font;
-
-                static LoaderRegister<FontLoader> _register;
-            };
-
-            template <> struct LoaderExtension<FontLoader> {
-                static constexpr const char *extension = "ttf";
+                std::shared_ptr<TTF_Font> load(const std::string &path) override;
             };
         } // namespace resource
     } // namespace core
