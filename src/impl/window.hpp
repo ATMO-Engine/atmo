@@ -3,10 +3,13 @@
 #include <SDL3/SDL.h>
 #include <clay.h>
 #include <flecs.h>
+#include <memory>
 #include <string>
 
 #include "clay_types.hpp"
 #include "core/ecs/components.hpp"
+#include "core/resource/handle.hpp"
+#include "core/resource/resource_manager.hpp"
 #include "core/types.hpp"
 
 namespace atmo
@@ -19,24 +22,8 @@ namespace atmo
             WindowManager(flecs::entity entity);
             ~WindowManager();
 
-            static void RegisterSystems(flecs::world ecs)
-            {
-                ecs.system<core::ComponentManager::Managed, core::components::Window>("PollEvents")
-                    .kind(flecs::PreUpdate)
-                    .each([](flecs::iter &it, size_t i, core::ComponentManager::Managed &manager, core::components::Window &window) {
-                        auto *wm = static_cast<impl::WindowManager *>(manager.ptr);
-                        wm->pollEvents(it.delta_time());
-                    });
-
-                ecs.system<core::ComponentManager::Managed, core::components::Window>("Draw")
-                    .kind(flecs::PostUpdate)
-                    .each([](core::ComponentManager::Managed &manager, core::components::Window &window) {
-                        auto *wm = static_cast<impl::WindowManager *>(manager.ptr);
-                        wm->draw();
-                    });
-            }
-
             void pollEvents(float deltaTime);
+            void beginDraw();
             void draw();
 
             void rename(const std::string &name) noexcept;
@@ -47,16 +34,35 @@ namespace atmo
             core::types::vector2i getSize() const noexcept;
             std::string getTitle() const noexcept;
 
+            inline SDL_Renderer *getRenderer() const noexcept
+            {
+                return m_rendererData.renderer;
+            }
+
+            inline SDL_Texture *getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle)
+            {
+                if (m_textureCache.find(handle) != m_textureCache.end()) {
+                    return m_textureCache[handle];
+                }
+
+                atmo::core::resource::ResourceRef<SDL_Surface> res =
+                    atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(handle.assetId);
+                std::shared_ptr<SDL_Surface> surface = res.get();
+
+                SDL_Texture *texture = SDL_CreateTextureFromSurface(m_rendererData.renderer, surface.get());
+                m_textureCache[handle] = texture;
+                return texture;
+            }
+
         private:
             Clay_ElementDeclaration buildDecl(flecs::entity e);
             Clay_ElementId getIdForEntity(flecs::entity e);
             void declareEntityUi(flecs::entity e);
 
-            static inline flecs::entity main_window;
-
             SDL_Window *m_window = nullptr;
             Clay_SDL3RendererData m_rendererData;
             Clay_Arena m_clayArena;
+            std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> m_textureCache;
         };
     } // namespace impl
 } // namespace atmo

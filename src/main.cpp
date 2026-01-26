@@ -1,12 +1,16 @@
 #include <csignal>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <string>
 #include "atmo.hpp"
 #include "core/ecs/components.hpp"
+#include "core/scene/scene_manager.hpp"
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
+#include "project/project_manager.hpp"
+#include "spdlog/spdlog.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -55,37 +59,97 @@ static void loop()
 #else // export mode
     throw std::runtime_error("Not implemented yet.");
     while (g_engine->getECS().progress()) {
-        atmo::core::InputManager::instance().tick();
+        atmo::core::InputManager::Tick();
     }
 #endif
 }
 
-
 int main(int argc, char **argv)
 {
+#if defined(ATMO_DEBUG)
+    spdlog::set_level(spdlog::level::debug);
+#endif
+
+    if (SDL_Init(
+            SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA) !=
+        true) {
+        spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
+        return 1;
+    }
+
+    std::atexit(SDL_Quit);
+
     atmo::core::Engine engine;
     g_engine = &engine;
 
     std::signal(SIGINT, [](int signum) { g_engine->stop(); });
     std::signal(SIGTERM, [](int signum) { g_engine->stop(); });
 
-    FileSystem::SetRootPath(get_executable_path());
-    spdlog::info("Executable Path: {}", FileSystem::GetRootPath().string());
+    atmo::project::FileSystem::SetRootPath(get_executable_path());
+    spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
 
-    atmo::core::InputManager::AddInput("#INTERNAL#ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT));
+    atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
+    atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
 
-    atmo::core::InputManager::AddInput("#INTERNAL#ui_scroll", new atmo::core::InputManager::MouseScrollEvent());
+    atmo::core::InputManager::AddInput("rotate_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_Q, true), false);
+    atmo::core::InputManager::AddInput("rotate_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_E, true), false);
 
-    auto window = engine.getECS().instantiatePrefab("window", "MainWindow");
-    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get_ref<atmo::core::ComponentManager::Managed>()->ptr);
-    wm->rename("Atmo Engine");
-    wm->makeMain();
+    atmo::core::InputManager::AddInput("move_up", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_W, true), false);
+    atmo::core::InputManager::AddInput("move_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_A, true), false);
+    atmo::core::InputManager::AddInput("move_down", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_S, true), false);
+    atmo::core::InputManager::AddInput("move_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_D, true), false);
 
-    while (g_engine->getECS().progress()) {
+    atmo::core::InputManager::AddInput("zoom_in", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_R, true), false);
+    atmo::core::InputManager::AddInput("zoom_out", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_F, true), false);
+
+    auto window = engine.getECS().instantiatePrefab("window", "_Root");
+    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
+    wm->rename(atmo::project::ProjectManager::GetSettings().app.project_name);
+
+    auto scene = engine.getECS().instantiatePrefab("scene");
+    auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
+    sprite.child_of(scene);
+    sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
+    sprite_transform->position = { 100.0f, 100.0f };
+    sprite_transform->scale = { 0.25f, 0.25f };
+
+    engine.getECS().changeScene(scene);
+
+    auto last_time = std::chrono::steady_clock::now();
+    float deltaTime = 0.0f;
+    while (g_engine->getECS().progress(deltaTime)) {
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<float> dt = current_time - last_time;
+        last_time = current_time;
+        deltaTime = dt.count();
+
         atmo::core::InputManager::Tick();
-    }
 
-    // loop();
+        // if (atmo::core::InputManager::IsPressed("rotate_left"))
+        //     sprite_transform->rotation -= 1.0f * deltaTime * 60.0f;
+
+        // if (atmo::core::InputManager::IsPressed("rotate_right"))
+        //     sprite_transform->rotation += 1.0f * deltaTime * 60.0f;
+
+        // atmo::core::types::vector2 move_delta{ 0, 0 };
+        // move_delta.y = (atmo::core::InputManager::IsPressed("move_up") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_down") ? 1 : 0);
+        // move_delta.x = (atmo::core::InputManager::IsPressed("move_left") ? -1 : 0) + (atmo::core::InputManager::IsPressed("move_right") ? 1 : 0);
+        // if (move_delta.x != 0 || move_delta.y != 0) {
+        //     float length = std::sqrt(move_delta.x * move_delta.x + move_delta.y * move_delta.y);
+        //     move_delta.x /= length;
+        //     move_delta.y /= length;
+
+        //     sprite_transform->position.x += move_delta.x * 500.0f * deltaTime;
+        //     sprite_transform->position.y += move_delta.y * 500.0f * deltaTime;
+        // }
+
+        // float zoom_delta = (atmo::core::InputManager::IsPressed("zoom_in") ? 1 : 0) + (atmo::core::InputManager::IsPressed("zoom_out") ? -1 : 0);
+        // if (zoom_delta != 0) {
+        //     sprite_transform->scale.x += zoom_delta * 0.001f;
+        //     sprite_transform->scale.y += zoom_delta * 0.001f;
+        // }
+    }
 
     return 0;
 }
