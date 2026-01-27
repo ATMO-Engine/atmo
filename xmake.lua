@@ -290,6 +290,18 @@ target("atmo")
         add_defines("ATMO_DEBUG")
     end
 
+    local packed_hash = nil
+
+    before_build(function (target)
+        local pck = path.absolute(target:targetfile())
+        if os.isfile(pck) then
+            local data = io.readfile(pck, {encoding = "binary"})
+            packed_hash = hash.md5(path.absolute(target:targetfile()))
+        else
+            packed_hash = nil
+        end
+    end)
+
     after_build(function (target)
         local function append_file(dst, src)
             local fsrc = assert(io.open(src, "rb"))
@@ -300,6 +312,13 @@ target("atmo")
 
             fsrc:close()
             fdst:close()
+        end
+
+        if not packed_hash or packed_hash ~= hash.md5(path.absolute(target:targetfile())) then
+            print(target:targetfile() .. ": Detected changes, repacking assets...")
+        else
+            print(target:targetfile() .. ": No changes detected, skipping repack.")
+            return
         end
 
         local bin = path.absolute(target:targetfile())
