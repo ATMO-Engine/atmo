@@ -115,19 +115,24 @@ namespace atmo
         class FileSystem
         {
         public:
+#pragma pack(push, 1)
             typedef struct PackedHeader {
-                char magic[4] = { 'A', 'T', 'M', 'O' };
+                char magic[8] = { ATMO_PACKED_MAGIC_NUMBER };
                 uint32_t version{ 1 };
-                VERSION_TYPE major{ 0 }, minor{ 0 }, patch{ 0 };
                 uint32_t file_count{ 0 };
                 uint64_t offset_to_files{ 0 };
             } PackedHeader;
+#pragma pack(pop)
 
+            static_assert(sizeof(PackedHeader) == 24);
+
+#pragma pack(push, 1)
             typedef struct PackedEntry {
                 const char *path = nullptr;
                 uint64_t offset = 0;
                 uint64_t size = 0;
             } PackedEntry;
+#pragma pack(pop)
 
             static void SetRootPath(std::filesystem::path path)
             {

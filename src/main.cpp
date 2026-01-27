@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include "atmo.hpp"
+#include "core/args/arg_manager.hpp"
 #include "core/ecs/components.hpp"
 #include "core/scene/scene_manager.hpp"
 #include "editor/editor.hpp"
@@ -71,10 +72,36 @@ static int handleArgs()
         std::cout << ATMO_ASCII_ART << std::endl;
         std::cout << "Atmo Engine Usage:" << std::endl;
         std::cout << "  --help, -h           Show this help message" << std::endl;
-        std::cout << "  --export <path>      Export the project at <path>" << std::endl;
+        std::cout << "  --pack <files>       Generate a .pck packed resource file from <files>" << std::endl;
+        std::cout << "  --read <path>        Read packed .pck resource file at <path> and output info" << std::endl;
 #endif
         return 1;
     }
+
+    if (atmo::core::args::ArgManager::HasArg("pack")) {
+        std::vector<std::string> files = atmo::core::args::ArgManager::GetNamedArgs("pack");
+
+        files.emplace(files.begin(), std::get<std::string>(atmo::core::args::ArgManager::GetArgValue("pack")));
+
+        if (files.empty()) {
+            spdlog::error("No files provided to pack.");
+            return 1;
+        }
+
+        atmo::project::ProjectManager::GeneratePackedFile("packed_output.pck", files);
+
+        return 1;
+    }
+
+    if (atmo::core::args::ArgManager::HasArg("read")) {
+        auto path = std::get<std::string>(atmo::core::args::ArgManager::GetArgValue("read"));
+
+        atmo::project::ProjectManager::DisplayPackedFileInfo(path);
+
+        return 1;
+    }
+
+    loop();
 
     return 0;
 }
@@ -86,6 +113,13 @@ int main(int argc, char **argv)
 #endif
 
     atmo::core::args::ArgManager::Parse(argc, argv);
+
+    atmo::project::FileSystem::SetRootPath(get_executable_path());
+    spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
+
+    if (int res = handleArgs(); res != 0) {
+        return res;
+    }
 
     if (SDL_Init(
             SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA) !=
@@ -101,13 +135,6 @@ int main(int argc, char **argv)
 
     std::signal(SIGINT, [](int signum) { g_engine->stop(); });
     std::signal(SIGTERM, [](int signum) { g_engine->stop(); });
-
-    atmo::project::FileSystem::SetRootPath(get_executable_path());
-    spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
-
-    if (int res = handleArgs(); res != 0) {
-        return res;
-    }
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);

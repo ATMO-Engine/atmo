@@ -22,7 +22,7 @@ namespace atmo
             {
             public:
                 static void Parse(int argc, char **argv);
-                static void Parse(std::vector<std::string> args);
+                static void Parse(const std::vector<std::string> &args);
                 static bool HasArg(const std::string &name);
                 static ArgPair GetArg(const std::string &name);
                 static ArgValue GetArgValue(const std::string &name);
@@ -30,6 +30,14 @@ namespace atmo
                 static ArgPair GetArgFromIndex(size_t index);
                 static ArgValue GetArgValueFromIndex(size_t index);
                 static void SetArg(const std::string &name, const ArgValue &value);
+
+                /**
+                 * @brief Get all named arguments after the given start argument
+                 *
+                 * @param start The argument to start from
+                 * @return std::vector<std::string>
+                 */
+                static std::vector<std::string> GetNamedArgs(const std::string &start);
 
             private:
                 ArgManager() = default;

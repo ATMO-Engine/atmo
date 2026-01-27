@@ -10,17 +10,17 @@ namespace atmo
             void ArgManager::Parse(int argc, char **argv)
             {
                 std::vector<std::string> args;
-                for (int i = 1; i < argc; ++i) {
+                for (int i = 1; i < argc; i++) {
                     args.emplace_back(argv[i]);
                 }
                 Parse(args);
             }
 
-            void ArgManager::Parse(std::vector<std::string> args)
+            void ArgManager::Parse(const std::vector<std::string> &args)
             {
                 Instance().m_args.clear();
 
-                for (size_t i = 0; i < args.size(); ++i) {
+                for (size_t i = 0; i < args.size(); i++) {
                     const std::string &arg = args[i];
                     if (arg.starts_with("--")) {
                         std::string name, value_str;
@@ -130,6 +130,23 @@ namespace atmo
                     }
                 }
                 Instance().m_args.push_back({ name, value });
+            }
+
+            std::vector<std::string> ArgManager::GetNamedArgs(const std::string &start)
+            {
+                std::vector<std::string> named_args;
+                bool start_found = false;
+                for (const auto &arg : Instance().m_args) {
+                    if (start_found) {
+                        if (std::get<std::monostate>(arg.value) != std::monostate()) {
+                            break;
+                        }
+                        named_args.push_back(arg.name);
+                    } else if (arg.name == start) {
+                        start_found = true;
+                    }
+                }
+                return named_args;
             }
 
         } // namespace args
