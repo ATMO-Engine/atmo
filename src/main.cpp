@@ -67,16 +67,16 @@ static void loop()
 
 static int handleArgs()
 {
-    if (atmo::core::args::ArgManager::HasArg("help") || atmo::core::args::ArgManager::HasArg("h")) {
 #if !defined(ATMO_EXPORT)
+    if (atmo::core::args::ArgManager::HasArg("help") || atmo::core::args::ArgManager::HasArg("h")) {
         std::cout << ATMO_ASCII_ART << std::endl;
         std::cout << "Atmo Engine Usage:" << std::endl;
         std::cout << "  --help, -h           Show this help message" << std::endl;
         std::cout << "  --pack <files>       Generate a .pck packed resource file from <files>" << std::endl;
         std::cout << "  --read <path>        Read packed .pck resource file at <path> and output info" << std::endl;
-#endif
         return 1;
     }
+#endif
 
     if (atmo::core::args::ArgManager::HasArg("pack")) {
         std::vector<std::string> files = atmo::core::args::ArgManager::GetNamedArgs("pack");
@@ -101,8 +101,6 @@ static int handleArgs()
         return 1;
     }
 
-    loop();
-
     return 0;
 }
 
@@ -118,6 +116,8 @@ int main(int argc, char **argv)
     spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
 
     if (int res = handleArgs(); res != 0) {
+        if (res > 0)
+            res = 0;
         return res;
     }
 

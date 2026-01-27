@@ -285,9 +285,39 @@ target("atmo")
     add_files("src/**.cpp")
     add_includedirs("src")
     platform_specifics()
+
     if is_mode("debug") then
         add_defines("ATMO_DEBUG")
     end
+
+    after_build(function (target)
+        local function append_file(dst, src)
+            local fsrc = assert(io.open(src, "rb"))
+            local fdst = assert(io.open(dst, "ab"))
+
+            local data = fsrc:read("*all")
+            fdst:write(data)
+
+            fsrc:close()
+            fdst:close()
+        end
+
+        local bin = path.absolute(target:targetfile())
+
+        local files = {}
+        table.join2(files, os.files("translation/**"))
+        table.join2(files, os.files("assets/**"))
+
+        print(bin .. ": Packing " .. #files .. " files...")
+
+        os.runv(bin, table.join({"--pack"}, files))
+
+        local pck = path.absolute("packed_output.pck")
+
+        append_file(bin, pck)
+
+        os.rm(pck)
+    end)
 
 target("atmo-test")
     set_kind("binary")
@@ -319,3 +349,5 @@ target("atmo-export")
     add_includedirs("src")
     platform_specifics()
     add_defines("ATMO_EXPORT")
+
+
