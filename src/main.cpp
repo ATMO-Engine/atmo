@@ -10,41 +10,9 @@
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
+#include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
-
-#if defined(_WIN32)
-#include <windows.h>
-#elif defined(__APPLE__)
-#include <mach-o/dyld.h>
-#else
-#include <unistd.h>
-#endif
-
-static std::filesystem::path get_executable_path()
-{
-#if defined(_WIN32)
-    char buffer[MAX_PATH];
-    GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    return std::filesystem::path(buffer);
-#elif defined(__APPLE__)
-    char buffer[4096];
-    uint32_t size = sizeof(buffer);
-    if (_NSGetExecutablePath(buffer, &size) == 0)
-        return std::filesystem::canonical(buffer);
-    std::string dyn(size, '\0');
-    _NSGetExecutablePath(dyn.data(), &size);
-    return std::filesystem::canonical(dyn.c_str());
-#else
-    char buffer[4096];
-    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-    if (len != -1) {
-        buffer[len] = '\0';
-        return std::filesystem::path(buffer);
-    }
-    return std::filesystem::current_path();
-#endif
-}
 
 static atmo::core::Engine *g_engine;
 
@@ -56,6 +24,7 @@ static void loop()
     std::string selected_path = project_explorer.getSelectedPath();
     g_engine->reset();
     atmo::editor::Editor editor(g_engine, selected_path);
+    editor.init();
     editor.loop();
 #else // export mode
     throw std::runtime_error("Not implemented yet.");
@@ -65,9 +34,9 @@ static void loop()
 #endif
 }
 
+#if !defined(ATMO_EXPORT)
 static int handleArgs()
 {
-#if !defined(ATMO_EXPORT)
     if (atmo::core::args::ArgManager::HasArg("help") || atmo::core::args::ArgManager::HasArg("h")) {
         std::cout << ATMO_ASCII_ART << std::endl;
         std::cout << "Atmo Engine Usage:" << std::endl;
@@ -76,7 +45,6 @@ static int handleArgs()
         std::cout << "  --read <path>        Read packed .pck resource file at <path> and output info" << std::endl;
         return 1;
     }
-#endif
 
     if (atmo::core::args::ArgManager::HasArg("pack")) {
         std::vector<std::string> files = atmo::core::args::ArgManager::GetNamedArgs("pack");
@@ -96,13 +64,14 @@ static int handleArgs()
     if (atmo::core::args::ArgManager::HasArg("read")) {
         auto path = std::get<std::string>(atmo::core::args::ArgManager::GetArgValue("read"));
 
-        atmo::project::ProjectManager::DisplayPackedFileInfo(path);
+        atmo::project::FileSystem::DisplayPackedFileInfo(path);
 
         return 1;
     }
 
     return 0;
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -111,9 +80,6 @@ int main(int argc, char **argv)
 #endif
 
     atmo::core::args::ArgManager::Parse(argc, argv);
-
-    atmo::project::FileSystem::SetRootPath(get_executable_path());
-    spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
 
     if (int res = handleArgs(); res != 0) {
         if (res > 0)
@@ -135,6 +101,8 @@ int main(int argc, char **argv)
 
     std::signal(SIGINT, [](int signum) { g_engine->stop(); });
     std::signal(SIGTERM, [](int signum) { g_engine->stop(); });
+
+    loop();
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);

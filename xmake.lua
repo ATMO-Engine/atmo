@@ -17,7 +17,9 @@ if is_mode("release") then
 end
 
 set_config("build.compdb", true)
-add_rules("plugin.compile_commands.autoupdate")
+add_rules("plugin.compile_commands.autoupdate", {
+    arguments = {"--target=" .. (get_config("target") or "all")}
+})
 
 local SUBMODULE_PATH = "submodules/"
 
@@ -337,6 +339,7 @@ target("atmo")
 
         os.rm(pck)
     end)
+target_end()
 
 target("atmo-test")
     set_kind("binary")
@@ -359,6 +362,7 @@ target("atmo-test")
             "--reporter=console::out=-::colour-mode=ansi"
         }
     })
+target_end()
 
 target("atmo-export")
     set_kind("binary")
@@ -368,5 +372,37 @@ target("atmo-export")
     add_includedirs("src")
     platform_specifics()
     add_defines("ATMO_EXPORT")
+target_end()
 
 
+
+task("clean")
+    on_run(function ()
+        import("core.base.option")
+        local mode = option.get("mode")
+
+        if not table.contains({"soft", "full", "submodules", "all"}, mode) then
+            raise("invalid clean mode: %s", mode)
+        end
+
+        import("clean")(mode)
+    end)
+
+    set_menu({
+        usage = "xmake clean|c [mode]",
+
+        shortname = "c",
+
+        description = "Clean project files.",
+
+        options = {
+            {
+                nil, "mode", "v", "soft", "Clean mode.",
+                    " - soft",
+                    " - full",
+                    " - submodules",
+                    " - all"
+            }
+        }
+    })
+task_end()
