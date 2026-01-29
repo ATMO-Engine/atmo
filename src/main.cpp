@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <variant>
 #include "atmo.hpp"
 #include "core/args/arg_manager.hpp"
 #include "core/ecs/components.hpp"
@@ -40,9 +41,10 @@ static int handleArgs()
     if (atmo::core::args::ArgManager::HasArg("help") || atmo::core::args::ArgManager::HasArg("h")) {
         std::cout << ATMO_ASCII_ART << std::endl;
         std::cout << "Atmo Engine Usage:" << std::endl;
-        std::cout << "  --help, -h           Show this help message" << std::endl;
-        std::cout << "  --pack <files>       Generate a .pck packed resource file from <files>" << std::endl;
-        std::cout << "  --read <path>        Read packed .pck resource file at <path> and output info" << std::endl;
+        std::cout << "  --help, -h           Show this help message." << std::endl;
+        std::cout << "  --pack files         Generate a .pck packed resource file from <files>." << std::endl;
+        std::cout << "  --read path [file]   Read packed .pck resource file at <path> and output info." << std::endl;
+        std::cout << "                         - if file is given, will output the contents of the file instead." << std::endl;
         return 1;
     }
 
@@ -62,9 +64,12 @@ static int handleArgs()
     }
 
     if (atmo::core::args::ArgManager::HasArg("read")) {
-        auto path = std::get<std::string>(atmo::core::args::ArgManager::GetArgValue("read"));
-
-        atmo::project::FileSystem::DisplayPackedFileInfo(path);
+        auto path = std::get<std::string>(atmo::core::args::ArgManager::GetArg("read").value);
+        auto args = atmo::core::args::ArgManager::GetNamedArgs("read");
+        if (args.size() == 1)
+            atmo::project::FileSystem::DisplayPackedFileContent(path, args[0]);
+        else
+            atmo::project::FileSystem::DisplayPackedFileInfo(path);
 
         return 1;
     }

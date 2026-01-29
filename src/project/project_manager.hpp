@@ -170,14 +170,18 @@ namespace atmo
                     }
                 }
 
-                uint64_t current_offset = sizeof(FileSystem::PackedHeader);
+                uint64_t current_offset = 0;
                 for (auto &entry : entries) {
                     entry.offset = current_offset;
                     current_offset += entry.size;
                 }
 
                 header.file_count = static_cast<uint32_t>(entries.size());
-                header.offset_to_files = sizeof(FileSystem::PackedHeader) + sizeof(FileSystem::PackedEntry) * entries.size();
+                header.offset_to_files =
+                    sizeof(FileSystem::PackedHeader) + (sizeof(FileSystem::PackedEntry::offset) + sizeof(FileSystem::PackedEntry::size)) * entries.size();
+                for (const auto &entry : entries) {
+                    header.offset_to_files += std::strlen(entry.path) + 1;
+                }
 
                 WriteStructure(out, &header);
                 for (const auto &entry : entries) {
