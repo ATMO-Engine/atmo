@@ -2,9 +2,9 @@
 
 #include <exception>
 #include <flecs.h>
-#include <map>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 #include "components.hpp"
 #include "core/scene/scene_manager.hpp"
@@ -22,7 +22,7 @@ namespace atmo
             {
             private:
                 flecs::world m_world;
-                std::map<std::string, Prefab> m_prefabs;
+                std::unordered_map<std::string, Prefab> m_prefabs;
                 scene::SceneManager m_scene_manager;
 
                 void loadPrefabs();

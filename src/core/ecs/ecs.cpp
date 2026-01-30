@@ -15,7 +15,6 @@ namespace atmo
             ECS::ECS()
             {
                 reset();
-                m_scene_manager.setWorld(m_world);
             }
 
             void ECS::stop()
@@ -26,11 +25,10 @@ namespace atmo
             void ECS::reset()
             {
                 m_world.reset();
-
-                // ECS_IMPORT(m_world, FlecsMeta);
+                m_scene_manager.setWorld(&m_world);
 
 #if defined(ATMO_DEBUG)
-                m_world.import <flecs::stats>();
+                ECS_IMPORT(m_world, FlecsStats);
                 m_world.set<flecs::Rest>({});
 #endif
 
