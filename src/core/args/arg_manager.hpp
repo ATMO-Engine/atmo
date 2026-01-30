@@ -13,7 +13,7 @@ namespace atmo
         namespace args
         {
             using ArgValue = std::variant<std::monostate, bool, int, float, std::string>;
-            using ArgPair = struct {
+            struct ArgPair {
                 std::string name;
                 ArgValue value;
             };

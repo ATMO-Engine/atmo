@@ -137,7 +137,7 @@ namespace atmo
              */
             void write(const void *buf, std::uint64_t n)
             {
-                if (!m_ownership || !m_file->good() || !(m_file->flags() & std::ios::out))
+                if (!m_ownership || !m_file->good() || !(static_cast<std::ios::openmode>(m_file->flags()) & std::ios::out))
                     throw std::runtime_error("Cannot write to file.");
 
                 m_file->seekp(m_start_offset + m_pos);
