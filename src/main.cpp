@@ -65,7 +65,12 @@ static int handleArgs()
     }
 
     if (atmo::core::args::ArgManager::HasArg("read")) {
-        auto path = std::get<std::string>(atmo::core::args::ArgManager::GetArg("read").value);
+        auto arg = atmo::core::args::ArgManager::GetArg("read");
+        if (std::holds_alternative<bool>(arg.value)) {
+            spdlog::error("No path provided to read.");
+            return -1;
+        }
+        auto path = std::get<std::string>(arg.value);
         auto args = atmo::core::args::ArgManager::GetNamedArgs("read");
         if (args.size() == 1)
             atmo::project::FileSystem::DisplayPackedFileContent(path, args[0]);
