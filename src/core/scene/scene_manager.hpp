@@ -14,7 +14,7 @@ namespace atmo
             class SceneManager
             {
             private:
-                flecs::world m_world;
+                flecs::world *m_world;
                 flecs::entity m_current;
                 bool m_initialized{ false };
                 std::vector<flecs::entity> m_singletons;
@@ -25,7 +25,7 @@ namespace atmo
             public:
                 ~SceneManager() = default;
 
-                void setWorld(flecs::world &world);
+                void setWorld(flecs::world *world);
 
                 flecs::entity getCurrentScene() const;
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include "spdlog/spdlog.h"
 
 namespace atmo
 {
