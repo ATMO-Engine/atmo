@@ -49,7 +49,6 @@ namespace atmo
                         auto &e = m_entries[i];
                         if (e.resource != nullptr) {
                             destroyEntry(i);
-                            spdlog::debug("Class destructed, destroy entry: " + std::to_string(i));
                         }
                     }
                 }
@@ -162,9 +161,7 @@ namespace atmo
                         if (m_entries[index].resource != nullptr) {
                             throw std::runtime_error("Shared pointer has been stored outside the resource manager, so the resource couldn't be destroyed");
                         }
-                        spdlog::debug("Resource at index {} deleted successfully", std::to_string(index));
                         m_entries[index].generation += 1;
-                        spdlog::debug("here");
                         m_freeList.push_back(index);
                     }
                 }

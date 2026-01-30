@@ -14,12 +14,16 @@ local function clean_full()
     clean_soft()
     os.tryrm(".xmake")
     os.tryrm("compile_commands.json")
+    os.tryrm("build")
+    os.tryrm(".cache")
 end
 
 local function clean_submodules()
     local submodules = os.dirs("submodules/*")
     for _, submodule in ipairs(submodules) do
-        os.tryrm(submodule.."/build/")
+        if os.isdir(submodule.."/build") then
+            os.tryrm(submodule.."/build")
+        end
     end
 end
 

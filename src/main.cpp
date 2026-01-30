@@ -1,3 +1,4 @@
+#include <atomic>
 #include <csignal>
 #include <cstdlib>
 #include <filesystem>
@@ -15,21 +16,21 @@
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
-static atmo::core::Engine *g_engine;
+static std::atomic<bool> g_should_quit{ false };
 
-static void loop()
+static void loop(atmo::core::Engine &engine)
 {
 #if !defined(ATMO_EXPORT) // editor mode
-    atmo::editor::ProjectExplorer project_explorer(g_engine);
+    atmo::editor::ProjectExplorer project_explorer(&engine);
     project_explorer.loop();
     std::string selected_path = project_explorer.getSelectedPath();
-    g_engine->reset();
-    atmo::editor::Editor editor(g_engine, selected_path);
+    engine.reset();
+    atmo::editor::Editor editor(&engine, selected_path);
     editor.init();
     editor.loop();
 #else // export mode
     throw std::runtime_error("Not implemented yet.");
-    while (g_engine->getECS().progress()) {
+    while (engine.getECS().progress()) {
         atmo::core::InputManager::Tick();
     }
 #endif
@@ -86,11 +87,13 @@ int main(int argc, char **argv)
 
     atmo::core::args::ArgManager::Parse(argc, argv);
 
+#if !defined(ATMO_EXPORT)
     if (int res = handleArgs(); res != 0) {
         if (res > 0)
             res = 0;
         return res;
     }
+#endif
 
     if (SDL_Init(
             SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA) !=
@@ -102,12 +105,11 @@ int main(int argc, char **argv)
     std::atexit(SDL_Quit);
 
     atmo::core::Engine engine;
-    g_engine = &engine;
 
-    std::signal(SIGINT, [](int signum) { g_engine->stop(); });
-    std::signal(SIGTERM, [](int signum) { g_engine->stop(); });
+    std::signal(SIGINT, [](int signum) { g_should_quit.store(true); });
+    std::signal(SIGTERM, [](int signum) { g_should_quit.store(true); });
 
-    loop();
+    loop(engine);
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
@@ -139,7 +141,8 @@ int main(int argc, char **argv)
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
-    while (g_engine->getECS().progress(deltaTime)) {
+
+    while (engine.getECS().progress(deltaTime)) {
         auto current_time = std::chrono::steady_clock::now();
         std::chrono::duration<float> dt = current_time - last_time;
         last_time = current_time;
@@ -170,6 +173,10 @@ int main(int argc, char **argv)
         //     sprite_transform->scale.x += zoom_delta * 0.001f;
         //     sprite_transform->scale.y += zoom_delta * 0.001f;
         // }
+
+        if (g_should_quit.load()) {
+            break;
+        }
     }
 
     return 0;
