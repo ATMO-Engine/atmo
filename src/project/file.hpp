@@ -8,6 +8,8 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+
+#include "SDL3/SDL.h"
 #include "spdlog/spdlog.h"
 
 namespace atmo
@@ -35,6 +37,12 @@ namespace atmo
             };
 
             ~File() = default;
+
+            enum class SeekWhence {
+                BEGIN,
+                CURRENT,
+                END
+            };
 
             class FileOpenException : public std::runtime_error
             {
@@ -66,12 +74,12 @@ namespace atmo
              * @param n Maximum number of bytes to read.
              * @return std::size_t Number of bytes actually read.
              */
-            std::size_t read(char *buf, std::size_t n)
+            std::size_t read(void *buf, std::size_t n)
             {
                 std::uint64_t remaining = m_end_offset - m_start_offset - m_pos;
                 std::size_t to_read = std::min<std::uint64_t>(n, remaining);
                 m_file->seekg(m_start_offset + m_pos);
-                m_file->read(buf, to_read);
+                m_file->read(reinterpret_cast<char *>(buf), to_read);
                 std::size_t bytes_read = m_file->gcount();
                 m_pos += bytes_read;
                 return bytes_read;
@@ -95,14 +103,38 @@ namespace atmo
              * @brief Seeks to a new position in the file.
              *
              * @param new_pos New position to seek to, relative to the start of the file segment.
+             * @param whence Reference point for the new position (default is BEGIN).
+             * @return std::int64_t The new position in the file.
              */
-            void seek(uint64_t new_pos)
+            std::int64_t seek(std::int64_t new_pos, SeekWhence whence = SeekWhence::BEGIN)
             {
-                if (new_pos > m_end_offset - m_start_offset)
-                    new_pos = m_end_offset - m_start_offset;
-                m_pos = new_pos;
+                switch (whence) {
+                    case SeekWhence::BEGIN:
+                        m_pos = new_pos;
+                        break;
+                    case SeekWhence::CURRENT:
+                        m_pos += new_pos;
+                        break;
+                    case SeekWhence::END:
+                        m_pos = (m_end_offset - m_start_offset) + new_pos;
+                        break;
+                    default:
+                        throw std::runtime_error("Invalid seek whence.");
+                }
+
+                if (m_pos < 0 || m_pos > (m_end_offset - m_start_offset)) {
+                    throw std::runtime_error("Seek position out of bounds.");
+                }
+
+                return m_pos;
             }
 
+            /**
+             * @brief Write n bytes from buf to the file.
+             *
+             * @param buf Buffer containing data to write.
+             * @param n Number of bytes to write.
+             */
             void write(const void *buf, std::uint64_t n)
             {
                 if (!m_ownership || !m_file->good() || !(m_file->flags() & std::ios::out))
@@ -111,6 +143,27 @@ namespace atmo
                 m_file->seekp(m_start_offset + m_pos);
                 m_file->write(reinterpret_cast<const char *>(buf), n);
                 m_pos += n;
+            }
+
+            /**
+             * @brief Gets the size of the file.
+             *
+             * @return std::uint64_t Size of the file in bytes.
+             */
+            std::uint64_t size() const noexcept
+            {
+                return m_end_offset - m_start_offset;
+            }
+
+            SDL_IOStream *toIOStream()
+            {
+                SDL_IOStreamInterface iface;
+                SDL_INIT_INTERFACE(&iface);
+                iface.size = [](void *userdata) { return (Sint64)((File *)userdata)->size(); };
+                iface.seek = [](void *userdata, Sint64 off, SDL_IOWhence w) { return (Sint64)((File *)userdata)->seek(off, static_cast<SeekWhence>(w)); };
+                iface.read = [](void *userdata, void *ptr, size_t len, SDL_IOStatus *s) { return ((File *)userdata)->read(ptr, len); };
+
+                return SDL_OpenIO(&iface, this);
             }
 
         private:

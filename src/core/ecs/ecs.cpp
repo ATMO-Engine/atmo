@@ -27,10 +27,8 @@ namespace atmo
                 m_world.reset();
                 m_scene_manager.setWorld(&m_world);
 
-                // ECS_IMPORT(m_world, FlecsMeta);
-
 #if defined(ATMO_DEBUG)
-                m_world.import <flecs::stats>();
+                ECS_IMPORT(m_world, FlecsStats);
                 m_world.set<flecs::Rest>({});
 #endif
 

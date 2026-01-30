@@ -9,10 +9,11 @@ namespace atmo
 
         void Editor::init()
         {
-            auto test = project::FileSystem::OpenFile("project://translation/en-US/atmo.json");
+            // TODO: init localization here
+            // auto test = project::FileSystem::OpenFile("project://translation/en-US/atmo.json");
 
-            std::string content = test.readAll();
-            std::cout.write(content.data(), content.size());
+            // std::string content = test.readAll();
+            // std::cout.write(content.data(), content.size());
         }
 
         void atmo::editor::Editor::loop()

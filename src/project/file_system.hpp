@@ -209,7 +209,15 @@ namespace atmo
 
         private:
             FileSystem() = default;
-            ~FileSystem() = default;
+            ~FileSystem()
+            {
+                if (m_resources && m_resources->is_open())
+                    m_resources->close();
+
+                for (auto &pair : m_index) {
+                    std::free(const_cast<char *>(pair.second.path));
+                }
+            }
 
             static std::vector<std::uint32_t> FindAllAtmoPcks(std::shared_ptr<std::fstream> stream)
             {

@@ -69,6 +69,16 @@ atmo::impl::WindowManager::~WindowManager()
         m_window = nullptr;
     }
 
+    if (m_rendererData.text_engine) {
+        TTF_DestroyRendererTextEngine(m_rendererData.text_engine);
+        m_rendererData.text_engine = nullptr;
+    }
+
+    if (m_rendererData.fonts) {
+        SDL_free(m_rendererData.fonts);
+        m_rendererData.fonts = nullptr;
+    }
+
     SDL_free(m_clayArena.memory);
 }
 

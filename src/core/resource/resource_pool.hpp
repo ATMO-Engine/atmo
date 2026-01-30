@@ -95,35 +95,31 @@ namespace atmo
 
                 const StoreHandle create(const std::string &path, uint64_t tick)
                 {
-                    try {
-                        std::shared_ptr<T> res = m_loader->load(path);
+                    std::shared_ptr<T> res = m_loader->load(path);
 
-                        StoreHandle newHandle = {};
-                        if (!m_freeList.empty()) {
-                            std::uint16_t idx = m_freeList.back();
-                            m_freeList.pop_back();
-                            m_entries.at(idx).resource = res;
-                            m_entries.at(idx).lastUsedFrame = tick;
-                            m_entries.at(idx).strongRefs = 0;
-                            m_entries.at(idx).residentRefs = 0;
+                    StoreHandle newHandle = {};
+                    if (!m_freeList.empty()) {
+                        std::uint16_t idx = m_freeList.back();
+                        m_freeList.pop_back();
+                        m_entries.at(idx).resource = res;
+                        m_entries.at(idx).lastUsedFrame = tick;
+                        m_entries.at(idx).strongRefs = 0;
+                        m_entries.at(idx).residentRefs = 0;
 
-                            newHandle.index = idx;
-                            newHandle.generation = m_entries.at(idx).generation;
-                        } else {
-                            Entry newRes = { .resource = nullptr, .generation = 1, .strongRefs = 0, .residentRefs = 0, .lastUsedFrame = 0 };
-                            newRes.resource = res;
-                            newRes.lastUsedFrame = tick;
+                        newHandle.index = idx;
+                        newHandle.generation = m_entries.at(idx).generation;
+                    } else {
+                        Entry newRes = { .resource = nullptr, .generation = 1, .strongRefs = 0, .residentRefs = 0, .lastUsedFrame = 0 };
+                        newRes.resource = res;
+                        newRes.lastUsedFrame = tick;
 
-                            newHandle.index = m_entries.size();
-                            newHandle.generation = 1;
+                        newHandle.index = m_entries.size();
+                        newHandle.generation = 1;
 
-                            m_entries.push_back(newRes);
-                        }
-
-                        return newHandle;
-                    } catch (const std::exception &e) {
-                        throw e;
+                        m_entries.push_back(newRes);
                     }
+
+                    return newHandle;
                 }
 
                 ResourceRef<T> getRef(StoreHandle &handle, uint64_t tick)

@@ -119,6 +119,8 @@ int main(int argc, char **argv)
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
 
+    atmo::core::InputManager::AddInput("escape", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), false);
+
     atmo::core::InputManager::AddInput("rotate_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_Q, true), false);
     atmo::core::InputManager::AddInput("rotate_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_E, true), false);
 
@@ -137,7 +139,7 @@ int main(int argc, char **argv)
     auto scene = engine.getECS().instantiatePrefab("scene");
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(scene);
-    sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    sprite.set<atmo::core::components::Sprite2D>({ "project://assets/atmo.png" });
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
     sprite_transform->scale = { 0.25f, 0.25f };
@@ -154,6 +156,11 @@ int main(int argc, char **argv)
         deltaTime = dt.count();
 
         atmo::core::InputManager::Tick();
+
+        if (atmo::core::InputManager::IsPressed("escape")) {
+            spdlog::info("Escape pressed, quitting...");
+            g_should_quit.store(true);
+        }
 
         // if (atmo::core::InputManager::IsPressed("rotate_left"))
         //     sprite_transform->rotation -= 1.0f * deltaTime * 60.0f;
@@ -180,7 +187,7 @@ int main(int argc, char **argv)
         // }
 
         if (g_should_quit.load()) {
-            break;
+            engine.stop();
         }
     }
 
