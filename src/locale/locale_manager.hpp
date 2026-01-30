@@ -13,15 +13,52 @@ namespace atmo
 {
     namespace locale
     {
+        /**
+         * @brief Manages localization and translations for both editor and projects.
+         *
+         */
         class LocaleManager
         {
         public:
+            /**
+             * @brief Get the current locale
+             *
+             * @return const std::string& Current locale
+             */
             static const std::string &GetCurrentLocale() noexcept;
+
+            /**
+             * @brief Set the user's preferred locale
+             *
+             * @param locale
+             */
             static void SetUserLocale(std::string_view locale);
+
+            /**
+             * @brief Clear the user's preferred locale
+             *
+             */
             static void ClearUserLocale();
+
+            /**
+             * @brief Get the available locales
+             *
+             * @return const std::vector<std::string>& Available locales in the project
+             */
             static const std::vector<std::string> &GetAvailableLocales() noexcept;
+
+            /**
+             * @brief Get the translation text for a given key
+             *
+             * @param key The key to translate
+             * @return std::string_view The translated string, or the key itself if not found
+             */
             static std::string_view GetTranslation(std::string_view key) noexcept;
 
+            /**
+             * @brief Exception thrown when a locale is not available
+             *
+             */
             class LocaleNotAvailableException : public std::exception
             {
             public:
