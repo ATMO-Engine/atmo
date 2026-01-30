@@ -117,8 +117,6 @@ int main(int argc, char **argv)
 
     loop(engine);
 
-    spdlog::info("Locale: {}", atmo::locale::LocaleManager::GetCurrentLocale());
-
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
 
