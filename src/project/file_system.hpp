@@ -9,7 +9,9 @@
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
+#include "common/utils.hpp"
 #include "file.hpp"
 #include "project_settings.hpp"
 #include "spdlog/spdlog.h"
@@ -171,14 +173,12 @@ namespace atmo
             }
 
             /**
-             * @brief Opens a file from the given path. If the file system is packed, it will open from the packed index.
+             * @brief Opens a file from the given path.
              *
-             * path can be:
-             *  - An absolute path to a file on disk.
+             * @param path Can be:
+             *  - An absolute or relative path to a file on disk.
              *  - "project://relative/path/to/file" to open a file relative to the current project root or from the packed index.
              *  - "user://relative/path/to/file" to open a file relative to the user data directory.
-             *
-             * @param path
              * @return File object representing the opened file.
              */
             static File OpenFile(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out)
@@ -205,6 +205,49 @@ namespace atmo
                 }
 
                 return File(path, mode);
+            }
+
+            /**
+             * @brief Lists all files at the given path in the file system. Supports glob patterns.
+             *
+             * @param path Can be:
+             *  - An absolute or relative path to a directory on disk.
+             *  - "project://relative/path/to/directory" to list files relative to the current project root or from the packed index.
+             *  - "user://relative/path/to/directory" to list files relative to the user data directory.
+             * @return std::vector<std::string>
+             */
+            static std::vector<std::string> SearchFiles(std::string_view path)
+            {
+                std::vector<std::string> results;
+
+                if (path.starts_with(PROJECT_PROTOCOL)) {
+                    std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));
+
+                    for (const auto &pair : Instance().m_index) {
+                        if (common::Utils::GlobMatch(relative_path.string(), pair.first)) {
+                            results.push_back(pair.first);
+                        }
+                    }
+
+                    return results;
+                }
+
+                if (path.starts_with(USER_PROTOCOL)) {
+                    std::filesystem::path relative_path = std::string(path.substr(sizeof(USER_PROTOCOL) - 1));
+                    std::filesystem::path full_path = GetUserDataDirectory() / relative_path;
+
+                    for (const auto &entry : std::filesystem::directory_iterator(full_path)) {
+                        results.push_back(entry.path().string());
+                    }
+
+                    return results;
+                }
+
+                std::filesystem::path full_path = std::string(path);
+                for (const auto &entry : std::filesystem::directory_iterator(full_path)) {
+                    results.push_back(entry.path().string());
+                }
+                return results;
             }
 
         private:

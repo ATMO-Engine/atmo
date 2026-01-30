@@ -12,6 +12,7 @@
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
+#include "locale/locale_manager.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
@@ -115,6 +116,8 @@ int main(int argc, char **argv)
     std::signal(SIGTERM, [](int signum) { g_should_quit.store(true); });
 
     loop(engine);
+
+    spdlog::info("Locale: {}", atmo::locale::LocaleManager::GetCurrentLocale());
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);

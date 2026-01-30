@@ -41,7 +41,6 @@ atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 
     m_rendererData.fonts = (TTF_Font **)SDL_calloc(1, sizeof(TTF_Font *));
     if (!m_rendererData.fonts) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate memory for the font array: %s", SDL_GetError());
         spdlog::error("Failed to allocate memory for the font array: {}", SDL_GetError());
         throw std::runtime_error("Failed to allocate memory for the font array");
     }
@@ -113,13 +112,11 @@ void atmo::impl::WindowManager::draw()
     if (core::InputManager::IsJustPressed("ui_click")) {
         auto pos = core::InputManager::GetMousePosition();
         Clay_SetPointerState({ pos.x, pos.y }, true);
-        spdlog::info("Click at {}, {}", pos.x, pos.y);
     }
 
     if (core::InputManager::IsJustReleased("ui_click")) {
         auto pos = core::InputManager::GetMousePosition();
         Clay_SetPointerState({ pos.x, pos.y }, false);
-        spdlog::info("Release at {}, {}", pos.x, pos.y);
     }
 
     auto scroll = core::InputManager::GetScrollDelta("ui_scroll");
