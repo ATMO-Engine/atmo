@@ -75,6 +75,7 @@ namespace atmo
         struct Engine {
             ATMO_SETTING core::types::Vector3 gravity{ 0.0f, -9.81f, 0.0f };
             ATMO_SETTING float physics_frame_rate = 60.0f;
+            ATMO_SETTING float pixels_per_meter = 50.0f;
         };
 
         struct ProjectSettings {

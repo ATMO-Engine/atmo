@@ -1,8 +1,7 @@
 #include "core/ecs/ecs.hpp"
-#include "core/ecs/prefab_registry.hpp"
+#include "core/ecs/ecs_registry.hpp"
 #include "flecs.h"
 #include "project/project_manager.hpp"
-#include "spdlog/spdlog.h"
 
 atmo::core::ecs::Prefab createScenePrefab(flecs::world world)
 {
@@ -26,7 +25,7 @@ atmo::core::ecs::Prefab createScenePrefab(flecs::world world)
 namespace
 {
     static int _ = [] {
-        atmo::core::ecs::PrefabRegistry::AddPrefabLoader(&createScenePrefab);
+        atmo::core::ecs::Registry::AddPrefabLoader(&createScenePrefab);
         return 0;
     }();
 } // namespace

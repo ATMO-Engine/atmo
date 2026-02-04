@@ -14,6 +14,10 @@ void atmo::core::Engine::start()
     auto scene = m_ecs.instantiatePrefab("scene");
     m_ecs.changeScene(scene);
 
+    auto ground = m_ecs.instantiatePrefab("static_body_2d", "ground").child_of(scene);
+
+    auto physics_2d_world = scene.get_ref<atmo::core::components::Scene>()->world_id;
+
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
 
@@ -29,7 +33,6 @@ void atmo::core::Engine::start()
             spdlog::info("Quitting...");
             m_running.store(false);
         }
-
 
         if (!m_running.load()) {
             m_ecs.stop();

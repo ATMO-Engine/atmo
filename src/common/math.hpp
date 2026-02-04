@@ -6,23 +6,23 @@ namespace atmo
     {
         namespace math
         {
-            constexpr double PI = 3.14159265358979323846f;
+            constexpr float PI = 3.14159265358979323846f;
 
             /**
              * @brief Convert degrees to radians
              *
              * @param degrees Angle in degrees
-             * @return double Angle in radians
+             * @return float Angle in radians
              */
-            double DegreesToRadians(double degrees);
+            float DegreesToRadians(float degrees);
 
             /**
              * @brief Convert radians to degrees
              *
              * @param radians Angle in radians
-             * @return double Angle in degrees
+             * @return float Angle in degrees
              */
-            double RadiansToDegrees(double radians);
+            float RadiansToDegrees(float radians);
 
             /**
              * @brief Clamp a value between a minimum and maximum
@@ -55,6 +55,22 @@ namespace atmo
             {
                 return a + static_cast<T>(t * (b - a));
             }
+
+            /**
+             * @brief Convert meters to pixels
+             *
+             * @param meters Value in meters
+             * @return float Value in pixels
+             */
+            float MeterToPixel(float meters);
+
+            /**
+             * @brief Convert pixels to meters
+             *
+             * @param pixels Value in pixels
+             * @return float Value in meters
+             */
+            float PixelToMeter(float pixels);
         } // namespace math
     } // namespace common
 } // namespace atmo

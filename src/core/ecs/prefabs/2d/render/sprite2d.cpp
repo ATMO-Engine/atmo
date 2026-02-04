@@ -1,11 +1,10 @@
 #include "core/ecs/ecs.hpp"
-#include "core/ecs/prefab_registry.hpp"
+#include "core/ecs/ecs_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/resource_ref.hpp"
 #include "flecs.h"
 #include "impl/window.hpp"
 #include "project/project_manager.hpp"
-#include "spdlog/spdlog.h"
 
 atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
 {
@@ -78,7 +77,7 @@ atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
 namespace
 {
     static int _ = [] {
-        atmo::core::ecs::PrefabRegistry::AddPrefabLoader(&createSprite2dPrefab);
+        atmo::core::ecs::Registry::AddPrefabLoader(&createSprite2dPrefab);
         return 0;
     }();
 } // namespace
