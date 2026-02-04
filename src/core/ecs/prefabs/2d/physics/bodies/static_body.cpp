@@ -13,9 +13,9 @@ atmo::core::ecs::Prefab createStaticBody2dPrefab(flecs::world world)
     staticBody2dPrefab.set(components::PhysicsBody2D{});
 
     staticBody2dPrefab.set(components::StaticBody2D{});
-    auto &body = staticBody2dPrefab.entity.get_mut<components::PhysicsBody2D>();
-    body.body_def.type = b2_staticBody;
-    body.shape = types::Shape2DType::Rectangle;
+    auto body = staticBody2dPrefab.entity.get_ref<components::PhysicsBody2D>();
+    body->body_def.type = b2_staticBody;
+    body->shape = types::Shape2DType::Rectangle;
 
     return staticBody2dPrefab;
 }
