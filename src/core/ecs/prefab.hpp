@@ -1,27 +1,9 @@
+#pragma once
+
 #include <flecs.h>
 #include <string>
 
 #include "components.hpp"
-
-/*
-static void RegisterSystems(flecs::world ecs)
-{
-    ecs.system<core::ComponentManager::Managed, core::components::Window>("PollEvents")
-        .kind(flecs::PreUpdate)
-        .each([](flecs::iter &it, size_t i, core::ComponentManager::Managed &manager, core::components::Window &window) {
-            auto *wm = static_cast<impl::WindowManager *>(manager.ptr);
-            wm->pollEvents(it.delta_time());
-            wm->beginDraw();
-        });
-
-    ecs.system<core::ComponentManager::Managed, core::components::Window>("Draw")
-        .kind(flecs::PostUpdate)
-        .each([](core::ComponentManager::Managed &manager, core::components::Window &window) {
-            auto *wm = static_cast<impl::WindowManager *>(manager.ptr);
-            wm->draw();
-        });
-}
-*/
 
 namespace atmo
 {

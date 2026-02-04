@@ -1,9 +1,45 @@
 #include "engine.hpp"
 #include "impl/window.hpp"
+#include "project/file_system.hpp"
+#include "project/project_manager.hpp"
+
+void atmo::core::Engine::start()
+{
+    m_running.store(true);
+
+    auto window = m_ecs.instantiatePrefab("window", "_Root");
+    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
+    wm->rename(atmo::project::ProjectManager::GetSettings().app.project_name);
+
+    auto scene = m_ecs.instantiatePrefab("scene");
+    m_ecs.changeScene(scene);
+
+    auto last_time = std::chrono::steady_clock::now();
+    float deltaTime = 0.0f;
+
+    while (m_ecs.progress(deltaTime)) {
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<float> dt = current_time - last_time;
+        last_time = current_time;
+        deltaTime = dt.count();
+
+        atmo::core::InputManager::Tick();
+
+        if (atmo::core::InputManager::IsPressed("ui_quit")) {
+            spdlog::info("Quitting...");
+            m_running.store(false);
+        }
+
+
+        if (!m_running.load()) {
+            m_ecs.stop();
+        }
+    }
+}
 
 void atmo::core::Engine::stop()
 {
-    m_ecs.stop();
+    m_running.store(false);
 }
 
 void atmo::core::Engine::reset()

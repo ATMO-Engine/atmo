@@ -2,9 +2,11 @@
 
 #include <exception>
 #include <flecs.h>
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "components.hpp"
 #include "core/scene/scene_manager.hpp"
@@ -26,6 +28,7 @@ namespace atmo
                 scene::SceneManager m_scene_manager;
 
                 void loadPrefabs();
+                void addPrefab(Prefab &prefab);
 
             public:
                 ECS();
@@ -36,8 +39,6 @@ namespace atmo
                 flecs::entity createScene(const std::string &scene_name, bool singleton);
                 void changeScene(flecs::entity scene);
                 void changeSceneToFile(std::string_view scene_path);
-
-                void addPrefab(Prefab &prefab);
 
                 Entity instantiatePrefab(const std::string &name, const std::string &instance_name = "");
 

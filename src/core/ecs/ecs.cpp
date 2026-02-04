@@ -2,9 +2,12 @@
 #include <memory>
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
+#include "core/ecs/prefab_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
 #include "impl/window.hpp"
+#include "project/project_manager.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo
 {
@@ -49,99 +52,10 @@ namespace atmo
                         t.g_scale = { parent_t.g_scale.x * t.scale.x, parent_t.g_scale.y * t.scale.y };
                     });
 
-                { // Scene
-                    auto scenePrefab = Prefab(m_world, "scene").set(components::Scene{ false });
-
-                    addPrefab(scenePrefab);
-                }
-
-                { // Window
-                    auto windowPrefab = Prefab(m_world, "window").managed<impl::WindowManager>(components::Window{ "Atmo Managed Window", { 800, 600 } });
-
-                    m_world.system<core::ComponentManager::Managed, core::components::Window>("PollEvents")
-                        .kind(flecs::PreUpdate)
-                        .each([](flecs::iter &it, size_t i, core::ComponentManager::Managed &manager, core::components::Window &window) {
-                            auto wm = static_cast<impl::WindowManager *>(manager.ptr);
-                            wm->pollEvents(it.delta_time());
-                            wm->beginDraw();
-                        });
-
-                    m_world.system<core::ComponentManager::Managed, core::components::Window>("Draw")
-                        .kind(flecs::PostUpdate)
-                        .each([](core::ComponentManager::Managed &manager, core::components::Window &window) {
-                            auto wm = static_cast<impl::WindowManager *>(manager.ptr);
-                            wm->draw();
-                        });
-
-                    addPrefab(windowPrefab);
-                }
-
-                { // Sprite2D
-                    m_world.observer<components::Sprite2D>("Sprite2D_LoadTexture").event(flecs::OnSet).each([](flecs::entity e, components::Sprite2D &sprite) {
-                        if (sprite.texture_path.empty())
-                            return;
-
-                        sprite.m_handle = atmo::core::resource::Handle<SDL_Surface>{ .assetId = sprite.texture_path };
-
-                        atmo::core::resource::ResourceRef<SDL_Surface> res =
-                            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
-
-                        res.pin();
-
-                        spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
-
-                        std::shared_ptr<SDL_Surface> surface = res.get();
-
-                        spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
-
-                        sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
-                    });
-
-                    m_world.system<components::Sprite2D, components::Transform2D>("Sprite2D_UpdateDestRect")
-                        .kind(flecs::OnValidate)
-                        .each([](flecs::entity e, components::Sprite2D &sprite, components::Transform2D &transform) {
-                            sprite.m_dest_rect.x = transform.g_position.x + transform.position.x;
-                            sprite.m_dest_rect.y = transform.g_position.y + transform.position.y;
-                            sprite.m_dest_rect.w = sprite.texture_size.x * (transform.g_scale.x * transform.scale.x);
-                            sprite.m_dest_rect.h = sprite.texture_size.y * (transform.g_scale.y * transform.scale.y);
-                        });
-
-                    m_world.system<components::Sprite2D, components::Transform2D, ComponentManager::Managed, components::Window>("Sprite2D_Render")
-                        .kind(flecs::OnValidate)
-                        .term_at(2)
-                        .up()
-                        .term_at(3)
-                        .up()
-                        .each([](flecs::entity e,
-                                 components::Sprite2D &sprite,
-                                 components::Transform2D &transform,
-                                 ComponentManager::Managed &manager,
-                                 core::components::Window &window) {
-                            auto wm = static_cast<impl::WindowManager *>(manager.ptr);
-
-                            SDL_Texture *texture = wm->getTextureFromHandle(sprite.m_handle);
-                            if (!texture)
-                                return;
-
-                            SDL_RenderTextureRotated(
-                                wm->getRenderer(), texture, nullptr, &sprite.m_dest_rect, transform.g_rotation + transform.rotation, nullptr, SDL_FLIP_NONE);
-                        });
-
-                    auto sprite2DPrefab = Prefab(m_world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
-                    addPrefab(sprite2DPrefab);
-
-                    m_world.observer<components::Sprite2D>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2D &sprite) {
-                        if (sprite.texture_path.empty())
-                            return;
-
-                        atmo::core::resource::ResourceRef<SDL_Surface> res =
-                            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
-
-                        res.unpin();
-
-                        spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
-                    });
-                }
+                for (auto loader : PrefabRegistry::GetLoaders()) {
+                    auto p = loader(m_world);
+                    addPrefab(p);
+                };
             }
 
             flecs::entity ECS::createScene(const std::string &scene_name, bool singleton)

@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "box2d/box2d.h"
 #include "flecs.h"
 
 namespace atmo
@@ -13,6 +14,11 @@ namespace atmo
             struct Vector2 {
                 float x = 0.0f;
                 float y = 0.0f;
+
+                Vector2() = default;
+                Vector2(float x, float y) : x(x), y(y) {}
+
+                Vector2(const b2Vec2 &v) : x(v.x), y(v.y) {}
             };
 
             struct Vector2i {
