@@ -44,8 +44,8 @@ namespace glz
     };
 } // namespace glz
 
-template <> struct glz::meta<atmo::core::types::rgba> {
-    using T = atmo::core::types::rgba;
+template <> struct glz::meta<atmo::core::types::ColorRGBA> {
+    using T = atmo::core::types::ColorRGBA;
     static constexpr auto value = glz::object("r", &T::r, "g", &T::g, "b", &T::b, "a", &T::a);
 };
 
@@ -61,7 +61,7 @@ namespace atmo
         };
 
         struct Boot {
-            ATMO_SETTING atmo::core::types::rgba background_color = { 0, 0, 0, 255 };
+            ATMO_SETTING atmo::core::types::ColorRGBA background_color = { 0, 0, 0, 255 };
             ATMO_SETTING bool show_splash_icon = true;
             ATMO_SETTING bool full_size_splash_icon = false;
             ATMO_SETTING std::string splash_icon_path = "project://assets/atmo.png";

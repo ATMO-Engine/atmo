@@ -142,7 +142,7 @@ void atmo::impl::WindowManager::rename(const std::string &name) noexcept
         SDL_SetWindowTitle(m_window, name.c_str());
 }
 
-void atmo::impl::WindowManager::resize(const atmo::core::types::vector2i &size) noexcept
+void atmo::impl::WindowManager::resize(const atmo::core::types::Vector2i &size) noexcept
 {
     if (m_window)
         SDL_SetWindowSize(m_window, size.x, size.y);
@@ -155,7 +155,7 @@ void atmo::impl::WindowManager::focus() noexcept
     }
 }
 
-atmo::core::types::vector2i atmo::impl::WindowManager::getSize() const noexcept
+atmo::core::types::Vector2i atmo::impl::WindowManager::getSize() const noexcept
 {
     if (m_window) {
         int w, h;

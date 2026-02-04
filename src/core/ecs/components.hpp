@@ -66,14 +66,14 @@ namespace atmo
             END_REFLECT(Scene)
 
             struct Transform2D {
-                types::vector2 position{ 0.0f, 0.0f };
-                types::vector2 g_position{ 0.0f, 0.0f };
+                types::Vector2 position{ 0.0f, 0.0f };
+                types::Vector2 g_position{ 0.0f, 0.0f };
 
                 float rotation{ 0.0f };
                 float g_rotation{ 0.0f };
 
-                types::vector2 scale{ 1.0f, 1.0f };
-                types::vector2 g_scale{ 1.0f, 1.0f };
+                types::Vector2 scale{ 1.0f, 1.0f };
+                types::Vector2 g_scale{ 1.0f, 1.0f };
             };
             BEGIN_REFLECT(Transform2D)
             FIELD(position)
@@ -87,7 +87,7 @@ namespace atmo
 
             struct Window {
                 std::string title;
-                types::vector2i size;
+                types::Vector2i size;
             };
             BEGIN_REFLECT(Window)
             FIELD(title)
@@ -105,7 +105,7 @@ namespace atmo
                 std::string texture_path;
                 resource::Handle<SDL_Surface> m_handle;
                 SDL_FRect m_dest_rect{ 0, 0, 0, 0 };
-                types::vector2 texture_size{ 0.0f, 0.0f };
+                types::Vector2 texture_size{ 0.0f, 0.0f };
             };
             BEGIN_REFLECT(Sprite2D)
             FIELD(texture_path)
@@ -117,8 +117,8 @@ namespace atmo
                 // Clay_TextElementConfig textConfig;
                 struct UI {
                     bool visible{ true };
-                    types::rgba modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
-                    types::rgba self_modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
+                    types::ColorRGBA modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
+                    types::ColorRGBA self_modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
                 };
                 BEGIN_REFLECT(UI)
                 FIELD(visible)
