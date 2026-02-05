@@ -9,7 +9,7 @@
 atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
 {
     using namespace atmo::core;
-    auto sprite2DPrefab = ecs::Prefab(world, "sprite2d").set(components::Transform2D{}).set(components::Sprite2D{});
+    auto sprite2DPrefab = ecs::Prefab(world, "sprite_2d").set(components::Transform2d{}).set(components::Sprite2D{});
 
     world.observer<components::Sprite2D>("Sprite2D_LoadTexture").event(flecs::OnSet).each([](flecs::entity e, components::Sprite2D &sprite) {
         if (sprite.texture_path.empty())
@@ -30,16 +30,16 @@ atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
         sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
     });
 
-    world.system<components::Sprite2D, components::Transform2D>("Sprite2D_UpdateDestRect")
+    world.system<components::Sprite2D, components::Transform2d>("Sprite2D_UpdateDestRect")
         .kind(flecs::OnValidate)
-        .each([](flecs::entity e, components::Sprite2D &sprite, components::Transform2D &transform) {
+        .each([](flecs::entity e, components::Sprite2D &sprite, components::Transform2d &transform) {
             sprite.m_dest_rect.x = transform.g_position.x + transform.position.x;
             sprite.m_dest_rect.y = transform.g_position.y + transform.position.y;
             sprite.m_dest_rect.w = sprite.texture_size.x * (transform.g_scale.x * transform.scale.x);
             sprite.m_dest_rect.h = sprite.texture_size.y * (transform.g_scale.y * transform.scale.y);
         });
 
-    world.system<components::Sprite2D, components::Transform2D, ComponentManager::Managed, components::Window>("Sprite2D_Render")
+    world.system<components::Sprite2D, components::Transform2d, ComponentManager::Managed, components::Window>("Sprite2D_Render")
         .kind(flecs::OnValidate)
         .term_at(2)
         .up()
@@ -47,7 +47,7 @@ atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
         .up()
         .each([](flecs::entity e,
                  components::Sprite2D &sprite,
-                 components::Transform2D &transform,
+                 components::Transform2d &transform,
                  ComponentManager::Managed &manager,
                  components::Window &window) {
             auto wm = static_cast<atmo::impl::WindowManager *>(manager.ptr);

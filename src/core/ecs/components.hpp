@@ -66,7 +66,7 @@ namespace atmo
             FIELD(singleton)
             END_REFLECT(Scene)
 
-            struct Transform2D {
+            struct Transform2d {
                 types::Vector2 position{ 0.0f, 0.0f };
                 types::Vector2 g_position{ 0.0f, 0.0f };
 
@@ -76,20 +76,20 @@ namespace atmo
                 types::Vector2 scale{ 1.0f, 1.0f };
                 types::Vector2 g_scale{ 1.0f, 1.0f };
             };
-            BEGIN_REFLECT(Transform2D)
+            BEGIN_REFLECT(Transform2d)
             FIELD(position)
             FIELD(rotation)
             FIELD(scale)
-            END_REFLECT(Transform2D)
+            END_REFLECT(Transform2d)
 
-            struct PhysicsBody2D {
+            struct PhysicsBody2d {
                 b2BodyId body_id{ b2_nullBodyId };
                 b2BodyDef body_def{ b2DefaultBodyDef() };
-                types::Shape2DType shape{ types::Shape2DType::None };
+                types::Shape2dType shape{ types::Shape2dType::None };
             };
-            BEGIN_REFLECT(PhysicsBody2D)
+            BEGIN_REFLECT(PhysicsBody2d)
             NAMED_FIELD("Shape", shape)
-            END_REFLECT(PhysicsBody2D)
+            END_REFLECT(PhysicsBody2d)
 
             struct RectangleShape2d {
                 types::Vector2 size{ 1.0f, 1.0f };
@@ -121,19 +121,13 @@ namespace atmo
             FIELD(points)
             END_REFLECT(PolygonShape2d)
 
-            struct StaticBody2D {
-                types::Vector2 position{ 0.0f, 0.0f };
-                float rotation{ 0.0f };
-            };
-            BEGIN_REFLECT(StaticBody2D)
-            FIELD(position)
-            FIELD(rotation)
-            END_REFLECT(StaticBody2D)
-
-            struct DynamicBody2D {
+            struct StaticBody2d {
             };
 
-            struct KinematicBody2D {
+            struct DynamicBody2d {
+            };
+
+            struct KinematicBody2d {
             };
 
             struct Window {

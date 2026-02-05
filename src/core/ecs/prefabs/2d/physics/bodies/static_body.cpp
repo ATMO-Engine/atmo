@@ -1,3 +1,5 @@
+#include "box2d/box2d.h"
+#include "box2d/math_functions.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/ecs.hpp"
 #include "core/ecs/ecs_registry.hpp"
@@ -10,12 +12,13 @@ atmo::core::ecs::Prefab createStaticBody2dPrefab(flecs::world world)
     using namespace atmo::core;
     auto staticBody2dPrefab = ecs::Prefab(world, "static_body_2d");
 
-    staticBody2dPrefab.set(components::PhysicsBody2D{});
+    staticBody2dPrefab.set<components::Transform2d>({});
+    staticBody2dPrefab.add<components::StaticBody2d>();
 
-    staticBody2dPrefab.set(components::StaticBody2D{});
-    auto body = staticBody2dPrefab.entity.get_ref<components::PhysicsBody2D>();
-    body->body_def.type = b2_staticBody;
-    body->shape = types::Shape2DType::Rectangle;
+    auto physics_body_component = components::PhysicsBody2d{};
+    physics_body_component.body_def.type = b2_staticBody;
+    physics_body_component.shape = types::Shape2dType::None;
+    staticBody2dPrefab.set(physics_body_component);
 
     return staticBody2dPrefab;
 }

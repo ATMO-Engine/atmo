@@ -98,8 +98,8 @@ int main(int argc, char **argv)
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
-
     atmo::core::InputManager::AddInput("ui_quit", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), false);
+    atmo::core::InputManager::AddInput("ui_confirm", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_RETURN, true), false);
 
     atmo::core::InputManager::AddInput("rotate_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_Q, true), false);
     atmo::core::InputManager::AddInput("rotate_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_E, true), false);

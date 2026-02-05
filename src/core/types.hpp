@@ -20,6 +20,10 @@ namespace atmo
                 Vector2(float x, float y) : x(x), y(y) {}
 
                 Vector2(const b2Vec2 &v) : x(common::math::MeterToPixel(v.x)), y(common::math::MeterToPixel(v.y)) {}
+                operator b2Vec2() const
+                {
+                    return b2Vec2(common::math::PixelToMeter(x), common::math::PixelToMeter(y));
+                }
             };
 
             struct Vector2i {
@@ -60,7 +64,7 @@ namespace atmo
                 float a = 1.0f;
             };
 
-            enum Shape2DType {
+            enum Shape2dType {
                 None,
                 Rectangle,
                 Circle,
@@ -77,12 +81,12 @@ namespace atmo
                 ecs.component<Vector4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
                 ecs.component<Vector4i>().member<int>("x").member<int>("y").member<int>("z").member<int>("w");
                 ecs.component<ColorRGBA>().member<float>("r").member<float>("g").member<float>("b").member<float>("a");
-                ecs.component<Shape2DType>()
-                    .constant("None", Shape2DType::None)
-                    .constant("Rectangle", Shape2DType::Rectangle)
-                    .constant("Circle", Shape2DType::Circle)
-                    .constant("Capsule", Shape2DType::Capsule)
-                    .constant("Polygon", Shape2DType::Polygon);
+                ecs.component<Shape2dType>()
+                    .constant("None", Shape2dType::None)
+                    .constant("Rectangle", Shape2dType::Rectangle)
+                    .constant("Circle", Shape2dType::Circle)
+                    .constant("Capsule", Shape2dType::Capsule)
+                    .constant("Polygon", Shape2dType::Polygon);
             }
         } // namespace types
     } // namespace core

@@ -1,4 +1,6 @@
 #include "engine.hpp"
+#include "core/input/input_manager.hpp"
+#include "core/types.hpp"
 #include "impl/window.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
@@ -15,8 +17,8 @@ void atmo::core::Engine::start()
     m_ecs.changeScene(scene);
 
     auto ground = m_ecs.instantiatePrefab("static_body_2d", "ground").child_of(scene);
-
-    auto physics_2d_world = scene.get_ref<atmo::core::components::Scene>()->world_id;
+    ground.get_ref<components::PhysicsBody2d>()->shape = types::Shape2dType::Rectangle;
+    ground.modified<components::PhysicsBody2d>();
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
@@ -27,12 +29,12 @@ void atmo::core::Engine::start()
         last_time = current_time;
         deltaTime = dt.count();
 
-        atmo::core::InputManager::Tick();
-
         if (atmo::core::InputManager::IsPressed("ui_quit")) {
             spdlog::info("Quitting...");
             m_running.store(false);
         }
+
+        atmo::core::InputManager::Tick();
 
         if (!m_running.load()) {
             m_ecs.stop();
