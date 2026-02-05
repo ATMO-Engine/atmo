@@ -57,7 +57,7 @@ static int handleArgs()
 
         if (files.empty()) {
             spdlog::error("No files provided to pack.");
-            return 1;
+            return -1;
         }
 
         atmo::project::ProjectManager::GeneratePackedFile("packed_output.pck", files);
