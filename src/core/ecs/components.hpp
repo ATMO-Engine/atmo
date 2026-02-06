@@ -7,14 +7,14 @@
 #include <box2d/box2d.h>
 #include <flecs.h>
 #include <spdlog/spdlog.h>
+#include <vector>
 #include "SDL3/SDL_rect.h"
+#include "SDL3/SDL_render.h"
 #include "clay.h"
-
 #include "core/resource/handle.hpp"
+#include "core/resource/subresources/2d/shape/shape2d.hpp"
 #include "core/types.hpp"
 #include "luau/luau.hpp"
-
-#include "SDL3/SDL_render.h"
 
 #define BEGIN_REFLECT(Type)                     \
     namespace                                   \
@@ -85,41 +85,11 @@ namespace atmo
             struct PhysicsBody2d {
                 b2BodyId body_id{ b2_nullBodyId };
                 b2BodyDef body_def{ b2DefaultBodyDef() };
-                types::Shape2dType shape{ types::Shape2dType::None };
+                std::vector<std::shared_ptr<resource::resources::Shape2d>> shapes;
             };
             BEGIN_REFLECT(PhysicsBody2d)
-            NAMED_FIELD("Shape", shape)
+            // NAMED_FIELD("Shape", shape)
             END_REFLECT(PhysicsBody2d)
-
-            struct RectangleShape2d {
-                types::Vector2 size{ 1.0f, 1.0f };
-            };
-            BEGIN_REFLECT(RectangleShape2d)
-            FIELD(size)
-            END_REFLECT(RectangleShape2d)
-
-            struct CircleShape2d {
-                float radius{ 0.5f };
-            };
-            BEGIN_REFLECT(CircleShape2d)
-            FIELD(radius)
-            END_REFLECT(CircleShape2d)
-
-            struct CapsuleShape2d {
-                float radius{ 0.5f };
-                float height{ 1.0f };
-            };
-            BEGIN_REFLECT(CapsuleShape2d)
-            FIELD(radius)
-            FIELD(height)
-            END_REFLECT(CapsuleShape2d)
-
-            struct PolygonShape2d {
-                std::vector<types::Vector2> points;
-            };
-            BEGIN_REFLECT(PolygonShape2d)
-            FIELD(points)
-            END_REFLECT(PolygonShape2d)
 
             struct StaticBody2d {
             };
@@ -181,7 +151,7 @@ namespace atmo
                 END_REFLECT(Text)
             } // namespace UI
 
-            template <typename Elem, typename Vector = std::vector<Elem>> flecs::opaque<Vector, Elem> std_vector_support(flecs::world &world)
+            template <typename Elem, typename Vector = std::vector<Elem>> flecs::opaque<Vector, Elem> static std_vector_support(flecs::world &world)
             {
                 return flecs::opaque<Vector, Elem>()
                     .as_type(world.vector<Elem>())
