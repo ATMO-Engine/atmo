@@ -1,6 +1,7 @@
 #include <exception>
 #include <memory>
 #include "SDL3_image/SDL_image.h"
+#include "project/file_system.hpp"
 
 #include "core/resource/loaders/image_loader.hpp"
 
@@ -16,12 +17,8 @@ namespace atmo
 
             std::shared_ptr<SDL_Surface> ImageLoader::load(const std::string &path)
             {
-                SDL_Surface *surface = nullptr;
-                try {
-                    surface = IMG_Load(path.c_str());
-                } catch (const std::exception &e) {
-                    throw e;
-                }
+                auto file = project::FileSystem::OpenFile(path);
+                SDL_Surface *surface = IMG_Load_IO(file.toIOStream(), true);
 
                 if (!surface) {
                     throw LoadException(std::string("Failed to load image: ") + SDL_GetError());

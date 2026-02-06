@@ -1,73 +1,104 @@
+#include <atomic>
 #include <csignal>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <variant>
 #include "atmo.hpp"
+#include "core/args/arg_manager.hpp"
 #include "core/ecs/components.hpp"
 #include "core/scene/scene_manager.hpp"
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
+#include "locale/locale_manager.hpp"
+#include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
-#if defined(_WIN32)
-#include <windows.h>
-#elif defined(__APPLE__)
-#include <mach-o/dyld.h>
-#else
-#include <unistd.h>
-#endif
+static std::atomic<bool> g_should_quit{ false };
 
-static std::filesystem::path get_executable_path()
-{
-#if defined(_WIN32)
-    char buffer[MAX_PATH];
-    GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    return std::filesystem::path(buffer);
-#elif defined(__APPLE__)
-    char buffer[4096];
-    uint32_t size = sizeof(buffer);
-    if (_NSGetExecutablePath(buffer, &size) == 0)
-        return std::filesystem::canonical(buffer);
-    std::string dyn(size, '\0');
-    _NSGetExecutablePath(dyn.data(), &size);
-    return std::filesystem::canonical(dyn.c_str());
-#else
-    char buffer[4096];
-    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-    if (len != -1) {
-        buffer[len] = '\0';
-        return std::filesystem::path(buffer);
-    }
-    return std::filesystem::current_path();
-#endif
-}
-
-static atmo::core::Engine *g_engine;
-
-static void loop()
+static void loop(atmo::core::Engine &engine)
 {
 #if !defined(ATMO_EXPORT) // editor mode
-    atmo::editor::ProjectExplorer project_explorer(g_engine);
+    atmo::editor::ProjectExplorer project_explorer(&engine);
     project_explorer.loop();
     std::string selected_path = project_explorer.getSelectedPath();
-    g_engine->reset();
-    atmo::editor::Editor editor(g_engine, selected_path);
+    engine.reset();
+    atmo::editor::Editor editor(&engine, selected_path);
+    editor.init();
     editor.loop();
 #else // export mode
     throw std::runtime_error("Not implemented yet.");
-    while (g_engine->getECS().progress()) {
+    while (engine.getECS().progress()) {
         atmo::core::InputManager::Tick();
     }
 #endif
 }
 
+#if !defined(ATMO_EXPORT)
+static int handleArgs()
+{
+    if (atmo::core::args::ArgManager::HasArg("help") || atmo::core::args::ArgManager::HasArg("h")) {
+        std::cout << ATMO_ASCII_ART << std::endl;
+        std::cout << "Atmo Engine Usage:" << std::endl;
+        std::cout << "  --help, -h           Show this help message." << std::endl;
+        std::cout << "  --pack files         Generate a .pck packed resource file from <files>." << std::endl;
+        std::cout << "  --read path [file]   Read packed .pck resource file at <path> and output info." << std::endl;
+        std::cout << "                         - if file is given, will output the contents of the file instead." << std::endl;
+        return 1;
+    }
+
+    if (atmo::core::args::ArgManager::HasArg("pack")) {
+        std::vector<std::string> files = atmo::core::args::ArgManager::GetNamedArgs("pack");
+
+        files.emplace(files.begin(), std::get<std::string>(atmo::core::args::ArgManager::GetArgValue("pack")));
+
+        if (files.empty()) {
+            spdlog::error("No files provided to pack.");
+            return -1;
+        }
+
+        atmo::project::ProjectManager::GeneratePackedFile("packed_output.pck", files);
+
+        return 1;
+    }
+
+    if (atmo::core::args::ArgManager::HasArg("read")) {
+        auto arg = atmo::core::args::ArgManager::GetArg("read");
+        if (std::holds_alternative<bool>(arg.value)) {
+            spdlog::error("No path provided to read.");
+            return -1;
+        }
+        auto path = std::get<std::string>(arg.value);
+        auto args = atmo::core::args::ArgManager::GetNamedArgs("read");
+        if (args.size() == 1)
+            atmo::project::FileSystem::DisplayPackedFileContent(path, args[0]);
+        else
+            atmo::project::FileSystem::DisplayPackedFileInfo(path);
+
+        return 1;
+    }
+
+    return 0;
+}
+#endif
+
 int main(int argc, char **argv)
 {
 #if defined(ATMO_DEBUG)
     spdlog::set_level(spdlog::level::debug);
+#endif
+
+    atmo::core::args::ArgManager::Parse(argc, argv);
+
+#if !defined(ATMO_EXPORT)
+    if (int res = handleArgs(); res != 0) {
+        if (res > 0)
+            res = 0;
+        return res;
+    }
 #endif
 
     if (SDL_Init(
@@ -80,16 +111,16 @@ int main(int argc, char **argv)
     std::atexit(SDL_Quit);
 
     atmo::core::Engine engine;
-    g_engine = &engine;
 
-    std::signal(SIGINT, [](int signum) { g_engine->stop(); });
-    std::signal(SIGTERM, [](int signum) { g_engine->stop(); });
+    std::signal(SIGINT, [](int signum) { g_should_quit.store(true); });
+    std::signal(SIGTERM, [](int signum) { g_should_quit.store(true); });
 
-    atmo::project::FileSystem::SetRootPath(get_executable_path());
-    spdlog::debug("Executable Path: {}", atmo::project::FileSystem::GetRootPath().string());
+    loop(engine);
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
     atmo::core::InputManager::AddInput("ui_scroll", new atmo::core::InputManager::MouseScrollEvent(), true);
+
+    atmo::core::InputManager::AddInput("escape", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), false);
 
     atmo::core::InputManager::AddInput("rotate_left", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_Q, true), false);
     atmo::core::InputManager::AddInput("rotate_right", new atmo::core::InputManager::KeyEvent(SDL_SCANCODE_E, true), false);
@@ -109,7 +140,7 @@ int main(int argc, char **argv)
     auto scene = engine.getECS().instantiatePrefab("scene");
     auto sprite = engine.getECS().instantiatePrefab("sprite2d", "TestSprite");
     sprite.child_of(scene);
-    sprite.set<atmo::core::components::Sprite2D>({ "assets/atmo.png" });
+    sprite.set<atmo::core::components::Sprite2D>({ "project://assets/atmo.png" });
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
     sprite_transform->scale = { 0.25f, 0.25f };
@@ -118,13 +149,19 @@ int main(int argc, char **argv)
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;
-    while (g_engine->getECS().progress(deltaTime)) {
+
+    while (engine.getECS().progress(deltaTime)) {
         auto current_time = std::chrono::steady_clock::now();
         std::chrono::duration<float> dt = current_time - last_time;
         last_time = current_time;
         deltaTime = dt.count();
 
         atmo::core::InputManager::Tick();
+
+        if (atmo::core::InputManager::IsPressed("escape")) {
+            spdlog::info("Escape pressed, quitting...");
+            g_should_quit.store(true);
+        }
 
         // if (atmo::core::InputManager::IsPressed("rotate_left"))
         //     sprite_transform->rotation -= 1.0f * deltaTime * 60.0f;
@@ -149,6 +186,10 @@ int main(int argc, char **argv)
         //     sprite_transform->scale.x += zoom_delta * 0.001f;
         //     sprite_transform->scale.y += zoom_delta * 0.001f;
         // }
+
+        if (g_should_quit.load()) {
+            engine.stop();
+        }
     }
 
     return 0;

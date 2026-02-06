@@ -9,7 +9,7 @@ namespace atmo
     {
         namespace scene
         {
-            void SceneManager::setWorld(flecs::world &world)
+            void SceneManager::setWorld(flecs::world *world)
             {
                 m_world = world;
             }
@@ -18,7 +18,7 @@ namespace atmo
             {
                 project::File file = project::FileSystem::OpenFile(file_path);
 
-                flecs::entity scene = m_world.entity();
+                flecs::entity scene = m_world->entity();
 
                 scene.from_json(file.readAll().c_str());
 
@@ -43,7 +43,7 @@ namespace atmo
 
             flecs::entity SceneManager::getRoot()
             {
-                static flecs::entity root = m_world.entity("_Root");
+                static flecs::entity root = m_world->entity("_Root");
                 return root;
             }
 

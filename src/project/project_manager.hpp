@@ -1,12 +1,16 @@
 #pragma once
 
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <glaze/glaze.hpp>
 #include <semver.hpp>
 #include <spdlog/spdlog.h>
+#include <string_view>
+#include <vector>
 
 #include "file_system.hpp"
+#include "glaze/json/write.hpp"
 #include "project/project_settings.hpp"
 
 #define ATMO_PROJECT_FILE "project.atmo"
@@ -19,6 +23,7 @@ namespace atmo
         class ProjectManager
         {
         public:
+#if !defined(ATMO_EXPORT)
             /**
              * @brief Opens a project from the path to a project.atmo file.
              *
@@ -29,28 +34,28 @@ namespace atmo
              */
             inline static void OpenProject(const std::filesystem::path &path)
             {
-#if defined(ATMO_EXPORT)
-                throw std::runtime_error("Cannot open project of an exported application.");
-#else
                 if (!std::filesystem::exists(path) || path.filename() != ATMO_PROJECT_FILE)
                     throw std::runtime_error("Invalid project file path: " + path.string());
 
-                FileSystem::SetRootPath(path);
-                File project_file = FileSystem::OpenFile(".atmo/" + std::string(ATMO_PROJECT_FILE));
-                LoadProjectSettings(project_file);
+                // TODO: Re-implement project opening
 
-                semver::version<VERSION_TYPES> current_engine_version;
-                semver::parse(ATMO_VERSION_STRING, current_engine_version);
+                // FileSystem::SetRootPath(path);
+                // File project_file = FileSystem::OpenFile(".atmo/" + std::string(ATMO_PROJECT_FILE));
+                // LoadProjectSettings(project_file);
 
-                if (Instance().m_settings.app.engine_version < current_engine_version) {
-                    spdlog::warn(
-                        "Project engine version ({}) is older than the current engine version ({}). It will be overwritten on save.",
-                        Instance().m_settings.app.engine_version.to_string(),
-                        current_engine_version.to_string());
-                }
-#endif
+                // semver::version<VERSION_TYPES> current_engine_version;
+                // semver::parse(ATMO_VERSION_STRING, current_engine_version);
+
+                // if (Instance().m_settings.app.engine_version < current_engine_version) {
+                //     spdlog::warn(
+                //         "Project engine version ({}) is older than the current engine version ({}). It will be overwritten on save.",
+                //         Instance().m_settings.app.engine_version.to_string(),
+                //         current_engine_version.to_string());
+                // }
             }
+#endif
 
+#if !defined(ATMO_EXPORT)
             /**
              * @brief Creates a new project at the specified directory path.
              *
@@ -63,9 +68,7 @@ namespace atmo
              */
             static std::filesystem::path CreateProject(const std::filesystem::path &path)
             {
-#if defined(ATMO_EXPORT)
-                throw std::runtime_error("Cannot create project of an exported application.");
-#else
+
                 if (!std::filesystem::exists(path))
                     std::filesystem::create_directories(path / ".atmo");
 
@@ -80,12 +83,14 @@ namespace atmo
                 if (!project_file.is_open())
                     throw std::runtime_error("Failed to create project file at: " + project_file_path.string());
 
-                WriteProjectSettings(project_file);
+                std::string dest;
+                WriteProjectSettings(project_file, dest);
+                project_file.write(dest.data(), dest.size());
                 project_file.close();
 
                 return project_file_path;
-#endif
             }
+#endif
 
             /**
              * @brief Get the Current Project Path object
@@ -97,56 +102,67 @@ namespace atmo
                 return FileSystem::GetRootPath();
             }
 
+#if !defined(ATMO_EXPORT)
             /**
              * @brief Closes the currently opened project.
              *
              */
             inline static void CloseProject()
             {
-#if defined(ATMO_EXPORT)
-                throw std::runtime_error("Cannot close project of an exported application.");
-#endif
+                throw std::runtime_error("To be implemented.");
             }
+#endif
 
+#if !defined(ATMO_EXPORT)
             /**
-             * @brief Generates a packed .pck file from the current project directory. This file may get appended to an atmo-export executable.
+             * @brief Generates a packed .pck file from the current project directory. This file may get appended to an atmo or atmo-export executable.
              *
              */
-            static void GeneratePackedFile()
+            static void GeneratePackedFile(std::string_view output_path = std::string_view(), const std::vector<std::string> &files = {})
             {
-#if defined(ATMO_EXPORT)
-                throw std::runtime_error("Cannot generate packed file from an exported application.");
-#else
-                std::ofstream out(
-                    GetCurrentProjectPath() /
-                        std::format(
-                            "%s.%s.%s",
-                            Instance().m_settings.app.project_name,
-                            Instance().m_settings.app.project_version.to_string(),
-                            std::string(ATMO_PACKED_EXT, 4)),
-                    std::ios::binary);
+                std::string path = output_path.empty() ? std::format(
+                                                             "{}.{}.{}",
+                                                             Instance().m_settings.app.project_name,
+                                                             Instance().m_settings.app.project_version.to_string(),
+                                                             std::string(ATMO_PACKED_EXT, 4))
+                                                       : std::string(output_path);
+                std::ofstream out(path, std::ios::binary);
                 if (!out.is_open())
                     throw std::runtime_error("Failed to create packed file.");
 
-                WriteStructure(out, &Instance().m_settings);
-
                 FileSystem::PackedHeader header;
-                header.major = Instance().m_settings.app.engine_version.major();
-                header.minor = Instance().m_settings.app.engine_version.minor();
-                header.patch = Instance().m_settings.app.engine_version.patch();
 
                 std::vector<FileSystem::PackedEntry> entries;
-                for (const auto &entry : std::filesystem::recursive_directory_iterator(GetCurrentProjectPath())) {
-                    if (entry.is_regular_file() && entry.path().filename() != ATMO_PROJECT_FILE) {
-                        std::ifstream in(entry.path(), std::ios::binary | std::ios::ate);
+
+                if (files.empty()) {
+                    for (const auto &entry : std::filesystem::recursive_directory_iterator(GetCurrentProjectPath())) {
+                        if (entry.is_regular_file() && entry.path().filename() != ATMO_PROJECT_FILE) {
+                            std::ifstream in(entry.path(), std::ios::binary | std::ios::ate);
+                            if (!in.is_open()) {
+                                spdlog::warn("Failed to open file for packing: {}", entry.path().string());
+                                continue;
+                            }
+                            std::streamsize size = in.tellg();
+                            in.seekg(0, std::ios::beg);
+                            FileSystem::PackedEntry packed_entry;
+                            packed_entry.path = strdup(entry.path().lexically_relative(GetCurrentProjectPath()).string().c_str());
+                            packed_entry.offset = 0;
+                            packed_entry.size = static_cast<uint64_t>(size);
+                            entries.push_back(packed_entry);
+                            in.close();
+                        }
+                    }
+                } else {
+                    for (const auto &entry : files) {
+                        std::ifstream in(entry, std::ios::binary | std::ios::ate);
                         if (!in.is_open()) {
-                            spdlog::warn("Failed to open file for packing: {}", entry.path().string());
+                            spdlog::warn("Failed to open file for packing: {}", entry);
                             continue;
                         }
                         std::streamsize size = in.tellg();
                         in.seekg(0, std::ios::beg);
                         FileSystem::PackedEntry packed_entry;
-                        packed_entry.path = strdup(entry.path().lexically_relative(GetCurrentProjectPath()).string().c_str());
+                        packed_entry.path = entry.c_str();
                         packed_entry.offset = 0;
                         packed_entry.size = static_cast<uint64_t>(size);
                         entries.push_back(packed_entry);
@@ -154,21 +170,27 @@ namespace atmo
                     }
                 }
 
-                uint64_t current_offset = sizeof(ProjectSettings) + sizeof(FileSystem::PackedHeader);
+                uint64_t current_offset = 0;
                 for (auto &entry : entries) {
                     entry.offset = current_offset;
                     current_offset += entry.size;
                 }
 
                 header.file_count = static_cast<uint32_t>(entries.size());
-                header.offset_to_files = sizeof(ProjectSettings) + sizeof(FileSystem::PackedHeader) + sizeof(FileSystem::PackedEntry) * entries.size();
+                header.offset_to_files =
+                    sizeof(FileSystem::PackedHeader) + (sizeof(FileSystem::PackedEntry::offset) + sizeof(FileSystem::PackedEntry::size)) * entries.size();
+                for (const auto &entry : entries) {
+                    header.offset_to_files += std::strlen(entry.path) + 1;
+                }
 
                 WriteStructure(out, &header);
                 for (const auto &entry : entries) {
-                    WriteStructure(out, &entry);
+                    out.write(entry.path, std::strlen(entry.path) + 1);
+                    out.write(reinterpret_cast<const char *>(&entry.offset), sizeof(uint64_t));
+                    out.write(reinterpret_cast<const char *>(&entry.size), sizeof(uint64_t));
                 }
                 for (const auto &entry : entries) {
-                    std::ifstream in(GetCurrentProjectPath() / entry.path, std::ios::binary);
+                    std::ifstream in(entry.path, std::ios::binary);
                     if (!in.is_open()) {
                         spdlog::warn("Failed to open file for packing data: {}", entry.path);
                         continue;
@@ -178,8 +200,8 @@ namespace atmo
                 }
 
                 out.close();
-#endif
             };
+#endif
 
             static ProjectSettings &GetSettings()
             {
@@ -211,18 +233,14 @@ namespace atmo
                 spdlog::debug("Loaded project settings for project: {}", Instance().m_settings.app.project_name);
             }
 
-            inline static void WriteProjectSettings(std::ofstream &file)
+            inline static void WriteProjectSettings(std::ofstream &file, std::string &dest)
             {
-                std::string buffer;
-
-                auto err = glz::write_json(Instance().m_settings, buffer);
+                auto err = glz::write_json(Instance().m_settings, dest);
 
                 if (err) {
-                    std::string descriptive_error = glz::format_error(err, buffer);
+                    std::string descriptive_error = glz::format_error(err, dest);
                     throw std::runtime_error("Failed to serialize project settings: " + descriptive_error);
                 }
-
-                file.write(buffer.data(), buffer.size());
             }
 
             template <typename T> inline static void WriteStructure(std::ofstream &file, const T *setting)
