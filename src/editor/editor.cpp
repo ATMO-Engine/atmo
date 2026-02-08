@@ -1,8 +1,24 @@
 #include "editor.hpp"
+#include "project/file_system.hpp"
 
-atmo::editor::Editor::Editor(atmo::core::Engine *engine, const std::string &project_path) : m_engine(engine), m_project_path(project_path) {}
-
-void atmo::editor::Editor::loop()
+namespace atmo
 {
-    // Placeholder for editor loop logic
-}
+    namespace editor
+    {
+        Editor::Editor(atmo::core::Engine *engine, const std::string &project_path) : m_engine(engine), m_project_path(project_path) {}
+
+        void Editor::init()
+        {
+            // TODO: init localization here
+            // auto test = project::FileSystem::OpenFile("project://translation/en-US/atmo.json");
+
+            // std::string content = test.readAll();
+            // std::cout.write(content.data(), content.size());
+        }
+
+        void atmo::editor::Editor::loop()
+        {
+            // Placeholder for editor loop logic
+        }
+    } // namespace editor
+} // namespace atmo

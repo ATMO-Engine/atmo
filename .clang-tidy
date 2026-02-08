@@ -1,6 +1,13 @@
-Checks: >
-  -*,
-  readability-identifier-naming
+Checks:
+  - -*
+  - readability-identifier-naming
+  - cppcoreguidelines-pro-type-member-init
+  - modernize-deprecated-headers
+  - modernize-redundant-void-arg
+  - modernize-use-bool-literals
+  - modernize-use-default-member-init
+  - modernize-use-nullptr
+  - readability-redundant-member-init
 
 CheckOptions:
   - key: readability-identifier-naming.PrivateMemberPrefix

@@ -1,11 +1,17 @@
-add_rules("mode.debug", "mode.release", "mode.profile")
+set_policy("check.auto_ignore_flags", false)
+
+add_rules("mode.release", "mode.debug", "mode.profile")
+set_allowedmodes("release", "debug", "profile")
 
 set_languages("c++23")
 
 if is_mode("debug") then
     set_policy("build.sanitizer.address", true)
     set_policy("build.sanitizer.undefined", true)
+    set_symbols("debug")
 end
+
+set_policy("build.warning", true)
 
 if is_mode("release") then
     set_optimize("fastest")
@@ -16,7 +22,9 @@ if is_mode("profile") then
 end
 
 set_config("build.compdb", true)
-add_rules("plugin.compile_commands.autoupdate")
+add_rules("plugin.compile_commands.autoupdate", {
+    arguments = {"--target=" .. (get_config("target") or "all")}
+})
 
 local SUBMODULE_PATH = "submodules/"
 
@@ -222,6 +230,15 @@ package("tracy")
     end)
 package_end()
 
+package("box2d")
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "box2d"))
+    on_install(function(package)
+        local configs = {"-DBOX2D_BUILD_UNIT_TESTS=OFF", "-DBOX2D_BUILD_TESTBED=OFF", "-DBOX2D_BUILD_EXAMPLES=OFF"}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+        import("package.tools.cmake").install(package, configs)
+    end)
+package_end()
 
 add_requires(
     "spdlog", { system = false },
@@ -234,7 +251,8 @@ add_requires(
     "clay", { system = false },
     "catch2", { system = false },
     "semver", { system = false },
-    "tracy", { system = false }
+    "tracy", { system = false },
+    "box2d", { system = false }
 )
 
 function platform_specifics()
@@ -272,11 +290,12 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "tracy")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "tracy", "box2d")
 end
 
 target("atmo")
     set_kind("binary")
+    set_default(true)
     packages()
     add_files("src/**.cpp")
     add_includedirs("src")
@@ -287,6 +306,59 @@ target("atmo")
         add_defines("TRACY_ENABLE")
         add_files(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy/public/TracyClient.cpp"))
     end
+
+    if is_mode("debug") then
+        add_defines("ATMO_DEBUG")
+    end
+
+    local packed_hash = nil
+
+    before_build(function (target)
+        local pck = path.absolute(target:targetfile())
+        if os.isfile(pck) then
+            local data = io.readfile(pck, {encoding = "binary"})
+            packed_hash = hash.md5(path.absolute(target:targetfile()))
+        else
+            packed_hash = nil
+        end
+    end)
+
+    after_build(function (target)
+        local function append_file(dst, src)
+            local fsrc = assert(io.open(src, "rb"))
+            local fdst = assert(io.open(dst, "ab"))
+
+            local data = fsrc:read("*all")
+            fdst:write(data)
+
+            fsrc:close()
+            fdst:close()
+        end
+
+        if not packed_hash or packed_hash ~= hash.md5(path.absolute(target:targetfile())) then
+            print(target:targetfile() .. ": Detected changes, repacking assets...")
+        else
+            print(target:targetfile() .. ": No changes detected, skipping repack.")
+            return
+        end
+
+        local bin = path.absolute(target:targetfile())
+
+        local files = {}
+        table.join2(files, os.files("translation/**"))
+        table.join2(files, os.files("assets/**"))
+
+        print(bin .. ": Packing " .. #files .. " files...")
+
+        os.runv(bin, table.join({"--pack"}, files))
+
+        local pck = path.absolute("packed_output.pck")
+
+        append_file(bin, pck)
+
+        os.rm(pck)
+    end)
+target_end()
 
 target("atmo-test")
     set_kind("binary")
@@ -309,6 +381,7 @@ target("atmo-test")
             "--reporter=console::out=-::colour-mode=ansi"
         }
     })
+target_end()
 
 target("atmo-export")
     set_kind("binary")
@@ -318,3 +391,37 @@ target("atmo-export")
     add_includedirs("src")
     platform_specifics()
     add_defines("ATMO_EXPORT")
+target_end()
+
+
+
+task("clean")
+    on_run(function ()
+        import("core.base.option")
+        local mode = option.get("mode")
+
+        if not table.contains({"soft", "full", "submodules", "all"}, mode) then
+            raise("invalid clean mode: %s", mode)
+        end
+
+        import("clean")(mode)
+    end)
+
+    set_menu({
+        usage = "xmake clean|c [mode]",
+
+        shortname = "c",
+
+        description = "Clean project files.",
+
+        options = {
+            {
+                nil, "mode", "v", "soft", "Clean mode.",
+                    " - soft",
+                    " - full",
+                    " - submodules",
+                    " - all"
+            }
+        }
+    })
+task_end()

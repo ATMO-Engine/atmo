@@ -7,4 +7,10 @@ build/
 
 .cache/
 .trunk/
+
+# atmo project
 compile_commands.json
+.vscode/
+
+# atmo engine
+*.pck
