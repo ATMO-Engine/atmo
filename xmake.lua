@@ -8,8 +8,11 @@ set_languages("c++23")
 if is_mode("debug") then
     set_symbols("debug")
     set_optimize("none")
-    set_policy("build.sanitizer.address", true)
-    set_policy("build.sanitizer.undefined", true)
+
+    if not is_plat("windows") then
+        set_policy("build.sanitizer.address", true)
+        set_policy("build.sanitizer.undefined", true)
+    end
 end
 
 set_policy("build.warning", true)
@@ -355,6 +358,10 @@ target("atmo")
         local files = {}
         table.join2(files, os.files("translation/**"))
         table.join2(files, os.files("assets/**"))
+        -- normalize to forward slashes
+        for i, f in ipairs(files) do
+            files[i] = path.unix(f)
+        end
 
         print(bin .. ": Packing " .. #files .. " files...")
 
