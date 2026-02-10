@@ -1,6 +1,8 @@
 #include "resource_manager.hpp"
 #include "spdlog/spdlog.h"
 
+#include "impl/profiler.hpp"
+
 namespace atmo
 {
     namespace core
@@ -22,6 +24,7 @@ namespace atmo
 
             void ResourceManager::clear(uint64_t currentFrame)
             {
+                ATMO_PROFILE_SCOPE_N_COLOR("Resource clear", 0xFF0000);
                 spdlog::info("Clear handles started");
                 for (auto &pool : m_gcPools) {
                     pool->collectGarbage(currentFrame);

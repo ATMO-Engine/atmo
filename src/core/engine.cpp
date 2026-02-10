@@ -1,8 +1,10 @@
 #include "engine.hpp"
 #include "impl/window.hpp"
+#include "impl/profiler.hpp"
 
 void atmo::core::Engine::stop()
 {
+    ATMO_PROFILE_SCOPE_COLOR(0x000000);
     m_ecs.stop();
 }
 

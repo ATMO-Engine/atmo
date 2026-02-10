@@ -2,7 +2,7 @@
 #include <iostream>
 #include "spdlog/spdlog.h"
 
-#include "tracy/Tracy.hpp"
+#include "impl/profiler.hpp"
 
 atmo::core::InputManager atmo::core::InputManager::instance;
 
@@ -58,7 +58,7 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
 
 void atmo::core::InputManager::Tick()
 {
-    ZoneScoped;
+    ATMO_PROFILE_SCOPE_COLOR(0xFFFFFF);
     for (auto &evt : instance.p_events) {
         if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);

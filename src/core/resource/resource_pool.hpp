@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <format>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -14,6 +15,7 @@
 #include "core/resource/resource.hpp"
 #include "i_resource_pool.hpp"
 #include "resource_ref.hpp"
+#include "impl/profiler.hpp"
 
 namespace atmo
 {
@@ -55,17 +57,34 @@ namespace atmo
 
                 void collectGarbage(uint64_t currentFrame)
                 {
+                    ATMO_PROFILE_SCOPE_N("Pool");
+                    ATMO_PROFILE_ZONE_NAME(m_loader->resourceTypeName().c_str(), m_loader->resourceTypeName().size());
+                    ATMO_PROFILE_ZONE_TEXT("Current frame:", 15);
+                    ATMO_PROFILE_ZONE_VALUE(currentFrame);
+
                     constexpr uint64_t GRACE_FRAMES = 120;
 
                     for (uint32_t i = 0; i < m_entries.size(); ++i) {
+                        ATMO_PROFILE_SCOPE_N("Entry");
+                        ATMO_PROFILE_ZONE_TEXT("Entry n:", 9);
+                        ATMO_PROFILE_ZONE_VALUE(i);
                         auto &e = m_entries[i];
                         if (e.resource != nullptr) {
+                            ATMO_PROFILE_ZONE_TEXT("Resident Ref:", 14);
+                            ATMO_PROFILE_ZONE_VALUE(e.residentRefs);
+                            ATMO_PROFILE_ZONE_TEXT("Strong Ref:", 12);
+                            ATMO_PROFILE_ZONE_VALUE(e.strongRefs);
+                            ATMO_PROFILE_ZONE_TEXT("Last Frame Use:", 16);
+                            ATMO_PROFILE_ZONE_VALUE(e.lastUsedFrame);
                             if (e.strongRefs == 0 && e.residentRefs == 0) {
                                 if (currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
+                                    ATMO_PROFILE_ZONE_TEXT("-- Resource delete --", 22);
                                     spdlog::debug("Destroy entry: " + std::to_string(i));
                                     destroyEntry(i);
                                 }
                             }
+                        } else {
+                            ATMO_PROFILE_ZONE_TEXT("Entry empty", 12);
                         }
                     }
                 }
@@ -95,10 +114,14 @@ namespace atmo
 
                 const StoreHandle create(const std::string &path, uint64_t tick)
                 {
+                    ATMO_PROFILE_SCOPE_COLOR(0xFF0000);
                     std::shared_ptr<T> res = m_loader->load(path);
 
+                    ATMO_PROFILE_ZONE_TEXT("Entry before creation:", 23);
+                    ATMO_PROFILE_ZONE_VALUE(m_entries.size());
                     StoreHandle newHandle = {};
                     if (!m_freeList.empty()) {
+                        ATMO_PROFILE_ZONE_TEXT("Recycled entry", 15);
                         std::uint16_t idx = m_freeList.back();
                         m_freeList.pop_back();
                         m_entries.at(idx).resource = res;
@@ -109,6 +132,7 @@ namespace atmo
                         newHandle.index = idx;
                         newHandle.generation = m_entries.at(idx).generation;
                     } else {
+                        ATMO_PROFILE_ZONE_TEXT("Created new entry", 18);
                         Entry newRes = { .resource = nullptr, .generation = 1, .strongRefs = 0, .residentRefs = 0, .lastUsedFrame = 0 };
                         newRes.resource = res;
                         newRes.lastUsedFrame = tick;
@@ -118,6 +142,9 @@ namespace atmo
 
                         m_entries.push_back(newRes);
                     }
+
+                    ATMO_PROFILE_ZONE_TEXT("Entry after creation:", 22);
+                    ATMO_PROFILE_ZONE_VALUE(m_entries.size());
 
                     return newHandle;
                 }

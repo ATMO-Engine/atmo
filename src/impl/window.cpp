@@ -3,6 +3,9 @@
 #include "core/event/event_dispatcher.hpp"
 #include "core/input/input_manager.hpp"
 
+#include "impl/profiler.hpp"
+#include "profiler.hpp"
+
 #include "window.hpp"
 
 #define CLAY_IMPLEMENTATION
@@ -109,6 +112,7 @@ void atmo::impl::WindowManager::beginDraw()
 
 void atmo::impl::WindowManager::draw()
 {
+    ATMO_PROFILE_SCOPE_COLOR(0xFFC0CB);
     if (core::InputManager::IsJustPressed("ui_click")) {
         auto pos = core::InputManager::GetMousePosition();
         Clay_SetPointerState({ pos.x, pos.y }, true);

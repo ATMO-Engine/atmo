@@ -21,6 +21,8 @@ namespace atmo
                 ~ScriptLoader() override;
 
                 std::shared_ptr<Bytecode> load(const std::string &path) override;
+
+                const std::string resourceTypeName() override;
             };
         } // namespace resource
     } // namespace core
