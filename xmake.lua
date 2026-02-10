@@ -6,9 +6,13 @@ set_allowedmodes("release", "debug", "profile")
 set_languages("c++23")
 
 if is_mode("debug") then
-    set_policy("build.sanitizer.address", true)
-    set_policy("build.sanitizer.undefined", true)
     set_symbols("debug")
+    set_optimize("none")
+
+    if not is_plat("windows") then
+        set_policy("build.sanitizer.address", true)
+        set_policy("build.sanitizer.undefined", true)
+    end
 end
 
 set_policy("build.warning", true)
@@ -231,11 +235,36 @@ package("tracy")
 package_end()
 
 package("box2d")
+
+    if is_plat("linux", "bsd") then
+        add_syslinks("pthread")
+    end
+
     add_deps("cmake")
     set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "box2d"))
-    on_install(function(package)
-        local configs = {"-DBOX2D_BUILD_UNIT_TESTS=OFF", "-DBOX2D_BUILD_TESTBED=OFF", "-DBOX2D_BUILD_EXAMPLES=OFF"}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+
+    on_install("!bsd", function (package)
+        if package:is_plat("windows") and package:is_debug() then
+            package:add("defines", "B2_ENABLE_ASSERT")
+        end
+
+        io.replace("CMakeLists.txt", [[set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")]], "", {plain = true})
+
+        local configs = {
+            "-DBOX2D_BUILD_UNIT_TESTS=OFF",
+            "-DBOX2D_BUILD_TESTBED=OFF",
+
+            "-DBOX2D_SAMPLES=OFF",
+            "-DBOX2D_UNIT_TESTS=OFF",
+            "-DBOX2D_VALIDATE=OFF",
+            "-DBUILD_SHARED_LIBS=OFF",
+            "--compile-no-warning-as-error",
+        }
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
+        table.insert(configs, "-DBOX2D_SANITIZE=" .. (package:config("asan") and "ON" or "OFF"))
+        table.insert(configs, "-DBOX2D_AVX2=OFF")
+
+        os.mkdir(path.join(package:builddir(), "src/pdb"))
         import("package.tools.cmake").install(package, configs)
     end)
 package_end()
@@ -347,6 +376,10 @@ target("atmo")
         local files = {}
         table.join2(files, os.files("translation/**"))
         table.join2(files, os.files("assets/**"))
+        -- normalize to forward slashes
+        for i, f in ipairs(files) do
+            files[i] = path.unix(f)
+        end
 
         print(bin .. ": Packing " .. #files .. " files...")
 
