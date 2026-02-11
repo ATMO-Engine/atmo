@@ -6,7 +6,6 @@ namespace atmo::core::ecs::entities
 {
     void Entity2d::initComponents()
     {
-        Entity::initComponents();
         setComponent<components::Transform2d>({});
     }
 } // namespace atmo::core::ecs::entities
