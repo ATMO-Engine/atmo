@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/resource/subresource.hpp"
+#include "core/resource/subresources/subresource.hpp"
 
 namespace atmo
 {
@@ -12,8 +12,6 @@ namespace atmo
             {
                 class Shape2d : public SubResource
                 {
-                public:
-                    std::string_view name() const noexcept override;
                 };
             }; // namespace resources
         } // namespace resource

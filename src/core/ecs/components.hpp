@@ -116,15 +116,15 @@ namespace atmo
             FIELD(file)
             END_REFLECT(Script)
 
-            struct Sprite2D {
+            struct Sprite2d {
                 std::string texture_path;
                 resource::Handle<SDL_Surface> m_handle;
                 SDL_FRect m_dest_rect{ 0, 0, 0, 0 };
                 types::Vector2 texture_size{ 0.0f, 0.0f };
             };
-            BEGIN_REFLECT(Sprite2D)
+            BEGIN_REFLECT(Sprite2d)
             FIELD(texture_path)
-            END_REFLECT(Sprite2D)
+            END_REFLECT(Sprite2d)
 
             namespace UI
             {

@@ -1,5 +1,7 @@
-#include "rectangle_shape2d.hpp"
 #include <format>
+
+#include "core/resource/subresource_registry.hpp"
+#include "rectangle_shape2d.hpp"
 
 namespace atmo
 {
@@ -9,11 +11,6 @@ namespace atmo
         {
             namespace resources
             {
-                std::string_view RectangleShape2d::name() const noexcept
-                {
-                    return "Shape2d::RectangleShape2d";
-                }
-
                 std::string RectangleShape2d::serialize() const
                 {
                     return std::format(R"({{ "size": {{ "x": {}, "y": {} }} }})", m_size.x, m_size.y);
@@ -25,10 +22,4 @@ namespace atmo
     } // namespace core
 } // namespace atmo
 
-namespace
-{
-    static int _ = [] {
-        atmo::core::resource::SubResourceRegistry::RegisterType<atmo::core::resource::resources::RectangleShape2d>("Shape2d::RectangleShape2d");
-        return 0;
-    }();
-} // namespace
+REGISTER_SUBRESOURCE(resources::RectangleShape2d);

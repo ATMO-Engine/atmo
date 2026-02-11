@@ -3,6 +3,7 @@
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/ecs_registry.hpp"
+#include "core/ecs/entity_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
 #include "impl/window.hpp"
@@ -29,6 +30,7 @@ namespace atmo
             {
                 m_world.reset();
                 m_scene_manager.setWorld(&m_world);
+                EntityRegistry::SetWorld(&m_world);
 
 #if defined(ATMO_DEBUG)
                 ECS_IMPORT(m_world, FlecsStats);
@@ -36,6 +38,8 @@ namespace atmo
 #endif
 
                 m_world.init_builtin_components();
+
+
                 components::register_core_components(m_world);
                 loadPrefabs();
             }

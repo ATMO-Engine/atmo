@@ -13,8 +13,6 @@ namespace atmo
                 class CircleShape2d : public Shape2d
                 {
                 public:
-                    std::string_view name() const noexcept override;
-
                     std::string serialize() const override;
                     void deserialize(const std::string &data) override;
 
