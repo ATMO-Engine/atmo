@@ -18,6 +18,9 @@ void atmo::core::Engine::start()
     auto scene = m_ecs.instantiatePrefab("scene");
     m_ecs.changeScene(scene);
 
+    auto sprite = ecs::EntityRegistry::Create("Entity::Entity2d::Sprite2d");
+    spdlog::info("Created entity named {}", sprite->name());
+
     // auto ptr = resource::SubResourceRegistry::Create("Shape2d::RectangleShape2d");
     // if (!ptr)
     //     spdlog::error("Failed to create subresource");

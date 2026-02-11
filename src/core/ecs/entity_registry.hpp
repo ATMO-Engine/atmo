@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -29,6 +30,15 @@ namespace atmo
             {
             public:
                 static void SetWorld(flecs::world *world);
+
+                template <typename Type> static std::unique_ptr<entities::Entity> Factorize()
+                {
+                    Type entity = Type(Instance().m_world->entity());
+
+                    entity.init();
+
+                    return std::make_unique<Type>(std::move(entity));
+                }
 
             private:
                 flecs::world *m_world{ nullptr };

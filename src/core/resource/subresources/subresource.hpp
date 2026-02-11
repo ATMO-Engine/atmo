@@ -23,6 +23,11 @@ namespace atmo
             public:
                 virtual ~SubResource() = default;
 
+                static constexpr std::string_view FullName()
+                {
+                    return "SubResource";
+                }
+
                 virtual std::string serialize() const = 0;
                 virtual void deserialize(const std::string &data) = 0;
             };

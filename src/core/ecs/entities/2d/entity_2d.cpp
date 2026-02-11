@@ -4,8 +4,9 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Entity2d::initComponents()
+    void Entity2d::init()
     {
+        Entity::init();
         setComponent<components::Transform2d>({});
     }
 } // namespace atmo::core::ecs::entities
