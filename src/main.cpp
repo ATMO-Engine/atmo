@@ -11,6 +11,7 @@
 #include "core/scene/scene_manager.hpp"
 #include "editor/editor.hpp"
 #include "editor/project_explorer.hpp"
+#include "impl/profiler.hpp"
 #include "impl/window.hpp"
 #include "locale/locale_manager.hpp"
 #include "project/file_system.hpp"
@@ -151,6 +152,7 @@ int main(int argc, char **argv)
     float deltaTime = 0.0f;
 
     while (engine.getECS().progress(deltaTime)) {
+        ATMO_PROFILE_FRAME();
         auto current_time = std::chrono::steady_clock::now();
         std::chrono::duration<float> dt = current_time - last_time;
         last_time = current_time;

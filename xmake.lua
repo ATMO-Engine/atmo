@@ -1,7 +1,7 @@
 set_policy("check.auto_ignore_flags", false)
 
-add_rules("mode.release", "mode.debug")
-set_allowedmodes("release", "debug")
+add_rules("mode.release", "mode.debug", "mode.profile")
+set_allowedmodes("release", "debug", "profile")
 
 set_languages("c++23")
 
@@ -18,6 +18,10 @@ end
 set_policy("build.warning", true)
 
 if is_mode("release") then
+    set_optimize("fastest")
+end
+
+if is_mode("profile") then
     set_optimize("fastest")
 end
 
@@ -223,6 +227,13 @@ package("semver")
     end)
 package_end()
 
+package("tracy")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy"))
+    on_install(function (package)
+        os.cp("public/*", package:installdir("include"))
+    end)
+package_end()
+
 package("box2d")
 
     if is_plat("linux", "bsd") then
@@ -269,6 +280,7 @@ add_requires(
     "clay", { system = false },
     "catch2", { system = false },
     "semver", { system = false },
+    "tracy", { system = false },
     "box2d", { system = false }
 )
 
@@ -307,7 +319,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "tracy", "box2d")
 end
 
 target("atmo")
@@ -317,6 +329,12 @@ target("atmo")
     add_files("src/**.cpp")
     add_includedirs("src")
     platform_specifics()
+    if is_mode("debug") or is_mode("profile") then
+        add_defines("ATMO_PROFILING")
+        add_defines("ATMO_PROFILER_TRACY")
+        add_defines("TRACY_ENABLE")
+        add_files(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy/public/TracyClient.cpp"))
+    end
 
     if is_mode("debug") then
         add_defines("ATMO_DEBUG")
