@@ -1,9 +1,61 @@
 #include "engine.hpp"
+#include "core/ecs/entity_registry.hpp"
+#include "core/input/input_manager.hpp"
+#include "core/resource/subresource_registry.hpp"
+#include "core/types.hpp"
 #include "impl/window.hpp"
+#include "project/file_system.hpp"
+#include "project/project_manager.hpp"
+
+void atmo::core::Engine::start()
+{
+    m_running.store(true);
+
+    auto window = m_ecs.instantiatePrefab("window", "_Root");
+    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
+    wm->rename(atmo::project::ProjectManager::GetSettings().app.project_name);
+
+    auto scene = m_ecs.instantiatePrefab("scene");
+    m_ecs.changeScene(scene);
+
+    auto sprite = ecs::EntityRegistry::Create("Entity::Entity2d::Sprite2d");
+    spdlog::info("Created entity named {}", sprite->name());
+
+    // auto ptr = resource::SubResourceRegistry::Create("Shape2d::RectangleShape2d");
+    // if (!ptr)
+    //     spdlog::error("Failed to create subresource");
+    // else
+    //     spdlog::info("Created subresource of type {}", ptr->name().data());
+
+    // auto ground = m_ecs.instantiatePrefab("static_body_2d", "ground").child_of(scene);
+    // ground.get_ref<components::PhysicsBody2d>()->shape = resource::resources::Shape2d::Shape2dType::Rectangle;
+    // ground.modified<components::PhysicsBody2d>();
+
+    // auto last_time = std::chrono::steady_clock::now();
+    // float deltaTime = 0.0f;
+
+    // while (m_ecs.progress(deltaTime)) {
+    //     auto current_time = std::chrono::steady_clock::now();
+    //     std::chrono::duration<float> dt = current_time - last_time;
+    //     last_time = current_time;
+    //     deltaTime = dt.count();
+
+    //     if (atmo::core::InputManager::IsPressed("ui_quit")) {
+    //         spdlog::info("Quitting...");
+    //         m_running.store(false);
+    //     }
+
+    //     atmo::core::InputManager::Tick();
+
+    //     if (!m_running.load()) {
+    //         m_ecs.stop();
+    //     }
+    // }
+}
 
 void atmo::core::Engine::stop()
 {
-    m_ecs.stop();
+    m_running.store(false);
 }
 
 void atmo::core::Engine::reset()

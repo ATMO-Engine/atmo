@@ -216,7 +216,7 @@ namespace atmo
              *  - "user://relative/path/to/directory" to list files relative to the user data directory.
              * @return std::vector<std::string>
              */
-            static std::vector<std::string> SearchFiles(std::string_view path)
+            [[nodiscard]] static std::vector<std::string> SearchFiles(std::string_view path)
             {
                 std::vector<std::string> results;
 

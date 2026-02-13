@@ -27,11 +27,11 @@ namespace atmo
             void draw();
 
             void rename(const std::string &name) noexcept;
-            void resize(const core::types::vector2i &size) noexcept;
+            void resize(const core::types::Vector2i &size) noexcept;
             void focus() noexcept;
             void makeMain() noexcept;
 
-            core::types::vector2i getSize() const noexcept;
+            core::types::Vector2i getSize() const noexcept;
             std::string getTitle() const noexcept;
 
             inline SDL_Renderer *getRenderer() const noexcept
