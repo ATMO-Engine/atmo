@@ -5,10 +5,10 @@
 
 namespace atmo::core::ecs::entities
 {
-    class Entity2d : public EntityRegistry::Registrable<Entity2d, Entity>
+    class Window : public EntityRegistry::Registrable<Window, Entity>
     {
     public:
-        using EntityRegistry::Registrable<Entity2d, Entity>::Registrable;
+        using EntityRegistry::Registrable<Window, Entity>::Registrable;
 
         static void RegisterSystems(flecs::world *world);
 
@@ -16,7 +16,7 @@ namespace atmo::core::ecs::entities
 
         static constexpr std::string_view LocalName()
         {
-            return "Entity2d";
+            return "Window";
         }
     };
 } // namespace atmo::core::ecs::entities

@@ -3,7 +3,9 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Entity::init() {}
+    void Entity::RegisterSystems(flecs::world *world) {}
+
+    void Entity::initialize() {}
 
     std::vector<Entity> Entity::getChildren()
     {

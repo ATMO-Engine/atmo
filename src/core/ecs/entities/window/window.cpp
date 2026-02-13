@@ -1,19 +1,16 @@
-#include "entity_2d.hpp"
+#include "window.hpp"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entity_registry.hpp"
 
 namespace atmo::core::ecs::entities
 {
-    static void RegisterSystems(flecs::world *world)
-    {
-        world->component<components::Transform2d>();
-    }
+    void Window::RegisterSystems(flecs::world *world) {}
 
-    void Entity2d::initialize()
+    void Window::initialize()
     {
         Entity::initialize();
         setComponent<components::Transform2d>({});
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Entity2d);
+REGISTER_ENTITY(entities::Window);

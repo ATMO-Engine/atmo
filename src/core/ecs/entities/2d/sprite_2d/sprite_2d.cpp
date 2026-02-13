@@ -5,12 +5,10 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Sprite2d::init()
+    void Sprite2d::initialize()
     {
-        Entity2d::init();
+        Entity2d::initialize();
         setComponent<components::Sprite2d>({});
-
-        spdlog::info("Initialized Sprite2d entity with id {}", p_handle.id());
     }
 } // namespace atmo::core::ecs::entities
 

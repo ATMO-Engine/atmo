@@ -24,6 +24,8 @@ namespace atmo::core::registry
                 Instance().m_registry[std::string(Type::FullName())] = Entry{ .is_abstract = false, .factory = Registry::template Factorize<Type> };
                 spdlog::debug(R"(Registered type "{}")", Type::FullName());
             }
+
+            Registry::template OnRegister<Type>();
         }
 
         template <class Derived, class Base> struct Registrable : Base {
@@ -57,6 +59,7 @@ namespace atmo::core::registry
             return it->second.factory.value()();
         }
 
+        template <typename Type> static void OnRegister() {};
         template <typename Type> static std::unique_ptr<Root> Factorize();
 
         HierarchicRegistry(const HierarchicRegistry &) = delete;

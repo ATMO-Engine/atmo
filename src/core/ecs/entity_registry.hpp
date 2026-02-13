@@ -31,11 +31,16 @@ namespace atmo
             public:
                 static void SetWorld(flecs::world *world);
 
+                template <typename Type> static void OnRegister()
+                {
+                    Type::RegisterSystems(Instance().m_world);
+                }
+
                 template <typename Type> static std::unique_ptr<entities::Entity> Factorize()
                 {
                     Type entity = Type(Instance().m_world->entity());
 
-                    entity.init();
+                    entity.initialize();
 
                     return std::make_unique<Type>(std::move(entity));
                 }

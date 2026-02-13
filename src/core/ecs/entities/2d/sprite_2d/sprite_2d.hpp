@@ -10,7 +10,7 @@ namespace atmo::core::ecs::entities
     public:
         using EntityRegistry::Registrable<Sprite2d, Entity2d>::Registrable;
 
-        void init();
+        void initialize();
 
         static constexpr std::string_view LocalName()
         {

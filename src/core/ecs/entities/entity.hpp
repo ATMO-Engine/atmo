@@ -29,7 +29,9 @@ namespace atmo::core::ecs::entities
             p_handle.set(std::forward<Component>(component));
         }
 
-        void init();
+        static void RegisterSystems(flecs::world *world);
+
+        void initialize();
 
         /**
          * @brief Get all of this entity's children.
