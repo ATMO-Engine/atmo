@@ -142,6 +142,20 @@ namespace atmo
                         spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
                     });
                 }
+
+                { // Ressource Manager
+                    m_world.system<>("Resource manager tick")
+                        .kind(flecs::OnLoad)
+                        .run([](flecs::iter &it) {
+                            atmo::core::resource::ResourceManager::GetInstance().increaseTick();
+                        });
+
+                    m_world.system<>("Resource manager clear")
+                        .kind(flecs::OnStore)
+                        .run([](flecs::iter &it) {
+                            atmo::core::resource::ResourceManager::GetInstance().clear();
+                        });
+                }
             }
 
             flecs::entity ECS::createScene(const std::string &scene_name, bool singleton)

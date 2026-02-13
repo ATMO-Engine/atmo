@@ -22,14 +22,15 @@ namespace atmo
                 m_gcPools.push_back(pool);
             }
 
-            void ResourceManager::clear(uint64_t currentFrame)
+            void ResourceManager::clear()
             {
-                ATMO_PROFILE_SCOPE_N_COLOR("Resource clear", 0xFF0000);
-                spdlog::info("Clear handles started");
-                for (auto &pool : m_gcPools) {
-                    pool->collectGarbage(currentFrame);
+                if (m_currentTick % CLEAN_FRAME != 0) {
+                    return;
                 }
-                spdlog::info("Clear ended");
+                ATMO_PROFILE_SCOPE_N_COLOR("Resource clear", 0xFF0000);
+                for (auto &pool : m_gcPools) {
+                    pool->collectGarbage(m_currentTick);
+                }
             }
         } // namespace resource
     } // namespace core
