@@ -8,11 +8,11 @@
 #define VERSION_TYPE std::uint64_t
 #define VERSION_TYPES VERSION_TYPE, VERSION_TYPE, VERSION_TYPE
 
+#define ATMO_VERSION_PROJECT 0
 #define ATMO_VERSION_MAJOR 1
 #define ATMO_VERSION_MINOR 0
-#define ATMO_VERSION_PATCH 0
 
-#define ATMO_VERSION_STRING std::to_string(ATMO_VERSION_MAJOR) + "." + std::to_string(ATMO_VERSION_MINOR) + "." + std::to_string(ATMO_VERSION_PATCH)
+#define ATMO_VERSION_STRING std::to_string(ATMO_VERSION_PROJECT) + "." + std::to_string(ATMO_VERSION_MAJOR) + "." + std::to_string(ATMO_VERSION_MINOR)
 
 #define ATMO_PACKED_MAGIC_NUMBER 'A', 'T', 'M', 'O', '-', 'P', 'C', 'K'
 
@@ -33,8 +33,8 @@ namespace atmo
     {
         struct App {
             ATMO_SETTING std::string project_name = "New Atmo Project";
-            ATMO_SETTING core::impl::Romver engine_version;
-            ATMO_SETTING core::impl::Romver project_version;
+            ATMO_SETTING std::string engine_version;
+            ATMO_SETTING std::string project_version;
             ATMO_SETTING std::string icon_path = "project://assets/atmo.png";
         };
 

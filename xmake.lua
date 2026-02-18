@@ -259,11 +259,14 @@ package("box2d")
 package_end()
 
 package("ctre")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "compile-time-regular-expressions"))
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "ctre"))
 
     on_install(function(package)
-        os.cp("include/ctre.hpp", package:installdir("include"))
-        os.cp("include/compile-time-regular-expressions", package:installdir("include"))
+        os.cp("include/**", package:installdir("include"))
+    end)
+
+    on_load(function(package)
+        package:add("includedirs", "include")
     end)
 package_end()
 

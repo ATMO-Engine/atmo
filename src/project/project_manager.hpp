@@ -77,7 +77,8 @@ namespace atmo
                     throw std::runtime_error("Project file already exists at: " + project_file_path.string());
 
                 Instance().m_settings = {};
-                semver::parse(ATMO_VERSION_STRING, Instance().m_settings.app.engine_version);
+                Instance().m_settings.app.engine_version = ATMO_VERSION_STRING;
+                impl::Romver::Parse(ATMO_VERSION_STRING);
 
                 std::ofstream project_file(project_file_path, std::ios::binary);
                 if (!project_file.is_open())
@@ -123,7 +124,7 @@ namespace atmo
                 std::string path = output_path.empty() ? std::format(
                                                              "{}.{}.{}",
                                                              Instance().m_settings.app.project_name,
-                                                             Instance().m_settings.app.project_version.to_string(),
+                                                             Instance().m_settings.app.project_version,
                                                              std::string(ATMO_PACKED_EXT, 4))
                                                        : std::string(output_path);
                 std::ofstream out(path, std::ios::binary);
