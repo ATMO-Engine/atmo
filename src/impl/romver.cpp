@@ -3,7 +3,6 @@
 #include "romver.hpp"
 #include "spdlog/spdlog.h"
 
-#include <iostream>
 #include <minwindef.h>
 #include <string>
 
@@ -181,7 +180,6 @@ namespace atmo
                 build.assign(ptr, end);
             }
 
-            std::cout << project << " " << major << " " << minor << " -" << pre << " +" << build << std::endl;
             return Romver(project, major, minor, pre, build);
         }
 
