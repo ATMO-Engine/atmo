@@ -258,6 +258,15 @@ package("box2d")
     end)
 package_end()
 
+package("ctre")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "compile-time-regular-expressions"))
+
+    on_install(function(package)
+        os.cp("include/ctre.hpp", package:installdir("include"))
+        os.cp("include/compile-time-regular-expressions", package:installdir("include"))
+    end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -269,7 +278,8 @@ add_requires(
     "clay", { system = false },
     "catch2", { system = false },
     "semver", { system = false },
-    "box2d", { system = false }
+    "box2d", { system = false },
+    "ctre", { system = false }
 )
 
 function platform_specifics()
@@ -307,7 +317,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d", "ctre")
 end
 
 target("atmo")
