@@ -2,7 +2,6 @@
 #include <csignal>
 #include <cstdlib>
 #include <filesystem>
-#include <iostream>
 #include <string>
 #include <variant>
 #include "atmo.hpp"

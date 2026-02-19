@@ -3,7 +3,6 @@
 #include "romver.hpp"
 #include "spdlog/spdlog.h"
 
-#include <minwindef.h>
 #include <string>
 
 namespace atmo
@@ -39,76 +38,7 @@ namespace atmo
 
         Romver::Romver(const std::string &version)
         {
-            const char* ptr = version.c_str();
-            const char* end = ptr + version.size();
-
-            auto parse_number = [&](uint16_t& out) -> bool
-            {
-                if (ptr == end || !std::isdigit(*ptr))
-                    return false;
-
-                uint32_t value = 0;
-
-                if (*ptr == '0')
-                {
-                    ptr++;
-                    out = 0;
-                    return true;
-                }
-
-                while (ptr < end && std::isdigit(*ptr))
-                {
-                    value = value * 10 + (*ptr - '0');
-                    ptr++;
-                }
-
-                out = static_cast<uint16_t>(value);
-                return true;
-            };
-
-            if (!parse_number(m_project) || ptr == end || *ptr != '.') {
-                spdlog::warn("Invalid version string '{}', default value (0.0.1) returned", version);
-                m_project = 0;
-                m_major = 0;
-                m_minor = 1;
-                return;
-            }
-            ptr++;
-
-            if (!parse_number(m_major) || ptr == end || *ptr != '.') {
-                spdlog::warn("Invalid version string '{}', default value (0.0.1) returned", version);
-                m_project = 0;
-                m_major = 0;
-                m_minor = 1;
-                return;
-            };
-            ptr++;
-
-            if (!parse_number(m_minor)) {
-                spdlog::warn("Invalid version string '{}', default value (0.0.1) returned", version);
-                m_project = 0;
-                m_major = 0;
-                m_minor = 1;
-                return;
-            }
-
-            m_pre = "";
-            if (ptr < end && *ptr == '-')
-            {
-                ptr++;
-                const char* start = ptr;
-
-                while (ptr < end && *ptr != '+')
-                    ptr++;
-
-                m_pre.assign(start, ptr);
-            }
-
-            if (ptr < end && *ptr == '+')
-            {
-                ptr++;
-                m_build.assign(ptr, end);
-            }
+            *this = Parse(version);
         }
 
         Romver Romver::Parse(const std::string &version)
