@@ -14,8 +14,8 @@
 #include "core/resource/handle.hpp"
 #include "core/resource/resource.hpp"
 #include "i_resource_pool.hpp"
-#include "resource_ref.hpp"
 #include "impl/profiler.hpp"
+#include "resource_ref.hpp"
 
 namespace atmo
 {

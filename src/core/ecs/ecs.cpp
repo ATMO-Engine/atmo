@@ -144,17 +144,13 @@ namespace atmo
                 }
 
                 { // Ressource Manager
-                    m_world.system<>("Resource manager tick")
-                        .kind(flecs::OnLoad)
-                        .run([](flecs::iter &it) {
-                            atmo::core::resource::ResourceManager::GetInstance().increaseTick();
-                        });
+                    m_world.system<>("Resource manager tick").kind(flecs::OnLoad).run([](flecs::iter &it) {
+                        atmo::core::resource::ResourceManager::GetInstance().increaseTick();
+                    });
 
-                    m_world.system<>("Resource manager clear")
-                        .kind(flecs::OnStore)
-                        .run([](flecs::iter &it) {
-                            atmo::core::resource::ResourceManager::GetInstance().clear();
-                        });
+                    m_world.system<>("Resource manager clear").kind(flecs::OnStore).run([](flecs::iter &it) {
+                        atmo::core::resource::ResourceManager::GetInstance().clear();
+                    });
                 }
             }
 

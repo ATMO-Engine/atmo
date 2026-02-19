@@ -1,7 +1,7 @@
+#include "image_loader.hpp"
 #include <exception>
 #include <memory>
 #include "SDL3_image/SDL_image.h"
-#include "image_loader.hpp"
 #include "project/file_system.hpp"
 
 #include "core/resource/loaders/image_loader.hpp"
@@ -31,7 +31,8 @@ namespace atmo
                 });
             }
 
-            const std::string ImageLoader::resourceTypeName() {
+            const std::string ImageLoader::resourceTypeName()
+            {
                 return "Image (SDL Surface)";
             }
         } // namespace resource

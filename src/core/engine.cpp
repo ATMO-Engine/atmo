@@ -1,6 +1,6 @@
 #include "engine.hpp"
-#include "impl/window.hpp"
 #include "impl/profiler.hpp"
+#include "impl/window.hpp"
 
 void atmo::core::Engine::stop()
 {

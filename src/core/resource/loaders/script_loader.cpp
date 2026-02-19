@@ -54,7 +54,8 @@ namespace atmo
                 }
             }
 
-            const std::string ScriptLoader::resourceTypeName() {
+            const std::string ScriptLoader::resourceTypeName()
+            {
                 return "Script";
             }
         } // namespace resource
