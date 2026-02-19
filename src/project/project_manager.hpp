@@ -121,12 +121,10 @@ namespace atmo
              */
             static void GeneratePackedFile(std::string_view output_path = std::string_view(), const std::vector<std::string> &files = {})
             {
-                std::string path = output_path.empty() ? std::format(
-                                                             "{}.{}.{}",
-                                                             Instance().m_settings.app.project_name,
-                                                             Instance().m_settings.app.project_version,
-                                                             std::string(ATMO_PACKED_EXT, 4))
-                                                       : std::string(output_path);
+                std::string path = output_path.empty()
+                    ? std::format(
+                          "{}.{}.{}", Instance().m_settings.app.project_name, Instance().m_settings.app.project_version, std::string(ATMO_PACKED_EXT, 4))
+                    : std::string(output_path);
                 std::ofstream out(path, std::ios::binary);
                 if (!out.is_open())
                     throw std::runtime_error("Failed to create packed file.");

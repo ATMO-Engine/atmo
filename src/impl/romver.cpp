@@ -43,25 +43,22 @@ namespace atmo
 
         Romver Romver::Parse(const std::string &version)
         {
-            const char* ptr = version.c_str();
-            const char* end = ptr + version.size();
+            const char *ptr = version.c_str();
+            const char *end = ptr + version.size();
 
-            auto parse_number = [&](uint16_t& out) -> bool
-            {
+            auto parse_number = [&](uint16_t &out) -> bool {
                 if (ptr == end || !std::isdigit(*ptr))
                     return false;
 
                 uint32_t value = 0;
 
-                if (*ptr == '0')
-                {
+                if (*ptr == '0') {
                     ptr++;
                     out = 0;
                     return true;
                 }
 
-                while (ptr < end && std::isdigit(*ptr))
-                {
+                while (ptr < end && std::isdigit(*ptr)) {
                     value = value * 10 + (*ptr - '0');
                     ptr++;
                 }
@@ -92,20 +89,17 @@ namespace atmo
             }
 
             std::string pre = "";
-            if (ptr < end && *ptr == '-')
-            {
+            if (ptr < end && *ptr == '-') {
                 ptr++;
-                const char* start = ptr;
+                const char *start = ptr;
 
-                while (ptr < end && *ptr != '+')
-                    ptr++;
+                while (ptr < end && *ptr != '+') ptr++;
 
                 pre.assign(start, ptr);
             }
 
             std::string build = "";
-            if (ptr < end && *ptr == '+')
-            {
+            if (ptr < end && *ptr == '+') {
                 ptr++;
                 build.assign(ptr, end);
             }
@@ -115,9 +109,7 @@ namespace atmo
 
         const std::string Romver::to_string()
         {
-            std::string version = std::to_string(m_project) + "." +
-                                  std::to_string(m_major) + "." +
-                                  std::to_string(m_minor);
+            std::string version = std::to_string(m_project) + "." + std::to_string(m_major) + "." + std::to_string(m_minor);
             if (!m_pre.empty()) {
                 version += "-" + m_pre;
             }
@@ -139,7 +131,7 @@ namespace atmo
                 return m_minor < other.m_minor;
             }
 
-            const bool thisHasPre  = !m_pre.empty();
+            const bool thisHasPre = !m_pre.empty();
             const bool otherHasPre = !other.m_pre.empty();
             if (thisHasPre != otherHasPre) // Pre-relase always lower than release
                 return thisHasPre;
@@ -167,7 +159,7 @@ namespace atmo
                 return m_minor > other.m_minor;
             }
 
-            const bool thisHasPre  = !m_pre.empty();
+            const bool thisHasPre = !m_pre.empty();
             const bool otherHasPre = !other.m_pre.empty();
             if (thisHasPre != otherHasPre) // Pre-relase always lower than release
                 return otherHasPre;
@@ -185,8 +177,7 @@ namespace atmo
 
         bool Romver::operator==(const Romver &other)
         {
-            return (m_project == other.m_project && m_major == other.m_major &&
-                m_minor == other.m_minor && m_pre == other.m_pre);
+            return (m_project == other.m_project && m_major == other.m_major && m_minor == other.m_minor && m_pre == other.m_pre);
         }
 
         bool Romver::operator!=(const Romver &other)

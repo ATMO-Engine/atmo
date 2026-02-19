@@ -2,8 +2,8 @@
 
 #include <string>
 #include "core/types.hpp"
-#include "impl/romver.hpp"
 #include "glaze/glaze.hpp"
+#include "impl/romver.hpp"
 
 #define VERSION_TYPE std::uint64_t
 #define VERSION_TYPES VERSION_TYPE, VERSION_TYPE, VERSION_TYPE
