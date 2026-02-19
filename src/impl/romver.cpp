@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include "impl/romver.hpp"
 
 #include "romver.hpp"
