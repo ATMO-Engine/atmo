@@ -258,18 +258,6 @@ package("box2d")
     end)
 package_end()
 
-package("ctre")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "ctre"))
-
-    on_install(function(package)
-        os.cp("include/**", package:installdir("include"))
-    end)
-
-    on_load(function(package)
-        package:add("includedirs", "include")
-    end)
-package_end()
-
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -282,7 +270,6 @@ add_requires(
     "catch2", { system = false },
     "semver", { system = false },
     "box2d", { system = false },
-    "ctre", { system = false }
 )
 
 function platform_specifics()
@@ -320,7 +307,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d", "ctre")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d")
 end
 
 target("atmo")

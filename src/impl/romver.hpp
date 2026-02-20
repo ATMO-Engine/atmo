@@ -1,17 +1,11 @@
 #pragma once
 
-// #include <ctre.hpp>
 #include <string>
 
 namespace atmo
 {
     namespace impl
     {
-        // inline constexpr auto ROMVER_REGEX =
-        //     ctll::fixed_string{
-        //         R"(^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([0-9A-Za-z]+([.\-][0-9A-Za-z]+)*))?(\+([0-9A-Za-z]+([.\-][0-9A-Za-z]+)*))?$)"
-        // };
-
         class Romver
         {
         public:
