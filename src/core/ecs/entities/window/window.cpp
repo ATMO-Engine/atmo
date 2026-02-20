@@ -4,12 +4,18 @@
 
 namespace atmo::core::ecs::entities
 {
+    void Window::RegisterComponents(flecs::world *world)
+    {
+        world->component<components::Window>();
+    }
+
     void Window::RegisterSystems(flecs::world *world) {}
 
     void Window::initialize()
     {
         Entity::initialize();
-        setComponent<components::Transform2d>({});
+
+        setComponent<components::Window>({});
     }
 } // namespace atmo::core::ecs::entities
 

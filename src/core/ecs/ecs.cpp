@@ -39,7 +39,6 @@ namespace atmo
 
                 m_world.init_builtin_components();
 
-
                 components::register_core_components(m_world);
                 loadPrefabs();
             }

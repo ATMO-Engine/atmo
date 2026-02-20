@@ -29,8 +29,24 @@ namespace atmo::core::ecs::entities
             p_handle.set(std::forward<Component>(component));
         }
 
+        /**
+         * @brief Method to register components related to this entity type. Called once when world is initialized before RegisterSystems.
+         *
+         * @param world
+         */
+        static void RegisterComponents(flecs::world *world);
+
+        /**
+         * @brief Method to register systems related to this entity type. Called once when world is initialized.
+         *
+         * @param world Pointer to the flecs world, can be used to register systems.
+         */
         static void RegisterSystems(flecs::world *world);
 
+        /**
+         * @brief Method used to initialize the entity after it has been created. Can be used to set default components or do other setup tasks.
+         *
+         */
         void initialize();
 
         /**

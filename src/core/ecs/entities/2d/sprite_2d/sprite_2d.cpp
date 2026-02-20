@@ -5,9 +5,17 @@
 
 namespace atmo::core::ecs::entities
 {
+    void Sprite2d::RegisterComponents(flecs::world *world)
+    {
+        world->component<components::Sprite2d>();
+    }
+
+    void Sprite2d::RegisterSystems(flecs::world *world) {}
+
     void Sprite2d::initialize()
     {
-        Entity2d::initialize();
+        Entity::initialize();
+
         setComponent<components::Sprite2d>({});
     }
 } // namespace atmo::core::ecs::entities

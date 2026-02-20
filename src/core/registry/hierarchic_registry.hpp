@@ -18,10 +18,10 @@ namespace atmo::core::registry
         template <typename Type> static void RegisterType()
         {
             if constexpr (std::is_abstract_v<Type>) {
-                Instance().m_registry[std::string(Type::FullName())] = Entry{ .is_abstract = true, .factory = std::nullopt };
+                Instance().p_registry[std::string(Type::FullName())] = Entry{ .is_abstract = true, .factory = std::nullopt };
                 spdlog::debug(R"(Registered abstract type "{}")", Type::FullName());
             } else {
-                Instance().m_registry[std::string(Type::FullName())] = Entry{ .is_abstract = false, .factory = Registry::template Factorize<Type> };
+                Instance().p_registry[std::string(Type::FullName())] = Entry{ .is_abstract = false, .factory = Registry::template Factorize<Type> };
                 spdlog::debug(R"(Registered type "{}")", Type::FullName());
             }
 
@@ -40,13 +40,13 @@ namespace atmo::core::registry
 
         static std::vector<std::string> GetEntries()
         {
-            return Instance().m_registry | std::views::keys | std::ranges::to<std::vector>();
+            return Instance().p_registry | std::views::keys | std::ranges::to<std::vector>();
         }
 
         static std::unique_ptr<Root> Create(std::string_view name)
         {
-            auto it = Instance().m_registry.find(std::string(name));
-            if (it == Instance().m_registry.end()) [[unlikely]] {
+            auto it = Instance().p_registry.find(std::string(name));
+            if (it == Instance().p_registry.end()) [[unlikely]] {
                 spdlog::error(R"("{}" not found in registry)", name);
                 return nullptr;
             }
@@ -75,7 +75,6 @@ namespace atmo::core::registry
             return registry;
         }
 
-    private:
         using Factory = std::unique_ptr<Root> (*)();
 
         struct Entry {
@@ -83,6 +82,6 @@ namespace atmo::core::registry
             std::optional<Factory> factory;
         };
 
-        std::unordered_map<std::string, Entry> m_registry;
+        std::unordered_map<std::string, Entry> p_registry;
     };
 } // namespace atmo::core::registry

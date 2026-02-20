@@ -1,9 +1,10 @@
 #pragma once
 
+#include <functional>
 #include <memory>
-#include <string>
-#include <type_traits>
-#include <unordered_map>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
 
 #include "core/registry/hierarchic_registry.hpp"
 #include "entities/entity.hpp"
@@ -33,7 +34,7 @@ namespace atmo
 
                 template <typename Type> static void OnRegister()
                 {
-                    Type::RegisterSystems(Instance().m_world);
+                    Instance().m_registers.push_back({ .components = &Type::RegisterComponents, .systems = &Type::RegisterSystems });
                 }
 
                 template <typename Type> static std::unique_ptr<entities::Entity> Factorize()
@@ -46,7 +47,13 @@ namespace atmo
                 }
 
             private:
+                struct Register {
+                    std::function<void(flecs::world *)> components;
+                    std::function<void(flecs::world *)> systems;
+                };
+
                 flecs::world *m_world{ nullptr };
+                std::vector<Register> m_registers;
             };
         } // namespace ecs
     } // namespace core

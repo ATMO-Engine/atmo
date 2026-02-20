@@ -3,6 +3,7 @@
 
 namespace atmo::core::ecs::entities
 {
+    void Entity::RegisterComponents(flecs::world *world) {}
     void Entity::RegisterSystems(flecs::world *world) {}
 
     void Entity::initialize() {}
