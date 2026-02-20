@@ -269,7 +269,7 @@ add_requires(
     "clay", { system = false },
     "catch2", { system = false },
     "semver", { system = false },
-    "box2d", { system = false },
+    "box2d", { system = false }
 )
 
 function platform_specifics()
