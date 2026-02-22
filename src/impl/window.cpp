@@ -5,11 +5,6 @@
 
 #include "window.hpp"
 
-#define CLAY_IMPLEMENTATION
-#include <clay.h>
-
-void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
-
 atmo::impl::WindowManager::WindowManager(flecs::entity entity)
 {
     this->entity = entity;

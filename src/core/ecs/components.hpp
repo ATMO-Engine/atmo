@@ -14,6 +14,7 @@
 #include "core/resource/handle.hpp"
 #include "core/resource/subresources/2d/shape/shape2d.hpp"
 #include "core/types.hpp"
+#include "impl/clay_types.hpp"
 #include "luau/luau.hpp"
 
 #define BEGIN_REFLECT(Type)                     \
@@ -103,6 +104,9 @@ namespace atmo
             struct Window {
                 std::string title;
                 types::Vector2i size;
+                SDL_Window *window = nullptr;
+                Clay_SDL3RendererData renderer_data;
+                Clay_Arena clay_arena;
             };
             BEGIN_REFLECT(Window)
             FIELD(title)
