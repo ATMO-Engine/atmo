@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <flecs.h>
+
 
 namespace atmo
 {
@@ -41,6 +43,23 @@ namespace atmo
                  * @brief Flag indicating whether the event has been consumed.
                  */
                 bool m_consumed = false;
+            };
+
+            class UIEvent : public AEvent
+            {
+            public:
+                UIEvent() = default;
+                ~UIEvent() override = default;
+
+            private:
+                flecs::entity m_entity_id;
+            };
+
+            class HoverEvent : public UIEvent
+            {
+            public:
+                HoverEvent() = default;
+                ~HoverEvent() override = default;
             };
         } // namespace event
     } // namespace core

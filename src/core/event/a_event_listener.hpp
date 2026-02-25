@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <unordered_map>
-#include "core/event/Aevent.hpp"
+#include "core/event/a_event.hpp"
 
 namespace atmo
 {
@@ -33,6 +33,16 @@ namespace atmo
                  */
                 void callback(event::AEvent *event);
             };
+
+            class ClayListener : public AListener
+            {
+            public:
+                ClayListener();
+                ~ClayListener() override = default;
+                void onEvent(event::UIEvent *event);
+                void hoverEvent(event::HoverEvent *event);
+            };
+
         } // namespace event
     } // namespace core
 } // namespace atmo
