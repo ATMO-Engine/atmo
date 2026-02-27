@@ -1,9 +1,9 @@
 #include "core/ecs/ecs.hpp"
 #include "core/ecs/ecs_registry.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/resource_ref.hpp"
 #include "flecs.h"
-#include "impl/window.hpp"
 #include "project/project_manager.hpp"
 
 atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
@@ -39,25 +39,19 @@ atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
             sprite.m_dest_rect.h = sprite.texture_size.y * (transform.g_scale.y * transform.scale.y);
         });
 
-    world.system<components::Sprite2d, components::Transform2d, ComponentManager::Managed, components::Window>("Sprite2D_Render")
+    world.system<components::Sprite2d, components::Transform2d, components::Window>("Sprite2D_Render")
         .kind(flecs::OnValidate)
         .term_at(2)
         .up()
-        .term_at(3)
-        .up()
-        .each([](flecs::entity e,
-                 components::Sprite2d &sprite,
-                 components::Transform2d &transform,
-                 ComponentManager::Managed &manager,
-                 components::Window &window) {
-            auto wm = static_cast<atmo::impl::WindowManager *>(manager.ptr);
+        .each([](flecs::iter &it, components::Sprite2d *sprite, components::Transform2d *transform, components::Window *window) {
+            ecs::entities::Window window_entity(it.entity(2));
 
-            SDL_Texture *texture = wm->getTextureFromHandle(sprite.m_handle);
+            SDL_Texture *texture = window_entity.getTextureFromHandle(sprite->m_handle);
             if (!texture)
                 return;
 
             SDL_RenderTextureRotated(
-                wm->getRenderer(), texture, nullptr, &sprite.m_dest_rect, transform.g_rotation + transform.rotation, nullptr, SDL_FLIP_NONE);
+                window->renderer_data.renderer, texture, nullptr, &sprite->m_dest_rect, transform->g_rotation + transform->rotation, nullptr, SDL_FLIP_NONE);
         });
 
     world.observer<components::Sprite2d>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2d &sprite) {

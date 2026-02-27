@@ -21,12 +21,14 @@ namespace atmo::core::ecs::entities
             return "Window";
         }
 
-        void setName(const std::string &name) noexcept;
-        void setSize(const core::types::Vector2i &size) noexcept;
-        void focus() noexcept;
+        void setName(const std::string &name);
+        void setSize(const core::types::Vector2i &size);
+        void focus();
 
         core::types::Vector2i getSize() const noexcept;
         std::string getTitle() const noexcept;
+
+        SDL_Texture *getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle);
 
     private:
         void pollEvents(float deltaTime);

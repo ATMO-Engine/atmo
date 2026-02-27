@@ -1,9 +1,11 @@
+#include "SDL3/SDL_video.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
 #include "core/ecs/components.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_dispatcher.hpp"
 #include "core/input/input_manager.hpp"
+#include "core/resource/resource_manager.hpp"
 #include "impl/clay_types.hpp"
 #include "spdlog/spdlog.h"
 #include "window.hpp"
@@ -119,14 +121,36 @@ namespace atmo::core::ecs::entities
         Clay_SetMeasureTextFunction(measureText, window->renderer_data.fonts);
     }
 
-    void Window::setName(const std::string &name) noexcept
+    void Window::setName(const std::string &name)
     {
-        p_handle.get_ref<components::Window>()->title = name;
+        auto window = p_handle.get_ref<components::Window>();
+
+        if (SDL_SetWindowTitle(window->window, name.c_str())) {
+            window->title = name;
+        } else {
+            spdlog::error("Failed to set window title: {}", SDL_GetError());
+        }
     }
 
-    void Window::setSize(const core::types::Vector2i &size) noexcept {}
+    void Window::setSize(const core::types::Vector2i &size)
+    {
+        auto window = p_handle.get_ref<components::Window>();
 
-    void Window::focus() noexcept {}
+        if (SDL_SetWindowSize(window->window, size.x, size.y)) {
+            window->size = size;
+        } else {
+            spdlog::error("Failed to set window size: {}", SDL_GetError());
+        }
+    }
+
+    void Window::focus()
+    {
+        auto window = p_handle.get_ref<components::Window>();
+
+        if (!SDL_RaiseWindow(window->window)) {
+            spdlog::error("Failed to focus window: {}", SDL_GetError());
+        }
+    }
 
     void Window::pollEvents(float deltaTime)
     {
@@ -207,6 +231,22 @@ namespace atmo::core::ecs::entities
         {
             e.children([this](flecs::entity child) { declareEntityUi(child); });
         }
+    }
+
+    SDL_Texture *Window::getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle)
+    {
+        auto window = p_handle.get_ref<components::Window>();
+
+        if (window->texture_cache.find(handle) != window->texture_cache.end()) {
+            return window->texture_cache[handle];
+        }
+
+        atmo::core::resource::ResourceRef<SDL_Surface> res = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(handle.assetId);
+        std::shared_ptr<SDL_Surface> surface = res.get();
+
+        SDL_Texture *texture = SDL_CreateTextureFromSurface(window->renderer_data.renderer, surface.get());
+        window->texture_cache[handle] = texture;
+        return texture;
     }
 } // namespace atmo::core::ecs::entities
 

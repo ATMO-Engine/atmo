@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <memory>
 #include <ranges>
 #include <string>
@@ -43,10 +44,14 @@ namespace atmo::core::registry
             return Instance().p_registry | std::views::keys | std::ranges::to<std::vector>();
         }
 
-        static std::unique_ptr<Root> Create(std::string_view name)
+        template <typename T = Root>
+            requires std::derived_from<T, Root>
+        static std::unique_ptr<T> Create(std::string_view name)
         {
-            auto it = Instance().p_registry.find(std::string(name));
-            if (it == Instance().p_registry.end()) [[unlikely]] {
+            auto &registry = Instance().p_registry;
+
+            auto it = registry.find(std::string(name));
+            if (it == registry.end()) [[unlikely]] {
                 spdlog::error(R"("{}" not found in registry)", name);
                 return nullptr;
             }
@@ -56,7 +61,14 @@ namespace atmo::core::registry
                 return nullptr;
             }
 
-            return it->second.factory.value()();
+            std::unique_ptr<Root> basePtr = it->second.factory.value()();
+
+            if constexpr (std::same_as<T, Root>) {
+                return basePtr;
+            } else {
+                T *derived = static_cast<T *>(basePtr.release());
+                return std::unique_ptr<T>(derived);
+            }
         }
 
         template <typename Type> static void OnRegister() {};

@@ -37,10 +37,14 @@ namespace atmo::core::ecs::entities
         return p_handle.is_valid();
     }
 
-    // TODO: add way to change name of entity and create it with a name.
     std::string_view Entity::name() const
     {
         return p_handle.name().c_str();
+    }
+
+    void Entity::rename(const std::string &new_name)
+    {
+        p_handle.set_name(new_name.c_str());
     }
 } // namespace atmo::core::ecs::entities
 

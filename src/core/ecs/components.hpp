@@ -107,6 +107,7 @@ namespace atmo
                 SDL_Window *window = nullptr;
                 Clay_SDL3RendererData renderer_data;
                 Clay_Arena clay_arena;
+                std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
             };
             BEGIN_REFLECT(Window)
             FIELD(title)

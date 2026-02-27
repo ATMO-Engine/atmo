@@ -6,7 +6,6 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
-#include "impl/window.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 

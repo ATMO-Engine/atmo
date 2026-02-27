@@ -92,6 +92,13 @@ namespace atmo::core::ecs::entities
          */
         std::string_view name() const;
 
+        /**
+         * @brief Set the entity's name.
+         *
+         * @param new_name New name for the entity.
+         */
+        void rename(const std::string &new_name);
+
     protected:
         flecs::entity p_handle;
     };

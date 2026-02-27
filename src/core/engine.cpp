@@ -1,9 +1,9 @@
 #include "engine.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/types.hpp"
-#include "impl/window.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 
@@ -11,9 +11,9 @@ void atmo::core::Engine::start()
 {
     m_running.store(true);
 
-    auto window = m_ecs.instantiatePrefab("window", "_Root");
-    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
-    wm->rename(atmo::project::ProjectManager::GetSettings().app.project_name);
+    auto window = ecs::EntityRegistry::Create<ecs::entities::Window>("Entity::Window");
+    window->rename("_Root");
+    window->setName(project::ProjectManager::GetSettings().app.project_name);
 
     auto scene = m_ecs.instantiatePrefab("scene");
     m_ecs.changeScene(scene);
