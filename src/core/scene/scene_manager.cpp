@@ -14,11 +14,11 @@ namespace atmo
                 m_world = world;
             }
 
-            flecs::entity SceneManager::loadSceneFromFile(std::string_view file_path)
+            ecs::entities::Scene SceneManager::loadSceneFromFile(std::string_view file_path)
             {
                 project::File file = project::FileSystem::OpenFile(file_path);
 
-                flecs::entity scene = m_world->entity();
+                ecs::entities::Scene scene = m_world->entity();
 
                 scene.from_json(file.readAll().c_str());
 
@@ -32,29 +32,29 @@ namespace atmo
 
             void SceneManager::loadSingleton(std::string_view file_path)
             {
-                flecs::entity singleton = loadSceneFromFile(file_path);
+                ecs::entities::Scene singleton = loadSceneFromFile(file_path);
                 m_singletons.push_back(singleton);
             }
 
-            flecs::entity SceneManager::getCurrentScene() const
+            ecs::entities::Scene SceneManager::getCurrentScene() const
             {
                 return m_current;
             }
 
-            flecs::entity SceneManager::getRoot()
+            ecs::entities::Scene SceneManager::getRoot()
             {
-                static flecs::entity root = m_world->entity("_Root");
+                static ecs::entities::Scene root = m_world->entity("_Root");
                 return root;
             }
 
-            void SceneManager::changeScene(flecs::entity scene)
+            void SceneManager::changeScene(ecs::entities::Scene scene)
             {
                 if (std::find(m_singletons.begin(), m_singletons.end(), scene) != m_singletons.end()) {
                     spdlog::error("Cannot change to a singleton scene: {}", scene.name().c_str());
                     throw SwitchToSingletonSceneException();
                 }
 
-                flecs::entity old_scene = m_current;
+                ecs::entities::Scene old_scene = m_current;
                 m_current = scene;
                 m_current.child_of(getRoot());
                 if (m_initialized)
@@ -64,7 +64,7 @@ namespace atmo
 
             void SceneManager::changeSceneToFile(std::string_view file_path)
             {
-                flecs::entity scene = loadSceneFromFile(file_path);
+                ecs::entities::Scene scene = loadSceneFromFile(file_path);
 
                 changeScene(scene);
             }

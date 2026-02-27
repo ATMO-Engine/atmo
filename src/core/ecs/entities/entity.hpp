@@ -65,6 +65,16 @@ namespace atmo::core::ecs::entities
         Entity getChild(std::string_view name);
 
         /**
+         * @brief Set the parent of this entity.
+         *
+         * @param parent Parent entity to set for this entity.
+         */
+        void setParent(Entity parent)
+        {
+            p_handle.child_of(parent.p_handle);
+        }
+
+        /**
          * @brief Get the entity's parent entity.
          *
          * @return Entity parent entity.

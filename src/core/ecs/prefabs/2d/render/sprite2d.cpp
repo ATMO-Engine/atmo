@@ -43,15 +43,20 @@ atmo::core::ecs::Prefab createSprite2dPrefab(flecs::world world)
         .kind(flecs::OnValidate)
         .term_at(2)
         .up()
-        .each([](flecs::iter &it, components::Sprite2d *sprite, components::Transform2d *transform, components::Window *window) {
-            ecs::entities::Window window_entity(it.entity(2));
+        .each([](flecs::iter &it, size_t i, components::Sprite2d &sprite, components::Transform2d &transform, components::Window &window) {
+            flecs::entity window_src = it.src(3);
+            if (!window_src) {
+                window_src = it.entity(i);
+            }
 
-            SDL_Texture *texture = window_entity.getTextureFromHandle(sprite->m_handle);
+            ecs::entities::Window window_entity(window_src);
+
+            SDL_Texture *texture = window_entity.getTextureFromHandle(sprite.m_handle);
             if (!texture)
                 return;
 
             SDL_RenderTextureRotated(
-                window->renderer_data.renderer, texture, nullptr, &sprite->m_dest_rect, transform->g_rotation + transform->rotation, nullptr, SDL_FLIP_NONE);
+                window.renderer_data.renderer, texture, nullptr, &sprite.m_dest_rect, transform.g_rotation + transform.rotation, nullptr, SDL_FLIP_NONE);
         });
 
     world.observer<components::Sprite2d>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2d &sprite) {

@@ -3,6 +3,7 @@
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/ecs_registry.hpp"
+#include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
@@ -54,16 +55,17 @@ namespace atmo
                 };
             }
 
-            flecs::entity ECS::createScene(const std::string &scene_name, bool singleton)
+            std::unique_ptr<entities::Scene> ECS::createScene(const std::string &scene_name, bool singleton)
             {
-                flecs::entity scene = instantiatePrefab("scene", scene_name).set<components::Scene>({ singleton });
+                auto scene = EntityRegistry::Create<entities::Scene>("Entity::Scene");
+                scene->setSingleton(singleton);
 
                 return scene;
             }
 
-            void ECS::changeScene(flecs::entity scene)
+            void ECS::changeScene(entities::Scene scene)
             {
-                flecs::entity current = m_scene_manager.getCurrentScene();
+                entities::Scene current = m_scene_manager.getCurrentScene();
 
                 if (current && scene == current)
                     return;
@@ -83,22 +85,6 @@ namespace atmo
             void ECS::addPrefab(Prefab &prefab)
             {
                 m_prefabs.emplace(prefab.name, prefab);
-            }
-
-            Entity ECS::instantiatePrefab(const std::string &name, const std::string &instance_name)
-            {
-                if (m_prefabs.find(name) == m_prefabs.end()) {
-                    throw std::runtime_error("Prefab not found: " + name);
-                }
-
-                flecs::entity instance;
-                if (instance_name.empty()) {
-                    instance = m_world.entity().is_a(m_prefabs.at(name).entity);
-                } else {
-                    instance = m_world.entity(instance_name.c_str()).is_a(m_prefabs.at(name).entity);
-                }
-
-                return instance;
             }
         } // namespace ecs
     } // namespace core

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "components.hpp"
+#include "core/ecs/entities/scene/scene.hpp"
 #include "core/scene/scene_manager.hpp"
 #include "prefab.hpp"
 
@@ -18,8 +19,6 @@ namespace atmo
     {
         namespace ecs
         {
-            using Entity = flecs::entity;
-
             class ECS
             {
             private:
@@ -36,11 +35,9 @@ namespace atmo
                 void stop();
                 void reset();
 
-                flecs::entity createScene(const std::string &scene_name, bool singleton);
-                void changeScene(flecs::entity scene);
+                std::unique_ptr<entities::Scene> createScene(const std::string &scene_name, bool singleton);
+                void changeScene(entities::Scene scene);
                 void changeSceneToFile(std::string_view scene_path);
-
-                Entity instantiatePrefab(const std::string &name, const std::string &instance_name = "");
 
                 bool progress(float delta_time = 0.0f) const
                 {

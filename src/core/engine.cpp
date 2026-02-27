@@ -1,4 +1,5 @@
 #include "engine.hpp"
+#include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
@@ -24,8 +25,9 @@ void atmo::core::Engine::start()
 
     // auto btn = ecs::EntityRegistry::Create("Entity::UI::Button");
 
-    // auto sprite = ecs::EntityRegistry::Create("Entity::Entity2d::Sprite2d");
-    // spdlog::info("Created entity named {}", sprite->name());
+    auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+
+    sprite->setTexturePath("project://assets/atmo.png");
 
     // auto ptr = resource::SubResourceRegistry::Create("Shape2d::RectangleShape2d");
     // if (!ptr)
