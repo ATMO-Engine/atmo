@@ -39,8 +39,10 @@ namespace atmo
 
                 template <typename Type> static entities::Entity *Factorize()
                 {
-                    Type *entity = new Type(Instance().m_world->entity());
+                    flecs::entity handle = Instance().m_world->entity();
+                    Type *entity = new Type(handle);
 
+                    entity->rename(std::format("{}#{}", Type::FullName(), handle.id()));
                     entity->initialize();
 
                     return entity;

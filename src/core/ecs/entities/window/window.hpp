@@ -30,6 +30,14 @@ namespace atmo::core::ecs::entities
 
         SDL_Texture *getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle);
 
+        /**
+         * @brief Set a callback function to be called when the window is closed. This can be used to perform cleanup tasks or prompt the user for confirmation
+         * before closing.
+         *
+         * @param callback Function to be called when the window is closed.
+         */
+        void onClose(std::function<void()> callback);
+
     private:
         void pollEvents(float deltaTime);
         void beginDraw(components::Window &window);

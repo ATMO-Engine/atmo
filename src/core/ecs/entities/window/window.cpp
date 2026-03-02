@@ -57,6 +57,10 @@ namespace atmo::core::ecs::entities
             }
 
             SDL_free(window.clay_arena.memory);
+
+            if (window.close_callback.has_value()) {
+                window.close_callback.value()();
+            }
         });
     }
 
@@ -247,6 +251,12 @@ namespace atmo::core::ecs::entities
         SDL_Texture *texture = SDL_CreateTextureFromSurface(window->renderer_data.renderer, surface.get());
         window->texture_cache[handle] = texture;
         return texture;
+    }
+
+    void Window::onClose(std::function<void()> callback)
+    {
+        auto window = p_handle.get_ref<components::Window>();
+        window->close_callback = callback;
     }
 } // namespace atmo::core::ecs::entities
 

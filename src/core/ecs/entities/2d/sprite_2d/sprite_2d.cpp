@@ -29,7 +29,7 @@ namespace atmo::core::ecs::entities
             .term_at(2)
             .up()
             .each([](flecs::iter &it, size_t i, components::Sprite2d &sprite, components::Transform2d &transform, components::Window &window) {
-                flecs::entity window_src = it.src(3);
+                flecs::entity window_src = it.src(2);
                 if (!window_src) {
                     window_src = it.entity(i);
                 }
@@ -58,7 +58,7 @@ namespace atmo::core::ecs::entities
 
     void Sprite2d::initialize()
     {
-        Entity::initialize();
+        Entity2d::initialize();
 
         setComponent<components::Sprite2d>({});
     }

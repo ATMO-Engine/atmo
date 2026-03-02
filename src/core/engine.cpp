@@ -15,6 +15,7 @@ void atmo::core::Engine::start()
     auto window = ecs::EntityRegistry::Create<ecs::entities::Window>("Entity::Window");
     window->rename("_Root");
     window->setName(project::ProjectManager::GetSettings().app.project_name);
+    window->onClose([&]() { stop(); });
 
     auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
     scene->setSingleton(false);
@@ -23,6 +24,7 @@ void atmo::core::Engine::start()
     // auto btn = ecs::EntityRegistry::Create("Entity::UI::Button");
 
     auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+    sprite->setParent(*scene);
 
     sprite->setTexturePath("project://assets/atmo.png");
 
@@ -36,26 +38,26 @@ void atmo::core::Engine::start()
     // ground.get_ref<components::PhysicsBody2d>()->shape = resource::resources::Shape2d::Shape2dType::Rectangle;
     // ground.modified<components::PhysicsBody2d>();
 
-    // auto last_time = std::chrono::steady_clock::now();
-    // float deltaTime = 0.0f;
+    auto last_time = std::chrono::steady_clock::now();
+    float deltaTime = 0.0f;
 
-    // while (m_ecs.progress(deltaTime)) {
-    //     auto current_time = std::chrono::steady_clock::now();
-    //     std::chrono::duration<float> dt = current_time - last_time;
-    //     last_time = current_time;
-    //     deltaTime = dt.count();
+    while (m_ecs.progress(deltaTime)) {
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<float> dt = current_time - last_time;
+        last_time = current_time;
+        deltaTime = dt.count();
 
-    //     if (atmo::core::InputManager::IsPressed("ui_quit")) {
-    //         spdlog::info("Quitting...");
-    //         m_running.store(false);
-    //     }
+        if (atmo::core::InputManager::IsPressed("ui_quit")) {
+            spdlog::info("Quitting...");
+            m_running.store(false);
+        }
 
-    //     atmo::core::InputManager::Tick();
+        atmo::core::InputManager::Tick();
 
-    //     if (!m_running.load()) {
-    //         m_ecs.stop();
-    //     }
-    // }
+        if (!m_running.load()) {
+            m_ecs.stop();
+        }
+    }
 }
 
 void atmo::core::Engine::stop()
