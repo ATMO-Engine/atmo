@@ -4,10 +4,10 @@
 #include "script_instance.hpp"
 #include "spdlog/spdlog.h"
 
-#include "luau.hpp"
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"
+#include "luau.hpp"
 
 namespace atmo
 {
@@ -66,7 +66,7 @@ namespace atmo
             return;
         }
 
-        void Luau::registerModule(const std::string& name, lua_CFunction loader)
+        void Luau::registerModule(const std::string &name, lua_CFunction loader)
         {
             loader(p_L);
             lua_setglobal(p_L, name.c_str());

@@ -2,14 +2,16 @@
 
 #include "luau/instance_manager.hpp"
 
-#include "time.hpp"
 #include "lua.h"
 #include "lualib.h"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
+#include "time.hpp"
 
-namespace atmo {
-    namespace luau {
+namespace atmo
+{
+    namespace luau
+    {
 
         void Time::RegisterTime(lua_State *state)
         {
@@ -26,7 +28,7 @@ namespace atmo {
             ScriptInstance *inst = InstanceManager::GetInstance().getScriptInstance(state);
 
             if (inst == nullptr) {
-                spdlog::warn("No script instance for {}", static_cast<void*>(state));
+                spdlog::warn("No script instance for {}", static_cast<void *>(state));
                 return 0;
             }
 
@@ -36,5 +38,5 @@ namespace atmo {
 
             return lua_yield(state, 0);
         }
-    } //namespace luau
+    } // namespace luau
 } // namespace atmo

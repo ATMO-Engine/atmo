@@ -28,8 +28,7 @@ namespace atmo
         void LuauRef::clear()
         {
             lua_State *state = m_vm.getState();
-            if (state && m_ref != LUA_NOREF)
-            {
+            if (state && m_ref != LUA_NOREF) {
                 lua_pushnil(state);
                 lua_rawseti(state, LUA_REGISTRYINDEX, m_ref);
                 m_ref = LUA_NOREF;

@@ -30,7 +30,8 @@ namespace atmo
             };
 
             void registerBindings();
-            void registerModule(const std::string& name, lua_CFunction loader);
+            void registerModule(const std::string &name, lua_CFunction loader);
+
         protected:
             lua_State *p_L;
         };

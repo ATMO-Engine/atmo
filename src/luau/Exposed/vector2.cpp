@@ -6,8 +6,10 @@
 #include "lua.h"
 #include "lualib.h"
 
-namespace atmo {
-    namespace luau {
+namespace atmo
+{
+    namespace luau
+    {
         void Vector2::RegisterVector2(lua_State *state)
         {
             luaL_newmetatable(state, "Vector2");
@@ -49,9 +51,9 @@ namespace atmo {
             return 1;
         }
 
-        std::shared_ptr<Vector2> &Vector2::CheckVector2(lua_State* L, int index)
+        std::shared_ptr<Vector2> &Vector2::CheckVector2(lua_State *L, int index)
         {
-            return *(std::shared_ptr<Vector2>*)luaL_checkudata(L, index, "Vector2");
+            return *(std::shared_ptr<Vector2> *)luaL_checkudata(L, index, "Vector2");
         }
 
         int Vector2::Vector2Length(lua_State *state)
@@ -63,17 +65,15 @@ namespace atmo {
 
         int Vector2::Vector2Index(lua_State *state)
         {
-            auto& v = CheckVector2(state, 1);
-            const char* key = luaL_checkstring(state, 2);
+            auto &v = CheckVector2(state, 1);
+            const char *key = luaL_checkstring(state, 2);
 
             // Properties
-            if (strcmp(key, "x") == 0)
-            {
+            if (strcmp(key, "x") == 0) {
                 lua_pushnumber(state, v->getX());
                 return 1;
             }
-            if (strcmp(key, "y") == 0)
-            {
+            if (strcmp(key, "y") == 0) {
                 lua_pushnumber(state, v->getY());
                 return 1;
             }
@@ -88,17 +88,15 @@ namespace atmo {
 
         int Vector2::Vector2NewIndex(lua_State *state)
         {
-            auto& v = CheckVector2(state, 1);
-            const char* key = luaL_checkstring(state, 2);
+            auto &v = CheckVector2(state, 1);
+            const char *key = luaL_checkstring(state, 2);
             float value = (float)luaL_checknumber(state, 3);
 
-            if (strcmp(key, "x") == 0)
-            {
+            if (strcmp(key, "x") == 0) {
                 v->setX(value);
                 return 0;
             }
-            if (strcmp(key, "y") == 0)
-            {
+            if (strcmp(key, "y") == 0) {
                 v->setY(value);
                 return 0;
             }
@@ -108,8 +106,7 @@ namespace atmo {
 
         int Vector2::Vector2GC(lua_State *state)
         {
-            auto* ptr = (std::shared_ptr<Vector2>*)
-            luaL_checkudata(state, 1, "Vector2");
+            auto *ptr = (std::shared_ptr<Vector2> *)luaL_checkudata(state, 1, "Vector2");
 
             ptr->~shared_ptr<Vector2>();
             return 0;

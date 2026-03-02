@@ -1,8 +1,8 @@
 #include "script_instance.hpp"
 #include "instance_manager.hpp"
+#include "lua.h"
 #include "luau.hpp"
 #include "luau_ref.hpp"
-#include "lua.h"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 
@@ -66,43 +66,42 @@ namespace atmo
                 return false;
             }
 
-            lua_pushvalue(m_thread, -2);   // push env
-            lua_setfenv(m_thread, -2);     // set env to chunk
+            lua_pushvalue(m_thread, -2); // push env
+            lua_setfenv(m_thread, -2);   // set env to chunk
 
             lua_remove(m_thread, -2);
 
             int result = lua_resume(m_thread, nullptr, 0);
 
-            if (result != LUA_OK && result != LUA_YIELD)
-            {
-                const char* err = lua_tostring(m_thread, -1);
+            if (result != LUA_OK && result != LUA_YIELD) {
+                const char *err = lua_tostring(m_thread, -1);
                 spdlog::warn("Load error: {}", err);
             }
 
-            //if (lua_resume(m_thread, nullptr, 0) != LUA_OK) {
-            //    if (lua_status(m_thread) != LUA_YIELD)
-            //        {
-            //            const char* err = lua_tostring(m_thread, -1);
-            //            spdlog::warn("Load error: {}", err);
-            //            // TODO: handle runtime error
-            //        }
-            //}
+            // if (lua_resume(m_thread, nullptr, 0) != LUA_OK) {
+            //     if (lua_status(m_thread) != LUA_YIELD)
+            //         {
+            //             const char* err = lua_tostring(m_thread, -1);
+            //             spdlog::warn("Load error: {}", err);
+            //             // TODO: handle runtime error
+            //         }
+            // }
 
             return true;
         }
 
-        //bool ScriptInstance::callRef(LuauRef &ref, int nargs)
+        // bool ScriptInstance::callRef(LuauRef &ref, int nargs)
         //{
-        //    if (ref.getRef() == LUA_NOREF) {
-        //        spdlog::warn("Ref not found for function"); // TODO: Verbose error
-        //        return false;
-        //    }
-//
+        //     if (ref.getRef() == LUA_NOREF) {
+        //         spdlog::warn("Ref not found for function"); // TODO: Verbose error
+        //         return false;
+        //     }
+        //
         //    lua_rawgeti(m_thread, LUA_REGISTRYINDEX, ref.getRef());
-//
+        //
         //    if (nargs > 0)
         //        lua_insert(m_thread, -1 - nargs);
-//
+        //
         //    if (lua_pcall(m_thread, nargs, 0, 0) != LUA_OK)
         //    {
         //        const char* err = lua_tostring(m_thread, -1);
@@ -118,7 +117,7 @@ namespace atmo
             if (result == LUA_YIELD) {
                 if (lua_isnumber(m_thread, -1)) {
                     float delay = lua_tonumber(m_thread, -1);
-                    //m_wakeTime = m_vm.getTime() + delay;
+                    // m_wakeTime = m_vm.getTime() + delay;
                 }
 
                 lua_pop(m_thread, 1);
@@ -126,7 +125,7 @@ namespace atmo
             } else if (result == LUA_OK) {
                 // Succes
             } else {
-                const char* err = lua_tostring(m_thread, -1);
+                const char *err = lua_tostring(m_thread, -1);
                 spdlog::warn("Run time error: {}", err);
             }
         }

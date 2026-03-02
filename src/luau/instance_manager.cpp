@@ -2,8 +2,10 @@
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 
-namespace atmo {
-    namespace luau {
+namespace atmo
+{
+    namespace luau
+    {
 
         InstanceManager::InstanceManager() {}
 
@@ -17,11 +19,7 @@ namespace atmo {
         void InstanceManager::registerScriptInstance(lua_State *thread, ScriptInstance *inst)
         {
             if (thread == nullptr || inst == nullptr) {
-                spdlog::warn(
-                    "Thread (coroutine) {} or Script instance {} is null",
-                    static_cast<void*>(thread),
-                    static_cast<void*>(inst)
-                );
+                spdlog::warn("Thread (coroutine) {} or Script instance {} is null", static_cast<void *>(thread), static_cast<void *>(inst));
                 return;
             }
             m_scriptInstances.insert(std::make_pair(thread, inst));
@@ -32,7 +30,7 @@ namespace atmo {
             if (m_scriptInstances.find(thread) != m_scriptInstances.end()) {
                 return m_scriptInstances.at(thread);
             }
-            spdlog::warn("No script instance registered for thread {}", static_cast<void*>(thread));
+            spdlog::warn("No script instance registered for thread {}", static_cast<void *>(thread));
             return nullptr;
         }
 
@@ -42,10 +40,7 @@ namespace atmo {
             if (it != m_scriptInstances.end()) {
                 m_scriptInstances.erase(it);
             } else {
-            spdlog::warn(
-                "No script instance registered for thread {}, supress ignored",
-                static_cast<void*>(thread)
-            );
+                spdlog::warn("No script instance registered for thread {}, supress ignored", static_cast<void *>(thread));
             }
         }
     } // namespace luau

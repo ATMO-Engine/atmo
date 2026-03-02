@@ -4,8 +4,8 @@
 #include <stdexcept>
 
 #include "core/resource/loaders/script_loader.hpp"
-#include "project/file_system.hpp"
 #include "luau/luau.hpp"
+#include "project/file_system.hpp"
 #include "script_loader.hpp"
 
 namespace atmo
@@ -24,13 +24,13 @@ namespace atmo
 
                 Bytecode *newRessource = nullptr;
                 try {
-                    //std::ifstream luaFile(path);
-                    //if (!luaFile) {
-                    //    throw std::runtime_error("Failed to open script file: " + path);
-                    //}
-//
-                    //std::string source((std::istreambuf_iterator<char>(luaFile)), std::istreambuf_iterator<char>());
-                    //luaFile.close();
+                    // std::ifstream luaFile(path);
+                    // if (!luaFile) {
+                    //     throw std::runtime_error("Failed to open script file: " + path);
+                    // }
+                    //
+                    // std::string source((std::istreambuf_iterator<char>(luaFile)), std::istreambuf_iterator<char>());
+                    // luaFile.close();
 
                     size_t bytecodeSize = 0;
                     char *bytecode = atmo::luau::Luau::Compile(file.readAll(), &bytecodeSize);

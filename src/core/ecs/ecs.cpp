@@ -168,19 +168,16 @@ namespace atmo
                         script.instance->load("script test", res.get()->data, res.get()->size, e.id());
                     });
 
-                    m_world.system<components::ScriptTest>("Script_update")
-                        .kind(flecs::OnValidate)
-                        .each([](flecs::entity e, components::ScriptTest &script) {
-                            if (script.instance == nullptr) {
-                                return;
-                            }
-                            float dt = e.world().delta_time();
+                    m_world.system<components::ScriptTest>("Script_update").kind(flecs::OnValidate).each([](flecs::entity e, components::ScriptTest &script) {
+                        if (script.instance == nullptr) {
+                            return;
+                        }
+                        float dt = e.world().delta_time();
 
-                            script.instance->update(dt);
-                        });
+                        script.instance->update(dt);
+                    });
 
-                    auto ScriptTestPrefab = Prefab(m_world, "scriptTest")
-                        .set(components::ScriptTest{.script_path="", .m_handle={}, .instance=nullptr});
+                    auto ScriptTestPrefab = Prefab(m_world, "scriptTest").set(components::ScriptTest{ .script_path = "", .m_handle = {}, .instance = nullptr });
                     addPrefab(ScriptTestPrefab);
 
                     m_world.observer<components::ScriptTest>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::ScriptTest &script) {

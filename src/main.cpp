@@ -154,11 +154,7 @@ int main(int argc, char **argv)
     sprite.child_of(scene);
 
     atmo::luau::ScriptInstance inst = vm.generateInstance();
-    script.set<atmo::core::components::ScriptTest>(
-        {.script_path="project://assets/script/luau_main.luau",
-        .m_handle={},
-        .instance=&inst}
-    );
+    script.set<atmo::core::components::ScriptTest>({ .script_path = "project://assets/script/luau_main.luau", .m_handle = {}, .instance = &inst });
 
     engine.getECS().changeScene(scene);
 

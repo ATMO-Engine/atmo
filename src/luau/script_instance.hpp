@@ -17,9 +17,9 @@ namespace atmo
             ScriptInstance(Luau &vm);
             ~ScriptInstance();
 
-            bool load(const std::string &name, const char* bytecode, size_t size, int id);
+            bool load(const std::string &name, const char *bytecode, size_t size, int id);
 
-            //bool callRef(LuauRef &ref, int nargs);
+            // bool callRef(LuauRef &ref, int nargs);
 
             void update(float dt);
             void destroy();
@@ -29,7 +29,8 @@ namespace atmo
             lua_State *getThread() const;
 
             void setWait(double timeSecond);
-    private:
+
+        private:
             Luau &m_vm;
 
             lua_State *m_thread = nullptr;
@@ -46,6 +47,6 @@ namespace atmo
 
             void createThread();
             void createEnvironment();
-    };
+        };
     } // namespace luau
 } // namespace atmo
