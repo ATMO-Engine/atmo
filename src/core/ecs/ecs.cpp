@@ -55,7 +55,7 @@ namespace atmo
                 };
             }
 
-            std::unique_ptr<entities::Scene> ECS::createScene(const std::string &scene_name, bool singleton)
+            std::shared_ptr<entities::Scene> ECS::createScene(const std::string &scene_name, bool singleton)
             {
                 auto scene = EntityRegistry::Create<entities::Scene>("Entity::Scene");
                 scene->setSingleton(singleton);
@@ -63,11 +63,11 @@ namespace atmo
                 return scene;
             }
 
-            void ECS::changeScene(entities::Scene scene)
+            void ECS::changeScene(std::shared_ptr<entities::Scene> scene)
             {
-                entities::Scene current = m_scene_manager.getCurrentScene();
+                auto current = m_scene_manager.getCurrentScene();
 
-                if (current && scene == current)
+                if (scene == current)
                     return;
 
                 try {

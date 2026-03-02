@@ -46,7 +46,7 @@ namespace atmo::core::registry
 
         template <typename T = Root>
             requires std::derived_from<T, Root>
-        static std::unique_ptr<T> Create(std::string_view name)
+        static std::shared_ptr<T> Create(std::string_view name)
         {
             auto &registry = Instance().p_registry;
 
@@ -61,18 +61,13 @@ namespace atmo::core::registry
                 return nullptr;
             }
 
-            std::unique_ptr<Root> basePtr = it->second.factory.value()();
+            Root *basePtr = it->second.factory.value()();
 
-            if constexpr (std::same_as<T, Root>) {
-                return basePtr;
-            } else {
-                T *derived = static_cast<T *>(basePtr.release());
-                return std::unique_ptr<T>(derived);
-            }
+            return std::shared_ptr<T>(static_cast<T *>(basePtr));
         }
 
         template <typename Type> static void OnRegister() {};
-        template <typename Type> static std::unique_ptr<Root> Factorize();
+        template <typename Type> static Root *Factorize();
 
         HierarchicRegistry(const HierarchicRegistry &) = delete;
         HierarchicRegistry &operator=(const HierarchicRegistry &) = delete;
@@ -87,7 +82,7 @@ namespace atmo::core::registry
             return registry;
         }
 
-        using Factory = std::unique_ptr<Root> (*)();
+        using Factory = std::function<Root *()>;
 
         struct Entry {
             bool is_abstract;

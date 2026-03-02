@@ -46,6 +46,16 @@ namespace atmo::core::ecs::entities
     {
         p_handle.set_name(new_name.c_str());
     }
+
+    void Entity::loadFromJson(std::string_view json_data)
+    {
+        p_handle.from_json(json_data.data());
+    }
+
+    bool Entity::isChildOf(Entity parent)
+    {
+        return p_handle.child_of(parent.p_handle);
+    }
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Entity);

@@ -15,25 +15,6 @@ namespace atmo::core::ecs::entities
 
     void Sprite2d::RegisterSystems(flecs::world *world)
     {
-        world->observer<components::Sprite2d>("Sprite2D_LoadTexture").event(flecs::OnSet).each([](flecs::entity e, components::Sprite2d &sprite) {
-            if (sprite.texture_path.empty())
-                return;
-
-            sprite.m_handle = resource::Handle<SDL_Surface>{ .assetId = sprite.texture_path };
-
-            resource::ResourceRef<SDL_Surface> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
-
-            res.pin();
-
-            spdlog::debug("Loaded Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
-
-            std::shared_ptr<SDL_Surface> surface = res.get();
-
-            spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
-
-            sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
-        });
-
         world->system<components::Sprite2d, components::Transform2d>("Sprite2D_UpdateDestRect")
             .kind(flecs::OnValidate)
             .each([](flecs::entity e, components::Sprite2d &sprite, components::Transform2d &transform) {
@@ -86,7 +67,23 @@ namespace atmo::core::ecs::entities
     {
         auto sprite = p_handle.get_ref<components::Sprite2d>();
         sprite->texture_path = path;
-        p_handle.modified<components::Sprite2d>();
+
+        if (sprite->texture_path.empty())
+            return;
+
+        sprite->m_handle = resource::Handle<SDL_Surface>{ .assetId = sprite->texture_path };
+
+        resource::ResourceRef<SDL_Surface> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->m_handle.assetId);
+
+        res.pin();
+
+        spdlog::debug("Loaded Sprite2D texture for entity {}: {}", p_handle.name().c_str(), sprite->texture_path);
+
+        std::shared_ptr<SDL_Surface> surface = res.get();
+
+        spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
+
+        sprite->texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
     }
 
     std::string_view Sprite2d::getTexturePath() const noexcept

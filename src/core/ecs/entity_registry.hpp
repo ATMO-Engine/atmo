@@ -37,13 +37,13 @@ namespace atmo
                     Instance().m_registers.push_back({ .components = &Type::RegisterComponents, .systems = &Type::RegisterSystems });
                 }
 
-                template <typename Type> static std::unique_ptr<entities::Entity> Factorize()
+                template <typename Type> static entities::Entity *Factorize()
                 {
-                    Type entity = Type(Instance().m_world->entity());
+                    Type *entity = new Type(Instance().m_world->entity());
 
-                    entity.initialize();
+                    entity->initialize();
 
-                    return std::make_unique<Type>(std::move(entity));
+                    return entity;
                 }
 
             private:

@@ -35,8 +35,8 @@ namespace atmo
                 void stop();
                 void reset();
 
-                std::unique_ptr<entities::Scene> createScene(const std::string &scene_name, bool singleton);
-                void changeScene(entities::Scene scene);
+                std::shared_ptr<entities::Scene> createScene(const std::string &scene_name, bool singleton);
+                void changeScene(std::shared_ptr<entities::Scene> scene);
                 void changeSceneToFile(std::string_view scene_path);
 
                 bool progress(float delta_time = 0.0f) const

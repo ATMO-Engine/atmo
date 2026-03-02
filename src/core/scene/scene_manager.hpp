@@ -16,21 +16,21 @@ namespace atmo
             {
             private:
                 flecs::world *m_world;
-                ecs::entities::Scene m_current;
+                std::shared_ptr<ecs::entities::Scene> m_current;
                 bool m_initialized{ false };
-                std::vector<ecs::entities::Scene> m_singletons;
+                std::vector<std::shared_ptr<ecs::entities::Scene>> m_singletons;
 
-                ecs::entities::Scene loadSceneFromFile(std::string_view file_path);
-                ecs::entities::Scene getRoot();
+                std::shared_ptr<ecs::entities::Scene> loadSceneFromFile(std::string_view file_path);
+                std::shared_ptr<ecs::entities::Scene> getRoot();
 
             public:
                 ~SceneManager() = default;
 
                 void setWorld(flecs::world *world);
 
-                ecs::entities::Scene getCurrentScene() const;
+                std::shared_ptr<ecs::entities::Scene> getCurrentScene() const;
 
-                void changeScene(ecs::entities::Scene scene);
+                void changeScene(std::shared_ptr<ecs::entities::Scene> scene);
                 void changeSceneToFile(std::string_view file_path);
                 void loadSingleton(std::string_view file_path);
 

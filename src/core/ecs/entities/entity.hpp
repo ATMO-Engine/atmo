@@ -19,6 +19,11 @@ namespace atmo::core::ecs::entities
             return p_handle;
         }
 
+        bool operator==(const Entity &other) const
+        {
+            return p_handle == other.p_handle;
+        }
+
         static constexpr std::string_view FullName()
         {
             return "Entity";
@@ -108,6 +113,22 @@ namespace atmo::core::ecs::entities
          * @param new_name New name for the entity.
          */
         void rename(const std::string &new_name);
+
+        /**
+         * @brief Load the entity's data from a JSON string.
+         *
+         * @param json_data JSON string containing the entity's data. The format of the JSON should match the structure of the entity and its components.
+         */
+        void loadFromJson(std::string_view json_data);
+
+        /**
+         * @brief Check if this entity is a child of the given parent entity.
+         *
+         * @param parent Entity to check against.
+         * @return true This entity is a child of the given parent.
+         * @return false This entity is not a child of the given parent.
+         */
+        bool isChildOf(Entity parent);
 
     protected:
         flecs::entity p_handle;

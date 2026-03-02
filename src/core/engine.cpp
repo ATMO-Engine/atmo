@@ -16,12 +16,9 @@ void atmo::core::Engine::start()
     window->rename("_Root");
     window->setName(project::ProjectManager::GetSettings().app.project_name);
 
-    auto scene = m_ecs.instantiatePrefab("scene");
+    auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
+    scene->setSingleton(false);
     m_ecs.changeScene(scene);
-
-    for (const auto &ent : ecs::EntityRegistry::GetEntries()) {
-        spdlog::info("entry: {}", ent);
-    }
 
     // auto btn = ecs::EntityRegistry::Create("Entity::UI::Button");
 
