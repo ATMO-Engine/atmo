@@ -2,8 +2,8 @@
 
 #include "vector2.hpp"
 #include <cmath>
-#include <memory>
 #include <cstring>
+#include <memory>
 #include "lua.h"
 #include "lualib.h"
 
