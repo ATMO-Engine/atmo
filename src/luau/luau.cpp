@@ -1,6 +1,13 @@
-#include "luau.hpp"
-#include "luacode.h"
+#include "Exposed/time.hpp"
+#include "Exposed/vector2.hpp"
+
+#include "script_instance.hpp"
 #include "spdlog/spdlog.h"
+
+#include "luau.hpp"
+#include "lua.h"
+#include "luacode.h"
+#include "lualib.h"
 
 namespace atmo
 {
@@ -10,6 +17,8 @@ namespace atmo
         {
             p_L = luaL_newstate();
             luaL_openlibs(p_L);
+
+            registerBindings();
         }
 
         Luau::~Luau()
@@ -24,13 +33,43 @@ namespace atmo
             return luau_compile(source.c_str(), source.size(), options, bytecode_size);
         }
 
-        void Luau::runBytecode(const std::string &source, const char *code, size_t size)
+        bool Luau::loadBytecode(const std::string &name, const char *code, size_t size, int env)
         {
-            const int result = luau_load(p_L, source.c_str(), code, size, 0);
+            const int result = luau_load(p_L, name.c_str(), code, size, env);
             if (result != 0) {
-                spdlog::error("Failed to load Lua code:" + source);
+                spdlog::error("Failed to load Lua code:" + name);
+                return false;
             }
+            return true;
+        }
+
+        bool Luau::LoadBytecodeCoroutine(lua_State *coroutine, const std::string &name, const char *code, size_t size, int env)
+        {
+            const int result = luau_load(coroutine, name.c_str(), code, size, env);
+            if (result != 0) {
+                spdlog::error("Failed to load Lua code:" + name);
+                return false;
+            }
+            return true;
+        }
+
+        ScriptInstance Luau::generateInstance()
+        {
+            return ScriptInstance(*this);
+        }
+
+        void Luau::registerBindings()
+        {
+            // static method to register exposed class
+            Vector2::RegisterVector2(p_L);
+            Time::RegisterTime(p_L);
+            return;
+        }
+
+        void Luau::registerModule(const std::string& name, lua_CFunction loader)
+        {
+            loader(p_L);
+            lua_setglobal(p_L, name.c_str());
         }
     } // namespace luau
-
 } // namespace atmo

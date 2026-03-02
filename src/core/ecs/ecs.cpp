@@ -2,9 +2,12 @@
 #include <memory>
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
+#include "core/resource/loaders/script_loader.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
+#include "flecs/addons/cpp/entity.hpp"
 #include "impl/window.hpp"
+#include "luau/script_instance.hpp"
 
 namespace atmo
 {
@@ -140,6 +143,61 @@ namespace atmo
                         res.unpin();
 
                         spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
+                    });
+                }
+                { // ScriptTest
+                    m_world.observer<components::ScriptTest>("Script_Load").event(flecs::OnSet).each([](flecs::entity e, components::ScriptTest &script) {
+                        if (script.script_path.empty())
+                            return;
+                        if (script.instance == nullptr) {
+                            return;
+                        }
+
+                        script.m_handle = atmo::core::resource::Handle<resource::Bytecode>{ .assetId = script.script_path };
+
+                        atmo::core::resource::ResourceRef<resource::Bytecode> res =
+                            atmo::core::resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.m_handle.assetId);
+
+                        res.pin();
+
+                        std::cout << res.get()->data << std::endl;
+                        std::cout << res.get()->size << std::endl;
+
+                        spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
+
+                        script.instance->load("script test", res.get()->data, res.get()->size, e.id());
+                    });
+
+                    m_world.system<components::ScriptTest>("Script_update")
+                        .kind(flecs::OnValidate)
+                        .each([](flecs::entity e, components::ScriptTest &script) {
+                            if (script.instance == nullptr) {
+                                return;
+                            }
+                            float dt = e.world().delta_time();
+
+                            script.instance->update(dt);
+                        });
+
+                    auto ScriptTestPrefab = Prefab(m_world, "scriptTest")
+                        .set(components::ScriptTest{.script_path="", .m_handle={}, .instance=nullptr});
+                    addPrefab(ScriptTestPrefab);
+
+                    m_world.observer<components::ScriptTest>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::ScriptTest &script) {
+                        if (script.script_path.empty())
+                            return;
+                        if (script.instance == nullptr) {
+                            return;
+                        }
+
+                        script.instance->destroy();
+
+                        atmo::core::resource::ResourceRef<SDL_Surface> res =
+                            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(script.m_handle.assetId);
+
+                        res.unpin();
+
+                        spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), script.script_path);
                     });
                 }
             }

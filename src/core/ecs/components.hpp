@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <memory>
 #include <string>
 
 #include <box2d/box2d.h>
@@ -11,10 +12,12 @@
 #include "clay.h"
 
 #include "core/resource/handle.hpp"
+#include "core/resource/loaders/script_loader.hpp"
 #include "core/types.hpp"
 #include "luau/luau.hpp"
 
 #include "SDL3/SDL_render.h"
+#include "luau/script_instance.hpp"
 
 #define BEGIN_REFLECT(Type)                     \
     namespace                                   \
@@ -110,6 +113,15 @@ namespace atmo
             BEGIN_REFLECT(Sprite2D)
             FIELD(texture_path)
             END_REFLECT(Sprite2D)
+
+            struct ScriptTest {
+                std::string script_path;
+                resource::Handle<resource::Bytecode> m_handle;
+                luau::ScriptInstance *instance = nullptr;
+            };
+            BEGIN_REFLECT(ScriptTest)
+            FIELD(script_path)
+            END_REFLECT(ScriptTest)
 
             namespace UI
             {
