@@ -3,6 +3,7 @@
 #include "vector2.hpp"
 #include <cmath>
 #include <memory>
+#include <cstring>
 #include "lua.h"
 #include "lualib.h"
 
