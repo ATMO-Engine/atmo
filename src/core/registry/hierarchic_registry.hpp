@@ -2,7 +2,6 @@
 
 #include <concepts>
 #include <memory>
-#include <ranges>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -39,14 +38,19 @@ namespace atmo::core::registry
             }
         };
 
+        // Method used to use "Instance().p_registry | std::views::keys | std::ranges::to<std::vector>()" but it isn't supported on enough compilers yet
         static std::vector<std::string> GetEntries()
         {
-            return Instance().p_registry | std::views::keys | std::ranges::to<std::vector>();
+            std::vector<std::string> entries;
+            for (const auto &[key, _] : Instance().p_registry) {
+                entries.push_back(key);
+            }
+            return entries;
         }
 
         template <typename T = Root>
             requires std::derived_from<T, Root>
-        static std::shared_ptr<T> Create(std::string_view name)
+        static std::shared_ptr<T> Create(std::string_view name, auto &&...args)
         {
             auto &registry = Instance().p_registry;
 
@@ -61,7 +65,7 @@ namespace atmo::core::registry
                 return nullptr;
             }
 
-            Root *basePtr = it->second.factory.value()();
+            Root *basePtr = it->second.factory.value()(std::forward<decltype(args)>(args)...);
 
             return std::shared_ptr<T>(static_cast<T *>(basePtr));
         }
@@ -82,7 +86,7 @@ namespace atmo::core::registry
             return registry;
         }
 
-        using Factory = std::function<Root *()>;
+        using Factory = std::function<Root *(...)>;
 
         struct Entry {
             bool is_abstract;

@@ -1,4 +1,5 @@
 #include "engine.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -21,11 +22,12 @@ void atmo::core::Engine::start()
     scene->setSingleton(false);
     m_ecs.changeScene(scene);
 
-    auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-    sprite->setParent(*scene);
-    sprite->setTexturePath("project://assets/atmo.png");
-    sprite->setPosition({ 100, 100 });
-    sprite->setScale({ 0.5, 0.5 });
+    auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
+    static_body->setParent(*scene);
+
+    // auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+    // sprite->setParent(*scene);
+    // sprite->setTexturePath("project://assets/atmo.png");
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;

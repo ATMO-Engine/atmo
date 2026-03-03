@@ -21,6 +21,10 @@ namespace atmo::core::ecs::entities
             return "Body2d";
         }
 
+        void setPosition(const types::Vector2 &position);
+        void setScale(const types::Vector2 &scale);
+        void setRotation(float rotation);
+
     private:
         struct Body2dData {
             b2BodyId body_id{ b2_nullBodyId };
