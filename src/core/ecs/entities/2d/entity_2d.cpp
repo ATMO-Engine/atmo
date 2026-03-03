@@ -9,7 +9,7 @@ namespace atmo::core::ecs::entities
     {
         world->component<components::Transform2d>();
 
-        Entity2d::p_SceneQuery = world->query_builder().with<components::Scene>().up().build();
+        Entity2d::m_SceneQuery = world->query_builder().with<components::Scene>().up().build();
     }
 
     void Entity2d::RegisterSystems(flecs::world *world)
@@ -84,18 +84,6 @@ namespace atmo::core::ecs::entities
     {
         auto t = p_handle.get_ref<components::Transform2d>();
         return t->g_rotation;
-    }
-
-    std::shared_ptr<entities::Scene> Entity2d::getScene() const
-    {
-        auto it = Entity2d::p_SceneQuery.iter(p_handle);
-
-        if (it.is_true()) {
-            entities::Scene *scene_entity = new entities::Scene{ it.first() };
-            return std::shared_ptr<entities::Scene>(scene_entity);
-        }
-
-        return nullptr;
     }
 } // namespace atmo::core::ecs::entities
 

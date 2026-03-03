@@ -88,15 +88,5 @@ namespace atmo::core::ecs::entities
          * @return float Global Rotation of the entity in degrees.
          */
         float getGlobalRotation() const;
-
-        /**
-         * @brief Get the Scene that the entity belongs to.
-         *
-         * @return std::shared_ptr<entities::Scene> Scene that the entity belongs to.
-         */
-        std::shared_ptr<entities::Scene> getScene() const;
-
-    private:
-        static flecs::query<> p_SceneQuery;
     };
 } // namespace atmo::core::ecs::entities

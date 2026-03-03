@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 
+#include "core/ecs/entities/scene/scene.hpp"
 #include "flecs.h"
 
 namespace atmo::core::ecs::entities
@@ -130,7 +131,19 @@ namespace atmo::core::ecs::entities
          */
         bool isChildOf(Entity parent);
 
+        // FIXME: Find a way to resolve recursive inclusion between Entity and Entity::Scene
+
+        /**
+         * @brief Get the Scene that the entity belongs to.
+         *
+         * @return std::shared_ptr<entities::Scene> Scene that the entity belongs to.
+         */
+        std::shared_ptr<entities::Scene> getScene() const;
+
     protected:
         flecs::entity p_handle;
+
+    private:
+        static flecs::query<> m_SceneQuery;
     };
 } // namespace atmo::core::ecs::entities
