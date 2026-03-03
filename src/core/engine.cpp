@@ -5,6 +5,7 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
+#include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
@@ -22,8 +23,14 @@ void atmo::core::Engine::start()
     scene->setSingleton(false);
     m_ecs.changeScene(scene);
 
-    auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
-    static_body->setParent(*scene);
+    {
+        auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape->setSize({ 50, 50 });
+
+        auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
+        static_body->addShape(rectangle_shape);
+        static_body->setParent(*scene);
+    }
 
     // auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
     // sprite->setParent(*scene);

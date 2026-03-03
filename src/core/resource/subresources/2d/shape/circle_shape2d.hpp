@@ -23,6 +23,9 @@ namespace atmo
                         return "RectangleShape2d";
                     }
 
+                    void setRadius(float radius);
+                    float getRadius() const;
+
                 private:
                     float m_radius{ 25.0f };
                 };

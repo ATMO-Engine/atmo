@@ -30,6 +30,8 @@ namespace atmo
             void ECS::reset()
             {
                 m_world.reset();
+                m_world.init_builtin_components();
+
                 m_scene_manager.setWorld(&m_world);
                 EntityRegistry::SetWorld(&m_world);
 
@@ -37,8 +39,6 @@ namespace atmo
                 ECS_IMPORT(m_world, FlecsStats);
                 m_world.set<flecs::Rest>({});
 #endif
-
-                m_world.init_builtin_components();
 
                 components::register_core_components(m_world);
                 loadPrefabs();

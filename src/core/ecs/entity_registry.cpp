@@ -14,10 +14,9 @@ namespace atmo::core::ecs
 
         instance.m_world = world;
 
-        for (auto &reg : instance.m_registers) {
-            reg.components(world);
-            reg.systems(world);
-        }
+        // We first register all components, then all systems, to ensure proper ordering.
+        for (auto &reg : instance.m_registers) reg.components(world);
+        for (auto &reg : instance.m_registers) reg.systems(world);
     }
 
     void EntityRegistry::UnregisterAll(flecs::world *world)

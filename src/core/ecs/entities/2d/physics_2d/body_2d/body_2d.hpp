@@ -24,8 +24,13 @@ namespace atmo::core::ecs::entities
         void setPosition(const types::Vector2 &position);
         void setScale(const types::Vector2 &scale);
         void setRotation(float rotation);
+        void setParent(Entity parent);
+
+        void addShape(std::shared_ptr<resource::resources::Shape2d> shape);
 
     private:
+        void initBody();
+
         struct Body2dData {
             b2BodyId body_id{ b2_nullBodyId };
             b2BodyDef body_def{ b2DefaultBodyDef() };

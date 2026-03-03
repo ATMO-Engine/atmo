@@ -3,23 +3,25 @@
 #include "circle_shape2d.hpp"
 #include "core/resource/subresource_registry.hpp"
 
-namespace atmo
+namespace atmo::core::resource::resources
 {
-    namespace core
+    std::string CircleShape2d::serialize() const
     {
-        namespace resource
-        {
-            namespace resources
-            {
-                std::string CircleShape2d::serialize() const
-                {
-                    return std::format(R"({{ "radius": {} }})", m_radius);
-                }
+        return std::format(R"({{ "radius": {} }})", m_radius);
+    }
 
-                void CircleShape2d::deserialize(const std::string &data) {}
-            } // namespace resources
-        } // namespace resource
-    } // namespace core
-} // namespace atmo
+    void CircleShape2d::deserialize(const std::string &data) {}
+
+    void CircleShape2d::setRadius(float radius)
+    {
+        m_radius = radius;
+    }
+
+    float CircleShape2d::getRadius() const
+    {
+        return m_radius;
+    }
+
+} // namespace atmo::core::resource::resources
 
 REGISTER_SUBRESOURCE(resources::CircleShape2d);

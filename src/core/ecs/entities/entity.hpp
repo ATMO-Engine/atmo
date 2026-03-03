@@ -153,8 +153,5 @@ namespace atmo::core::ecs::entities
 
     protected:
         flecs::entity p_handle;
-
-    private:
-        static flecs::query<> m_SceneQuery;
     };
 } // namespace atmo::core::ecs::entities

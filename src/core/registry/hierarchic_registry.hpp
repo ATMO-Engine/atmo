@@ -1,7 +1,9 @@
 #pragma once
 
 #include <concepts>
+#include <format>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -12,7 +14,7 @@
 
 namespace atmo::core::registry
 {
-    template <typename Registry, typename Root> class HierarchicRegistry
+    template <typename Registry, typename Root, typename... FactoryArgs> class HierarchicRegistry
     {
     public:
         template <typename Type> static void RegisterType()
@@ -50,7 +52,7 @@ namespace atmo::core::registry
 
         template <typename T = Root>
             requires std::derived_from<T, Root>
-        static std::shared_ptr<T> Create(std::string_view name, auto &&...args)
+        static std::shared_ptr<T> Create(std::string_view name, FactoryArgs... args)
         {
             auto &registry = Instance().p_registry;
 
@@ -65,7 +67,7 @@ namespace atmo::core::registry
                 return nullptr;
             }
 
-            Root *basePtr = it->second.factory.value()(std::forward<decltype(args)>(args)...);
+            Root *basePtr = it->second.factory.value()(args...);
 
             return std::shared_ptr<T>(static_cast<T *>(basePtr));
         }
@@ -86,7 +88,7 @@ namespace atmo::core::registry
             return registry;
         }
 
-        using Factory = std::function<Root *(...)>;
+        using Factory = Root *(*)(FactoryArgs...);
 
         struct Entry {
             bool is_abstract;

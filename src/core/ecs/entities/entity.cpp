@@ -3,23 +3,15 @@
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
-    flecs::query<> Entity::m_SceneQuery;
-
-    void Entity::RegisterComponents(flecs::world *world)
-    {
-        m_SceneQuery = world->query_builder("Entity_SceneLookupQuery").with<components::Scene>().up().build();
-    }
+    void Entity::RegisterComponents(flecs::world *world) {}
 
     void Entity::RegisterSystems(flecs::world *world) {}
 
-    void Entity::Unregister(flecs::world *world)
-    {
-        if (std::string_view(FullName()) == "Entity" && m_SceneQuery)
-            m_SceneQuery.destruct();
-    }
+    void Entity::Unregister(flecs::world *world) {}
 
     void Entity::initialize() {}
 
@@ -74,11 +66,13 @@ namespace atmo::core::ecs::entities
 
     std::shared_ptr<entities::Scene> Entity::getScene() const
     {
-        auto it = Entity::m_SceneQuery.iter(p_handle);
+        flecs::entity current = p_handle;
 
-        if (it.is_true()) {
-            entities::Scene *scene_entity = new entities::Scene{ it.first() };
-            return std::shared_ptr<entities::Scene>(scene_entity);
+        while (current.is_valid()) {
+            if (current.has<components::Scene>()) {
+                return std::make_shared<entities::Scene>(current);
+            }
+            current = current.parent();
         }
 
         return nullptr;
