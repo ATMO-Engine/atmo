@@ -1,10 +1,25 @@
 #include "entity.hpp"
+#include <memory>
+#include "core/ecs/components.hpp"
+#include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
 
 namespace atmo::core::ecs::entities
 {
-    void Entity::RegisterComponents(flecs::world *world) {}
+    flecs::query<> Entity::m_SceneQuery;
+
+    void Entity::RegisterComponents(flecs::world *world)
+    {
+        m_SceneQuery = world->query_builder("Entity_SceneLookupQuery").with<components::Scene>().up().build();
+    }
+
     void Entity::RegisterSystems(flecs::world *world) {}
+
+    void Entity::Unregister(flecs::world *world)
+    {
+        if (std::string_view(FullName()) == "Entity" && m_SceneQuery)
+            m_SceneQuery.destruct();
+    }
 
     void Entity::initialize() {}
 

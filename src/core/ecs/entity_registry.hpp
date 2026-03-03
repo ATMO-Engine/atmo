@@ -34,7 +34,8 @@ namespace atmo
 
                 template <typename Type> static void OnRegister()
                 {
-                    Instance().m_registers.push_back({ .components = &Type::RegisterComponents, .systems = &Type::RegisterSystems });
+                    Instance().m_registers.push_back(
+                        { .components = &Type::RegisterComponents, .systems = &Type::RegisterSystems, .unregister = &Type::Unregister });
                 }
 
                 template <typename Type> static entities::Entity *Factorize()
@@ -48,10 +49,13 @@ namespace atmo
                     return entity;
                 }
 
+                static void UnregisterAll(flecs::world *world);
+
             private:
                 struct Register {
                     std::function<void(flecs::world *)> components;
                     std::function<void(flecs::world *)> systems;
+                    std::function<void(flecs::world *)> unregister;
                 };
 
                 flecs::world *m_world{ nullptr };

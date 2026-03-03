@@ -8,8 +8,6 @@ namespace atmo::core::ecs::entities
     void Entity2d::RegisterComponents(flecs::world *world)
     {
         world->component<components::Transform2d>();
-
-        Entity2d::m_SceneQuery = world->query_builder().with<components::Scene>().up().build();
     }
 
     void Entity2d::RegisterSystems(flecs::world *world)

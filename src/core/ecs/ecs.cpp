@@ -23,6 +23,7 @@ namespace atmo
 
             void ECS::stop()
             {
+                EntityRegistry::UnregisterAll(&m_world);
                 m_world.quit();
             }
 

@@ -36,16 +36,13 @@ void atmo::core::Engine::start()
         last_time = current_time;
         deltaTime = dt.count();
 
-        if (atmo::core::InputManager::IsPressed("ui_quit")) {
-            spdlog::info("Quitting...");
+        if (atmo::core::InputManager::IsPressed("ui_quit"))
             m_running.store(false);
-        }
 
         atmo::core::InputManager::Tick();
 
-        if (!m_running.load()) {
+        if (!m_running.load())
             m_ecs.stop();
-        }
     }
 }
 

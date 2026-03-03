@@ -1,14 +1,17 @@
 #pragma once
 
 #include <concepts>
+#include <memory>
+#include <optional>
 #include <string_view>
 #include <vector>
 
-#include "core/ecs/entities/scene/scene.hpp"
 #include "flecs.h"
 
 namespace atmo::core::ecs::entities
 {
+    class Scene;
+
     class Entity
     {
     public:
@@ -48,6 +51,13 @@ namespace atmo::core::ecs::entities
          * @param world Pointer to the flecs world, can be used to register systems.
          */
         static void RegisterSystems(flecs::world *world);
+
+        /**
+         * @brief Method to cleanup any static resources related to this entity type. Called once when world is being cleaned up.
+         *
+         * @param world World that is being cleaned up.
+         */
+        static void Unregister(flecs::world *world);
 
         /**
          * @brief Method used to initialize the entity after it has been created. Can be used to set default components or do other setup tasks.

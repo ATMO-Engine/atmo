@@ -173,7 +173,7 @@ namespace atmo
                     });
             }
 
-            void register_core_components(flecs::world world)
+            static void register_core_components(flecs::world world)
             {
                 types::register_core_types(world);
 
