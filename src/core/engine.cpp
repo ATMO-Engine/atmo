@@ -21,22 +21,11 @@ void atmo::core::Engine::start()
     scene->setSingleton(false);
     m_ecs.changeScene(scene);
 
-    // auto btn = ecs::EntityRegistry::Create("Entity::UI::Button");
-
     auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
     sprite->setParent(*scene);
-
     sprite->setTexturePath("project://assets/atmo.png");
-
-    // auto ptr = resource::SubResourceRegistry::Create("Shape2d::RectangleShape2d");
-    // if (!ptr)
-    //     spdlog::error("Failed to create subresource");
-    // else
-    //     spdlog::info("Created subresource of type {}", ptr->name().data());
-
-    // auto ground = m_ecs.instantiatePrefab("static_body_2d", "ground").child_of(scene);
-    // ground.get_ref<components::PhysicsBody2d>()->shape = resource::resources::Shape2d::Shape2dType::Rectangle;
-    // ground.modified<components::PhysicsBody2d>();
+    sprite->setPosition({ 100, 100 });
+    sprite->setScale({ 0.5, 0.5 });
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;

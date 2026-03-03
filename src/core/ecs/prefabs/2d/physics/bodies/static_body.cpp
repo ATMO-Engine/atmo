@@ -15,10 +15,10 @@ atmo::core::ecs::Prefab createStaticBody2dPrefab(flecs::world world)
     staticBody2dPrefab.set<components::Transform2d>({});
     staticBody2dPrefab.add<components::StaticBody2d>();
 
-    auto physics_body_component = components::PhysicsBody2d{};
-    physics_body_component.body_def.type = b2_staticBody;
+    // auto physics_body_component = components::PhysicsBody2d{};
+    // physics_body_component.body_def.type = b2_staticBody;
     // physics_body_component.shape = atmo::core::resource::resources::Shape2d::Shape2dType::None;
-    staticBody2dPrefab.set(physics_body_component);
+    // staticBody2dPrefab.set(physics_body_component);
 
     return staticBody2dPrefab;
 }

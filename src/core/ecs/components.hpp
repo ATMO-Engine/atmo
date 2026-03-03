@@ -83,15 +83,6 @@ namespace atmo
             FIELD(scale)
             END_REFLECT(Transform2d)
 
-            struct PhysicsBody2d {
-                b2BodyId body_id{ b2_nullBodyId };
-                b2BodyDef body_def{ b2DefaultBodyDef() };
-                std::vector<std::shared_ptr<resource::resources::Shape2d>> shapes;
-            };
-            BEGIN_REFLECT(PhysicsBody2d)
-            // NAMED_FIELD("Shape", shape)
-            END_REFLECT(PhysicsBody2d)
-
             struct StaticBody2d {
             };
 
@@ -182,7 +173,7 @@ namespace atmo
                     });
             }
 
-            static void register_core_components(flecs::world world)
+            void register_core_components(flecs::world world)
             {
                 types::register_core_types(world);
 

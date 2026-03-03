@@ -1,4 +1,5 @@
 #include "entity_2d.hpp"
+#include <memory>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entity_registry.hpp"
 
@@ -7,6 +8,8 @@ namespace atmo::core::ecs::entities
     void Entity2d::RegisterComponents(flecs::world *world)
     {
         world->component<components::Transform2d>();
+
+        Entity2d::p_SceneQuery = world->query_builder().with<components::Scene>().up().build();
     }
 
     void Entity2d::RegisterSystems(flecs::world *world)
@@ -27,6 +30,72 @@ namespace atmo::core::ecs::entities
         Entity::initialize();
 
         setComponent<components::Transform2d>({});
+    }
+
+    types::Vector2 Entity2d::getPosition() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        return t->position;
+    }
+
+    void Entity2d::setPosition(const types::Vector2 &position)
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        t->position = position;
+    }
+
+    types::Vector2 Entity2d::getGlobalPosition() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        return t->g_position;
+    }
+
+    types::Vector2 Entity2d::getScale() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        return t->scale;
+    }
+
+    void Entity2d::setScale(const types::Vector2 &scale)
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        t->scale = scale;
+    }
+
+    types::Vector2 Entity2d::getGlobalScale() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        return t->g_scale;
+    }
+
+    float Entity2d::getRotation() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        return t->rotation;
+    }
+
+    void Entity2d::setRotation(float rotation)
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        t->rotation = rotation;
+    }
+
+    float Entity2d::getGlobalRotation() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        return t->g_rotation;
+    }
+
+    std::shared_ptr<entities::Scene> Entity2d::getScene() const
+    {
+        auto it = Entity2d::p_SceneQuery.iter(p_handle);
+
+        if (it.is_true()) {
+            entities::Scene *scene_entity = new entities::Scene{ it.first() };
+            return std::shared_ptr<entities::Scene>(scene_entity);
+        }
+
+        return nullptr;
     }
 } // namespace atmo::core::ecs::entities
 

@@ -31,5 +31,11 @@ namespace atmo::core::ecs::entities
         void initFromFile(std::string_view file_path);
 
         void setSingleton(bool singleton);
+
+        b2WorldId getWorldId() const
+        {
+            auto scene = p_handle.get_ref<components::Scene>();
+            return scene->world_id;
+        }
     };
 } // namespace atmo::core::ecs::entities
