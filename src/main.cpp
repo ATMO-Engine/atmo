@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <variant>
 #include "atmo.hpp"
@@ -13,6 +14,7 @@
 #include "editor/project_explorer.hpp"
 #include "impl/window.hpp"
 #include "locale/locale_manager.hpp"
+#include "luau/luau.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
@@ -115,6 +117,8 @@ int main(int argc, char **argv)
     std::signal(SIGINT, [](int signum) { g_should_quit.store(true); });
     std::signal(SIGTERM, [](int signum) { g_should_quit.store(true); });
 
+    atmo::luau::Luau vm;
+
     loop(engine);
 
     atmo::core::InputManager::AddInput("ui_click", new atmo::core::InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
@@ -144,6 +148,13 @@ int main(int argc, char **argv)
     auto sprite_transform = sprite.get_ref<atmo::core::components::Transform2D>();
     sprite_transform->position = { 100.0f, 100.0f };
     sprite_transform->scale = { 0.25f, 0.25f };
+
+
+    auto script = engine.getECS().instantiatePrefab("scriptTest", "Test Script");
+    sprite.child_of(scene);
+
+    atmo::luau::ScriptInstance inst = vm.generateInstance();
+    script.set<atmo::core::components::ScriptTest>({ .script_path = "project://assets/script/luau_main.luau", .m_handle = {}, .instance = &inst });
 
     engine.getECS().changeScene(scene);
 
