@@ -38,8 +38,16 @@ void atmo::core::Engine::start()
 
         auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
         dynamic_body->addShape(rectangle_shape2);
-        dynamic_body->setPosition({ 100, 300 });
+        dynamic_body->setPosition({ 410, 300 });
         dynamic_body->setParent(*scene);
+
+        auto rectangle_shape3 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape3->setSize({ 80, 80 });
+
+        auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body2->addShape(rectangle_shape3);
+        dynamic_body2->setPosition({ 450, 0 });
+        dynamic_body2->setParent(*scene);
     }
 
     // auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");

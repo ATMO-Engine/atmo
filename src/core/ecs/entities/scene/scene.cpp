@@ -18,11 +18,18 @@ namespace atmo::core::ecs::entities
             }
         });
 
-        world->system<components::Scene>("Scene_Update2dPhysics").kind(flecs::OnUpdate).each([](flecs::iter &it, size_t i, components::Scene &scene) {
-            if (b2World_IsValid(scene.world_id)) {
-                b2World_Step(scene.world_id, 1.0f / 60.0f * it.delta_time(), 4);
-            }
-        });
+        static const float physics_dt = 1.0f / atmo::project::ProjectManager::GetSettings().engine.physics_frame_rate;
+
+        auto Physics = world->entity("Physics").add(flecs::Phase).depends_on(flecs::OnUpdate);
+        flecs::entity physics_tick = world->timer().interval(physics_dt);
+        world->system<components::Scene>("Scene_Update2dPhysics")
+            .kind(Physics)
+            .tick_source(physics_tick)
+            .each([&](flecs::iter &it, size_t i, components::Scene &scene) {
+                if (b2World_IsValid(scene.world_id)) {
+                    b2World_Step(scene.world_id, physics_dt, 4);
+                }
+            });
     }
 
     void Scene::initialize()
