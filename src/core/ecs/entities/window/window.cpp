@@ -75,7 +75,7 @@ namespace atmo::core::ecs::entities
             spdlog::error("Failed to measure text: {}", SDL_GetError());
         }
 
-        return (Clay_Dimensions){ (float)width, (float)height };
+        return Clay_Dimensions{ static_cast<float>(width), static_cast<float>(height) };
     }
 
     void Window::initialize()
