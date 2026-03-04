@@ -82,6 +82,14 @@ namespace atmo::core::ecs::entities
         body_data->body_def.rotation = b2MakeRot(atmo::common::math::DegreesToRadians(transform->rotation));
 
         body_data->body_id = b2CreateBody(scene->getWorldId(), &body_data->body_def);
+
+        // Shapes may be added before the body exists (e.g. before parent/scene is set).
+        // Recreate all stored shapes on the newly created body.
+        for (auto &shape : body_data->shapes) {
+            if (shape) {
+                shape->create(body_data->body_id);
+            }
+        }
     }
 
     void Body2d::setPosition(const types::Vector2 &position)

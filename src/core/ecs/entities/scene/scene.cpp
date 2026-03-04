@@ -20,7 +20,7 @@ namespace atmo::core::ecs::entities
 
         world->system<components::Scene>("Scene_Update2dPhysics").kind(flecs::OnUpdate).each([](flecs::iter &it, size_t i, components::Scene &scene) {
             if (b2World_IsValid(scene.world_id)) {
-                b2World_Step(scene.world_id, 1.0f / 60.0f, 4);
+                b2World_Step(scene.world_id, 1.0f / 60.0f * it.delta_time(), 4);
             }
         });
     }
@@ -33,9 +33,13 @@ namespace atmo::core::ecs::entities
         auto scene = p_handle.get_ref<components::Scene>();
 
         b2WorldDef worldDef = b2DefaultWorldDef();
-        auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
 
+        auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
         worldDef.gravity = { .x = gravity.x, .y = gravity.y };
+
+        // TODO: implement debug drawing with b2DebugDraw and call b2World_Draw in a debug system
+        // b2World_Draw(b2WorldId worldId, b2DebugDraw *draw)
+
         scene->world_id = b2CreateWorld(&worldDef);
     }
 

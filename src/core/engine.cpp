@@ -26,11 +26,11 @@ void atmo::core::Engine::start()
 
     {
         auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-        rectangle_shape->setSize({ 100, 100 });
+        rectangle_shape->setSize({ 800, 100 });
 
         auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
         static_body->addShape(rectangle_shape);
-        static_body->setPosition({ 100, 500 });
+        static_body->setPosition({ 800, 500 });
         static_body->setParent(*scene);
 
         auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
