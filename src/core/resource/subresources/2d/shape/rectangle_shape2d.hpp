@@ -26,6 +26,8 @@ namespace atmo
                     void setSize(const types::Vector2 &size);
                     types::Vector2 getSize() const;
 
+                    void create(b2BodyId body) override;
+
                 private:
                     types::Vector2 m_size{ 50.0f, 50.0f };
                 };

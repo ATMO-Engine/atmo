@@ -20,6 +20,11 @@ namespace atmo::core::types
         {
             return b2Vec2(common::math::PixelToMeter(x), common::math::PixelToMeter(y));
         }
+
+        Vector2 operator/(float f) const
+        {
+            return Vector2(x / f, y / f);
+        }
     };
 
     struct Vector2i {

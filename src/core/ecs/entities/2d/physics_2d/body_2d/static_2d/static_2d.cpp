@@ -12,6 +12,14 @@ namespace atmo::core::ecs::entities
     void Static2d::initialize()
     {
         Body2d::initialize();
+
+        addTag<Static2dData>();
+    }
+
+    void Static2d::setBodyType()
+    {
+        auto body_data = p_handle.get_ref<Body2dData>();
+        body_data->body_def.type = b2_staticBody;
     }
 } // namespace atmo::core::ecs::entities
 

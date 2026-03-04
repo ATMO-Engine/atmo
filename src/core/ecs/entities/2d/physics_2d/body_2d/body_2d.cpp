@@ -1,10 +1,14 @@
 #include "body_2d.hpp"
+#include <cmath>
+#include "SDL3/SDL_rect.h"
+#include "SDL3/SDL_render.h"
 #include "box2d/box2d.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/resource_ref.hpp"
+#include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
@@ -22,18 +26,39 @@ namespace atmo::core::ecs::entities
                 transform.position = b2Body_GetPosition(body_data.body_id);
                 transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));
             });
+
+        // FIXME: change true to a debug flag
+        if (true) {
+            world->system<components::Transform2d, Body2dData, components::Window>("Body2d_DebugDrawShapes")
+                .kind(flecs::OnValidate)
+                .term_at(2)
+                .up()
+                .each([](flecs::iter &it, size_t i, components::Transform2d &transform, Body2dData &body_data, components::Window &window) {
+                    flecs::entity window_src = it.src(2);
+                    if (!window_src) {
+                        window_src = it.entity(i);
+                    }
+
+                    Window window_entity(window_src);
+
+                    for (auto shape : body_data.shapes) {
+                        if (auto rect_shape = dynamic_cast<resource::resources::RectangleShape2d *>(shape.get())) {
+                            auto size = rect_shape->getSize();
+                            Body2d::DebugRenderRectangleShape(window.renderer_data.renderer, transform.position, size, transform.rotation);
+                        }
+                    }
+                });
+        }
     }
 
     void Body2d::initialize()
     {
         Entity2d::initialize();
-        auto transform = p_handle.get_ref<components::Transform2d>();
 
         setComponent<Body2dData>({});
         auto body_data = p_handle.get_ref<Body2dData>();
 
-        body_data->body_def.position = transform->position;
-        body_data->body_def.rotation = b2MakeRot(atmo::common::math::DegreesToRadians(transform->rotation));
+        setBodyType();
 
         initBody();
     }
@@ -50,6 +75,11 @@ namespace atmo::core::ecs::entities
         if (b2Body_IsValid(body_data->body_id))
             b2DestroyBody(body_data->body_id);
 
+        auto transform = p_handle.get_ref<components::Transform2d>();
+
+        body_data->body_def.position = transform->position;
+        body_data->body_def.rotation = b2MakeRot(atmo::common::math::DegreesToRadians(transform->rotation));
+
         body_data->body_id = b2CreateBody(scene->getWorldId(), &body_data->body_def);
     }
 
@@ -60,6 +90,10 @@ namespace atmo::core::ecs::entities
         auto transform = p_handle.get_ref<components::Transform2d>();
 
         auto body_data = p_handle.get_ref<Body2dData>();
+
+        if (!b2Body_IsValid(body_data->body_id))
+            return;
+
         b2Body_SetTransform(body_data->body_id, position, b2MakeRot(atmo::common::math::DegreesToRadians(transform->rotation)));
     }
 
@@ -81,6 +115,10 @@ namespace atmo::core::ecs::entities
         auto transform = p_handle.get_ref<components::Transform2d>();
 
         auto body_data = p_handle.get_ref<Body2dData>();
+
+        if (!b2Body_IsValid(body_data->body_id))
+            return;
+
         b2Body_SetTransform(body_data->body_id, transform->position, b2MakeRot(atmo::common::math::DegreesToRadians(rotation)));
     }
 
@@ -97,6 +135,59 @@ namespace atmo::core::ecs::entities
 
         if (!b2Body_IsValid(body_data->body_id))
             return;
+
+        shape->create(body_data->body_id);
+    }
+
+    void Body2d::DebugRenderRectangleShape(SDL_Renderer *renderer, types::Vector2 center, types::Vector2 size, float angle)
+    {
+        static constexpr SDL_FColor outlineColor = { 0.18f, 0.93f, 1.0f, 1.0f };
+        static constexpr SDL_FColor insideColor = { 0.18f, 0.93f, 1.0f, 0.25f };
+
+        float rad = angle * (float)M_PI / 180.0f;
+        float cosA = std::cosf(rad);
+        float sinA = std::sinf(rad);
+
+        float hw = size.x / 2.0f;
+        float hh = size.y / 2.0f;
+
+        SDL_FPoint local[4] = { { -hw, -hh }, { hw, -hh }, { hw, hh }, { -hw, hh } };
+
+        SDL_Vertex fillVerts[4];
+        SDL_FPoint worldPoints[4];
+
+        for (int i = 0; i < 4; i++) {
+            float x = local[i].x;
+            float y = local[i].y;
+
+            float rx = x * cosA - y * sinA;
+            float ry = x * sinA + y * cosA;
+
+            worldPoints[i].x = center.x + rx;
+            worldPoints[i].y = center.y + ry;
+
+            fillVerts[i].position = worldPoints[i];
+            fillVerts[i].color = insideColor;
+            fillVerts[i].tex_coord = { 0, 0 };
+        }
+
+        // ---- Filled rectangle ----
+        int indices[6] = { 0, 1, 2, 2, 3, 0 };
+        SDL_RenderGeometry(renderer, nullptr, fillVerts, 4, indices, 6);
+
+        // ---- Outline ----
+        SDL_Vertex lineVerts[5];
+
+        for (int i = 0; i < 4; i++) {
+            lineVerts[i].position = worldPoints[i];
+            lineVerts[i].color = outlineColor;
+            lineVerts[i].tex_coord = { 0, 0 };
+        }
+
+        // Close the loop
+        lineVerts[4] = lineVerts[0];
+
+        SDL_RenderGeometry(renderer, nullptr, lineVerts, 5, nullptr, 0);
     }
 } // namespace atmo::core::ecs::entities
 

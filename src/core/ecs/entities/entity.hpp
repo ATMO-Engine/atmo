@@ -34,9 +34,25 @@ namespace atmo::core::ecs::entities
             return "Entity";
         }
 
+        /**
+         * @brief Set a component for the entity.
+         *
+         * @tparam Component Type of the component to set. Must not be a tag component (struct with no data).
+         * @param component Component data to set for the entity. If the entity already has a component of this type, it will be replaced with the new data.
+         */
         template <typename Component> void setComponent(Component &&component)
         {
             p_handle.set(std::forward<Component>(component));
+        }
+
+        /**
+         * @brief Adds a tag component (struct with no data) to the entity.
+         *
+         * @tparam Component Type of the tag component to add. Must be a struct with no data.
+         */
+        template <typename Component> void addTag()
+        {
+            p_handle.add<Component>();
         }
 
         /**

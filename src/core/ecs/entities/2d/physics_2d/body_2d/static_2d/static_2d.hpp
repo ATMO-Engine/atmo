@@ -21,6 +21,8 @@ namespace atmo::core::ecs::entities
             return "Static2d";
         }
 
+        void setBodyType() override;
+
     private:
         struct Static2dData {
         };

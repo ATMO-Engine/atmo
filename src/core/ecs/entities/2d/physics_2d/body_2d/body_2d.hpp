@@ -28,13 +28,18 @@ namespace atmo::core::ecs::entities
 
         void addShape(std::shared_ptr<resource::resources::Shape2d> shape);
 
-    private:
-        void initBody();
+    protected:
+        virtual void setBodyType() = 0;
 
         struct Body2dData {
             b2BodyId body_id{ b2_nullBodyId };
             b2BodyDef body_def{ b2DefaultBodyDef() };
             std::vector<std::shared_ptr<resource::resources::Shape2d>> shapes;
         };
+
+    private:
+        void initBody();
+
+        static void DebugRenderRectangleShape(SDL_Renderer *renderer, types::Vector2 center, types::Vector2 size, float angle);
     };
 } // namespace atmo::core::ecs::entities

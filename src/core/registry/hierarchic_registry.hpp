@@ -19,6 +19,11 @@ namespace atmo::core::registry
     public:
         template <typename Type> static void RegisterType()
         {
+            if (Instance().p_registry.contains(Type::FullName().data())) {
+                spdlog::trace(R"("{}" is already registered in registry)", Type::FullName());
+                return;
+            }
+
             if constexpr (std::is_abstract_v<Type>) {
                 Instance().p_registry[std::string(Type::FullName())] = Entry{ .is_abstract = true, .factory = std::nullopt };
                 spdlog::debug(R"(Registered abstract type "{}")", Type::FullName());

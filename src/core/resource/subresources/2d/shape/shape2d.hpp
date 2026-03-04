@@ -22,11 +22,14 @@ namespace atmo
                         return "Shape2d";
                     }
 
-                    // TODO: implement these in rectangle and circle shapes.
-                    virtual void createShape() = 0;
+                    b2ShapeDef &getShapeDef();
+
+                    virtual void create(b2BodyId body) = 0;
+                    void destroy(bool defer_body_update = false);
 
                 protected:
                     b2ShapeId p_shape_id{ b2_nullShapeId };
+                    b2ShapeDef p_shape_def{ b2DefaultShapeDef() };
                 };
             }; // namespace resources
         } // namespace resource

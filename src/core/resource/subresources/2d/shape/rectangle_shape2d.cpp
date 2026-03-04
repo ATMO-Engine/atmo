@@ -22,6 +22,14 @@ namespace atmo::core::resource::resources
         return m_size;
     }
 
+    void RectangleShape2d::create(b2BodyId body)
+    {
+        auto halfSize = m_size / 2;
+        b2Vec2 meterVector = halfSize;
+        b2Polygon box = b2MakeBox(meterVector.x, meterVector.y);
+
+        p_shape_id = b2CreatePolygonShape(body, &p_shape_def, &box);
+    }
 } // namespace atmo::core::resource::resources
 
 REGISTER_SUBRESOURCE(resources::RectangleShape2d);
