@@ -10,6 +10,7 @@
 #include "core/resource/resource_ref.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
+#include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
@@ -27,28 +28,6 @@ namespace atmo::core::ecs::entities
                 transform.position = b2Body_GetPosition(body_data.body_id);
                 transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));
             });
-
-        // FIXME: change true to a debug flag
-        if (true) {
-            world->system<components::Transform2d, Body2dData>("Body2d_DebugDrawShapes")
-                .kind(flecs::OnValidate)
-                .each([world](flecs::entity, components::Transform2d &transform, Body2dData &body_data) {
-                    flecs::entity root = world->lookup("_Root");
-                    if (!root.is_valid() || !root.has<components::Window>())
-                        return;
-
-                    auto window = root.get_ref<components::Window>();
-                    if (!window || !window->renderer_data.renderer)
-                        return;
-
-                    for (auto shape : body_data.shapes) {
-                        if (auto rect_shape = dynamic_cast<resource::resources::RectangleShape2d *>(shape.get())) {
-                            auto size = rect_shape->getSize();
-                            Body2d::DebugRenderRectangleShape(window->renderer_data.renderer, transform.position, size, transform.rotation);
-                        }
-                    }
-                });
-        }
     }
 
     void Body2d::initialize()

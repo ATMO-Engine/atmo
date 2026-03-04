@@ -41,28 +41,15 @@ void atmo::core::Engine::start()
         dynamic_body->setPosition({ 410, 300 });
         dynamic_body->setParent(*scene);
 
-        auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite->setParent(*dynamic_body);
-        sprite->setTexturePath("project://assets/atmo.png");
-        sprite->setScale({ rectangle_shape2->getSize().x / sprite->getTextureSize().x, rectangle_shape2->getSize().y / sprite->getTextureSize().y });
-
         auto rectangle_shape3 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
         rectangle_shape3->setSize({ 80, 80 });
+        rectangle_shape3->getShapeDef().density = 15.0f;
 
         auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
         dynamic_body2->addShape(rectangle_shape3);
         dynamic_body2->setPosition({ 450, 0 });
         dynamic_body2->setParent(*scene);
-
-        auto sprite2 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite2->setParent(*dynamic_body2);
-        sprite2->setTexturePath("project://assets/atmo.png");
-        sprite2->setScale({ rectangle_shape3->getSize().x / sprite2->getTextureSize().x, rectangle_shape3->getSize().y / sprite2->getTextureSize().y });
     }
-
-    // auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-    // sprite->setParent(*scene);
-    // sprite->setTexturePath("project://assets/atmo.png");
 
     auto last_time = std::chrono::steady_clock::now();
     float deltaTime = 0.0f;

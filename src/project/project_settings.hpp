@@ -78,11 +78,16 @@ namespace atmo
             ATMO_SETTING float pixels_per_meter = 50.0f;
         };
 
+        struct Debug {
+            ATMO_SETTING bool draw_physics_debug = true;
+        };
+
         struct ProjectSettings {
             ATMO_SETTING App app;
             ATMO_SETTING Boot boot;
             ATMO_SETTING Singletons singletons;
             ATMO_SETTING Engine engine;
+            ATMO_SETTING Debug debug;
         };
     } // namespace project
 } // namespace atmo
