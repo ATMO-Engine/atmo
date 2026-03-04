@@ -29,7 +29,7 @@ namespace atmo
                     void create(b2BodyId body) override;
 
                 private:
-                    float m_radius{ 25.0f };
+                    float m_radius{ 2.0f };
                 };
             }; // namespace resources
         } // namespace resource

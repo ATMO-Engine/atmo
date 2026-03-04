@@ -6,6 +6,7 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
+#include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
 #include "project/file_system.hpp"
@@ -41,12 +42,12 @@ void atmo::core::Engine::start()
         dynamic_body->setPosition({ 410, 300 });
         dynamic_body->setParent(*scene);
 
-        auto rectangle_shape3 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-        rectangle_shape3->setSize({ 80, 80 });
-        rectangle_shape3->getShapeDef().density = 15.0f;
+        auto circle_shape = resource::SubResourceRegistry::Create<resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
+        circle_shape->setRadius(40.0f);
+        circle_shape->getShapeDef().density = 2.0f;
 
         auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
-        dynamic_body2->addShape(rectangle_shape3);
+        dynamic_body2->addShape(circle_shape);
         dynamic_body2->setPosition({ 450, 0 });
         dynamic_body2->setParent(*scene);
     }
