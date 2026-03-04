@@ -30,22 +30,21 @@ namespace atmo::core::ecs::entities
 
         // FIXME: change true to a debug flag
         if (true) {
-            world->system<components::Transform2d, Body2dData, components::Window>("Body2d_DebugDrawShapes")
+            world->system<components::Transform2d, Body2dData>("Body2d_DebugDrawShapes")
                 .kind(flecs::OnValidate)
-                .term_at(2)
-                .up()
-                .each([](flecs::iter &it, size_t i, components::Transform2d &transform, Body2dData &body_data, components::Window &window) {
-                    flecs::entity window_src = it.src(2);
-                    if (!window_src) {
-                        window_src = it.entity(i);
-                    }
+                .each([world](flecs::entity, components::Transform2d &transform, Body2dData &body_data) {
+                    flecs::entity root = world->lookup("_Root");
+                    if (!root.is_valid() || !root.has<components::Window>())
+                        return;
 
-                    Window window_entity(window_src);
+                    auto window = root.get_ref<components::Window>();
+                    if (!window || !window->renderer_data.renderer)
+                        return;
 
                     for (auto shape : body_data.shapes) {
                         if (auto rect_shape = dynamic_cast<resource::resources::RectangleShape2d *>(shape.get())) {
                             auto size = rect_shape->getSize();
-                            Body2d::DebugRenderRectangleShape(window.renderer_data.renderer, transform.position, size, transform.rotation);
+                            Body2d::DebugRenderRectangleShape(window->renderer_data.renderer, transform.position, size, transform.rotation);
                         }
                     }
                 });

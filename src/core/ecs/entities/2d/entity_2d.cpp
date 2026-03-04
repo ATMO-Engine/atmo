@@ -12,10 +12,21 @@ namespace atmo::core::ecs::entities
 
     void Entity2d::RegisterSystems(flecs::world *world)
     {
+        world->system<components::Transform2d>("Transform2d_IdentityGlobal").kind(flecs::OnValidate).each([](flecs::entity e, components::Transform2d &t) {
+            flecs::entity parent = e.parent();
+            if (parent.is_valid() && parent.has<components::Transform2d>())
+                return;
+
+            t.g_position = t.position;
+            t.g_rotation = t.rotation;
+            t.g_scale = t.scale;
+        });
+
         world->system<components::Transform2d, components::Transform2d>("Transform2d_GenerateGlobal")
-            .kind(flecs::PreUpdate)
+            .kind(flecs::OnValidate)
             .term_at(1)
             .up()
+            .cascade(flecs::ChildOf)
             .each([](flecs::entity e, components::Transform2d &t, const components::Transform2d &parent_t) {
                 t.g_position = { parent_t.g_position.x + t.position.x, parent_t.g_position.y + t.position.y };
                 t.g_rotation = parent_t.g_rotation + t.rotation;
