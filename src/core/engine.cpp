@@ -1,4 +1,5 @@
 #include "engine.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/window/window.hpp"
@@ -29,8 +30,16 @@ void atmo::core::Engine::start()
 
         auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
         static_body->addShape(rectangle_shape);
-        static_body->setPosition({ 100, 100 });
+        static_body->setPosition({ 100, 500 });
         static_body->setParent(*scene);
+
+        auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape2->setSize({ 80, 80 });
+
+        auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body->addShape(rectangle_shape2);
+        dynamic_body->setPosition({ 90, 100 });
+        dynamic_body->setParent(*scene);
     }
 
     // auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");

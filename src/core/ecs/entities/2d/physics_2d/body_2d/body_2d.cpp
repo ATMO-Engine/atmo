@@ -176,18 +176,8 @@ namespace atmo::core::ecs::entities
         SDL_RenderGeometry(renderer, nullptr, fillVerts, 4, indices, 6);
 
         // ---- Outline ----
-        SDL_Vertex lineVerts[5];
-
-        for (int i = 0; i < 4; i++) {
-            lineVerts[i].position = worldPoints[i];
-            lineVerts[i].color = outlineColor;
-            lineVerts[i].tex_coord = { 0, 0 };
-        }
-
-        // Close the loop
-        lineVerts[4] = lineVerts[0];
-
-        SDL_RenderGeometry(renderer, nullptr, lineVerts, 5, nullptr, 0);
+        SDL_SetRenderDrawColor(renderer, outlineColor.r * 255, outlineColor.g * 255, outlineColor.b * 255, outlineColor.a * 255);
+        SDL_RenderLines(renderer, worldPoints, 4);
     }
 } // namespace atmo::core::ecs::entities
 

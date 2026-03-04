@@ -180,6 +180,7 @@ namespace atmo::core::ecs::entities
     void Window::beginDraw(components::Window &window)
     {
         SDL_RenderClear(window.renderer_data.renderer);
+        SDL_SetRenderDrawBlendMode(window.renderer_data.renderer, SDL_BLENDMODE_BLEND);
     }
 
     void Window::draw(components::Window &window)
