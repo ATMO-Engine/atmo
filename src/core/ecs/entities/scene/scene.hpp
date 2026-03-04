@@ -40,6 +40,8 @@ namespace atmo::core::ecs::entities
         }
 
     private:
+        static void SetupDebugDraw(b2DebugDraw *debugDraw);
+
         static b2DebugDraw m_debug_draw;
     };
 } // namespace atmo::core::ecs::entities
