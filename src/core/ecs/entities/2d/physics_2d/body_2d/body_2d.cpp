@@ -9,6 +9,7 @@
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/resource_ref.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
+#include "core/types.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
@@ -21,7 +22,7 @@ namespace atmo::core::ecs::entities
     void Body2d::RegisterSystems(flecs::world *world)
     {
         world->system<components::Transform2d, Body2dData>("Body2d_UpdateValuesFromPhysicsEngine")
-            .kind(flecs::OnStore)
+            .kind(flecs::PostUpdate)
             .each([](flecs::entity e, components::Transform2d &transform, Body2dData &body_data) {
                 transform.position = b2Body_GetPosition(body_data.body_id);
                 transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));

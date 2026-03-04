@@ -38,7 +38,7 @@ void atmo::core::Engine::start()
 
         auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
         dynamic_body->addShape(rectangle_shape2);
-        dynamic_body->setPosition({ 90, 100 });
+        dynamic_body->setPosition({ 100, 300 });
         dynamic_body->setParent(*scene);
     }
 

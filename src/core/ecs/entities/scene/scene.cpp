@@ -35,7 +35,7 @@ namespace atmo::core::ecs::entities
         b2WorldDef worldDef = b2DefaultWorldDef();
         auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
 
-        worldDef.gravity = { gravity.x, gravity.y };
+        worldDef.gravity = { .x = gravity.x, .y = gravity.y };
         scene->world_id = b2CreateWorld(&worldDef);
     }
 
