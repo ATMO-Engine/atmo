@@ -1,7 +1,9 @@
 #pragma once
 
+#include <concepts>
+#include <format>
 #include <memory>
-#include <ranges>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -12,11 +14,16 @@
 
 namespace atmo::core::registry
 {
-    template <typename Registry, typename Root> class HierarchicRegistry
+    template <typename Registry, typename Root, typename... FactoryArgs> class HierarchicRegistry
     {
     public:
         template <typename Type> static void RegisterType()
         {
+            if (Instance().p_registry.contains(Type::FullName().data())) {
+                spdlog::trace(R"("{}" is already registered in registry)", Type::FullName());
+                return;
+            }
+
             if constexpr (std::is_abstract_v<Type>) {
                 Instance().p_registry[std::string(Type::FullName())] = Entry{ .is_abstract = true, .factory = std::nullopt };
                 spdlog::debug(R"(Registered abstract type "{}")", Type::FullName());
@@ -38,15 +45,24 @@ namespace atmo::core::registry
             }
         };
 
+        // Method used to use "Instance().p_registry | std::views::keys | std::ranges::to<std::vector>()" but it isn't supported on enough compilers yet
         static std::vector<std::string> GetEntries()
         {
-            return Instance().p_registry | std::views::keys | std::ranges::to<std::vector>();
+            std::vector<std::string> entries;
+            for (const auto &[key, _] : Instance().p_registry) {
+                entries.push_back(key);
+            }
+            return entries;
         }
 
-        static std::unique_ptr<Root> Create(std::string_view name)
+        template <typename T = Root>
+            requires std::derived_from<T, Root>
+        static std::shared_ptr<T> Create(std::string_view name, FactoryArgs... args)
         {
-            auto it = Instance().p_registry.find(std::string(name));
-            if (it == Instance().p_registry.end()) [[unlikely]] {
+            auto &registry = Instance().p_registry;
+
+            auto it = registry.find(std::string(name));
+            if (it == registry.end()) [[unlikely]] {
                 spdlog::error(R"("{}" not found in registry)", name);
                 return nullptr;
             }
@@ -56,11 +72,13 @@ namespace atmo::core::registry
                 return nullptr;
             }
 
-            return it->second.factory.value()();
+            Root *basePtr = it->second.factory.value()(args...);
+
+            return std::shared_ptr<T>(static_cast<T *>(basePtr));
         }
 
         template <typename Type> static void OnRegister() {};
-        template <typename Type> static std::unique_ptr<Root> Factorize();
+        template <typename Type> static Root *Factorize();
 
         HierarchicRegistry(const HierarchicRegistry &) = delete;
         HierarchicRegistry &operator=(const HierarchicRegistry &) = delete;
@@ -75,7 +93,7 @@ namespace atmo::core::registry
             return registry;
         }
 
-        using Factory = std::unique_ptr<Root> (*)();
+        using Factory = Root *(*)(FactoryArgs...);
 
         struct Entry {
             bool is_abstract;

@@ -34,22 +34,28 @@ namespace atmo
 
                 template <typename Type> static void OnRegister()
                 {
-                    Instance().m_registers.push_back({ .components = &Type::RegisterComponents, .systems = &Type::RegisterSystems });
+                    Instance().m_registers.push_back(
+                        { .components = &Type::RegisterComponents, .systems = &Type::RegisterSystems, .unregister = &Type::Unregister });
                 }
 
-                template <typename Type> static std::unique_ptr<entities::Entity> Factorize()
+                template <typename Type> static entities::Entity *Factorize()
                 {
-                    Type entity = Type(Instance().m_world->entity());
+                    flecs::entity handle = Instance().m_world->entity();
+                    Type *entity = new Type(handle);
 
-                    entity.initialize();
+                    entity->rename(std::format("{}#{}", Type::FullName(), handle.id()));
+                    entity->initialize();
 
-                    return std::make_unique<Type>(std::move(entity));
+                    return entity;
                 }
+
+                static void UnregisterAll(flecs::world *world);
 
             private:
                 struct Register {
                     std::function<void(flecs::world *)> components;
                     std::function<void(flecs::world *)> systems;
+                    std::function<void(flecs::world *)> unregister;
                 };
 
                 flecs::world *m_world{ nullptr };

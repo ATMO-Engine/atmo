@@ -20,8 +20,13 @@ namespace atmo
 
                     static constexpr std::string_view LocalName()
                     {
-                        return "RectangleShape2d";
+                        return "CircleShape2d";
                     }
+
+                    void setRadius(float radius);
+                    float getRadius() const;
+
+                    void create(b2BodyId body) override;
 
                 private:
                     float m_radius{ 25.0f };

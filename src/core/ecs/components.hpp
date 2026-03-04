@@ -14,6 +14,7 @@
 #include "core/resource/handle.hpp"
 #include "core/resource/subresources/2d/shape/shape2d.hpp"
 #include "core/types.hpp"
+#include "impl/clay_types.hpp"
 #include "luau/luau.hpp"
 
 #define BEGIN_REFLECT(Type)                     \
@@ -82,15 +83,6 @@ namespace atmo
             FIELD(scale)
             END_REFLECT(Transform2d)
 
-            struct PhysicsBody2d {
-                b2BodyId body_id{ b2_nullBodyId };
-                b2BodyDef body_def{ b2DefaultBodyDef() };
-                std::vector<std::shared_ptr<resource::resources::Shape2d>> shapes;
-            };
-            BEGIN_REFLECT(PhysicsBody2d)
-            // NAMED_FIELD("Shape", shape)
-            END_REFLECT(PhysicsBody2d)
-
             struct StaticBody2d {
             };
 
@@ -103,6 +95,11 @@ namespace atmo
             struct Window {
                 std::string title;
                 types::Vector2i size;
+                SDL_Window *window = nullptr;
+                Clay_SDL3RendererData renderer_data;
+                Clay_Arena clay_arena;
+                std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
+                std::optional<std::function<void()>> close_callback;
             };
             BEGIN_REFLECT(Window)
             FIELD(title)

@@ -18,9 +18,9 @@ namespace atmo::core::resource
     class SubResourceRegistry : public registry::HierarchicRegistry<SubResourceRegistry, SubResource>
     {
     public:
-        template <typename Type> static std::unique_ptr<SubResource> Factorize()
+        template <typename Type> static SubResource *Factorize()
         {
-            return std::make_unique<Type>();
+            return new Type();
         }
     };
 } // namespace atmo::core::resource

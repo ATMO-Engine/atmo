@@ -19,5 +19,8 @@ namespace atmo::core::ecs::entities
         {
             return "Sprite2d";
         }
+
+        void setTexturePath(const std::string &path);
+        std::string_view getTexturePath() const noexcept;
     };
 } // namespace atmo::core::ecs::entities

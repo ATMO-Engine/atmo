@@ -1,6 +1,7 @@
 #include "scene_manager.hpp"
 #include <algorithm>
 #include "core/ecs/components.hpp"
+#include "core/ecs/entity_registry.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo
@@ -14,15 +15,15 @@ namespace atmo
                 m_world = world;
             }
 
-            flecs::entity SceneManager::loadSceneFromFile(std::string_view file_path)
+            std::shared_ptr<ecs::entities::Scene> SceneManager::loadSceneFromFile(std::string_view file_path)
             {
                 project::File file = project::FileSystem::OpenFile(file_path);
 
-                flecs::entity scene = m_world->entity();
+                auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
 
-                scene.from_json(file.readAll().c_str());
+                scene->loadFromJson(file.readAll().c_str());
 
-                if (!scene.is_valid()) {
+                if (!scene->isAlive()) {
                     spdlog::error("Failed to load scene from file: {}", file_path);
                     throw std::runtime_error("Failed to load scene from file: " + std::string(file_path));
                 }
@@ -32,39 +33,39 @@ namespace atmo
 
             void SceneManager::loadSingleton(std::string_view file_path)
             {
-                flecs::entity singleton = loadSceneFromFile(file_path);
+                auto singleton = loadSceneFromFile(file_path);
                 m_singletons.push_back(singleton);
             }
 
-            flecs::entity SceneManager::getCurrentScene() const
+            std::shared_ptr<ecs::entities::Scene> SceneManager::getCurrentScene() const
             {
                 return m_current;
             }
 
-            flecs::entity SceneManager::getRoot()
+            std::shared_ptr<ecs::entities::Scene> SceneManager::getRoot()
             {
-                static flecs::entity root = m_world->entity("_Root");
+                static auto root = std::make_shared<ecs::entities::Scene>(m_world->entity("_Root"));
                 return root;
             }
 
-            void SceneManager::changeScene(flecs::entity scene)
+            void SceneManager::changeScene(std::shared_ptr<ecs::entities::Scene> scene)
             {
                 if (std::find(m_singletons.begin(), m_singletons.end(), scene) != m_singletons.end()) {
-                    spdlog::error("Cannot change to a singleton scene: {}", scene.name().c_str());
+                    spdlog::error("Cannot change to a singleton scene: {}", scene->name());
                     throw SwitchToSingletonSceneException();
                 }
 
-                flecs::entity old_scene = m_current;
+                std::shared_ptr<ecs::entities::Scene> old_scene = m_current;
                 m_current = scene;
-                m_current.child_of(getRoot());
+                m_current->isChildOf(*getRoot());
                 if (m_initialized)
-                    old_scene.destruct();
+                    old_scene->destroy();
                 m_initialized = true;
             }
 
             void SceneManager::changeSceneToFile(std::string_view file_path)
             {
-                flecs::entity scene = loadSceneFromFile(file_path);
+                auto scene = loadSceneFromFile(file_path);
 
                 changeScene(scene);
             }

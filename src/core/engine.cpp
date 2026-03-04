@@ -1,9 +1,13 @@
 #include "engine.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
+#include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
+#include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
-#include "impl/window.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 
@@ -11,52 +15,54 @@ void atmo::core::Engine::start()
 {
     m_running.store(true);
 
-    auto window = m_ecs.instantiatePrefab("window", "_Root");
-    atmo::impl::WindowManager *wm = static_cast<atmo::impl::WindowManager *>(window.get<atmo::core::ComponentManager::Managed>().ptr);
-    wm->rename(atmo::project::ProjectManager::GetSettings().app.project_name);
+    auto window = ecs::EntityRegistry::Create<ecs::entities::Window>("Entity::Window");
+    window->rename("_Root");
+    window->setName(project::ProjectManager::GetSettings().app.project_name);
+    window->onClose([&]() { stop(); });
 
-    auto scene = m_ecs.instantiatePrefab("scene");
+    auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
+    scene->setSingleton(false);
     m_ecs.changeScene(scene);
 
-    for (const auto &ent : ecs::EntityRegistry::GetEntries()) {
-        spdlog::info("entry: {}", ent);
+    {
+        auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape->setSize({ 100, 100 });
+
+        auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
+        static_body->addShape(rectangle_shape);
+        static_body->setPosition({ 100, 500 });
+        static_body->setParent(*scene);
+
+        auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape2->setSize({ 80, 80 });
+
+        auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body->addShape(rectangle_shape2);
+        dynamic_body->setPosition({ 90, 100 });
+        dynamic_body->setParent(*scene);
     }
 
-    // auto btn = ecs::EntityRegistry::Create("Entity::UI::Button");
+    // auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+    // sprite->setParent(*scene);
+    // sprite->setTexturePath("project://assets/atmo.png");
 
-    // auto sprite = ecs::EntityRegistry::Create("Entity::Entity2d::Sprite2d");
-    // spdlog::info("Created entity named {}", sprite->name());
+    auto last_time = std::chrono::steady_clock::now();
+    float deltaTime = 0.0f;
 
-    // auto ptr = resource::SubResourceRegistry::Create("Shape2d::RectangleShape2d");
-    // if (!ptr)
-    //     spdlog::error("Failed to create subresource");
-    // else
-    //     spdlog::info("Created subresource of type {}", ptr->name().data());
+    while (m_ecs.progress(deltaTime)) {
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<float> dt = current_time - last_time;
+        last_time = current_time;
+        deltaTime = dt.count();
 
-    // auto ground = m_ecs.instantiatePrefab("static_body_2d", "ground").child_of(scene);
-    // ground.get_ref<components::PhysicsBody2d>()->shape = resource::resources::Shape2d::Shape2dType::Rectangle;
-    // ground.modified<components::PhysicsBody2d>();
+        if (atmo::core::InputManager::IsPressed("ui_quit"))
+            m_running.store(false);
 
-    // auto last_time = std::chrono::steady_clock::now();
-    // float deltaTime = 0.0f;
+        atmo::core::InputManager::Tick();
 
-    // while (m_ecs.progress(deltaTime)) {
-    //     auto current_time = std::chrono::steady_clock::now();
-    //     std::chrono::duration<float> dt = current_time - last_time;
-    //     last_time = current_time;
-    //     deltaTime = dt.count();
-
-    //     if (atmo::core::InputManager::IsPressed("ui_quit")) {
-    //         spdlog::info("Quitting...");
-    //         m_running.store(false);
-    //     }
-
-    //     atmo::core::InputManager::Tick();
-
-    //     if (!m_running.load()) {
-    //         m_ecs.stop();
-    //     }
-    // }
+        if (!m_running.load())
+            m_ecs.stop();
+    }
 }
 
 void atmo::core::Engine::stop()
