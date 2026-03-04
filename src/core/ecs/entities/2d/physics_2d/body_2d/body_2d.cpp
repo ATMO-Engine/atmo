@@ -61,8 +61,6 @@ namespace atmo::core::ecs::entities
 
         body_data->body_id = b2CreateBody(scene->getWorldId(), &body_data->body_def);
 
-        // Shapes may be added before the body exists (e.g. before parent/scene is set).
-        // Recreate all stored shapes on the newly created body.
         for (auto &shape : body_data->shapes) {
             if (shape) {
                 shape->create(body_data->body_id);
@@ -131,9 +129,9 @@ namespace atmo::core::ecs::entities
         static constexpr SDL_FColor outlineColor = { 0.18f, 0.93f, 1.0f, 1.0f };
         static constexpr SDL_FColor insideColor = { 0.18f, 0.93f, 1.0f, 0.25f };
 
-        float rad = angle * (float)M_PI / 180.0f;
-        float cosA = std::cosf(rad);
-        float sinA = std::sinf(rad);
+        float rad = angle * common::math::PI / 180.0f;
+        float cosA = std::cos(rad);
+        float sinA = std::sin(rad);
 
         float hw = size.x / 2.0f;
         float hh = size.y / 2.0f;

@@ -45,6 +45,7 @@ void atmo::core::Engine::start()
         auto circle_shape = resource::SubResourceRegistry::Create<resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
         circle_shape->setRadius(40.0f);
         circle_shape->getShapeDef().density = 2.0f;
+        circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
         auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
         dynamic_body2->addShape(circle_shape);
