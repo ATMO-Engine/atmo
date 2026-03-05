@@ -22,5 +22,7 @@ namespace atmo::core::ecs::entities
 
         void setTexturePath(const std::string &path);
         std::string_view getTexturePath() const noexcept;
+
+        types::Vector2 getTextureSize() const noexcept;
     };
 } // namespace atmo::core::ecs::entities

@@ -57,7 +57,12 @@ namespace atmo
 
                 std::shared_ptr<ecs::entities::Scene> old_scene = m_current;
                 m_current = scene;
-                m_current->isChildOf(*getRoot());
+
+                auto root = getRoot();
+                if (root && m_current && !m_current->isChildOf(*root)) {
+                    m_current->setParent(*root);
+                }
+
                 if (m_initialized)
                     old_scene->destroy();
                 m_initialized = true;

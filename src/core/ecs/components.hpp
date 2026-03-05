@@ -116,7 +116,6 @@ namespace atmo
             struct Sprite2d {
                 std::string texture_path;
                 resource::Handle<SDL_Surface> m_handle;
-                SDL_FRect m_dest_rect{ 0, 0, 0, 0 };
                 types::Vector2 texture_size{ 0.0f, 0.0f };
             };
             BEGIN_REFLECT(Sprite2d)

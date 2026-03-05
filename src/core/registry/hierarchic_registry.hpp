@@ -20,7 +20,7 @@ namespace atmo::core::registry
         template <typename Type> static void RegisterType()
         {
             if (Instance().p_registry.contains(Type::FullName().data())) {
-                spdlog::trace(R"("{}" is already registered in registry)", Type::FullName());
+                spdlog::error(R"("{}" is already registered in registry)", Type::FullName());
                 return;
             }
 

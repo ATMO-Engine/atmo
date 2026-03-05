@@ -2,7 +2,7 @@
 
 namespace atmo::common::math
 {
-    constexpr float PI = 3.14159265358979323846f;
+    constexpr float PI = 3.14159265358979323846264338327950288f;
 
     /**
      * @brief Convert degrees to radians

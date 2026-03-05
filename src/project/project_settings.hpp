@@ -73,9 +73,13 @@ namespace atmo
         };
 
         struct Engine {
-            ATMO_SETTING core::types::Vector3 gravity{ 0.0f, -9.81f, 0.0f };
+            ATMO_SETTING core::types::Vector3 gravity{ 0.0f, 9.81f, 0.0f };
             ATMO_SETTING float physics_frame_rate = 60.0f;
             ATMO_SETTING float pixels_per_meter = 50.0f;
+        };
+
+        struct Debug {
+            ATMO_SETTING bool draw_physics_debug = true;
         };
 
         struct ProjectSettings {
@@ -83,6 +87,7 @@ namespace atmo
             ATMO_SETTING Boot boot;
             ATMO_SETTING Singletons singletons;
             ATMO_SETTING Engine engine;
+            ATMO_SETTING Debug debug;
         };
     } // namespace project
 } // namespace atmo

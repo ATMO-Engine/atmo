@@ -1,13 +1,19 @@
 #include "scene.hpp"
+
 #include "box2d/box2d.h"
+#include "core/ecs/components.hpp"
+#include "core/types.hpp"
 #include "project/project_manager.hpp"
-#include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
+    b2DebugDraw Scene::m_debug_draw{ b2DefaultDebugDraw() };
+
     void Scene::RegisterComponents(flecs::world *world)
     {
         world->component<components::Scene>();
+
+        SetupDebugDraw(&m_debug_draw);
     }
 
     void Scene::RegisterSystems(flecs::world *world)
@@ -18,11 +24,30 @@ namespace atmo::core::ecs::entities
             }
         });
 
-        world->system<components::Scene>("Scene_Update2dPhysics").kind(flecs::OnUpdate).each([](flecs::iter &it, size_t i, components::Scene &scene) {
-            if (b2World_IsValid(scene.world_id)) {
-                b2World_Step(scene.world_id, 1.0f / 60.0f, 4);
-            }
-        });
+        static const float physics_dt = 1.0f / atmo::project::ProjectManager::GetSettings().engine.physics_frame_rate;
+
+        auto Physics = world->entity("Physics").add(flecs::Phase).depends_on(flecs::OnUpdate);
+        flecs::entity physics_tick = world->timer().interval(physics_dt);
+        world->system<components::Scene>("Scene_Update2dPhysics")
+            .kind(Physics)
+            .tick_source(physics_tick)
+            .each([&](flecs::iter &it, size_t i, components::Scene &scene) {
+                if (b2World_IsValid(scene.world_id)) {
+                    b2World_Step(scene.world_id, physics_dt, 4);
+                }
+            });
+
+        if (atmo::project::ProjectManager::GetSettings().debug.draw_physics_debug) {
+            world->system<components::Scene, components::Window>("Body2d_DebugDrawShapes")
+                .kind(flecs::OnValidate)
+                .term_at(1)
+                .up()
+                .each([&](flecs::iter &it, size_t i, components::Scene &scene, components::Window &window) {
+                    m_debug_draw.context = &window;
+
+                    b2World_Draw(scene.world_id, &m_debug_draw);
+                });
+        }
     }
 
     void Scene::initialize()
@@ -33,9 +58,13 @@ namespace atmo::core::ecs::entities
         auto scene = p_handle.get_ref<components::Scene>();
 
         b2WorldDef worldDef = b2DefaultWorldDef();
-        auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
 
-        worldDef.gravity = { gravity.x, gravity.y };
+        auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
+        worldDef.gravity = { .x = gravity.x, .y = gravity.y };
+
+        // TODO: implement debug drawing with b2DebugDraw and call b2World_Draw in a debug system
+        // b2World_Draw(b2WorldId worldId, b2DebugDraw *draw)
+
         scene->world_id = b2CreateWorld(&worldDef);
     }
 
