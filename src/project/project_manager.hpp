@@ -209,7 +209,16 @@ namespace atmo
             }
 
         private:
-            ProjectManager() = default;
+            ProjectManager()
+            {
+                auto settings_search = project::FileSystem::SearchFiles("project://.atmo/project_settings.json");
+
+                if (!settings_search.empty()) {
+                    File settings_file = project::FileSystem::OpenFile("project://.atmo/project_settings.json");
+                    LoadProjectSettings(settings_file);
+                }
+            }
+
             ~ProjectManager() = default;
 
             static ProjectManager &Instance()
