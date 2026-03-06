@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <flecs.h>
+#include "core/types.hpp"
 
 
 namespace atmo
@@ -60,6 +61,7 @@ namespace atmo
             public:
                 HoverEvent() = default;
                 ~HoverEvent() override = default;
+                types::Vector2 position;
             };
         } // namespace event
     } // namespace core

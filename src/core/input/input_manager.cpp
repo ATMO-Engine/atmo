@@ -1,5 +1,7 @@
 #include "input_manager.hpp"
 #include <iostream>
+#include "core/event/a_event.hpp"
+#include "core/event/event_registry.hpp"
 #include "spdlog/spdlog.h"
 
 atmo::core::InputManager atmo::core::InputManager::instance;
@@ -228,8 +230,18 @@ std::pair<atmo::core::types::Vector2, float> atmo::core::InputManager::GetScroll
 
 atmo::core::InputManager::InputListener::InputListener()
 {
-    atmo::core::event::EventDispatcher::Subscribe<InputEvent>(*this);
-    handlers[atmo::core::event::event_id<InputEvent>()] = [this](event::AEvent *event) { onEvent(static_cast<InputManager::InputEvent *>(event)); };
+    auto &hover_event_listen = ecs::EventRegistry::Create<atmo::core::event::HoverEvent>();
+    hover_event_listen.setCallBack([](atmo::core::event::AEvent *event) {
+        spdlog::info(
+            "Hover event received in InputManager, my position is ({}, {})",
+            static_cast<atmo::core::event::HoverEvent *>(event)->position.x,
+            static_cast<atmo::core::event::HoverEvent *>(event)->position.y);
+    });
+
+
+    event::HoverEvent hoverEvent;
+    hoverEvent.position = { 100, 200 };
+    ecs::EventRegistry::Dispatch(hoverEvent);
 }
 
 void atmo::core::InputManager::InputListener::onEvent(InputManager::InputEvent *event)

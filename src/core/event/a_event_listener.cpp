@@ -21,8 +21,8 @@ namespace atmo
             {
                 atmo::core::event::EventDispatcher::Subscribe<UIEvent>(*this);
                 atmo::core::event::EventDispatcher::Subscribe<HoverEvent>(*this);
-                handlers[atmo::core::event::event_id<UIEvent>()] = [this](event::UIEvent *event) { onEvent(event); };
-                handlers[atmo::core::event::event_id<HoverEvent>()] = [this](event::HoverEvent *event) { hoverEvent(event); };
+                // handlers[atmo::core::event::event_id<UIEvent>()] = [this](event::UIEvent *event) { onEvent(event); };
+                // handlers[atmo::core::event::event_id<HoverEvent>()] = [this](event::HoverEvent *event) { hoverEvent(event); };
             }
         } // namespace event
     } // namespace core
