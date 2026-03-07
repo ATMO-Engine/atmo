@@ -158,9 +158,9 @@ void atmo::core::InputManager::SetMousePosition(float x, float y)
     SDL_WarpMouseInWindow(nullptr, x, y);
 }
 
-atmo::core::types::vector2 atmo::core::InputManager::GetMousePosition()
+atmo::core::types::Vector2 atmo::core::InputManager::GetMousePosition()
 {
-    atmo::core::types::vector2 pos;
+    atmo::core::types::Vector2 pos;
 
     SDL_GetMouseState(&pos.x, &pos.y);
     return pos;
@@ -213,7 +213,7 @@ void atmo::core::InputManager::StopTextInput(SDL_Window *window) noexcept
     }
 }
 
-std::pair<atmo::core::types::vector2, float> atmo::core::InputManager::GetScrollDelta(const std::string &inputName)
+std::pair<atmo::core::types::Vector2, float> atmo::core::InputManager::GetScrollDelta(const std::string &inputName)
 {
     auto it = instance.p_inputs.find(inputName);
     if (it == instance.p_inputs.end())

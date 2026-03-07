@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
+#include "core/types.hpp"
 
 namespace atmo
 {
@@ -14,6 +16,8 @@ namespace atmo
 
             static std::vector<std::string> SplitString(const std::string &str, char delimiter);
             static bool GlobMatch(std::string_view pattern, std::string_view str);
+
+            static core::types::ColorRGBAi HexToRGBAi(std::uint32_t hex) noexcept;
 
         private:
             Utils() = default;

@@ -212,10 +212,52 @@ package_end()
 package("catch2")
     add_deps("cmake")
     set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "catch2"))
-    on_install(function(package)
-        local configs = {"-DBUILD_STATIC_LIBS=ON", "-DBUILD_TESTING=OFF"}
+
+    on_load(function (package)
+        package:add("deps", "cmake")
+        package:add("components", "main", "lib")
+        if package:is_plat("macosx") then
+            package:add("extsources", "brew::catch2/catch2-with-main")
+        end
+    end)
+
+    on_component("main", function (package, component)
+        local link = "Catch2Main"
+        if package:is_debug() then
+            link = link.."d"
+        end
+        component:add("links", link)
+    end)
+
+    on_component("lib", function (package, component)
+        local link = "Catch2"
+        if package:is_debug() then
+            link = link.."d"
+        end
+        component:add("links", link)
+    end)
+
+    on_install(function (package)
+        if package:is_plat("windows") then
+            local main_component = package:component("main")
+            if package:has_tool("cxx", "cl", "clang-cl") then
+                main_component:add("ldflags", "-subsystem:console")
+            elseif package:has_tool("cxx", "clang", "clangxx") then
+                main_component:add("ldflags", "-Wl,/subsystem:console")
+            end
+            os.mkdir(path.join(package:builddir(), "src/pdb"))
+        end
+
+        local configs = {"-DCATCH_INSTALL_DOCS=OFF", "-DCATCH_BUILD_TESTING=OFF", "-DCATCH_BUILD_EXAMPLES=OFF"}
         table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+        table.insert(configs, "-DBUILD_SHARED_LIBS=OFF")
+        table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
         import("package.tools.cmake").install(package, configs)
+
+        if package:is_plat("windows") and package:is_debug() then
+            local dir = package:installdir("lib")
+            os.cp(path.join(package:builddir(), "src/*.pdb"), dir)
+        end
     end)
 package_end()
 
