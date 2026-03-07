@@ -1,3 +1,4 @@
+#include "font_loader.hpp"
 #include <exception>
 #include <memory>
 #include "SDL3_ttf/SDL_ttf.h"
@@ -32,6 +33,11 @@ namespace atmo
                         }
                     });
                 }
+            }
+
+            const std::string FontLoader::resourceTypeName()
+            {
+                return "Font (SDL Font)";
             }
         } // namespace resource
     } // namespace core
