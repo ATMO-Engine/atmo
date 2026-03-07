@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <flecs.h>
 #include <spdlog/spdlog.h>
 
@@ -15,11 +16,13 @@ namespace atmo
         {
         private:
             ecs::ECS m_ecs;
+            std::atomic<bool> m_running{ false };
 
         public:
             Engine() = default;
             ~Engine() = default;
 
+            void start();
             void stop();
             void reset();
             ecs::ECS &getECS();
