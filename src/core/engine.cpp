@@ -1,5 +1,4 @@
 #include "engine.hpp"
-#include "impl/profiler.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
@@ -10,6 +9,7 @@
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
+#include "impl/profiler.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 
