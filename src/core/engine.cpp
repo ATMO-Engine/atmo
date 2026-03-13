@@ -9,12 +9,17 @@
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
+#include "ecs/entities/script/script.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "resource/subresource_registry.hpp"
+
+#include "luau/luau.hpp"
 
 void atmo::core::Engine::start()
 {
     m_running.store(true);
+    atmo::luau::Luau vm;
 
     auto window = ecs::EntityRegistry::Create<ecs::entities::Window>("Entity::Window");
     window->rename("_Root");
@@ -23,8 +28,14 @@ void atmo::core::Engine::start()
 
     auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
     scene->setSingleton(false);
-    m_ecs.changeScene(scene);
 
+    auto script = ecs::EntityRegistry::Create<ecs::entities::Script>("Entity::Script");
+    atmo::luau::ScriptInstance inst = vm.generateInstance();
+    script->setScriptInstance(&inst);
+    script->setScriptPath("project://assets/script/luau_main.luau");
+    script->setParent(*scene);
+
+    m_ecs.changeScene(scene);
     {
         auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
         rectangle_shape->setSize({ 800, 100 });
