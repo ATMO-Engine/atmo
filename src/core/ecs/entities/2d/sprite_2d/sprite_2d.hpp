@@ -1,0 +1,28 @@
+#pragma once
+
+#include "core/ecs/entities/2d/entity_2d.hpp"
+#include "core/ecs/entity_registry.hpp"
+
+namespace atmo::core::ecs::entities
+{
+    class Sprite2d : public EntityRegistry::Registrable<Sprite2d, Entity2d>
+    {
+    public:
+        using EntityRegistry::Registrable<Sprite2d, Entity2d>::Registrable;
+
+        static void RegisterComponents(flecs::world *world);
+        static void RegisterSystems(flecs::world *world);
+
+        void initialize();
+
+        static constexpr std::string_view LocalName()
+        {
+            return "Sprite2d";
+        }
+
+        void setTexturePath(const std::string &path);
+        std::string_view getTexturePath() const noexcept;
+
+        types::Vector2 getTextureSize() const noexcept;
+    };
+} // namespace atmo::core::ecs::entities

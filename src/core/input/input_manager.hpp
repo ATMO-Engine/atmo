@@ -87,10 +87,10 @@ namespace atmo
             static bool IsJustReleased(const std::string &inputName);
             static bool IsReleased(const std::string &inputName);
 
-            static std::pair<types::vector2, types::vector2> GetLastMouseMotion();
+            static std::pair<types::Vector2, types::Vector2> GetLastMouseMotion();
             static void SetMousePosition(float x, float y);
-            static types::vector2 GetMousePosition();
-            static std::pair<types::vector2, float> GetScrollDelta(const std::string &inputName);
+            static types::Vector2 GetMousePosition();
+            static std::pair<types::Vector2, float> GetScrollDelta(const std::string &inputName);
 
             static std::string ConsumeText() noexcept;
             static void StartTextInput(SDL_Window *window) noexcept;
@@ -138,7 +138,7 @@ namespace atmo
                     return Type::MouseScroll;
                 }
 
-                types::vector2 scroll;
+                types::Vector2 scroll;
                 float delta_time = 0.0f;
             };
 
