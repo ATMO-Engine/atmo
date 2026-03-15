@@ -19,8 +19,6 @@ namespace atmo
 
             bool load(const std::string &name, const char *bytecode, size_t size, int id);
 
-            // bool callRef(LuauRef &ref, int nargs);
-
             void update(float dt);
             void destroy();
 

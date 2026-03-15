@@ -16,9 +16,19 @@ namespace atmo
         Luau::Luau()
         {
             p_L = luaL_newstate();
-            luaL_openlibs(p_L);
+            luaopen_base(p_L);
+            luaopen_coroutine(p_L);
+            luaopen_table(p_L);
+            luaopen_string(p_L);
+            luaopen_math(p_L);
+            luaopen_utf8(p_L);
+            luaopen_bit32(p_L);
+            luaopen_buffer(p_L);
+            luaopen_vector(p_L);
 
             registerBindings();
+
+            luaL_sandbox(p_L);
         }
 
         Luau::~Luau()
