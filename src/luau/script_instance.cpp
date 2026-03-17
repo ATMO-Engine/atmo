@@ -50,17 +50,22 @@ namespace atmo
             return newThread;
         }
 
-        void ScriptInstance::createEnvironment()
+        int ScriptInstance::createEnvironment(lua_State *thread)
         {
-            lua_newtable(m_updateThread);
+            lua_newtable(m_updateThread);            // push new table as env
+            int envIndex = lua_gettop(m_updateThread);
 
             lua_pushinteger(m_updateThread, m_id);
             lua_setfield(m_updateThread, -2, "entity");
 
-            lua_newtable(m_updateThread);
-            lua_pushvalue(m_updateThread, LUA_GLOBALSINDEX);
-            lua_setfield(m_updateThread, -2, "__index");
-            lua_setmetatable(m_updateThread, -2);
+            lua_newtable(m_updateThread);            // metatable
+            lua_getglobal(m_updateThread, "_G");     // push _G from VM
+            lua_setfield(m_updateThread, -2, "__index");  // mt.__index = _G
+            lua_setmetatable(m_updateThread, envIndex);   // set metatable for env table
+
+            int ref = lua_ref(m_updateThread, LUA_REGISTRYINDEX);  // stores env table ref in ScriptInstance
+            m_envRef.set(ref);
+            return envIndex;
         }
 
         bool ScriptInstance::load(const std::string &name, const char *bytecode, size_t size, int id)
@@ -70,18 +75,7 @@ namespace atmo
             m_updateThread = createThread(m_updateThreadRef);
             m_physiqueThread = createThread(m_physiqueThreadRef);
 
-            //createEnvironment();
-lua_newtable(m_updateThread);            // push new table as env
-int envIndex = lua_gettop(m_updateThread);
-
-lua_newtable(m_updateThread);            // metatable
-lua_getglobal(m_updateThread, "_G");     // push _G from VM
-lua_setfield(m_updateThread, -2, "__index");  // mt.__index = _G
-lua_setmetatable(m_updateThread, envIndex);   // set metatable for env table
-
-// 3️⃣ store a reference in the registry so you can reuse it
-int ref = lua_ref(m_updateThread, LUA_REGISTRYINDEX);  // stores env table ref in ScriptInstance
-m_envRef.set(ref);
+            int envIndex = createEnvironment(m_updateThread);
 
             if (!m_vm.LoadBytecodeCoroutine(m_updateThread, name, bytecode, size, envIndex)) {
                 spdlog::warn("Byte code couldn't be loaded inside thread");
@@ -95,11 +89,11 @@ m_envRef.set(ref);
 
             lua_rawgeti(m_physiqueThread, LUA_REGISTRYINDEX, m_envRef.getRef());
             int sharedindex = lua_gettop(m_physiqueThread);
-            
+
             lua_pushvalue(m_updateThread, -1);
             lua_xmove(m_updateThread, m_physiqueThread, 1);
 
-            
+
             int result = lua_resume(m_updateThread, nullptr, 0);
 
             if (result != LUA_OK && result != LUA_YIELD) {

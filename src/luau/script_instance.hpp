@@ -49,7 +49,7 @@ namespace atmo
             void handleResume(int result);
 
             lua_State *createThread(LuauRef &ref);
-            void createEnvironment();
+            int createEnvironment(lua_State *thread);
         };
     } // namespace luau
 } // namespace atmo
