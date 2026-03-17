@@ -50,6 +50,7 @@ namespace atmo
 
             lua_State *createThread(LuauRef &ref);
             int createEnvironment(lua_State *thread);
+            void copyEnv(lua_State *from, lua_State *to);
         };
     } // namespace luau
 } // namespace atmo

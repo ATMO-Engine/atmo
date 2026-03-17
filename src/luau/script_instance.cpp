@@ -68,6 +68,15 @@ namespace atmo
             return envIndex;
         }
 
+        void ScriptInstance::copyEnv(lua_State *from, lua_State *to)
+        {
+            lua_rawgeti(to, LUA_REGISTRYINDEX, m_envRef.getRef());
+            int sharedindex = lua_gettop(to);
+
+            lua_pushvalue(from, -1);
+            lua_xmove(from, to, 1);
+        }
+
         bool ScriptInstance::load(const std::string &name, const char *bytecode, size_t size, int id)
         {
             m_id = id;
@@ -86,12 +95,7 @@ namespace atmo
             luaL_sandboxthread(m_updateThread);
 
 
-
-            lua_rawgeti(m_physiqueThread, LUA_REGISTRYINDEX, m_envRef.getRef());
-            int sharedindex = lua_gettop(m_physiqueThread);
-
-            lua_pushvalue(m_updateThread, -1);
-            lua_xmove(m_updateThread, m_physiqueThread, 1);
+            copyEnv(m_updateThread, m_physiqueThread);
 
 
             int result = lua_resume(m_updateThread, nullptr, 0);
