@@ -31,8 +31,13 @@ namespace atmo
         private:
             Luau &m_vm;
 
-            lua_State *m_thread = nullptr;
-            LuauRef m_threadRef;
+            LuauRef m_envRef;
+
+            lua_State *m_updateThread = nullptr;
+            LuauRef m_updateThreadRef;
+
+            lua_State *m_physiqueThread = nullptr;
+            LuauRef m_physiqueThreadRef;
 
             int m_id = -1;
 
@@ -43,7 +48,7 @@ namespace atmo
 
             void handleResume(int result);
 
-            void createThread();
+            lua_State *createThread(LuauRef &ref);
             void createEnvironment();
         };
     } // namespace luau
