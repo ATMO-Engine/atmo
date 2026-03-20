@@ -12,11 +12,6 @@
 
 namespace atmo::core::ecs
 {
-    ECS::ECS()
-    {
-        reset();
-    }
-
     void ECS::stop()
     {
         EntityRegistry::UnregisterAll(&m_world);

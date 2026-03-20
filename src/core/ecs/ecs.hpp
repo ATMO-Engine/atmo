@@ -26,7 +26,7 @@ namespace atmo::core::ecs
         void addPrefab(Prefab &prefab);
 
     public:
-        ECS();
+        ECS() = default;
         ~ECS() = default;
         void stop();
         void reset();

@@ -274,7 +274,7 @@ package("box2d")
     add_deps("cmake")
     set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "box2d"))
 
-    on_install("!bsd", function (package)
+    on_install("!bsd", function(package)
         if package:is_plat("windows") and package:is_debug() then
             package:add("defines", "B2_ENABLE_ASSERT")
         end
@@ -300,6 +300,14 @@ package("box2d")
     end)
 package_end()
 
+package("argparse")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "argparse"))
+
+    on_install(function(package)
+        os.cp("include/argparse/argparse.hpp", package:installdir("include/argparse"))
+    end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -311,7 +319,8 @@ add_requires(
     "clay", { system = false },
     "catch2", { system = false },
     "semver", { system = false },
-    "box2d", { system = false }
+    "box2d", { system = false },
+    "argparse", { system = false }
 )
 
 function platform_specifics()
@@ -349,7 +358,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d", "argparse")
 end
 
 target("atmo")
