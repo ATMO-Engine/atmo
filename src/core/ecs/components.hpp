@@ -12,7 +12,6 @@
 #include "SDL3/SDL_rect.h"
 #include "core/resource/loaders/script_loader.hpp"
 
-#include "luau/script_instance.hpp"
 #include "SDL3/SDL_render.h"
 #include "clay.h"
 #include "core/resource/handle.hpp"
@@ -20,6 +19,7 @@
 #include "core/types.hpp"
 #include "impl/clay_types.hpp"
 #include "luau/luau.hpp"
+#include "luau/script_instance.hpp"
 
 #define BEGIN_REFLECT(Type)                     \
     namespace                                   \

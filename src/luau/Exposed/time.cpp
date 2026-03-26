@@ -15,6 +15,7 @@ namespace atmo
 
         void Time::RegisterTime(lua_State *state)
         {
+            return; // TODO: implement  asynchronous code before loading this code
             lua_getglobal(state, "_G");
 
             lua_pushcfunction(state, Time::TimeWait, "Wait");
@@ -34,7 +35,7 @@ namespace atmo
 
             double t = luaL_checknumber(state, 1);
 
-            inst->setWait(t);
+            // inst->setWait(t);
 
             return lua_yield(state, 0);
         }

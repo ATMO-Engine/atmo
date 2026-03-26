@@ -1,19 +1,26 @@
-function Main()
-    print("start")
+local x = 0
 
-    print(debug)
-print(io)
-print(os)
-print(package)
+local updateTimer = 0
+local physicsTimer = 0
 
-    wait(1)
+function Create()
+    x = 10
+end
 
-    print("after 1 second")
+function Update(deltaTime)
+    updateTimer += deltaTime
 
-    while true do
-        print("tick")
-        wait(2)
+    if updateTimer >= 2 then
+        updateTimer -= 2 -- keep remainder for accuracy
+        x = x + 1
     end
 end
 
-Main()
+function PhysiqueUpdate(deltaTime)
+    physicsTimer += deltaTime
+
+    if physicsTimer >= 1 then
+        physicsTimer -= 1 -- keep remainder
+        print(x)
+    end
+end

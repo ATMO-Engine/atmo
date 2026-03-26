@@ -18,10 +18,11 @@ namespace atmo::core::ecs::entities
             float dt = e.world().delta_time();
 
             script.instance->update(dt);
+            script.instance->physiqueUpdate(dt);
         });
 
-        //auto ScriptTestPrefab = Prefab(world, "scriptTest").set(components::ScriptTest{ .script_path = "", .m_handle = {}, .instance = nullptr });
-        //addPrefab(ScriptTestPrefab);
+        // auto ScriptTestPrefab = Prefab(world, "scriptTest").set(components::ScriptTest{ .script_path = "", .m_handle = {}, .instance = nullptr });
+        // addPrefab(ScriptTestPrefab);
 
         world->observer<components::ScriptTest>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::ScriptTest &script) {
             if (script.script_path.empty())
@@ -67,14 +68,14 @@ namespace atmo::core::ecs::entities
 
         script->m_handle = resource::Handle<resource::Bytecode>{ .assetId = script->script_path };
 
-        resource::ResourceRef<resource::Bytecode> res =
-            resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script->m_handle.assetId);
+        resource::ResourceRef<resource::Bytecode> res = resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script->m_handle.assetId);
 
         res.pin();
 
         spdlog::debug("Loaded script for entity {}: {}", p_handle.name().c_str(), script->script_path);
 
         script->instance->load("script test", res.get()->data, res.get()->size, p_handle.id());
+        script->instance->create();
     }
 
     std::string_view Script::getScriptPath() const noexcept
