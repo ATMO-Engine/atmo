@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "flecs.h"
-#include "glaze/glaze.hpp"
 
 
 namespace atmo::core::ecs::entities
@@ -179,11 +178,3 @@ namespace atmo::core::ecs::entities
         flecs::entity p_handle;
     };
 } // namespace atmo::core::ecs::entities
-
-template <> struct glz::meta<atmo::core::ecs::entities::EntityComponentData> {
-    using T = atmo::core::ecs::entities::EntityComponentData;
-
-    // &T::id.world
-
-    static constexpr auto value = glz::object("x", 1);
-};

@@ -7,6 +7,7 @@
 #include "core/input/input_manager.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "impl/clay_types.hpp"
+#include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 #include "window.hpp"
 
@@ -262,3 +263,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Window);
+ATMO_REGISTER_COMPONENT(atmo::core::components::Window)

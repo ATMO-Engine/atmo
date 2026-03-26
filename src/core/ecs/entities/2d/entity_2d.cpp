@@ -2,6 +2,7 @@
 #include <memory>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
 {
@@ -97,3 +98,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Entity2d);
+ATMO_REGISTER_COMPONENT(atmo::core::components::Transform2d)

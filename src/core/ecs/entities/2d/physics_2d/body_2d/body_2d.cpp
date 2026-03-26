@@ -10,6 +10,7 @@
 #include "core/resource/resource_ref.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
+#include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
@@ -167,3 +168,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Body2d);
+ATMO_REGISTER_COMPONENT(atmo::core::ecs::entities::Body2d::Body2dData)
