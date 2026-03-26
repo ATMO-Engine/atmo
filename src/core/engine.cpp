@@ -220,12 +220,6 @@ namespace atmo::core
             if (InputManager::IsPressed("ui_quit"))
                 m_running.store(false);
 
-            if (auto json = glz::write_json(scene->serialize())) {
-                spdlog::info(glz::prettify_json(json.value()));
-            }
-
-            m_running.store(false);
-
             InputManager::Tick();
 
             if (!m_running.load())
