@@ -1,14 +1,19 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <vector>
 
 #include "flecs.h"
+#include "glaze/glaze.hpp"
 
 #include "meta/component_meta.hpp"
 #include "meta/field_descriptor.hpp"
+#include "meta/glaze_bridge.hpp"
 
 namespace atmo::meta
 {
@@ -22,8 +27,8 @@ namespace atmo::meta
         bool has_range = false;
         float range_min = 0.0f;
         float range_max = 0.0f;
-        std::size_t offset = 0; // byte offset within the owning component
-        std::size_t size = 0;   // sizeof(field_type)
+        std::size_t offset = 0;
+        std::size_t size = 0;
 
         void (*get)(const void *component, void *out) = nullptr;
         void (*set)(void *component, const void *value) = nullptr;
@@ -31,11 +36,15 @@ namespace atmo::meta
 
     struct TypeInfo {
         const char *name = nullptr;
-        const char *category = nullptr; // may be nullptr
+        const char *category = nullptr;
         std::size_t size = 0;
+        std::uint64_t flecs_id = 0;
         std::vector<FieldInfo> fields;
 
         void (*register_flecs)(flecs::world &) = nullptr;
+        std::uint64_t (*resolve_flecs_id)(flecs::world &) = nullptr;
+        std::string (*to_json)(const void *component) = nullptr;
+        bool (*from_json)(void *component, std::string_view json) = nullptr;
     };
 
     namespace detail
@@ -102,6 +111,18 @@ namespace atmo::meta
 
         ti.fields.reserve(field_count);
         detail::fill_fields(fields, ti.fields, std::make_index_sequence<field_count>{});
+
+        ti.resolve_flecs_id = [](flecs::world &w) -> std::uint64_t { return w.component<T>().id(); };
+
+        ti.to_json = [](const void *component) -> std::string {
+            auto result = glz::write_json(*static_cast<const T *>(component));
+            return result.value_or("");
+        };
+
+        ti.from_json = [](void *component, std::string_view json) -> bool {
+            auto err = glz::read_json(*static_cast<T *>(component), json);
+            return !err;
+        };
 
         return ti;
     }

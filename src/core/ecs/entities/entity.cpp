@@ -3,6 +3,8 @@
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "glaze/glaze.hpp"
+#include "meta/meta_registry.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
@@ -18,11 +20,23 @@ namespace atmo::core::ecs::entities
     EntityData Entity::serialize() const
     {
         EntityData output;
-
         output.type = FullName();
         output.name = p_handle.name();
 
-        p_handle.each([&](flecs::id id) { output.components.emplace_back(EntityComponentData{ id }); });
+        p_handle.each([&](flecs::id id) {
+            if (id.is_pair())
+                return;
+
+            const meta::TypeInfo *ti = meta::MetaRegistry::Instance().findByFlecsId(id.raw_id());
+            if (!ti || !ti->to_json)
+                return;
+
+            const void *comp = p_handle.get(id);
+            if (!comp)
+                return;
+
+            output.components[ti->name] = ti->to_json(comp);
+        });
 
         p_handle.children([&](flecs::entity child) {
             Entity wrapped{ child };
@@ -32,7 +46,24 @@ namespace atmo::core::ecs::entities
         return output;
     }
 
-    void Entity::deserialize(std::string_view data) {}
+    void Entity::deserialize(std::string_view json)
+    {
+        EntityData data;
+        if (glz::read_json(data, json))
+            return;
+
+        for (const auto &[comp_name, comp_json] : data.components) {
+            const meta::TypeInfo *ti = meta::MetaRegistry::Instance().find(comp_name);
+            if (!ti || !ti->from_json || ti->flecs_id == 0)
+                continue;
+
+            void *comp = p_handle.get_mut(flecs::id(p_handle.world(), ti->flecs_id));
+            if (!comp)
+                continue;
+
+            ti->from_json(comp, comp_json.str);
+        }
+    }
 
     std::vector<Entity> Entity::getChildren()
     {

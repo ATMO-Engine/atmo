@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -57,6 +58,9 @@ namespace atmo::meta
             for (auto &ti : m_types) {
                 if (ti.register_flecs) {
                     ti.register_flecs(world);
+                    if (ti.resolve_flecs_id) {
+                        ti.flecs_id = ti.resolve_flecs_id(world);
+                    }
                 }
             }
         }
@@ -75,6 +79,21 @@ namespace atmo::meta
                 }
             }
             return nullptr;
+        }
+
+        [[nodiscard]] const TypeInfo *findByFlecsId(std::uint64_t id) const
+        {
+            for (const auto &ti : m_types) {
+                if (ti.flecs_id == id) {
+                    return &ti;
+                }
+            }
+            return nullptr;
+        }
+
+        template <HasComponentMeta T> [[nodiscard]] const TypeInfo *lookup() const
+        {
+            return find(ComponentMeta<T>::name);
         }
 
         /**

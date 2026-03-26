@@ -49,6 +49,5 @@ namespace atmo::core::ecs::entities
 template <> struct atmo::meta::ComponentMeta<atmo::core::ecs::entities::Body2d::Body2dData> {
     static constexpr const char *name = "Body2dData";
     static constexpr const char *category = "2D";
-    static constexpr auto fields =
-        std::make_tuple(atmo::meta::field<&atmo::core::ecs::entities::Body2d::Body2dData::shapes>("shapes").withWidget("resource_list"));
+    static constexpr auto fields = std::make_tuple();
 };

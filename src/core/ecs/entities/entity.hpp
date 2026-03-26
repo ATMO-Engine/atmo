@@ -4,24 +4,22 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "flecs.h"
+#include "glaze/glaze.hpp"
 
 
 namespace atmo::core::ecs::entities
 {
     class Scene;
 
-    struct EntityComponentData {
-        flecs::id id;
-    };
-
     struct EntityData {
         std::string name;
         std::string type;
 
-        std::vector<EntityComponentData> components;
+        std::unordered_map<std::string, glz::raw_json> components;
 
         std::vector<EntityData> children;
     };
