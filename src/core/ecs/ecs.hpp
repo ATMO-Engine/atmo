@@ -11,7 +11,6 @@
 #include "components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/scene/scene_manager.hpp"
-#include "prefab.hpp"
 
 namespace atmo::core::ecs
 {
@@ -19,11 +18,7 @@ namespace atmo::core::ecs
     {
     private:
         flecs::world m_world;
-        std::unordered_map<std::string, Prefab> m_prefabs;
         scene::SceneManager m_scene_manager;
-
-        void loadPrefabs();
-        void addPrefab(Prefab &prefab);
 
     public:
         ECS() = default;

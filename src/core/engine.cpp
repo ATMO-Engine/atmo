@@ -14,8 +14,10 @@
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
+#include "glaze/json/write.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)
 #include "editor/editor.hpp"
@@ -143,16 +145,16 @@ namespace atmo::core
 
     int Engine::init(int argc, const char *const *argv)
     {
-        if (int ret = initLogger() != 0)
+        if (int ret = initLogger(); ret != 0)
             return ret;
 
-        if (int ret = initArgs(argc, argv) != 0)
+        if (int ret = initArgs(argc, argv); ret != 0)
             return ret;
 
-        if (int ret = initSDL() != 0)
+        if (int ret = initSDL(); ret != 0)
             return ret;
 
-        if (int ret = initDefaultInputs() != 0)
+        if (int ret = initDefaultInputs(); ret != 0)
             return ret;
 
         static atmo::core::Engine &g_engine = *this;
@@ -178,33 +180,33 @@ namespace atmo::core
         scene->setSingleton(false);
         m_ecs.changeScene(scene);
 
-        {
-            auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-            rectangle_shape->setSize({ 800, 100 });
 
-            auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
-            static_body->addShape(rectangle_shape);
-            static_body->setPosition({ 800, 500 });
-            static_body->setParent(*scene);
+        auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape->setSize({ 800, 100 });
 
-            auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-            rectangle_shape2->setSize({ 80, 80 });
+        auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
+        static_body->addShape(rectangle_shape);
+        static_body->setPosition({ 800, 500 });
+        static_body->setParent(*scene);
 
-            auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
-            dynamic_body->addShape(rectangle_shape2);
-            dynamic_body->setPosition({ 410, 300 });
-            dynamic_body->setParent(*scene);
+        auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape2->setSize({ 80, 80 });
 
-            auto circle_shape = resource::SubResourceRegistry::Create<resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
-            circle_shape->setRadius(40.0f);
-            circle_shape->getShapeDef().density = 2.0f;
-            circle_shape->getShapeDef().material.rollingResistance = 0.02f;
+        auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body->addShape(rectangle_shape2);
+        dynamic_body->setPosition({ 410, 300 });
+        dynamic_body->setParent(*scene);
 
-            auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
-            dynamic_body2->addShape(circle_shape);
-            dynamic_body2->setPosition({ 450, 0 });
-            dynamic_body2->setParent(*scene);
-        }
+        auto circle_shape = resource::SubResourceRegistry::Create<resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
+        circle_shape->setRadius(40.0f);
+        circle_shape->getShapeDef().density = 2.0f;
+        circle_shape->getShapeDef().material.rollingResistance = 0.02f;
+
+        auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body2->addShape(circle_shape);
+        dynamic_body2->setPosition({ 450, 0 });
+        dynamic_body2->setParent(*scene);
+
 
         auto last_time = std::chrono::steady_clock::now();
         float deltaTime = 0.0f;
@@ -217,6 +219,11 @@ namespace atmo::core
 
             if (InputManager::IsPressed("ui_quit"))
                 m_running.store(false);
+
+            // TODO: make this work
+            // spdlog::info(glz::prettify_json(glz::write_json(scene->serialize())));
+
+            m_running.store(false);
 
             InputManager::Tick();
 

@@ -15,6 +15,25 @@ namespace atmo::core::ecs::entities
 
     void Entity::initialize() {}
 
+    EntityData Entity::serialize() const
+    {
+        EntityData output;
+
+        output.type = FullName();
+        output.name = p_handle.name();
+
+        p_handle.each([&](flecs::id id) { output.components.emplace_back(EntityComponentData{ id }); });
+
+        p_handle.children([&](flecs::entity child) {
+            Entity wrapped{ child };
+            output.children.emplace_back(wrapped.serialize());
+        });
+
+        return output;
+    }
+
+    void Entity::deserialize(std::string_view data) {}
+
     std::vector<Entity> Entity::getChildren()
     {
         std::vector<Entity> res;
@@ -52,11 +71,6 @@ namespace atmo::core::ecs::entities
     void Entity::rename(const std::string &new_name)
     {
         p_handle.set_name(new_name.c_str());
-    }
-
-    void Entity::loadFromJson(std::string_view json_data)
-    {
-        p_handle.from_json(json_data.data());
     }
 
     bool Entity::isChildOf(Entity parent)
