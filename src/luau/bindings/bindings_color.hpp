@@ -2,7 +2,6 @@
 
 #include "lualib.h"
 
-#include <cstring>
 #include <memory>
 #include "core/types.hpp"
 #include "lua_bindings.hpp"
@@ -12,7 +11,7 @@ namespace atmo::luau
 
     using namespace atmo::core::types;
 
-    template <> class LuaBindings<ColorRGBA>
+    template <> class LuaBindings<ColorRGBA> : public atmo::luau::LuaBindingsBase<atmo::luau::LuaBindings<ColorRGBA>, ColorRGBA>
     {
     public:
         static void RegisterType(lua_State *state)
@@ -38,9 +37,10 @@ namespace atmo::luau
             lua_setglobal(state, name);
         }
 
-    private:
+        static Property m_properties[];
         static constexpr const char *name = "ColorRGBA";
 
+    private:
         static std::shared_ptr<ColorRGBA> &Check(lua_State *state, int index)
         {
             return *(std::shared_ptr<ColorRGBA> *)luaL_checkudata(state, index, name);
@@ -66,61 +66,6 @@ namespace atmo::luau
         {
             auto *ptr = (std::shared_ptr<ColorRGBA> *)luaL_checkudata(state, 1, name);
             ptr->~shared_ptr<ColorRGBA>();
-            return 0;
-        }
-
-        static int Index(lua_State *state)
-        {
-            auto &v = Check(state, 1);
-            const char *key = luaL_checkstring(state, 2);
-
-            if (strcmp(key, "r") == 0) {
-                lua_pushnumber(state, v->r);
-                return 1;
-            }
-            if (strcmp(key, "g") == 0) {
-                lua_pushnumber(state, v->g);
-                return 1;
-            }
-            if (strcmp(key, "b") == 0) {
-                lua_pushnumber(state, v->b);
-                return 1;
-            }
-            if (strcmp(key, "a") == 0) {
-                lua_pushnumber(state, v->a);
-                return 1;
-            }
-
-            luaL_getmetatable(state, name);
-            lua_getfield(state, -1, "__methods");
-            lua_getfield(state, -1, key);
-
-            return 1;
-        }
-
-        static int NewIndex(lua_State *state)
-        {
-            auto &v = Check(state, 1);
-            const char *key = luaL_checkstring(state, 2);
-            float value = (float)luaL_checknumber(state, 3);
-
-            if (strcmp(key, "r") == 0) {
-                v->r = value;
-                return 0;
-            }
-            if (strcmp(key, "g") == 0) {
-                v->g = value;
-                return 0;
-            }
-            if (strcmp(key, "b") == 0) {
-                v->b = value;
-                return 0;
-            }
-            if (strcmp(key, "a") == 0) {
-                v->a = value;
-                return 0;
-            }
-
             return 0;
         }
     };

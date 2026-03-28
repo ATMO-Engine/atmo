@@ -2,17 +2,15 @@
 
 #include "lualib.h"
 
-#include <cstring>
 #include <memory>
 #include "core/types.hpp"
 #include "lua_bindings.hpp"
 
 namespace atmo::luau
 {
-
     using namespace atmo::core::types;
 
-    template <> class LuaBindings<Vector2>
+    template <> class LuaBindings<Vector2> : public atmo::luau::LuaBindingsBase<atmo::luau::LuaBindings<Vector2>, Vector2>
     {
     public:
         static void RegisterType(lua_State *state)
@@ -41,9 +39,10 @@ namespace atmo::luau
             lua_setglobal(state, name);
         }
 
-    private:
+        static Property m_properties[];
         static constexpr const char *name = "Vector2";
 
+    private:
         static std::shared_ptr<Vector2> &Check(lua_State *state, int index)
         {
             return *(std::shared_ptr<Vector2> *)luaL_checkudata(state, index, name);
@@ -75,45 +74,6 @@ namespace atmo::luau
             auto &v = Check(state, 1);
             lua_pushnumber(state, v->length());
             return 1;
-        }
-
-        static int Index(lua_State *state)
-        {
-            auto &v = Check(state, 1);
-            const char *key = luaL_checkstring(state, 2);
-
-            if (strcmp(key, "x") == 0) {
-                lua_pushnumber(state, v->x);
-                return 1;
-            }
-            if (strcmp(key, "y") == 0) {
-                lua_pushnumber(state, v->y);
-                return 1;
-            }
-
-            luaL_getmetatable(state, name);
-            lua_getfield(state, -1, "__methods");
-            lua_getfield(state, -1, key);
-
-            return 1;
-        }
-
-        static int NewIndex(lua_State *state)
-        {
-            auto &v = Check(state, 1);
-            const char *key = luaL_checkstring(state, 2);
-            float value = (float)luaL_checknumber(state, 3);
-
-            if (strcmp(key, "x") == 0) {
-                v->x = value;
-                return 0;
-            }
-            if (strcmp(key, "y") == 0) {
-                v->y = value;
-                return 0;
-            }
-
-            return 0;
         }
     };
 } // namespace atmo::luau
