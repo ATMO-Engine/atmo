@@ -68,15 +68,12 @@ namespace atmo
                 return false;
             }
 
-            std::cout << "here" << std::endl;
             int result = lua_pcall(m_thread, 0, 0, 0);
-            std::cout << "here" << std::endl;
             if (result != LUA_OK) {
                 const char *err = lua_tostring(m_thread, -1);
                 spdlog::warn("Load error: {}", err);
             }
 
-            std::cout << "here" << std::endl;
             return true;
         }
 

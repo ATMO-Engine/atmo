@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 #include <string>
 
@@ -26,6 +27,11 @@ namespace atmo::core::types
         Vector2 operator/(float f) const
         {
             return Vector2(x / f, y / f);
+        }
+
+        float length() const
+        {
+            return std::sqrt(x * x + y * y);
         }
     };
 

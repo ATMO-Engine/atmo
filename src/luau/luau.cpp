@@ -1,6 +1,6 @@
-#include "Exposed/time.hpp"
-#include "Exposed/vector2.hpp"
-
+#include "bindings/bindings_color.hpp"
+#include "bindings/bindings_vector2.hpp"
+#include "core/types.hpp"
 #include "script_instance.hpp"
 #include "spdlog/spdlog.h"
 
@@ -70,9 +70,8 @@ namespace atmo
 
         void Luau::registerBindings()
         {
-            // static method to register exposed class
-            Vector2::RegisterVector2(p_L);
-            Time::RegisterTime(p_L);
+            LuaBindings<atmo::core::types::Vector2>::RegisterType(p_L);
+            LuaBindings<atmo::core::types::ColorRGBA>::RegisterType(p_L);
             return;
         }
 
