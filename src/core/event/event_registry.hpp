@@ -9,10 +9,6 @@
 
 #include "events/event.hpp"
 
-/**
- * @brief
- *
- */
 #define REGISTER_EVENT(evt)                             \
     namespace                                           \
     {                                                   \
@@ -25,31 +21,14 @@
 
 namespace atmo::core::event
 {
-    /**
-     * @brief Registry for events in the system. This registry allows for the registration of event types, as well as the dispatching of events to listeners.
-     * Listeners can subscribe to specific event types, and can mark events as consumed to prevent further propagation.
-     *
-     */
     class EventRegistry : public registry::HierarchicRegistry<EventRegistry, events::Event>
     {
     public:
-        /**
-         * @brief
-         *
-         * @tparam Type
-         * @return events::Event*
-         */
         template <typename Type> static events::Event *Factorize()
         {
             return new Type();
         }
 
-        /**
-         * @brief Called when an event type is registered. Can be used to perform additional setup for the event type
-         * related to the event.
-         *
-         * @tparam Type
-         */
         template <typename Type> static void OnRegister()
         {
             spdlog::info("Registering event: {}", Type::FullName());
@@ -91,11 +70,6 @@ namespace atmo::core::event
         }
 
     private:
-        /**
-         * @brief Map of event type names to their registered listeners. Each listener is a callback function that takes a pointer to the base event type as its
-         * parameter.
-         *
-         */
         static inline std::unordered_map<std::string, std::vector<std::function<void(events::Event *)>>> m_listeners;
     };
 } // namespace atmo::core::event

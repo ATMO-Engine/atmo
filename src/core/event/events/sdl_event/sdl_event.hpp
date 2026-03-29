@@ -6,10 +6,7 @@
 
 namespace atmo::core::event::events
 {
-    /**
-     * @brief Event representing any SDL event, such as window events, input events, etc. This is the base event for all SDL events, and can be used to listen
-     * to all SDL events in a generic way.
-     */
+
     class SDLEvent : public event::EventRegistry::Registrable<SDLEvent, Event>
     {
     public:
@@ -28,11 +25,6 @@ namespace atmo::core::event::events
          */
         float delta = 0.0f;
 
-        /**
-         * @brief Get the Local Name of the event, used for registration and dispatching
-         *
-         * @return constexpr std::string_view
-         */
         static constexpr std::string_view LocalName()
         {
             return "SDLEvent";
