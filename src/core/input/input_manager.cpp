@@ -3,6 +3,8 @@
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "spdlog/spdlog.h"
 
+#include "impl/profiler.hpp"
+
 atmo::core::InputManager::InputManager()
 {
     event::EventRegistry::SetCallBack<event::events::InputEvent>([](event::events::InputEvent *event) { ProcessEvent(event->sdl_event, event->delta); });
@@ -56,6 +58,7 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
 
 void atmo::core::InputManager::Tick()
 {
+    ATMO_PROFILE_SCOPE_COLOR(0xFFFFFF);
     for (auto &evt : Instance().p_events) {
         if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
