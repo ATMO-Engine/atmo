@@ -331,8 +331,8 @@ add_requires(
     "catch2", { system = false },
     "semver", { system = false },
     "box2d", { system = false },
-    "argparse", { system = false }
-    "tracy", { system = false },
+    "argparse", { system = false },
+    "tracy", { system = false }
 )
 
 function platform_specifics()
