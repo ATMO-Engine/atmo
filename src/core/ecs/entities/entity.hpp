@@ -20,7 +20,7 @@ namespace atmo::core::ecs::entities
         std::string name;
         std::string type;
 
-        std::unordered_map<std::string, glz::raw_json> components;
+        std::unordered_map<std::string, glz::generic> components;
 
         std::vector<EntityData> children;
     };
@@ -48,7 +48,7 @@ namespace atmo::core::ecs::entities
             return "Entity";
         }
 
-        EntityData serialize(bool prettify = false) const;
+        EntityData serialize() const;
         void deserialize(std::string_view data);
 
         /**
@@ -95,9 +95,10 @@ namespace atmo::core::ecs::entities
         /**
          * @brief Get all of this entity's children.
          *
+         * @param bool Should the returned list contain children of children recursively?
          * @return std::vector<Entity> containing all of this entity's children.
          */
-        std::vector<Entity> getChildren() const;
+        std::vector<Entity> getChildren(bool recursive = false) const;
 
         /**
          * @brief Get the child of entity by name.

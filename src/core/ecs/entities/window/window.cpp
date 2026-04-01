@@ -199,19 +199,11 @@ namespace atmo::core::ecs::entities
             Clay_UpdateScrollContainers(true, { scroll.first.x, scroll.first.y }, scroll.second);
 
         Clay_BeginLayout();
-        for (auto &child : getChildren()) {
-            if (child.hasComponent<components::UI>()) {
+        for (auto &child : getChildren(true)) {
+            if (child.hasComponent<components::UI>() && !child.getParent().hasComponent<components::UI>()) {
                 auto wrapped = EntityRegistry::Wrap(child);
                 if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
                     ui->draw();
-            } else if (child.hasComponent<components::Scene>()) {
-                for (auto &scene_child : child.getChildren()) {
-                    if (scene_child.hasComponent<components::UI>()) {
-                        auto wrapped = EntityRegistry::Wrap(scene_child);
-                        if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
-                            ui->draw();
-                    }
-                }
             }
         }
         auto clayCommands = Clay_EndLayout();

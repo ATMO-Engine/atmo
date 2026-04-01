@@ -70,6 +70,8 @@ namespace atmo::editor
         auto &rect_layout = rect->getComponentMutable<core::components::Layout>();
         rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        rect_layout.padding = { 8, 8, 8, 8 };
+        rect_layout.child_gap = 8;
         rect->rename("white rect");
         rect->setParent(*scene);
 
@@ -78,9 +80,9 @@ namespace atmo::editor
         rect1_rect.color = { 255, 0, 0, 255 };
         auto &rect1_layout = rect1->getComponentMutable<core::components::Layout>();
         rect1_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect1_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        rect1_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
         rect1_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect1_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        rect1_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
         rect1->rename("red rect");
         rect1->setParent(*rect);
 
@@ -89,9 +91,9 @@ namespace atmo::editor
         rect2_rect.color = { 0, 255, 0, 255 };
         auto &rect2_layout = rect2->getComponentMutable<core::components::Layout>();
         rect2_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect2_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        rect2_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
         rect2_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect2_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        rect2_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
         rect2->rename("green rect");
         rect2->setParent(*rect);
 
@@ -100,13 +102,13 @@ namespace atmo::editor
         rect3_rect.color = { 0, 0, 255, 255 };
         auto &rect3_layout = rect3->getComponentMutable<core::components::Layout>();
         rect3_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect3_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        rect3_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
         rect3_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect3_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        rect3_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
         rect3->rename("blue rect");
         rect3->setParent(*rect);
 
-        spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize())->c_str());
+        spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
     }
 } // namespace atmo::editor
 

@@ -15,7 +15,7 @@ namespace atmo::core::ecs::entities
 
     void Entity::initialize() {}
 
-    EntityData Entity::serialize(bool prettify) const
+    EntityData Entity::serialize() const
     {
         EntityData output;
         output.type = FullName();
@@ -33,7 +33,7 @@ namespace atmo::core::ecs::entities
             if (!comp)
                 return;
 
-            output.components[ti->name] = ti->to_json(comp, prettify);
+            output.components[ti->name] = ti->to_json(comp);
         });
 
         p_handle.children([&](flecs::entity child) {
@@ -59,15 +59,25 @@ namespace atmo::core::ecs::entities
             if (!comp)
                 continue;
 
-            ti->from_json(comp, comp_json.str);
+            ti->from_json(comp, comp_json.dump().value());
         }
     }
 
-    std::vector<Entity> Entity::getChildren() const
+    std::vector<Entity> Entity::getChildren(bool recursive) const
     {
         std::vector<Entity> res;
 
-        p_handle.children([&res](flecs::entity child) { res.push_back(child); });
+        p_handle.children([&res, &recursive](flecs::entity child) {
+            res.push_back(child);
+
+            if (recursive) {
+                Entity entity(child);
+
+                std::vector<Entity> sub_res = entity.getChildren(recursive);
+                res.reserve(res.size() + sub_res.size());
+                res.insert(res.end(), sub_res.begin(), sub_res.end());
+            }
+        });
 
         return res;
     }
