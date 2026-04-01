@@ -27,7 +27,7 @@ namespace atmo::core::components
             };
 
             SizingAxisType type = SizingAxisType::FIT;
-            std::variant<MinMax, float> size;
+            std::variant<MinMax, float> size = MinMax{};
         };
 
         struct Padding {
