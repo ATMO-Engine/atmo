@@ -1,3 +1,4 @@
+#include "image_loader.hpp"
 #include <exception>
 #include <memory>
 #include "SDL3_image/SDL_image.h"
@@ -28,6 +29,11 @@ namespace atmo
                         SDL_DestroySurface(s);
                     }
                 });
+            }
+
+            const std::string ImageLoader::resourceTypeName()
+            {
+                return "Image (SDL Surface)";
             }
         } // namespace resource
     } // namespace core

@@ -14,7 +14,7 @@
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
-#include "glaze/json/write.hpp"
+#include "impl/profiler.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
@@ -212,6 +212,7 @@ namespace atmo::core
         float deltaTime = 0.0f;
 
         while (m_ecs.progress(deltaTime)) {
+            ATMO_PROFILE_FRAME();
             auto current_time = std::chrono::steady_clock::now();
             std::chrono::duration<float> dt = current_time - last_time;
             last_time = current_time;
