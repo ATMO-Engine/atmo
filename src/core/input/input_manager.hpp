@@ -96,6 +96,8 @@ namespace atmo
             static void StartTextInput(SDL_Window *window) noexcept;
             static void StopTextInput(SDL_Window *window) noexcept;
 
+            static InputManager &Instance();
+
             class KeyEvent : public Input
             {
             public:

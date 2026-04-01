@@ -23,7 +23,7 @@ end
 
 set_config("build.compdb", true)
 add_rules("plugin.compile_commands.autoupdate", {
-    arguments = {"--target=" .. (get_config("target") or "all")}
+    arguments = {"--target=" .. (get_config("target") or "atmo")}
 })
 
 local SUBMODULE_PATH = "submodules/"
@@ -348,6 +348,10 @@ function platform_specifics()
         )
     end
 
+    if is_plat("linux") then
+        add_syslinks("dl")
+    end
+
     if is_plat("windows") then
         add_cxxflags("/utf-8")
         add_syslinks(
@@ -367,6 +371,9 @@ target("atmo")
     packages()
     add_files("src/**.cpp")
     add_includedirs("src")
+    if is_plat("macosx") then
+        add_files("src/editor/menu_bar/macos_menu_bar.mm")
+    end
     platform_specifics()
 
     if is_mode("debug") then
@@ -409,7 +416,7 @@ target("atmo")
         local files = {}
         table.join2(files, os.files("translation/**"))
         table.join2(files, os.files("assets/**"))
-        -- normalize to forward slashes
+
         for i, f in ipairs(files) do
             files[i] = path.unix(f)
         end

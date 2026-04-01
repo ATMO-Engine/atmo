@@ -10,15 +10,11 @@ namespace atmo::core::ecs::entities
 {
     b2DebugDraw Scene::m_debug_draw{ b2DefaultDebugDraw() };
 
-    void Scene::RegisterComponents(flecs::world *world)
-    {
-        world->component<components::Scene>();
-
-        SetupDebugDraw(&m_debug_draw);
-    }
 
     void Scene::RegisterSystems(flecs::world *world)
     {
+        SetupDebugDraw(&m_debug_draw);
+
         world->observer<components::Scene>("Scene_Destroy2dPhysicsWorld").event(flecs::OnRemove).each([](flecs::entity e, components::Scene &scene) {
             if (b2World_IsValid(scene.world_id)) {
                 b2DestroyWorld(scene.world_id);
@@ -78,6 +74,6 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Scene);
+ATMO_REGISTER_ENTITY(entities::Scene);
 
 ATMO_REGISTER_COMPONENT(atmo::core::components::Scene)

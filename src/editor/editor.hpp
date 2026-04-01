@@ -1,8 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <string_view>
 
 #include "core/engine.hpp"
+#include "editor/commands/commands.hpp"
+#include "editor/menu_bar/i_platform_menu_bar.hpp"
+
+#if !defined(ATMO_EXPORT)
 
 #define ATMO_ASCII_ART                                                         \
     "                                                                      \n" \
@@ -33,29 +38,25 @@
     "                          -@@@@@@           :::                       \n" \
     "                                                                      \n"
 
-namespace atmo
+
+namespace atmo::editor
 {
-#if !defined(ATMO_EXPORT)
-    namespace editor
+    class Editor
     {
-        class Editor
-        {
-        public:
-            Editor(atmo::core::Engine *engine, const std::string &project_path);
-            ~Editor() = default;
+    public:
+        Editor(atmo::core::Engine &engine, const std::string &project_path);
+        ~Editor() = default;
 
-            void init();
-            void loop();
+        void init();
 
-            struct Config {
-                std::string preferred_language = "en-US";
-            };
+    private:
+        void registerDefaultCommands();
 
-        private:
-            atmo::core::Engine *m_engine;
-            std::string_view m_project_path;
-            Config m_config;
-        };
-    } // namespace editor
+        atmo::core::Engine &m_engine;
+        std::string_view m_project_path;
+        Commands m_commands;
+        std::unique_ptr<IPlatformMenuBar> m_menu_bar;
+    };
+} // namespace atmo::editor
+
 #endif
-} // namespace atmo

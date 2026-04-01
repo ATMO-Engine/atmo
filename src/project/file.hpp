@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 #include "SDL3/SDL.h"
 #include "spdlog/spdlog.h"
@@ -19,8 +20,7 @@ namespace atmo
         class File
         {
         public:
-            explicit File(std::shared_ptr<std::fstream> base, std::uint64_t start, std::uint64_t end) :
-                m_file(std::move(base)), m_start_offset(start), m_end_offset(end)
+            explicit File(std::shared_ptr<std::fstream> base, std::uint64_t start, std::uint64_t end) : m_file(base), m_start_offset(start), m_end_offset(end)
             {
             }
 
@@ -155,6 +155,11 @@ namespace atmo
                 return m_end_offset - m_start_offset;
             }
 
+            /**
+             * @brief Converts this File object to an SDL_IOStream for use with SDL functions.
+             *
+             * @return SDL_IOStream* Pointer to the created SDL_IOStream. The caller is responsible for closing the stream with SDL_CloseIO when done.
+             */
             SDL_IOStream *toIOStream()
             {
                 SDL_IOStreamInterface iface;

@@ -43,7 +43,7 @@ namespace atmo::meta
 
         void (*register_flecs)(flecs::world &) = nullptr;
         std::uint64_t (*resolve_flecs_id)(flecs::world &) = nullptr;
-        std::string (*to_json)(const void *component) = nullptr;
+        std::string (*to_json)(const void *component, bool prettify) = nullptr;
         bool (*from_json)(void *component, std::string_view json) = nullptr;
     };
 
@@ -114,8 +114,8 @@ namespace atmo::meta
 
         ti.resolve_flecs_id = [](flecs::world &w) -> std::uint64_t { return w.component<T>().id(); };
 
-        ti.to_json = [](const void *component) -> std::string {
-            auto result = glz::write_json(*static_cast<const T *>(component));
+        ti.to_json = [](const void *component, bool prettify) -> std::string {
+            auto result = glz::write_json<{ .prettify = prettify }>(*static_cast<const T *>(component));
             return result.value_or("");
         };
 

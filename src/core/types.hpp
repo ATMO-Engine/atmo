@@ -81,10 +81,10 @@ namespace atmo::core::types
     };
 
     struct ColorRGBAi {
-        std::uint8_t r = 0;
-        std::uint8_t g = 0;
-        std::uint8_t b = 0;
-        std::uint8_t a = 0;
+        std::uint8_t r = 255;
+        std::uint8_t g = 255;
+        std::uint8_t b = 255;
+        std::uint8_t a = 255;
 
         ColorRGBAi() = default;
         ColorRGBAi(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) : r(r), g(g), b(b), a(a) {}

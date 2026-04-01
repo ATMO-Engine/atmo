@@ -180,11 +180,14 @@ namespace atmo
              *  - "project://relative/path/to/file" to open a file relative to the current project root or from the packed index.
              *  - "user://relative/path/to/file" to open a file relative to the user data directory.
              * @return File object representing the opened file.
+             * @exception File::FileOpenException If file could not be opened.
+             * @exception std::runtime_error If file was not found.
+             * @todo replace std::runtime_error when file is not found by FileSystem::FileNotFound exception.
              */
             static File OpenFile(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out)
             {
                 if (path.starts_with(PROJECT_PROTOCOL)) {
-                    if (mode != (std::ios::in | std::ios::out))
+                    if (mode != (std::ios::in | std::ios::out) || (mode & std::ios::in) == 0 && (mode & std::ios::binary) == 0)
                         spdlog::warn("Packed project files can only be opened in binary read mode.");
 
                     std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));

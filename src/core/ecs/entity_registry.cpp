@@ -1,6 +1,7 @@
 #include "entity_registry.hpp"
 #include "core/ecs/entities/entity.hpp"
 #include "spdlog/spdlog.h"
+#include <memory>
 
 namespace atmo::core::ecs
 {
@@ -14,9 +15,20 @@ namespace atmo::core::ecs
 
         instance.m_world = world;
 
-        // We first register all components, then all systems, to ensure proper ordering.
-        for (auto &reg : instance.m_registers) reg.components(world);
         for (auto &reg : instance.m_registers) reg.systems(world);
+    }
+
+    std::unique_ptr<entities::Entity> EntityRegistry::Wrap(const entities::Entity &e)
+    {
+        if (!e.hasComponent<components::EntityType>())
+            return nullptr;
+
+        const auto &type_name = e.getComponent<components::EntityType>().type_name;
+        auto it = Instance().m_wrap_factories.find(type_name);
+        if (it == Instance().m_wrap_factories.end())
+            return nullptr;
+
+        return std::unique_ptr<entities::Entity>(it->second(static_cast<flecs::entity>(e)));
     }
 
     void EntityRegistry::UnregisterAll(flecs::world *world)

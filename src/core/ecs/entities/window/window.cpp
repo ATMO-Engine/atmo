@@ -2,11 +2,14 @@
 #include "SDL3_ttf/SDL_ttf.h"
 
 #include "core/ecs/components.hpp"
+#include "core/ecs/entities/scene/scene.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_dispatcher.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "impl/clay_types.hpp"
+#include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 #include "window.hpp"
@@ -18,11 +21,6 @@ void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_Rende
 
 namespace atmo::core::ecs::entities
 {
-    void Window::RegisterComponents(flecs::world *world)
-    {
-        world->component<components::Window>();
-    }
-
     void Window::RegisterSystems(flecs::world *world)
     {
         world->system<components::Window>("PollEvents").kind(flecs::PreUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
@@ -126,7 +124,7 @@ namespace atmo::core::ecs::entities
         Clay_SetMeasureTextFunction(measureText, window->renderer_data.fonts);
     }
 
-    void Window::setName(const std::string &name)
+    void Window::setTitle(const std::string &name)
     {
         auto window = p_handle.get_ref<components::Window>();
 
@@ -201,42 +199,28 @@ namespace atmo::core::ecs::entities
             Clay_UpdateScrollContainers(true, { scroll.first.x, scroll.first.y }, scroll.second);
 
         Clay_BeginLayout();
-
-        p_handle.children([this](flecs::entity child) { declareEntityUi(child); });
-
-        auto commands = Clay_EndLayout();
+        for (auto &child : getChildren()) {
+            if (child.hasComponent<components::UI>()) {
+                auto wrapped = EntityRegistry::Wrap(child);
+                if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
+                    ui->draw();
+            } else if (child.hasComponent<components::Scene>()) {
+                for (auto &scene_child : child.getChildren()) {
+                    if (scene_child.hasComponent<components::UI>()) {
+                        auto wrapped = EntityRegistry::Wrap(scene_child);
+                        if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
+                            ui->draw();
+                    }
+                }
+            }
+        }
+        auto clayCommands = Clay_EndLayout();
 
         SDL_SetRenderDrawColor(window.renderer_data.renderer, 0, 0, 0, 255);
 
-        SDL_Clay_RenderClayCommands(&window.renderer_data, &commands);
+        SDL_Clay_RenderClayCommands(&window.renderer_data, &clayCommands);
 
         SDL_RenderPresent(window.renderer_data.renderer);
-    }
-
-    Clay_ElementId Window::getIdForEntity(flecs::entity e)
-    {
-        std::string path = std::format("#{}", e.id());
-        Clay_String s{ false, static_cast<std::int32_t>(path.size()), path.c_str() };
-        return Clay_GetElementId(s);
-    }
-
-    Clay_ElementDeclaration Window::buildDecl(flecs::entity e)
-    {
-        Clay_ElementDeclaration d{};
-
-        d.id = getIdForEntity(e);
-
-        return d;
-    }
-
-    void Window::declareEntityUi(flecs::entity e)
-    {
-        Clay_ElementDeclaration decl = buildDecl(e);
-
-        CLAY(decl)
-        {
-            e.children([this](flecs::entity child) { declareEntityUi(child); });
-        }
     }
 
     SDL_Texture *Window::getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle)
@@ -262,5 +246,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Window);
+ATMO_REGISTER_ENTITY(entities::Window);
 ATMO_REGISTER_COMPONENT(atmo::core::components::Window)

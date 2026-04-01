@@ -3,11 +3,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Static2d::RegisterComponents(flecs::world *world)
-    {
-        world->component<Static2dData>();
-    }
-
     void Static2d::RegisterSystems(flecs::world *world) {}
 
     void Static2d::initialize()
@@ -24,5 +19,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Static2d);
+ATMO_REGISTER_ENTITY(entities::Static2d);
 ATMO_REGISTER_COMPONENT(atmo::core::ecs::entities::Static2d::Static2dData)

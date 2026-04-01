@@ -9,15 +9,13 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Entity::RegisterComponents(flecs::world *world) {}
-
     void Entity::RegisterSystems(flecs::world *world) {}
 
     void Entity::Unregister(flecs::world *world) {}
 
     void Entity::initialize() {}
 
-    EntityData Entity::serialize() const
+    EntityData Entity::serialize(bool prettify) const
     {
         EntityData output;
         output.type = FullName();
@@ -35,7 +33,7 @@ namespace atmo::core::ecs::entities
             if (!comp)
                 return;
 
-            output.components[ti->name] = ti->to_json(comp);
+            output.components[ti->name] = ti->to_json(comp, prettify);
         });
 
         p_handle.children([&](flecs::entity child) {
@@ -65,7 +63,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    std::vector<Entity> Entity::getChildren()
+    std::vector<Entity> Entity::getChildren() const
     {
         std::vector<Entity> res;
 
@@ -74,7 +72,7 @@ namespace atmo::core::ecs::entities
         return res;
     }
 
-    Entity Entity::getChild(std::string_view name)
+    Entity Entity::getChild(std::string_view name) const
     {
         return p_handle.lookup(name.data());
     }
@@ -122,6 +120,11 @@ namespace atmo::core::ecs::entities
 
         return nullptr;
     }
+
+    std::uint64_t Entity::getID() const
+    {
+        return p_handle.id();
+    }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Entity);
+ATMO_REGISTER_ENTITY(entities::Entity);

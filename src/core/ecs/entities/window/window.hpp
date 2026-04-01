@@ -40,7 +40,6 @@ namespace atmo::core::ecs::entities
     public:
         using EntityRegistry::Registrable<Window, Entity>::Registrable;
 
-        static void RegisterComponents(flecs::world *world);
         static void RegisterSystems(flecs::world *world);
 
         void initialize();
@@ -50,7 +49,7 @@ namespace atmo::core::ecs::entities
             return "Window";
         }
 
-        void setName(const std::string &name);
+        void setTitle(const std::string &name);
         void setSize(const core::types::Vector2i &size);
         void focus();
 
@@ -66,8 +65,7 @@ namespace atmo::core::ecs::entities
         void beginDraw(components::Window &window);
         void draw(components::Window &window);
 
-        Clay_ElementId getIdForEntity(flecs::entity e);
-        Clay_ElementDeclaration buildDecl(flecs::entity e);
-        void declareEntityUi(flecs::entity e);
+        Clay_ElementId getIdForEntity(const Entity &e);
+        Clay_ElementDeclaration buildDecl(const Entity &e);
     };
 } // namespace atmo::core::ecs::entities

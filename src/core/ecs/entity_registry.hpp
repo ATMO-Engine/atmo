@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -11,7 +12,7 @@
 #include "flecs.h"
 #include "spdlog/spdlog.h"
 
-#define REGISTER_ENTITY(entity)                     \
+#define ATMO_REGISTER_ENTITY(entity)                \
     namespace                                       \
     {                                               \
         static int _ = [] {                         \
@@ -21,46 +22,48 @@
         }();                                        \
     }
 
-namespace atmo
+namespace atmo::core::ecs
 {
-    namespace core
+    class EntityRegistry : public registry::HierarchicRegistry<EntityRegistry, entities::Entity>
     {
-        namespace ecs
+    public:
+        static void SetWorld(flecs::world *world);
+
+        template <typename Type> static void OnRegister()
         {
-            class EntityRegistry : public registry::HierarchicRegistry<EntityRegistry, entities::Entity>
-            {
-            public:
-                static void SetWorld(flecs::world *world);
+            Instance().m_registers.push_back({ .systems = &Type::RegisterSystems, .unregister = &Type::Unregister });
 
-                template <typename Type> static void OnRegister()
-                {
-                    Instance().m_registers.push_back(
-                        { .components = &Type::RegisterComponents, .systems = &Type::RegisterSystems, .unregister = &Type::Unregister });
-                }
+            if constexpr (!std::is_abstract_v<Type>) {
+                Instance().m_wrap_factories[std::string(Type::FullName())] = [](flecs::entity h) -> entities::Entity * { return new Type(h); };
+            }
+        }
 
-                template <typename Type> static entities::Entity *Factorize()
-                {
-                    flecs::entity handle = Instance().m_world->entity();
-                    Type *entity = new Type(handle);
+        template <typename Type> static entities::Entity *Factorize()
+        {
+            flecs::entity handle = Instance().m_world->entity();
+            Type *entity = new Type(handle);
 
-                    entity->rename(std::format("{}#{}", Type::FullName(), handle.id()));
-                    entity->initialize();
+            entity->rename(std::format("{}#{}", Type::FullName(), handle.id()));
+            entity->initialize();
+            entity->setComponent(components::EntityType{ std::string(Type::FullName()) });
 
-                    return entity;
-                }
+            return entity;
+        }
 
-                static void UnregisterAll(flecs::world *world);
+        static std::unique_ptr<entities::Entity> Wrap(const entities::Entity &e);
 
-            private:
-                struct Register {
-                    std::function<void(flecs::world *)> components;
-                    std::function<void(flecs::world *)> systems;
-                    std::function<void(flecs::world *)> unregister;
-                };
+        static void UnregisterAll(flecs::world *world);
 
-                flecs::world *m_world{ nullptr };
-                std::vector<Register> m_registers;
-            };
-        } // namespace ecs
-    } // namespace core
-} // namespace atmo
+    private:
+        using WrapFactory = entities::Entity *(*)(flecs::entity);
+
+        struct Register {
+            std::function<void(flecs::world *)> systems;
+            std::function<void(flecs::world *)> unregister;
+        };
+
+        flecs::world *m_world{ nullptr };
+        std::vector<Register> m_registers;
+        std::unordered_map<std::string, WrapFactory> m_wrap_factories;
+    };
+} // namespace atmo::core::ecs

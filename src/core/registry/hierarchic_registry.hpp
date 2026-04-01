@@ -83,15 +83,15 @@ namespace atmo::core::registry
         HierarchicRegistry(const HierarchicRegistry &) = delete;
         HierarchicRegistry &operator=(const HierarchicRegistry &) = delete;
 
-    protected:
-        HierarchicRegistry() = default;
-        ~HierarchicRegistry() = default;
-
         static Registry &Instance()
         {
             static Registry registry;
             return registry;
         }
+
+    protected:
+        HierarchicRegistry() = default;
+        ~HierarchicRegistry() = default;
 
         using Factory = Root *(*)(FactoryArgs...);
 

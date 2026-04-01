@@ -11,11 +11,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Sprite2d::RegisterComponents(flecs::world *world)
-    {
-        world->component<components::Sprite2d>();
-    }
-
     void Sprite2d::RegisterSystems(flecs::world *world)
     {
         world->system<components::Sprite2d, components::Transform2d>("Sprite2D_Render")
@@ -99,5 +94,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Sprite2d);
+ATMO_REGISTER_ENTITY(entities::Sprite2d);
 ATMO_REGISTER_COMPONENT(atmo::core::components::Sprite2d)
