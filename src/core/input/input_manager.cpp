@@ -213,11 +213,6 @@ void atmo::core::InputManager::StopTextInput(SDL_Window *window) noexcept
     }
 }
 
-atmo::core::InputManager &atmo::core::InputManager::Instance()
-{
-    return instance;
-}
-
 std::pair<atmo::core::types::Vector2, float> atmo::core::InputManager::GetScrollDelta(const std::string &inputName)
 {
     auto it = Instance().p_inputs.find(inputName);
