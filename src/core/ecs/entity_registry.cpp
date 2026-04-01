@@ -1,7 +1,7 @@
 #include "entity_registry.hpp"
+#include <memory>
 #include "core/ecs/entities/entity.hpp"
 #include "spdlog/spdlog.h"
-#include <memory>
 
 namespace atmo::core::ecs
 {
