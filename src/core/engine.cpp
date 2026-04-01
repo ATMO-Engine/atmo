@@ -17,7 +17,7 @@
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
-#include "glaze/json/write.hpp"
+#include "impl/profiler.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
@@ -196,6 +196,11 @@ namespace atmo::core
         int frame_count = 0;
 
         while (m_ecs.progress(deltaTime)) {
+            ATMO_PROFILE_FRAME();
+
+            if (InputManager::IsPressed("ui_quit"))
+                m_running.store(false);
+
             InputManager::Tick();
 
             if (!m_running.load())

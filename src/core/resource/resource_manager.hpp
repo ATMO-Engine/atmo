@@ -11,6 +11,8 @@
 #include "resource_pool.hpp"
 #include "resource_ref.hpp"
 
+#define CLEAN_FRAME 60
+
 namespace atmo
 {
     namespace core
@@ -61,15 +63,14 @@ namespace atmo
                     }
                 }
 
-
                 /**
                  * @brief Clear unused handles
                  */
-                void clear(uint64_t currentFrame);
+                void clear();
 
-                void increaseTick(uint64_t current)
+                void increaseTick()
                 {
-                    m_currentTick = current;
+                    m_currentTick++;
                 }
 
                 uint64_t getTick()
@@ -100,7 +101,7 @@ namespace atmo
 
                 std::vector<IPoolGarbageCollector *> m_gcPools;
 
-                uint64_t m_currentTick;
+                uint64_t m_currentTick = 0;
             };
         } // namespace resource
     } // namespace core

@@ -17,6 +17,8 @@ namespace atmo
                 ~ImageLoader() override;
 
                 std::shared_ptr<SDL_Surface> load(const std::string &path) override;
+
+                const std::string resourceTypeName() override;
             };
         } // namespace resource
     } // namespace core

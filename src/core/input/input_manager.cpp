@@ -1,25 +1,27 @@
 #include "input_manager.hpp"
 #include <iostream>
+#include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "spdlog/spdlog.h"
 
-atmo::core::InputManager atmo::core::InputManager::instance;
+#include "impl/profiler.hpp"
 
 atmo::core::InputManager::InputManager()
 {
-    core::event::EventDispatcher::Subscribe<InputEvent>(p_inputListener);
-}
+    event::EventRegistry::SetCallBack<event::events::InputEvent>([](event::events::InputEvent *event) { ProcessEvent(event->sdl_event, event->delta); });
+};
+
 
 void atmo::core::InputManager::AddInput(const std::string &inputName, Input *event, bool internal)
 {
-    if (instance.p_inputs.find(inputName) == instance.p_inputs.end())
-        instance.p_inputs[inputName] = {};
+    if (Instance().p_inputs.find(inputName) == Instance().p_inputs.end())
+        Instance().p_inputs[inputName] = {};
 
     auto evt = std::shared_ptr<Input>(event);
 
     evt->internal = internal;
 
-    instance.p_events.push_back(evt);
-    instance.p_inputs[inputName].push_back(evt);
+    Instance().p_events.push_back(evt);
+    Instance().p_inputs[inputName].push_back(evt);
 }
 
 void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
@@ -27,18 +29,18 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
     switch (e.type) {
         case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP:
-            for (auto evt : instance.p_events)
+            for (auto evt : Instance().p_events)
                 if (auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt))
                     HandleKeyboardEvent(e.key, keyEvent);
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
-            for (auto evt : instance.p_events)
+            for (auto evt : Instance().p_events)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt))
                     HandleMouseButtonEvent(e.button, mouseEvent);
             break;
         case SDL_EVENT_MOUSE_WHEEL:
-            for (auto evt : instance.p_events)
+            for (auto evt : Instance().p_events)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt)) {
                     mouseEvent->scroll.x = e.wheel.x;
                     mouseEvent->scroll.y = e.wheel.y;
@@ -46,8 +48,8 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
                 }
             break;
         case SDL_EVENT_TEXT_INPUT:
-            if (instance.p_textInput)
-                instance.p_textBuffer += e.text.text;
+            if (Instance().p_textInput)
+                Instance().p_textBuffer += e.text.text;
             break;
         default:
             break;
@@ -56,7 +58,8 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
 
 void atmo::core::InputManager::Tick()
 {
-    for (auto &evt : instance.p_events) {
+    ATMO_PROFILE_SCOPE_COLOR(0xFFFFFF);
+    for (auto &evt : Instance().p_events) {
         if (evt->getType() == Input::Type::Key) {
             auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
             keyEvent->just_pressed = false;
@@ -72,8 +75,8 @@ void atmo::core::InputManager::Tick()
 
 bool atmo::core::InputManager::IsPressed(const std::string &inputName)
 {
-    auto it = instance.p_inputs.find(inputName);
-    if (it == instance.p_inputs.end())
+    auto it = Instance().p_inputs.find(inputName);
+    if (it == Instance().p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -92,8 +95,8 @@ bool atmo::core::InputManager::IsPressed(const std::string &inputName)
 
 bool atmo::core::InputManager::IsJustPressed(const std::string &inputName)
 {
-    auto it = instance.p_inputs.find(inputName);
-    if (it == instance.p_inputs.end())
+    auto it = Instance().p_inputs.find(inputName);
+    if (it == Instance().p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -112,8 +115,8 @@ bool atmo::core::InputManager::IsJustPressed(const std::string &inputName)
 
 bool atmo::core::InputManager::IsJustReleased(const std::string &inputName)
 {
-    auto it = instance.p_inputs.find(inputName);
-    if (it == instance.p_inputs.end())
+    auto it = Instance().p_inputs.find(inputName);
+    if (it == Instance().p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -132,8 +135,8 @@ bool atmo::core::InputManager::IsJustReleased(const std::string &inputName)
 
 bool atmo::core::InputManager::IsReleased(const std::string &inputName)
 {
-    auto it = instance.p_inputs.find(inputName);
-    if (it == instance.p_inputs.end())
+    auto it = Instance().p_inputs.find(inputName);
+    if (it == Instance().p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -189,24 +192,24 @@ void atmo::core::InputManager::HandleMouseButtonEvent(const SDL_MouseButtonEvent
 
 std::string atmo::core::InputManager::ConsumeText() noexcept
 {
-    auto t = instance.p_textBuffer;
-    instance.p_textBuffer.clear();
+    auto t = Instance().p_textBuffer;
+    Instance().p_textBuffer.clear();
     return t;
 }
 
 void atmo::core::InputManager::StartTextInput(SDL_Window *window) noexcept
 {
-    if (!instance.p_textInput) {
+    if (!Instance().p_textInput) {
         SDL_StartTextInput(window);
-        instance.p_textInput = true;
+        Instance().p_textInput = true;
     }
 }
 
 void atmo::core::InputManager::StopTextInput(SDL_Window *window) noexcept
 {
-    if (instance.p_textInput) {
+    if (Instance().p_textInput) {
         SDL_StopTextInput(window);
-        instance.p_textInput = false;
+        Instance().p_textInput = false;
     }
 }
 
@@ -217,8 +220,8 @@ atmo::core::InputManager &atmo::core::InputManager::Instance()
 
 std::pair<atmo::core::types::Vector2, float> atmo::core::InputManager::GetScrollDelta(const std::string &inputName)
 {
-    auto it = instance.p_inputs.find(inputName);
-    if (it == instance.p_inputs.end())
+    auto it = Instance().p_inputs.find(inputName);
+    if (it == Instance().p_inputs.end())
         throw std::runtime_error("Input not found: " + inputName);
 
     for (auto evt : it->second) {
@@ -229,15 +232,4 @@ std::pair<atmo::core::types::Vector2, float> atmo::core::InputManager::GetScroll
     }
 
     return { { 0, 0 }, 0.0f };
-}
-
-atmo::core::InputManager::InputListener::InputListener()
-{
-    atmo::core::event::EventDispatcher::Subscribe<InputEvent>(*this);
-    handlers[atmo::core::event::event_id<InputEvent>()] = [this](event::AEvent *event) { onEvent(static_cast<InputManager::InputEvent *>(event)); };
-}
-
-void atmo::core::InputManager::InputListener::onEvent(InputManager::InputEvent *event)
-{
-    InputManager::ProcessEvent(event->sdl_event, event->delta);
 }

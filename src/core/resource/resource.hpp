@@ -42,6 +42,8 @@ namespace atmo
                 virtual ~Resource() = default;
 
                 virtual std::shared_ptr<T> load(const std::string &path) = 0;
+
+                virtual const std::string resourceTypeName() = 0;
             };
         } // namespace resource
     } // namespace core

@@ -6,7 +6,7 @@
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/event/event_dispatcher.hpp"
+#include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/types.hpp"
@@ -16,6 +16,8 @@
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "window.hpp"
+
+#include "core/event/event_registry.hpp"
 
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
@@ -173,7 +175,9 @@ namespace atmo::core::ecs::entities
                     Clay_SetPointerState({ event.motion.x, event.motion.y }, event.motion.state & SDL_BUTTON_LMASK);
                     break;
                 default:
-                    atmo::core::event::EventDispatcher::Dispatch(new atmo::core::InputManager::InputEvent(event));
+                    auto default_event = atmo::core::event::EventRegistry::Create<atmo::core::event::events::InputEvent>("Event::SDLEvent::InputEvent");
+                    default_event->sdl_event = event;
+                    atmo::core::event::EventRegistry::Dispatch(default_event);
                     break;
             };
         }
