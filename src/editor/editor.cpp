@@ -1,7 +1,10 @@
 #include "editor.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "glaze/json/prettify.hpp"
+#include "project/file_system.hpp"
 #include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)
@@ -65,48 +68,55 @@ namespace atmo::editor
         m_menu_bar = makePlatformMenuBar();
         m_menu_bar->build(*scene, m_commands);
 
-        auto rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &rect_rect = rect->getComponentMutable<core::components::UIRect>();
-        auto &rect_layout = rect->getComponentMutable<core::components::Layout>();
-        rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        rect_layout.padding = { 8, 8, 8, 8 };
-        rect_layout.child_gap = 8;
-        rect->rename("white rect");
-        rect->setParent(*scene);
+        auto white_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &white_rect_rect = white_rect->getComponentMutable<core::components::UIRect>();
+        auto &white_rect_layout = white_rect->getComponentMutable<core::components::Layout>();
+        white_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        white_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        white_rect_layout.padding = { 8, 8, 8, 8 };
+        white_rect_layout.child_gap = 8;
+        white_rect->rename("white rect");
+        white_rect->setParent(*scene);
 
-        auto rect1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &rect1_rect = rect1->getComponentMutable<core::components::UIRect>();
-        rect1_rect.color = { 255, 0, 0, 255 };
-        auto &rect1_layout = rect1->getComponentMutable<core::components::Layout>();
-        rect1_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect1_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
-        rect1_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect1_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
-        rect1->rename("red rect");
-        rect1->setParent(*rect);
+        // auto red_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        // auto &red_rect_rect = red_rect->getComponentMutable<core::components::UIRect>();
+        // red_rect_rect.color = core::types::Color::RED;
+        // auto &red_rect_layout = red_rect->getComponentMutable<core::components::Layout>();
+        // red_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // red_rect_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // red_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // red_rect_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // red_rect->rename("red rect");
+        // red_rect->setParent(*white_rect);
 
-        auto rect2 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &rect2_rect = rect2->getComponentMutable<core::components::UIRect>();
-        rect2_rect.color = { 0, 255, 0, 255 };
-        auto &rect2_layout = rect2->getComponentMutable<core::components::Layout>();
-        rect2_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect2_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
-        rect2_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect2_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
-        rect2->rename("green rect");
-        rect2->setParent(*rect);
+        // auto green_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        // auto &green_rect_rect = green_rect->getComponentMutable<core::components::UIRect>();
+        // green_rect_rect.color = core::types::Color::GREEN;
+        // auto &green_rect_layout = green_rect->getComponentMutable<core::components::Layout>();
+        // green_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // green_rect_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // green_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // green_rect_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // green_rect->rename("green rect");
+        // green_rect->setParent(*white_rect);
 
-        auto rect3 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &rect3_rect = rect3->getComponentMutable<core::components::UIRect>();
-        rect3_rect.color = { 0, 0, 255, 255 };
-        auto &rect3_layout = rect3->getComponentMutable<core::components::Layout>();
-        rect3_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect3_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
-        rect3_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        rect3_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
-        rect3->rename("blue rect");
-        rect3->setParent(*rect);
+        // auto blue_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        // auto &blue_rect_rect = blue_rect->getComponentMutable<core::components::UIRect>();
+        // blue_rect_rect.color = core::types::Color::BLUE;
+        // auto &blue_rect_layout = blue_rect->getComponentMutable<core::components::Layout>();
+        // blue_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // blue_rect_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // blue_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // blue_rect_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // blue_rect->rename("blue rect");
+        // blue_rect->setParent(*white_rect);
+
+        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        auto &label_label = label->getComponentMutable<core::components::UILabel>();
+        label_label.text = "Hello, World!";
+        label->rename("hello world");
+        label->setParent(*white_rect);
 
         spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
     }

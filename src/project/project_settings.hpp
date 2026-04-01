@@ -29,10 +29,14 @@ namespace atmo
         };
 
         struct Boot {
-            ATMO_PROJECT_SETTING core::types::ColorRGBA background_color = { 0, 0, 0, 255 };
+            ATMO_PROJECT_SETTING core::types::Color background_color = core::types::Color::BLACK;
             ATMO_PROJECT_SETTING bool show_splash_icon = true;
             ATMO_PROJECT_SETTING bool full_size_splash_icon = false;
             ATMO_PROJECT_SETTING std::string splash_icon_path = "project://assets/atmo.png";
+        };
+
+        struct Window {
+            ATMO_PROJECT_SETTING core::types::Color background_color = core::types::Color::BLACK;
         };
 
         struct Singletons {
@@ -56,6 +60,7 @@ namespace atmo
         struct ProjectSettings {
             ATMO_PROJECT_SETTING App app;
             ATMO_PROJECT_SETTING Boot boot;
+            ATMO_PROJECT_SETTING Window window;
             ATMO_PROJECT_SETTING Singletons singletons;
             ATMO_PROJECT_SETTING Engine engine;
             ATMO_PROJECT_SETTING Debug debug;

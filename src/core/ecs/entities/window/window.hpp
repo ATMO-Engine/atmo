@@ -20,7 +20,7 @@ namespace atmo::core::components
         std::string title;
         types::Vector2i size;
         SDL_Window *window = nullptr;
-        Clay_SDL3RendererData renderer_data;
+        ClaySdL3RendererData renderer_data;
         Clay_Arena clay_arena;
         std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
         std::optional<std::function<void()>> close_callback;

@@ -17,36 +17,20 @@ namespace atmo::core::ecs::entities
     {
         Clay_ElementDeclaration d = UI::buildDecl();
 
+        const auto &ui = getComponentMutable<components::UI>();
         const auto &rect = getComponentMutable<components::UIRect>();
 
-        d.border.color = { static_cast<float>(rect.border.color.r),
-                           static_cast<float>(rect.border.color.g),
-                           static_cast<float>(rect.border.color.b),
-                           static_cast<float>(rect.border.color.a) };
+        d.border.color = (rect.border.color * ui.modulate).toFloat<Clay_Color>(255);
 
         d.border.width = { rect.border.left, rect.border.right, rect.border.top, rect.border.bottom, rect.border.between_children };
 
-        d.backgroundColor = {
-            static_cast<float>(rect.color.r), static_cast<float>(rect.color.g), static_cast<float>(rect.color.b), static_cast<float>(rect.color.a)
-        };
+        d.backgroundColor = (rect.color * ui.modulate).toFloat<Clay_Color>(255);
         d.cornerRadius = { rect.corner_radius.top_left, rect.corner_radius.top_right, rect.corner_radius.bottom_left, rect.corner_radius.bottom_right };
 
         return d;
     }
 
-    void UIRect::draw()
-    {
-        CLAY(buildDecl())
-        {
-            for (auto child : getChildren()) {
-                if (child.hasComponent<components::UI>()) {
-                    auto wrapped = EntityRegistry::Wrap(child);
-                    if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
-                        ui->draw();
-                }
-            }
-        }
-    }
+    void UIRect::draw() {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIRect);

@@ -13,8 +13,7 @@ namespace atmo::core::components
 {
     struct UI {
         bool visible{ true };
-        types::ColorRGBA modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
-        types::ColorRGBA self_modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
+        types::Color modulate{ types::Color::WHITE };
         Clay_ElementId element_id;
     };
 } // namespace atmo::core::components
@@ -24,8 +23,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UI> {
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::UI::UI::visible>("visible"),
-        atmo::meta::field<&atmo::core::components::UI::UI::modulate>("modulate").withWidget("color_picker"),
-        atmo::meta::field<&atmo::core::components::UI::UI::self_modulate>("self_modulate").withWidget("color_picker"));
+        atmo::meta::field<&atmo::core::components::UI::UI::modulate>("modulate").withWidget("color_picker"));
 };
 
 namespace atmo::core::ecs::entities
@@ -44,6 +42,7 @@ namespace atmo::core::ecs::entities
             return "UI";
         }
 
+        void internalDraw();
         virtual void draw();
 
     protected:

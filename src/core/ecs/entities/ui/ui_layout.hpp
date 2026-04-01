@@ -23,7 +23,7 @@ namespace atmo::core::components
 
             struct MinMax {
                 float min = 0.0f;
-                float max = std::numeric_limits<float>::max();
+                float max = 0.0f;
             };
 
             SizingAxisType type = SizingAxisType::FIT;
@@ -46,6 +46,27 @@ namespace atmo::core::components
         std::uint16_t child_gap = 0;
     };
 } // namespace atmo::core::components
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout::SizingAxis::MinMax> {
+    static constexpr const char *name = "MinMax";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::Layout::SizingAxis::MinMax::min>("min"),
+        atmo::meta::field<&atmo::core::components::Layout::SizingAxis::MinMax::max>("max"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout::SizingAxis> {
+    static constexpr const char *name = "Size";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::Layout::SizingAxis::type>("type"),
+        atmo::meta::field<&atmo::core::components::Layout::SizingAxis::size>("size"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout::Padding> {
+    static constexpr const char *name = "Padding";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::Layout::Padding::left>("left"), atmo::meta::field<&atmo::core::components::Layout::Padding::right>("right"),
+        atmo::meta::field<&atmo::core::components::Layout::Padding::top>("top"), atmo::meta::field<&atmo::core::components::Layout::Padding::bottom>("bottom"));
+};
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout> {
     static constexpr const char *name = "Layout";

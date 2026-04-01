@@ -48,18 +48,37 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UI::draw()
+    void UI::internalDraw()
     {
-        CLAY(buildDecl())
-        {
-            for (auto child : getChildren()) {
-                if (child.hasComponent<components::UI>()) {
-                    auto cast = static_cast<entities::UI *>(&child);
-                    cast->draw();
-                }
+        std::vector<Entity> children = getChildren();
+        bool has_ui_child = false;
+
+        for (auto &entity : children)
+            if (entity.hasComponent<components::UI>())
+                has_ui_child = true;
+
+        if (has_ui_child) {
+            Clay__OpenElement();
+            Clay__ConfigureOpenElement(buildDecl());
+
+            draw();
+
+            for (auto child : children) {
+                auto wrapped = EntityRegistry::Wrap(child);
+                if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
+                    ui->internalDraw();
             }
+
+            Clay__CloseElement();
+        } else {
+            Clay__OpenElement();
+            Clay__ConfigureOpenElement(buildDecl());
+            draw();
+            Clay__CloseElement();
         }
     }
+
+    void UI::draw() {}
 
     void UI::configureSizingAxis(Clay_SizingAxis &sizing, const components::Layout::SizingAxis &axis)
     {

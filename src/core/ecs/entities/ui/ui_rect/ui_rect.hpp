@@ -22,12 +22,12 @@ namespace atmo::core::components
             std::uint16_t bottom = 0;
             std::uint16_t between_children = 0;
 
-            types::ColorRGBAi color;
+            types::Color color = types::Color::WHITE;
         };
 
         CornerRadius corner_radius;
         Border border;
-        types::ColorRGBAi color;
+        types::Color color = types::Color::WHITE;
     };
 } // namespace atmo::core::components
 

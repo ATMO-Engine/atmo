@@ -4,6 +4,8 @@
 #include <format>
 #include <string>
 
+#include "SDL3/SDL_error.h"
+#include "SDL3_ttf/SDL_ttf.h"
 #include "args/arg_manager.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
@@ -121,6 +123,10 @@ namespace atmo::core
                 SDL_INIT_CAMERA) != true) {
             spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
             return 1;
+        }
+
+        if (!TTF_Init()) {
+            spdlog::error("Failed to initialize SDL_TTF: {}", SDL_GetError());
         }
 
         std::atexit(SDL_Quit);

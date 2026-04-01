@@ -1,6 +1,7 @@
 #include "SDL3/SDL_video.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
+#include <cstdint>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
@@ -8,16 +9,18 @@
 #include "core/event/event_dispatcher.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/resource_manager.hpp"
+#include "core/types.hpp"
 #include "impl/clay_types.hpp"
 #include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
+#include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "window.hpp"
 
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
 
-void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
+void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
 
 namespace atmo::core::ecs::entities
 {
@@ -178,6 +181,10 @@ namespace atmo::core::ecs::entities
 
     void Window::beginDraw(components::Window &window)
     {
+        static const types::Color &clear_color = project::ProjectManager::GetSettings().window.background_color;
+        static std::array<std::uint8_t, 4> clear_color_sdl = clear_color.toInt<std::array<std::uint8_t, 4>>();
+
+        SDL_SetRenderDrawColor(window.renderer_data.renderer, clear_color_sdl[0], clear_color_sdl[1], clear_color_sdl[2], clear_color_sdl[3]);
         SDL_RenderClear(window.renderer_data.renderer);
         SDL_SetRenderDrawBlendMode(window.renderer_data.renderer, SDL_BLENDMODE_BLEND);
     }
@@ -200,15 +207,12 @@ namespace atmo::core::ecs::entities
 
         Clay_BeginLayout();
         for (auto &child : getChildren(true)) {
-            if (child.hasComponent<components::UI>() && !child.getParent().hasComponent<components::UI>()) {
-                auto wrapped = EntityRegistry::Wrap(child);
-                if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
-                    ui->draw();
-            }
+            auto wrapped = EntityRegistry::Wrap(child);
+            auto *ui = dynamic_cast<entities::UI *>(wrapped.get());
+            if (ui && !child.getParent().hasComponent<components::UI>())
+                ui->internalDraw();
         }
         auto clayCommands = Clay_EndLayout();
-
-        SDL_SetRenderDrawColor(window.renderer_data.renderer, 0, 0, 0, 255);
 
         SDL_Clay_RenderClayCommands(&window.renderer_data, &clayCommands);
 

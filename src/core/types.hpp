@@ -5,6 +5,7 @@
 
 #include "SDL3/SDL_pixels.h"
 #include "box2d/box2d.h"
+#include "clay.h"
 #include "common/math.hpp"
 #include "flecs.h"
 #include "meta/meta.hpp"
@@ -61,34 +62,47 @@ namespace atmo::core::types
         int w = 0;
     };
 
-    struct ColorRGBAi;
-
-    struct ColorRGBA {
+    /**
+     * @brief Color, can be converted to any format
+     *
+     */
+    struct Color {
         float r = 1.0f;
         float g = 1.0f;
         float b = 1.0f;
         float a = 1.0f;
 
-        ColorRGBA() = default;
-        ColorRGBA(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
-        explicit ColorRGBA(const ColorRGBAi &c);
-        explicit operator ColorRGBAi() const;
+        Color(const Color &) = default;
+        Color &operator=(const Color &) = default;
 
-        SDL_FColor toSDLColor() const
+        Color(float r, float g, float b, float a);
+        Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
+
+        Color operator+(const Color &modulator) const;
+        Color operator-(const Color &modulator) const;
+        Color operator*(const Color &modulator) const;
+        Color operator/(const Color &modulator) const;
+
+        static Color FromHex(std::uint32_t hex);
+
+        template <typename T, typename Individual = std::uint8_t> T toInt(std::uint32_t range = 255) const
         {
-            return SDL_FColor{ r, g, b, a };
+            return T{ static_cast<Individual>(common::math::Round(r * range)),
+                      static_cast<Individual>(common::math::Round(g * range)),
+                      static_cast<Individual>(common::math::Round(b * range)),
+                      static_cast<Individual>(common::math::Round(a * range)) };
         }
-    };
 
-    struct ColorRGBAi {
-        std::uint8_t r = 255;
-        std::uint8_t g = 255;
-        std::uint8_t b = 255;
-        std::uint8_t a = 255;
+        template <typename T> T toFloat(float range = 1.0f) const
+        {
+            return T{ r * range, g * range, b * range, a * range };
+        }
 
-        ColorRGBAi() = default;
-        ColorRGBAi(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) : r(r), g(g), b(b), a(a) {}
-        explicit ColorRGBAi(const ColorRGBA &c);
+        static const Color WHITE;
+        static const Color BLACK;
+        static const Color RED;
+        static const Color GREEN;
+        static const Color BLUE;
     };
 
     void register_core_types(flecs::world ecs);
@@ -134,16 +148,9 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector4i> {
         atmo::meta::field<&atmo::core::types::Vector4i::z>("z"), atmo::meta::field<&atmo::core::types::Vector4i::w>("w"));
 };
 
-template <> struct atmo::meta::ComponentMeta<atmo::core::types::ColorRGBA> {
-    static constexpr const char *name = "ColorRGBA";
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::Color> {
+    static constexpr const char *name = "Color";
     static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::types::ColorRGBA::r>("r"), atmo::meta::field<&atmo::core::types::ColorRGBA::g>("g"),
-        atmo::meta::field<&atmo::core::types::ColorRGBA::b>("b"), atmo::meta::field<&atmo::core::types::ColorRGBA::a>("a"));
-};
-
-template <> struct atmo::meta::ComponentMeta<atmo::core::types::ColorRGBAi> {
-    static constexpr const char *name = "ColorRGBAi";
-    static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::types::ColorRGBAi::r>("r"), atmo::meta::field<&atmo::core::types::ColorRGBAi::g>("g"),
-        atmo::meta::field<&atmo::core::types::ColorRGBAi::b>("b"), atmo::meta::field<&atmo::core::types::ColorRGBAi::a>("a"));
+        atmo::meta::field<&atmo::core::types::Color::r>("r"), atmo::meta::field<&atmo::core::types::Color::g>("g"),
+        atmo::meta::field<&atmo::core::types::Color::b>("b"), atmo::meta::field<&atmo::core::types::Color::a>("a"));
 };

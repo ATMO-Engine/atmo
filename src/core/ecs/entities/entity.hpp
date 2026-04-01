@@ -49,7 +49,8 @@ namespace atmo::core::ecs::entities
         }
 
         EntityData serialize() const;
-        void deserialize(std::string_view data);
+        void deserializeJson(std::string_view data);
+        void deserialize(const EntityData &data);
 
         /**
          * @brief Set a component for the entity.

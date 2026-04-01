@@ -177,7 +177,7 @@ namespace atmo
              *
              * @param path Can be:
              *  - An absolute or relative path to a file on disk.
-             *  - "project://relative/path/to/file" to open a file relative to the current project root or from the packed index.
+             *  - "project://relative/path/to/file" to open a file from the packed index.
              *  - "user://relative/path/to/file" to open a file relative to the user data directory.
              * @return File object representing the opened file.
              * @exception File::FileOpenException If file could not be opened.

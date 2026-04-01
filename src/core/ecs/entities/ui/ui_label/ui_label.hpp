@@ -11,9 +11,11 @@ namespace atmo::core::components
 {
     struct UILabel {
         std::string text;
-        float font_size = 14.0f;
-        std::string font_path = "project://assets/fonts/Nunito.ttf";
+        float font_size = 24.0f;
+        std::string font_path = "project://assets/fonts/Nunito/Nunito.ttf";
         resource::Handle<TTF_Font> font_handle;
+        uint16_t letter_spacing = 0;
+        uint16_t line_height = 0;
     };
 } // namespace atmo::core::components
 
@@ -22,7 +24,9 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UILabel> {
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::UILabel::text>("text"), atmo::meta::field<&atmo::core::components::UILabel::font_size>("font_size"),
-        atmo::meta::field<&atmo::core::components::UILabel::font_path>("font_path"));
+        atmo::meta::field<&atmo::core::components::UILabel::font_path>("font_path"),
+        atmo::meta::field<&atmo::core::components::UILabel::letter_spacing>("letter_spacing"),
+        atmo::meta::field<&atmo::core::components::UILabel::line_height>("line_height"));
 };
 
 namespace atmo::core::ecs::entities
@@ -43,5 +47,7 @@ namespace atmo::core::ecs::entities
 
         void setFontPath(const std::string &path);
         std::string_view getFontPath() const noexcept;
+
+        void draw() override;
     };
 } // namespace atmo::core::ecs::entities
