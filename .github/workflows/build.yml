@@ -205,5 +205,5 @@ jobs:
 
       - name: Run unit tests
         run: |
-          xmake build atmo-test
-          xmake test -v
+          xmake build atmo-test -y
+          xmake test -v -y
