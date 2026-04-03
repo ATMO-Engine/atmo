@@ -9,6 +9,9 @@ int main(int argc, const char *const *argv)
 {
     atmo::core::Engine engine;
 
+    if (int ret = engine.args(argc, argv); ret != 0)
+        return ret == -1 ? 0 : 1;
+
     if (int ret = engine.init(); ret != 0)
         return ret == -1 ? 0 : 1;
 
@@ -34,9 +37,6 @@ int main(int argc, const char *const *argv)
             spdlog::warn("Failed to load addon at \"{}\": {}", addon_pair.first, err.what());
         }
     }
-
-    if (int ret = engine.args(argc, argv); ret != 0)
-        return ret == -1 ? 0 : 1;
 
     engine.start();
 

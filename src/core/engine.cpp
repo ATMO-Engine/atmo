@@ -5,6 +5,7 @@
 #include <string>
 
 #include "SDL3/SDL_error.h"
+#include "SDL3/SDL_hints.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "args/arg_manager.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
@@ -83,6 +84,8 @@ namespace atmo::core
         ArgManager::AddArgument("--help", "-h").defaultValue(false).implicitValue(true).help("Show this help message.");
         ArgManager::AddLaunchHandler(10000, "--help", handleArgHelp);
 
+        ArgManager::AddArgument("--headless").defaultValue(false).implicitValue(true).help("Start in headless mode (no graphical interface)");
+
 #if !defined(ATMO_EXPORT)
         auto group = ArgManager::AddMutuallyExclusiveGroup();
         group.addArgument("--pack").nargs(ArgManager::NargsPattern::AtLeastOne).help("Pack one or more files into a .pck file.").metavar("files");
@@ -104,30 +107,30 @@ namespace atmo::core
             return 1;
         }
 
-        ArgManager::ExecuteLaunchHandlers();
-
-        if (auto res = ArgManager::GetLaunchResult(); res != ArgManager::LaunchResult::Continue) {
-            if (res == ArgManager::LaunchResult::ExitSuccess)
-                return -1;
-            else
-                return 1;
-        }
-
         return 0;
     }
 
     int Engine::initSDL()
     {
-        if (SDL_Init(
-                SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR |
-                SDL_INIT_CAMERA) != true) {
-            spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
-            return 1;
+        static constexpr SDL_InitFlags flags =
+            SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA;
+
+        if (args::ArgManager::Get<bool>("--headless") == false && SDL_Init(flags)) {
+            m_headless = false;
+        } else {
+            spdlog::info("booting in headless mode");
+            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "offscreen");
+
+            if (!SDL_Init(flags)) {
+                spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
+                return 1;
+            }
+
+            m_headless = true;
         }
 
-        if (!TTF_Init()) {
+        if (!TTF_Init())
             spdlog::error("Failed to initialize SDL_TTF: {}", SDL_GetError());
-        }
 
         std::atexit(SDL_Quit);
 
@@ -156,6 +159,15 @@ namespace atmo::core
 
         if (int ret = initDefaultInputs(); ret != 0)
             return ret;
+
+        args::ArgManager::ExecuteLaunchHandlers();
+
+        if (auto res = args::ArgManager::GetLaunchResult(); res != args::ArgManager::LaunchResult::Continue) {
+            if (res == args::ArgManager::LaunchResult::ExitSuccess)
+                return -1;
+            else
+                return 1;
+        }
 
         static Engine &g_engine = *this;
 

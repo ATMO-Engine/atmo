@@ -37,6 +37,7 @@ namespace atmo
 
         struct Window {
             ATMO_PROJECT_SETTING core::types::Color background_color = core::types::Color::BLACK;
+            ATMO_PROJECT_SETTING bool headless = false;
         };
 
         struct Singletons {

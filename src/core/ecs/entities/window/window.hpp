@@ -14,6 +14,12 @@
 #include "impl/clay_types.hpp"
 #include "meta/meta.hpp"
 
+#if defined(__APPLE__)
+#define RENDERING_PLATFORM SDL_WINDOW_METAL
+#else
+#define RENDERING_PLATFORM SDL_WINDOW_VULKAN
+#endif
+
 namespace atmo::core::components
 {
     struct Window {
@@ -24,6 +30,7 @@ namespace atmo::core::components
         Clay_Arena clay_arena;
         std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
         std::optional<std::function<void()>> close_callback;
+        bool headless = false;
     };
 } // namespace atmo::core::components
 
@@ -49,7 +56,7 @@ namespace atmo::core::ecs::entities
             return "Window";
         }
 
-        void setTitle(const std::string &name);
+        bool setTitle(const std::string &name);
         void setSize(const core::types::Vector2i &size);
         void focus();
 

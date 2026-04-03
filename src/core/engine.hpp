@@ -15,6 +15,7 @@ namespace atmo::core
     private:
         ecs::ECS m_ecs;
         std::atomic<bool> m_running{ false };
+        bool m_headless = false;
 
         int initLogger();
         int initSDL();

@@ -441,7 +441,7 @@ target("atmo")
 
         print(bin .. ": Packing " .. #files .. " files...")
 
-        os.runv(bin, table.join({"--pack"}, files))
+        os.runv(bin, table.join({"--headless", "--pack"}, files))
 
         local pck = path.absolute("packed_output.pck")
 
