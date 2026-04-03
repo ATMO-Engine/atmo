@@ -3,6 +3,10 @@ name: build-check
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-compile:
     name: Linux build
@@ -29,9 +33,15 @@ jobs:
         with:
           xmake-version: latest
 
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.xmake/packages
+          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: xmake-${{ runner.os }}-
+
       - name: Run xmake build
-        run: |
-          xmake -y
+        run: xmake -y
 
   check-compile-macos:
     name: macOS build
@@ -46,6 +56,13 @@ jobs:
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
+
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.xmake/packages
+          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: xmake-${{ runner.os }}-
 
       - name: Run xmake build
         run: xmake -y
@@ -63,6 +80,13 @@ jobs:
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
+
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.xmake/packages
+          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: xmake-${{ runner.os }}-
 
       - name: Run xmake build
         run: xmake -y

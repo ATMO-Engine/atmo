@@ -1,6 +1,11 @@
 name: unit-test
+
 on:
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   run-tests-linux:
@@ -28,9 +33,16 @@ jobs:
         with:
           xmake-version: latest
 
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.xmake/packages
+          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: xmake-${{ runner.os }}-
+
       - name: Run unit tests
         run: |
-          xmake -y
+          xmake build atmo-test
           xmake test -v
 
   run-tests-macos:
@@ -47,9 +59,16 @@ jobs:
         with:
           xmake-version: latest
 
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.xmake/packages
+          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: xmake-${{ runner.os }}-
+
       - name: Run unit tests
         run: |
-          xmake -y
+          xmake build atmo-test
           xmake test -v
 
   run-tests-windows:
@@ -66,7 +85,14 @@ jobs:
         with:
           xmake-version: latest
 
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.xmake/packages
+          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: xmake-${{ runner.os }}-
+
       - name: Run unit tests
         run: |
-          xmake -y
+          xmake build atmo-test
           xmake test -v
