@@ -13,7 +13,7 @@ jobs:
     name: Linux unit tests
     runs-on: ubuntu-latest
     env:
-      XMAKE_GLOBALDIR: ${{ github.workspace }}/.xmake-global
+      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,24 +35,38 @@ jobs:
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
+          actions-cache-folder: .xmake-cache
 
-      - name: Cache xmake packages
-        uses: actions/cache@v4
+      - name: Get xmake dependency hash
+        id: dep_hash
+        run: echo "hash=$(xmake l utils.ci.packageskey)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore xmake packages cache
+        id: restore-depcache
+        uses: actions/cache/restore@v4
         with:
-          path: ${{ github.workspace }}/.xmake-global/packages
-          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
-          restore-keys: xmake-${{ runner.os }}-
+          path: ${{ env.XMAKE_GLOBALDIR }}/.xmake/packages
+          key: ${{ runner.os }}-${{ steps.dep_hash.outputs.hash }}
+          restore-keys: ${{ runner.os }}-
 
       - name: Run unit tests
         run: |
           xmake build atmo-test
           xmake test -v
+
+      - name: Save xmake packages cache
+        if: ${{ !steps.restore-depcache.outputs.cache-hit }}
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.XMAKE_GLOBALDIR }}/.xmake/packages
+          key: ${{ steps.restore-depcache.outputs.cache-primary-key }}
 
   run-tests-macos:
     name: macOS unit tests
     runs-on: macos-latest
     env:
-      XMAKE_GLOBALDIR: ${{ github.workspace }}/.xmake-global
+      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,24 +77,38 @@ jobs:
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
+          actions-cache-folder: .xmake-cache
 
-      - name: Cache xmake packages
-        uses: actions/cache@v4
+      - name: Get xmake dependency hash
+        id: dep_hash
+        run: echo "hash=$(xmake l utils.ci.packageskey)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore xmake packages cache
+        id: restore-depcache
+        uses: actions/cache/restore@v4
         with:
-          path: ${{ github.workspace }}/.xmake-global/packages
-          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
-          restore-keys: xmake-${{ runner.os }}-
+          path: ${{ env.XMAKE_GLOBALDIR }}/.xmake/packages
+          key: ${{ runner.os }}-${{ steps.dep_hash.outputs.hash }}
+          restore-keys: ${{ runner.os }}-
 
       - name: Run unit tests
         run: |
           xmake build atmo-test
           xmake test -v
+
+      - name: Save xmake packages cache
+        if: ${{ !steps.restore-depcache.outputs.cache-hit }}
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.XMAKE_GLOBALDIR }}/.xmake/packages
+          key: ${{ steps.restore-depcache.outputs.cache-primary-key }}
 
   run-tests-windows:
     name: Windows unit tests
     runs-on: windows-latest
     env:
-      XMAKE_GLOBALDIR: ${{ github.workspace }}/.xmake-global
+      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,15 +119,29 @@ jobs:
         uses: xmake-io/github-action-setup-xmake@v1
         with:
           xmake-version: latest
+          actions-cache-folder: .xmake-cache
 
-      - name: Cache xmake packages
-        uses: actions/cache@v4
+      - name: Get xmake dependency hash
+        id: dep_hash
+        run: echo "hash=$(xmake l utils.ci.packageskey)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore xmake packages cache
+        id: restore-depcache
+        uses: actions/cache/restore@v4
         with:
-          path: ${{ github.workspace }}/.xmake-global/packages
-          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
-          restore-keys: xmake-${{ runner.os }}-
+          path: ${{ env.XMAKE_GLOBALDIR }}/.xmake/packages
+          key: ${{ runner.os }}-${{ steps.dep_hash.outputs.hash }}
+          restore-keys: ${{ runner.os }}-
 
       - name: Run unit tests
         run: |
           xmake build atmo-test
           xmake test -v
+
+      - name: Save xmake packages cache
+        if: ${{ !steps.restore-depcache.outputs.cache-hit }}
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.XMAKE_GLOBALDIR }}/.xmake/packages
+          key: ${{ steps.restore-depcache.outputs.cache-primary-key }}
