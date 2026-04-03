@@ -13,7 +13,7 @@ jobs:
     name: Linux build
     runs-on: ubuntu-latest
     env:
-      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
     name: macOS build
     runs-on: macos-latest
     env:
-      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
     name: Windows build
     runs-on: windows-latest
     env:
-      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

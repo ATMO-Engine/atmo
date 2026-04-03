@@ -13,7 +13,7 @@ jobs:
     name: Linux unit tests
     runs-on: ubuntu-latest
     env:
-      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
     name: macOS unit tests
     runs-on: macos-latest
     env:
-      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
     name: Windows unit tests
     runs-on: windows-latest
     env:
-      XMAKE_GLOBALDIR: ${{ runner.workspace }}/xmake-global
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
