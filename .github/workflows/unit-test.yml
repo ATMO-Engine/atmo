@@ -12,6 +12,8 @@ jobs:
   run-tests-linux:
     name: Linux unit tests
     runs-on: ubuntu-latest
+    env:
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/.xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +39,7 @@ jobs:
       - name: Cache xmake packages
         uses: actions/cache@v4
         with:
-          path: ~/.xmake/packages
+          path: ${{ github.workspace }}/.xmake-global/packages
           key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
           restore-keys: xmake-${{ runner.os }}-
 
@@ -49,6 +51,8 @@ jobs:
   run-tests-macos:
     name: macOS unit tests
     runs-on: macos-latest
+    env:
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/.xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,7 +67,7 @@ jobs:
       - name: Cache xmake packages
         uses: actions/cache@v4
         with:
-          path: ~/.xmake/packages
+          path: ${{ github.workspace }}/.xmake-global/packages
           key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
           restore-keys: xmake-${{ runner.os }}-
 
@@ -75,6 +79,8 @@ jobs:
   run-tests-windows:
     name: Windows unit tests
     runs-on: windows-latest
+    env:
+      XMAKE_GLOBALDIR: ${{ github.workspace }}/.xmake-global
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -89,7 +95,7 @@ jobs:
       - name: Cache xmake packages
         uses: actions/cache@v4
         with:
-          path: ~/.xmake/packages
+          path: ${{ github.workspace }}/.xmake-global/packages
           key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
           restore-keys: xmake-${{ runner.os }}-
 
