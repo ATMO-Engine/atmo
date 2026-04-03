@@ -15,6 +15,8 @@ if is_mode("debug") then
     end
 end
 
+set_policy("build.intermediate_directory", false)
+
 set_policy("build.warning", true)
 
 if is_mode("release") then
