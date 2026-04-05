@@ -2,16 +2,27 @@
 
 #include <concepts>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "flecs.h"
+#include "glaze/glaze.hpp"
+
 
 namespace atmo::core::ecs::entities
 {
     class Scene;
+
+    struct EntityData {
+        std::string name;
+        std::string type;
+
+        std::unordered_map<std::string, glz::raw_json> components;
+
+        std::vector<EntityData> children;
+    };
 
     class Entity
     {
@@ -33,6 +44,9 @@ namespace atmo::core::ecs::entities
         {
             return "Entity";
         }
+
+        EntityData serialize() const;
+        void deserialize(std::string_view data);
 
         /**
          * @brief Set a component for the entity.
@@ -143,13 +157,6 @@ namespace atmo::core::ecs::entities
         void rename(const std::string &new_name);
 
         /**
-         * @brief Load the entity's data from a JSON string.
-         *
-         * @param json_data JSON string containing the entity's data. The format of the JSON should match the structure of the entity and its components.
-         */
-        void loadFromJson(std::string_view json_data);
-
-        /**
          * @brief Check if this entity is a child of the given parent entity.
          *
          * @param parent Entity to check against.
@@ -157,8 +164,6 @@ namespace atmo::core::ecs::entities
          * @return false This entity is not a child of the given parent.
          */
         bool isChildOf(Entity parent);
-
-        // FIXME: Find a way to resolve recursive inclusion between Entity and Entity::Scene
 
         /**
          * @brief Get the Scene that the entity belongs to.

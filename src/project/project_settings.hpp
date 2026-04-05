@@ -22,11 +22,6 @@
 #define ATMO_SETTING
 #endif
 
-template <> struct glz::meta<atmo::core::types::ColorRGBA> {
-    using T = atmo::core::types::ColorRGBA;
-    static constexpr auto value = glz::object("r", &T::r, "g", &T::g, "b", &T::b, "a", &T::a);
-};
-
 namespace atmo
 {
     namespace project

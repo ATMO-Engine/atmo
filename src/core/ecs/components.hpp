@@ -1,195 +1,54 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdlib>
 #include <string>
-
-#include <box2d/box2d.h>
-#include <flecs.h>
-#include <spdlog/spdlog.h>
 #include <vector>
-#include "SDL3/SDL_rect.h"
-#include "SDL3/SDL_render.h"
-#include "clay.h"
-#include "core/resource/handle.hpp"
-#include "core/resource/subresources/2d/shape/shape2d.hpp"
+
+#include <flecs.h>
+
 #include "core/types.hpp"
-#include "impl/clay_types.hpp"
-#include "luau/luau.hpp"
+#include "meta/meta_registry.hpp"
 
-#define BEGIN_REFLECT(Type)                     \
-    namespace                                   \
-    {                                           \
-        void register_##Type(flecs::world &ecs) \
-        {                                       \
-            using Self = Type;                  \
-            auto c = ecs.component<Self>();
+namespace atmo::core::components
+{
+    template <typename Elem, typename Vector = std::vector<Elem>> flecs::opaque<Vector, Elem> static std_vector_support(flecs::world &world)
+    {
+        return flecs::opaque<Vector, Elem>()
+            .as_type(world.vector<Elem>())
 
-#define FIELD(m) c.member<decltype(Self::m)>(#m);
-#define NAMED_FIELD(name, m) c.member<decltype(Self::m)>(name);
+            .serialize([](const flecs::serializer *s, const Vector *data) {
+                for (const auto &el : *data) {
+                    s->value(el);
+                }
+                return 0;
+            })
 
-#define END_REFLECT(Type)                                                                 \
-    }                                                                                     \
-    const bool Type##_ref_reg = (component_registry().push_back(&register_##Type), true); \
+            .count([](const Vector *data) { return data->size(); })
+
+            .resize([](Vector *data, size_t size) { data->resize(size); })
+
+            .ensure_element([](Vector *data, size_t elem) {
+                if (data->size() <= elem) {
+                    data->resize(elem + 1);
+                }
+
+                return &data->data()[elem];
+            });
     }
 
-namespace atmo
-{
-    namespace core
+    static void register_core_components(flecs::world world)
     {
-        class ComponentManager
-        {
-        public:
-            virtual ~ComponentManager() = default;
+        types::register_core_types(world);
 
-            struct Managed {
-                ComponentManager *ptr;
-            };
+        world.component<std::string>()
+            .opaque(flecs::String)
+            .serialize([](const flecs::serializer *s, const std::string *data) {
+                const char *str = data->c_str();
+                return s->value(flecs::String, &str);
+            })
+            .assign_string([](std::string *data, const char *value) { *data = value; });
 
-            flecs::entity entity;
-        };
+        world.component<std::vector<types::Vector2>>().opaque(std_vector_support<types::Vector2>);
 
-        namespace components
-        {
-            using RegistrationFn = void (*)(flecs::world &);
-
-            static inline std::vector<RegistrationFn> &component_registry()
-            {
-                static std::vector<RegistrationFn> registry;
-                return registry;
-            }
-
-            struct Scene {
-                bool singleton{ false };
-                b2WorldId world_id{ b2_nullWorldId };
-            };
-            BEGIN_REFLECT(Scene)
-            FIELD(singleton)
-            END_REFLECT(Scene)
-
-            struct Transform2d {
-                types::Vector2 position{ 0.0f, 0.0f };
-                types::Vector2 g_position{ 0.0f, 0.0f };
-
-                float rotation{ 0.0f };
-                float g_rotation{ 0.0f };
-
-                types::Vector2 scale{ 1.0f, 1.0f };
-                types::Vector2 g_scale{ 1.0f, 1.0f };
-            };
-            BEGIN_REFLECT(Transform2d)
-            FIELD(position)
-            FIELD(rotation)
-            FIELD(scale)
-            END_REFLECT(Transform2d)
-
-            struct StaticBody2d {
-            };
-
-            struct DynamicBody2d {
-            };
-
-            struct KinematicBody2d {
-            };
-
-            struct Window {
-                std::string title;
-                types::Vector2i size;
-                SDL_Window *window = nullptr;
-                Clay_SDL3RendererData renderer_data;
-                Clay_Arena clay_arena;
-                std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
-                std::optional<std::function<void()>> close_callback;
-            };
-            BEGIN_REFLECT(Window)
-            FIELD(title)
-            FIELD(size)
-            END_REFLECT(Window)
-
-            struct Script {
-                std::string file;
-            };
-            BEGIN_REFLECT(Script)
-            FIELD(file)
-            END_REFLECT(Script)
-
-            struct Sprite2d {
-                std::string texture_path;
-                resource::Handle<SDL_Surface> m_handle;
-                types::Vector2 texture_size{ 0.0f, 0.0f };
-            };
-            BEGIN_REFLECT(Sprite2d)
-            FIELD(texture_path)
-            END_REFLECT(Sprite2d)
-
-            namespace UI
-            {
-                // Clay_ElementDeclaration decl;
-                // Clay_TextElementConfig textConfig;
-                struct UI {
-                    bool visible{ true };
-                    types::ColorRGBA modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
-                    types::ColorRGBA self_modulate{ 1.0f, 1.0f, 1.0f, 1.0f };
-                };
-                BEGIN_REFLECT(UI)
-                FIELD(visible)
-                FIELD(modulate)
-                FIELD(self_modulate)
-                END_REFLECT(UI)
-
-                struct Text {
-                    std::string content;
-                    // Clay_TextElementConfig config;
-                };
-                BEGIN_REFLECT(Text)
-                FIELD(content)
-                // FIELD(config)
-                END_REFLECT(Text)
-            } // namespace UI
-
-            template <typename Elem, typename Vector = std::vector<Elem>> flecs::opaque<Vector, Elem> static std_vector_support(flecs::world &world)
-            {
-                return flecs::opaque<Vector, Elem>()
-                    .as_type(world.vector<Elem>())
-
-                    .serialize([](const flecs::serializer *s, const Vector *data) {
-                        for (const auto &el : *data) {
-                            s->value(el);
-                        }
-                        return 0;
-                    })
-
-                    .count([](const Vector *data) { return data->size(); })
-
-                    .resize([](Vector *data, size_t size) { data->resize(size); })
-
-                    .ensure_element([](Vector *data, size_t elem) {
-                        if (data->size() <= elem) {
-                            data->resize(elem + 1);
-                        }
-
-                        return &data->data()[elem];
-                    });
-            }
-
-            static void register_core_components(flecs::world world)
-            {
-                types::register_core_types(world);
-
-                world.component<std::string>()
-                    .opaque(flecs::String)
-                    .serialize([](const flecs::serializer *s, const std::string *data) {
-                        const char *str = data->c_str();
-                        return s->value(flecs::String, &str);
-                    })
-                    .assign_string([](std::string *data, const char *value) { *data = value; });
-
-                world.component<std::vector<types::Vector2>>().opaque(std_vector_support<types::Vector2>);
-
-                for (auto fn : component_registry()) {
-                    fn(world);
-                }
-            }
-        } // namespace components
-    } // namespace core
-} // namespace atmo
+        atmo::meta::MetaRegistry::Instance().registerAllFlecs(world);
+    }
+} // namespace atmo::core::components

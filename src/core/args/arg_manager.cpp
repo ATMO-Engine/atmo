@@ -1,154 +1,44 @@
 #include "arg_manager.hpp"
+#include <utility>
 #include "spdlog/spdlog.h"
 
-namespace atmo
+namespace atmo::core::args
 {
-    namespace core
+    void ArgManager::Parse(int argc, const char *const *argv)
     {
-        namespace args
-        {
-            void ArgManager::Parse(int argc, char **argv)
-            {
-                std::vector<std::string> args;
-                for (int i = 1; i < argc; i++) {
-                    args.emplace_back(argv[i]);
-                }
-                Parse(args);
-            }
+        Instance().m_args.parse_args(argc, argv);
+    }
 
-            void ArgManager::Parse(const std::vector<std::string> &args)
-            {
-                Instance().m_args.clear();
+    std::stringstream ArgManager::Help()
+    {
+        return Instance().m_args.help();
+    }
 
-                for (size_t i = 0; i < args.size(); i++) {
-                    const std::string &arg = args[i];
-                    if (arg.starts_with("--")) {
-                        std::string name, value_str;
-                        ArgValue value = true;
-                        size_t equal_pos = arg.find('=');
-                        if (equal_pos != std::string::npos) {
-                            name = arg.substr(2, equal_pos - 2);
-                            value_str = arg.substr(equal_pos + 1);
-                        } else {
-                            name = arg.substr(2);
-                            if (i + 1 < args.size() && !args[i + 1].starts_with("-") && !args[i + 1].starts_with("--")) {
-                                value_str = args[i + 1];
-                                ++i;
-                            }
-                        }
+    void ArgManager::AddLaunchHandler(int priority, const std::string &arg, ArgManagerCallback callback)
+    {
+        Instance().m_launchHandlers[priority].emplace_back(std::make_pair(arg, callback));
+    }
 
-                        if (!value_str.empty()) {
-                            try {
-                                std::size_t pos;
-                                value = std::stoi(value_str, &pos);
-                                if (pos != value_str.size()) {
-                                    throw std::invalid_argument("Not fully parsed as int");
-                                }
-                            } catch (...) {
-                                try {
-                                    value = std::stof(value_str);
-                                } catch (...) {
-                                    value = value_str;
-                                }
-                            }
-                        }
+    void ArgManager::ExecuteLaunchHandlers()
+    {
+        ArgManager &instance = Instance();
 
-                        Instance().m_args.push_back({ name, value });
-                    } else if (arg.starts_with("-")) {
-                        for (size_t j = 1; j < arg.size(); ++j) {
-                            std::string name(1, arg[j]);
-                            Instance().m_args.push_back({ name, true });
-                        }
-                    } else {
-                        Instance().m_args.push_back({ arg, std::monostate() });
-                    }
-                }
-            }
+        for (auto &entry : instance.m_launchHandlers) {
+            for (auto &handler : entry.second) {
+                if (auto fn = instance.m_args.is_used(handler.first)) {
+                    instance.m_launchResult = handler.second(instance);
 
-            bool ArgManager::HasArg(const std::string &name)
-            {
-                for (const auto &arg : Instance().m_args) {
-                    if (arg.name == name) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            ArgPair ArgManager::GetArg(const std::string &name)
-            {
-                for (const auto &arg : Instance().m_args) {
-                    if (arg.name == name) {
-                        return arg;
-                    }
-                }
-                throw std::runtime_error("Argument not found: " + name);
-            }
-
-            ArgValue ArgManager::GetArgValue(const std::string &name)
-            {
-                for (const auto &arg : Instance().m_args) {
-                    if (arg.name == name) {
-                        return arg.value;
-                    }
-                }
-                throw std::runtime_error("Argument not found: " + name);
-            }
-
-            ArgValue ArgManager::GetArgValueWithDefault(const std::string &name, const ArgValue &default_value)
-            {
-                for (const auto &arg : Instance().m_args) {
-                    if (arg.name == name) {
-                        return arg.value;
-                    }
-                }
-                return default_value;
-            }
-
-            ArgPair ArgManager::GetArgFromIndex(size_t index)
-            {
-                if (index < Instance().m_args.size()) {
-                    return Instance().m_args[index];
-                }
-                throw std::runtime_error("Argument index out of range: " + std::to_string(index));
-            }
-
-            ArgValue ArgManager::GetArgValueFromIndex(size_t index)
-            {
-                if (index < Instance().m_args.size()) {
-                    return Instance().m_args[index].value;
-                }
-                throw std::runtime_error("Argument index out of range: " + std::to_string(index));
-            }
-
-            void ArgManager::SetArg(const std::string &name, const ArgValue &value)
-            {
-                for (auto &arg : Instance().m_args) {
-                    if (arg.name == name) {
-                        arg.value = value;
+                    if (instance.m_launchResult != LaunchResult::Continue)
                         return;
-                    }
                 }
-                Instance().m_args.push_back({ name, value });
             }
+        }
+    }
 
-            std::vector<std::string> ArgManager::GetNamedArgs(const std::string &start)
-            {
-                std::vector<std::string> named_args;
-                bool start_found = false;
-                for (const auto &arg : Instance().m_args) {
-                    if (start_found) {
-                        if (std::get<std::monostate>(arg.value) != std::monostate()) {
-                            break;
-                        }
-                        named_args.push_back(arg.name);
-                    } else if (arg.name == start) {
-                        start_found = true;
-                    }
-                }
-                return named_args;
-            }
+    ArgManager::LaunchResult ArgManager::GetLaunchResult()
+    {
+        return Instance().m_launchResult;
+    }
 
-        } // namespace args
-    } // namespace core
-} // namespace atmo
+
+} // namespace atmo::core::args

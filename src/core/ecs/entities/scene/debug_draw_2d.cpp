@@ -1,3 +1,4 @@
+#include "core/ecs/entities/window/window.hpp"
 #include "scene.hpp"
 
 #include <cmath>
