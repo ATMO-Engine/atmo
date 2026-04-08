@@ -70,13 +70,11 @@ namespace atmo
                         ATMO_PROFILE_ZONE_VALUE(i);
                         auto &e = m_entries[i];
                         if (e.resource != nullptr) {
-                            ATMO_PROFILE_ZONE_TEXT("Resident Ref:", 14);
-                            ATMO_PROFILE_ZONE_VALUE(e.residentRefs);
-                            ATMO_PROFILE_ZONE_TEXT("Strong Ref:", 12);
-                            ATMO_PROFILE_ZONE_VALUE(e.strongRefs);
+                            ATMO_PROFILE_ZONE_TEXT("Ref:", 14);
+                            ATMO_PROFILE_ZONE_VALUE(e.ref);
                             ATMO_PROFILE_ZONE_TEXT("Last Frame Use:", 16);
                             ATMO_PROFILE_ZONE_VALUE(e.lastUsedFrame);
-                            if (e.strongRefs == 0 && e.residentRefs == 0) {
+                            if (e.ref == 0) {
                                 if (currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
                                     ATMO_PROFILE_ZONE_TEXT("-- Resource delete --", 22);
                                     spdlog::debug("Destroy entry: " + std::to_string(i));
@@ -89,27 +87,18 @@ namespace atmo
                     }
                 }
 
-                void retain(StoreHandle handle, uint64_t tick)
-                {
-                    m_entries[handle.index].lastUsedFrame = tick;
-                    m_entries[handle.index].strongRefs++;
-                }
-
-                void release(StoreHandle handle)
-                {
-                    m_entries[handle.index].strongRefs--;
-                }
-
-                void pin(StoreHandle handle)
+                void pin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Pinned index: {}", handle.index);
-                    m_entries[handle.index].residentRefs++;
+                    m_entries[handle.index].lastUsedFrame = tick;
+                    m_entries[handle.index].ref++;
                 }
 
-                void unpin(StoreHandle handle)
+                void unpin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Unpinned index: {}", handle.index);
-                    m_entries[handle.index].residentRefs--;
+                    m_entries[handle.index].lastUsedFrame = tick;
+                    m_entries[handle.index].ref--;
                 }
 
                 const StoreHandle create(const std::string &path, uint64_t tick)
@@ -126,14 +115,13 @@ namespace atmo
                         m_freeList.pop_back();
                         m_entries.at(idx).resource = res;
                         m_entries.at(idx).lastUsedFrame = tick;
-                        m_entries.at(idx).strongRefs = 0;
-                        m_entries.at(idx).residentRefs = 0;
+                        m_entries.at(idx).ref = 0;
 
                         newHandle.index = idx;
                         newHandle.generation = m_entries.at(idx).generation;
                     } else {
                         ATMO_PROFILE_ZONE_TEXT("Created new entry", 18);
-                        Entry newRes = { .resource = nullptr, .generation = 1, .strongRefs = 0, .residentRefs = 0, .lastUsedFrame = 0 };
+                        Entry newRes = { .resource = nullptr, .generation = 1, .ref = 0, .lastUsedFrame = 0 };
                         newRes.resource = res;
                         newRes.lastUsedFrame = tick;
 
@@ -171,8 +159,7 @@ namespace atmo
                     std::shared_ptr<T> resource;
                     uint32_t generation = 1;
 
-                    uint32_t strongRefs = 0;
-                    uint32_t residentRefs = 0;
+                    uint32_t ref = 0;
                     uint32_t lastUsedFrame = 0;
                 };
 

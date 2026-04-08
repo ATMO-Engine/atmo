@@ -12,6 +12,7 @@
 #include "SDL3/SDL_render.h"
 #include "clay.h"
 #include "core/resource/handle.hpp"
+#include "core/resource/resource_ref.hpp"
 #include "core/resource/subresources/2d/shape/shape2d.hpp"
 #include "core/types.hpp"
 #include "impl/clay_types.hpp"
@@ -98,7 +99,7 @@ namespace atmo
                 SDL_Window *window = nullptr;
                 Clay_SDL3RendererData renderer_data;
                 Clay_Arena clay_arena;
-                std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
+                std::map<std::string, SDL_Texture *> texture_cache;
                 std::optional<std::function<void()>> close_callback;
             };
             BEGIN_REFLECT(Window)
@@ -115,7 +116,7 @@ namespace atmo
 
             struct Sprite2d {
                 std::string texture_path;
-                resource::Handle<SDL_Surface> m_handle;
+                resource::ResourceRef<SDL_Surface> *m_res = nullptr;
                 types::Vector2 texture_size{ 0.0f, 0.0f };
             };
             BEGIN_REFLECT(Sprite2d)

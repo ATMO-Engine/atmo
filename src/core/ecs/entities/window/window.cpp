@@ -242,19 +242,19 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    SDL_Texture *Window::getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle)
+    SDL_Texture *Window::getTextureFromHandle(const std::string &path)
     {
         auto window = p_handle.get_ref<components::Window>();
 
-        if (window->texture_cache.find(handle) != window->texture_cache.end()) {
-            return window->texture_cache[handle];
+        if (window->texture_cache.find(path) != window->texture_cache.end()) {
+            return window->texture_cache[path];
         }
 
-        atmo::core::resource::ResourceRef<SDL_Surface> res = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(handle.assetId);
+        atmo::core::resource::ResourceRef<SDL_Surface> res = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(path);
         std::shared_ptr<SDL_Surface> surface = res.get();
 
         SDL_Texture *texture = SDL_CreateTextureFromSurface(window->renderer_data.renderer, surface.get());
-        window->texture_cache[handle] = texture;
+        window->texture_cache[path] = texture;
         return texture;
     }
 

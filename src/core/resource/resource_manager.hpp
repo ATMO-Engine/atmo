@@ -6,7 +6,6 @@
 
 #include "core/resource/handle.hpp"
 #include "core/resource/loader_dispatcher.hpp"
-#include "handle.hpp"
 #include "i_resource_pool.hpp"
 #include "resource_pool.hpp"
 #include "resource_ref.hpp"

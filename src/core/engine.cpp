@@ -52,6 +52,11 @@ void atmo::core::Engine::start()
         dynamic_body2->addShape(circle_shape);
         dynamic_body2->setPosition({ 450, 0 });
         dynamic_body2->setParent(*scene);
+
+        auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+        sprite->setTexturePath("project://assets/atmo.png");
+        sprite->setPosition({ 1200, 500 });
+        sprite->setParent(*scene);
     }
 
     auto last_time = std::chrono::steady_clock::now();

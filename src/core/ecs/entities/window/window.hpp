@@ -28,7 +28,7 @@ namespace atmo::core::ecs::entities
         core::types::Vector2i getSize() const noexcept;
         std::string getTitle() const noexcept;
 
-        SDL_Texture *getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle);
+        SDL_Texture *getTextureFromHandle(const std::string &path);
 
         /**
          * @brief Set a callback function to be called when the window is closed. This can be used to perform cleanup tasks or prompt the user for confirmation
