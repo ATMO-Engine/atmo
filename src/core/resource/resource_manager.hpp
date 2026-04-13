@@ -86,6 +86,13 @@ namespace atmo
                     std::unordered_map<std::string, StoreHandle> mapHandle;
                 };
 
+                /**
+                 * @brief
+                 * Get the Pool instance associated with the data type
+                 *
+                 * @tparam T The datatype
+                 * @return ResourceTypeStore<T>& The pool
+                 */
                 template <typename T> ResourceTypeStore<T> &getPool()
                 {
                     static ResourceTypeStore<T> store = { .pool = nullptr, .mapHandle = {} };

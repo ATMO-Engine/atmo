@@ -55,6 +55,12 @@ namespace atmo
                     }
                 }
 
+                /**
+                 * @brief
+                 * Clear the unused resources inside the pool
+                 *
+                 * @param currentFrame The current tick executed
+                 */
                 void collectGarbage(uint64_t currentFrame)
                 {
                     ATMO_PROFILE_SCOPE_N("Pool");
@@ -87,6 +93,13 @@ namespace atmo
                     }
                 }
 
+                /**
+                 * @brief
+                 * Increase a counter that track the number of references
+                 *
+                 * @param handle The index of the resource
+                 * @param tick The tick when the action is performed
+                 */
                 void pin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Pinned index: {}", handle.index);
@@ -94,6 +107,13 @@ namespace atmo
                     m_entries[handle.index].ref++;
                 }
 
+                /**
+                 * @brief
+                 * Decrease a counter that track the number of references
+                 *
+                 * @param handle The index of the resource
+                 * @param tick The tick when the action is performed
+                 */
                 void unpin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Unpinned index: {}", handle.index);
@@ -101,6 +121,14 @@ namespace atmo
                     m_entries[handle.index].ref--;
                 }
 
+                /**
+                 * @brief
+                 * Create a resource
+                 *
+                 * @param path the path of the resource you want to load
+                 * @param tick The tick when the action is performed
+                 * @return const StoreHandle The index of the resource created
+                 */
                 const StoreHandle create(const std::string &path, uint64_t tick)
                 {
                     ATMO_PROFILE_SCOPE_COLOR(0xFF0000);
@@ -137,6 +165,14 @@ namespace atmo
                     return newHandle;
                 }
 
+                /**
+                 * @brief
+                 * Get the Ref object of the resource
+                 *
+                 * @param handle The index of the resource
+                 * @param tick The tick when the action is performed
+                 * @return ResourceRef<T> The ResourceRef of the resource
+                 */
                 ResourceRef<T> getRef(StoreHandle &handle, uint64_t tick)
                 {
                     if (handle.generation != m_entries.at(handle.index).generation) {
@@ -146,6 +182,13 @@ namespace atmo
                     return ref;
                 }
 
+                /**
+                 * @brief
+                 * Get the shared ptr that hold the resource
+                 *
+                 * @param handle The index of the resource
+                 * @return std::shared_ptr<T> The resource
+                 */
                 std::shared_ptr<T> getAsset(const StoreHandle &handle)
                 {
                     if (handle.generation != m_entries.at(handle.index).generation) {

@@ -41,6 +41,13 @@ namespace atmo
 
                 virtual ~Resource() = default;
 
+                /**
+                 * @brief
+                 * Load the specified resource inside a shared_ptr (the destroyer is a lambda associated to the shared_ptr)
+                 *
+                 * @param path The path of the resoruce to load
+                 * @return std::shared_ptr<T> The resource
+                 */
                 virtual std::shared_ptr<T> load(const std::string &path) = 0;
 
                 virtual const std::string resourceTypeName() = 0;
