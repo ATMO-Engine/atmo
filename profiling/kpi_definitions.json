@@ -1,0 +1,135 @@
+{
+  "frame_time": {
+    "description": "Time per frame in milliseconds",
+    "unit": "ms",
+    "target": 16.6,
+    "warning": 20.0,
+    "critical": 33.3
+  },
+  "cpu_render_time": {
+    "description": "CPU time spent on rendering",
+    "unit": "ms",
+    "target": 5.0,
+    "warning": 8.0,
+    "critical": 12.0
+  },
+  "cpu_physics_time": {
+    "description": "CPU time spent on physics calculations",
+    "unit": "ms",
+    "target": 4.0,
+    "warning": 6.0,
+    "critical": 10.0
+  },
+  "cpu_scripting_time": {
+    "description": "CPU time spent on scripting / Luau / AI",
+    "unit": "ms",
+    "target": 3.0,
+    "warning": 5.0,
+    "critical": 8.0
+  },
+  "gpu_frame_time": {
+    "description": "GPU frame time per frame",
+    "unit": "ms",
+    "target": 12.0,
+    "warning": 16.0,
+    "critical": 25.0
+  },
+  "draw_calls_per_frame": {
+    "description": "Number of draw calls submitted per frame",
+    "unit": "count",
+    "target": 1500,
+    "warning": 2000,
+    "critical": 3000
+  },
+  "total_memory_usage": {
+    "description": "Total RAM used by the engine",
+    "unit": "MB",
+    "target": 2048,
+    "warning": 3072,
+    "critical": 4096
+  },
+  "peak_memory_usage": {
+    "description": "Peak RAM usage during a scene",
+    "unit": "MB",
+    "target": 2048,
+    "warning": 3072,
+    "critical": 4096
+  },
+  "allocations_per_frame": {
+    "description": "Number of memory allocations per frame",
+    "unit": "count",
+    "target": 50,
+    "warning": 100,
+    "critical": 200
+  },
+  "memory_leaks": {
+    "description": "Detected memory leaks",
+    "unit": "count",
+    "target": 0,
+    "warning": 0,
+    "critical": 1
+  },
+  "thread_utilization": {
+    "description": "Worker threads CPU utilization percentage",
+    "unit": "%",
+    "target": 85,
+    "warning": 60,
+    "critical": 40
+  },
+  "task_latency": {
+    "description": "Average time tasks wait in queue before execution",
+    "unit": "ms",
+    "target": 1.0,
+    "warning": 3.0,
+    "critical": 5.0
+  },
+  "synchronization_overhead": {
+    "description": "Time spent waiting for mutexes / barriers",
+    "unit": "ms",
+    "target": 0.5,
+    "warning": 2.0,
+    "critical": 5.0
+  },
+  "scene_load_time": {
+    "description": "Time to load a scene",
+    "unit": "seconds",
+    "target": 3.0,
+    "warning": 5.0,
+    "critical": 10.0
+  },
+  "asset_load_time": {
+    "description": "Time to load individual assets",
+    "unit": "seconds",
+    "target": 0.5,
+    "warning": 1.0,
+    "critical": 2.0
+  },
+  "streaming_performance": {
+    "description": "Time to stream assets during gameplay",
+    "unit": "ms",
+    "target": 10.0,
+    "warning": 20.0,
+    "critical": 50.0
+  },
+  "hot_reload_time": {
+    "description": "Time to hot-reload assets or scripts",
+    "unit": "seconds",
+    "target": 0.5,
+    "warning": 1.0,
+    "critical": 3.0
+  },
+  "crash_rate": {
+    "description": "Number of crashes per session",
+    "unit": "count",
+    "target": 0,
+    "warning": 1,
+    "critical": 2
+  },
+  "assertion_failures": {
+    "description": "Number of assertion / runtime errors",
+    "unit": "count",
+    "target": 0,
+    "warning": 5,
+    "critical": 10
+  }
+}
