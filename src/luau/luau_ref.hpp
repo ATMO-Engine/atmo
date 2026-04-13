@@ -14,6 +14,12 @@ namespace atmo
             LuauRef(Luau &vm, int ref);
             ~LuauRef();
 
+            /**
+             * @brief
+             * Store the lua raw ref given so the lifetime will be handled automatically
+             *
+             * @param ref the lua ref
+             */
             void set(int ref);
             void clear();
 

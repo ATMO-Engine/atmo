@@ -14,6 +14,11 @@ namespace atmo
         template <typename T> class LuaBindings
         {
         public:
+            /**
+             * @brief
+             * Register C++ bindings
+             * @param state The VM in which you want to register the bindings
+             */
             static void RegisterType(lua_State *state)
             {
                 // TODO: spdlog generate crash here
@@ -27,6 +32,13 @@ namespace atmo
         template <typename Derived, typename T> class LuaBindingsBase
         {
         protected:
+            /**
+             * @brief
+             * Push value read to the lua stack in order to get a element
+             *
+             * @param L The vm / execution context in which you perform the action
+             * @return int Number of value returned in stack
+             */
             static int Index(lua_State *L)
             {
                 void *obj = luaL_checkudata(L, 1, Derived::name);
@@ -48,6 +60,13 @@ namespace atmo
                 return 1;
             }
 
+            /**
+             * @brief
+             * Set value of a element
+             *
+             * @param L The vm / execution context in which you perform the action
+             * @return int Number of value returned in stack
+             */
             static int NewIndex(lua_State *L)
             {
                 void *obj = luaL_checkudata(L, 1, Derived::name);

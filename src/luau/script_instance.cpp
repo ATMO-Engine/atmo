@@ -50,13 +50,13 @@ namespace atmo
         {
             lua_pushvalue(thread, LUA_GLOBALSINDEX);
 
-            int ref = lua_ref(m_thread, LUA_REGISTRYINDEX);
+            int ref = lua_ref(thread, LUA_REGISTRYINDEX);
             m_envRef.set(ref);
         }
 
         bool ScriptInstance::load(const std::string &name, const char *bytecode, size_t size, int id)
         {
-            m_id = id;
+            m_id = id; // TODO: Attach id to the env so debug call can be specific on the id (Maybe can be handled c++ side only ?)
 
             m_thread = createThread(m_threadRef);
             luaL_sandboxthread(m_thread);
