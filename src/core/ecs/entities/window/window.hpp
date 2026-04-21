@@ -22,7 +22,7 @@ namespace atmo::core::components
         SDL_Window *window = nullptr;
         Clay_SDL3RendererData renderer_data;
         Clay_Arena clay_arena;
-        std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
+        std::map<std::string, SDL_Texture *> texture_cache;
         std::optional<std::function<void()>> close_callback;
     };
 } // namespace atmo::core::components
@@ -57,7 +57,7 @@ namespace atmo::core::ecs::entities
         core::types::Vector2i getSize() const noexcept;
         std::string getTitle() const noexcept;
 
-        SDL_Texture *getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle);
+        SDL_Texture *getTextureFromHandle(const std::string &path);
 
         void onClose(std::function<void()> callback);
 

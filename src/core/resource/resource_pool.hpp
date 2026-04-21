@@ -55,6 +55,12 @@ namespace atmo
                     }
                 }
 
+                /**
+                 * @brief
+                 * Clear the unused resources inside the pool
+                 *
+                 * @param currentFrame The current tick executed
+                 */
                 void collectGarbage(uint64_t currentFrame)
                 {
                     ATMO_PROFILE_SCOPE_N("Pool");
@@ -70,13 +76,11 @@ namespace atmo
                         ATMO_PROFILE_ZONE_VALUE(i);
                         auto &e = m_entries[i];
                         if (e.resource != nullptr) {
-                            ATMO_PROFILE_ZONE_TEXT("Resident Ref:", 14);
-                            ATMO_PROFILE_ZONE_VALUE(e.residentRefs);
-                            ATMO_PROFILE_ZONE_TEXT("Strong Ref:", 12);
-                            ATMO_PROFILE_ZONE_VALUE(e.strongRefs);
+                            ATMO_PROFILE_ZONE_TEXT("Ref:", 14);
+                            ATMO_PROFILE_ZONE_VALUE(e.ref);
                             ATMO_PROFILE_ZONE_TEXT("Last Frame Use:", 16);
                             ATMO_PROFILE_ZONE_VALUE(e.lastUsedFrame);
-                            if (e.strongRefs == 0 && e.residentRefs == 0) {
+                            if (e.ref == 0) {
                                 if (currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
                                     ATMO_PROFILE_ZONE_TEXT("-- Resource delete --", 22);
                                     spdlog::debug("Destroy entry: " + std::to_string(i));
@@ -89,29 +93,42 @@ namespace atmo
                     }
                 }
 
-                void retain(StoreHandle handle, uint64_t tick)
-                {
-                    m_entries[handle.index].lastUsedFrame = tick;
-                    m_entries[handle.index].strongRefs++;
-                }
-
-                void release(StoreHandle handle)
-                {
-                    m_entries[handle.index].strongRefs--;
-                }
-
-                void pin(StoreHandle handle)
+                /**
+                 * @brief
+                 * Increase a counter that track the number of references
+                 *
+                 * @param handle The index of the resource
+                 * @param tick The tick when the action is performed
+                 */
+                void pin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Pinned index: {}", handle.index);
-                    m_entries[handle.index].residentRefs++;
+                    m_entries[handle.index].lastUsedFrame = tick;
+                    m_entries[handle.index].ref++;
                 }
 
-                void unpin(StoreHandle handle)
+                /**
+                 * @brief
+                 * Decrease a counter that track the number of references
+                 *
+                 * @param handle The index of the resource
+                 * @param tick The tick when the action is performed
+                 */
+                void unpin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Unpinned index: {}", handle.index);
-                    m_entries[handle.index].residentRefs--;
+                    m_entries[handle.index].lastUsedFrame = tick;
+                    m_entries[handle.index].ref--;
                 }
 
+                /**
+                 * @brief
+                 * Create a resource
+                 *
+                 * @param path the path of the resource you want to load
+                 * @param tick The tick when the action is performed
+                 * @return const StoreHandle The index of the resource created
+                 */
                 const StoreHandle create(const std::string &path, uint64_t tick)
                 {
                     ATMO_PROFILE_SCOPE_COLOR(0xFF0000);
@@ -126,14 +143,13 @@ namespace atmo
                         m_freeList.pop_back();
                         m_entries.at(idx).resource = res;
                         m_entries.at(idx).lastUsedFrame = tick;
-                        m_entries.at(idx).strongRefs = 0;
-                        m_entries.at(idx).residentRefs = 0;
+                        m_entries.at(idx).ref = 0;
 
                         newHandle.index = idx;
                         newHandle.generation = m_entries.at(idx).generation;
                     } else {
                         ATMO_PROFILE_ZONE_TEXT("Created new entry", 18);
-                        Entry newRes = { .resource = nullptr, .generation = 1, .strongRefs = 0, .residentRefs = 0, .lastUsedFrame = 0 };
+                        Entry newRes = { .resource = nullptr, .generation = 1, .ref = 0, .lastUsedFrame = 0 };
                         newRes.resource = res;
                         newRes.lastUsedFrame = tick;
 
@@ -149,6 +165,14 @@ namespace atmo
                     return newHandle;
                 }
 
+                /**
+                 * @brief
+                 * Get the Ref object of the resource
+                 *
+                 * @param handle The index of the resource
+                 * @param tick The tick when the action is performed
+                 * @return ResourceRef<T> The ResourceRef of the resource
+                 */
                 ResourceRef<T> getRef(StoreHandle &handle, uint64_t tick)
                 {
                     if (handle.generation != m_entries.at(handle.index).generation) {
@@ -158,6 +182,13 @@ namespace atmo
                     return ref;
                 }
 
+                /**
+                 * @brief
+                 * Get the shared ptr that hold the resource
+                 *
+                 * @param handle The index of the resource
+                 * @return std::shared_ptr<T> The resource
+                 */
                 std::shared_ptr<T> getAsset(const StoreHandle &handle)
                 {
                     if (handle.generation != m_entries.at(handle.index).generation) {
@@ -171,8 +202,7 @@ namespace atmo
                     std::shared_ptr<T> resource;
                     uint32_t generation = 1;
 
-                    uint32_t strongRefs = 0;
-                    uint32_t residentRefs = 0;
+                    uint32_t ref = 0;
                     uint32_t lastUsedFrame = 0;
                 };
 

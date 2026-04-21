@@ -208,6 +208,12 @@ namespace atmo::core
         dynamic_body2->setParent(*scene);
 
 
+        // Sprite
+        auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+        sprite->setTexturePath("project://assets/atmo.png");
+        sprite->setPosition({ 1200, 500 });
+        sprite->setParent(*scene);
+
         auto last_time = std::chrono::steady_clock::now();
         float deltaTime = 0.0f;
 
