@@ -10,6 +10,7 @@
 #include "core/resource/resource_ref.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
+#include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
@@ -17,6 +18,35 @@ namespace atmo::core::ecs::entities
 {
     void Body2d::RegisterComponents(flecs::world *world)
     {
+        using ShapePtr = std::shared_ptr<resource::resources::Shape2d>;
+        using ShapeVec = std::vector<ShapePtr>;
+
+        world->component<ShapePtr>()
+            .opaque(flecs::String)
+            .serialize([](const flecs::serializer *s, const ShapePtr *data) {
+                const char *type_name = (*data) ? (*data)->FullName().data() : "null";
+                return s->value(flecs::String, &type_name);
+            })
+            .assign_string([](ShapePtr *, const char *) {});
+
+        world->component<ShapeVec>().opaque([](flecs::world &w) {
+            return flecs::opaque<ShapeVec, ShapePtr>()
+                .as_type(w.vector<ShapePtr>())
+                .serialize([](const flecs::serializer *s, const ShapeVec *data) {
+                    for (const auto &el : *data) {
+                        s->value(el);
+                    }
+                    return 0;
+                })
+                .count([](const ShapeVec *data) { return data->size(); })
+                .resize([](ShapeVec *data, size_t size) { data->resize(size); })
+                .ensure_element([](ShapeVec *data, size_t i) -> ShapePtr * {
+                    if (data->size() <= i)
+                        data->resize(i + 1);
+                    return &(*data)[i];
+                });
+        });
+
         world->component<Body2dData>();
     }
 
@@ -167,3 +197,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Body2d);
+ATMO_REGISTER_COMPONENT(atmo::core::ecs::entities::Body2d::Body2dData)

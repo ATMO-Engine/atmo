@@ -18,10 +18,16 @@ namespace atmo
             ecs::ECS m_ecs;
             std::atomic<bool> m_running{ false };
 
+            int initLogger();
+            int initArgs(int argc, const char *const *argv);
+            int initSDL();
+            int initDefaultInputs();
+
         public:
             Engine() = default;
             ~Engine() = default;
 
+            int init(int argc, const char *const *argv);
             void start();
             void stop();
             void reset();

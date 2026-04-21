@@ -4,6 +4,7 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/resource_ref.hpp"
+#include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
 #include "SDL3/SDL_rect.h"
@@ -90,3 +91,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Sprite2d);
+ATMO_REGISTER_COMPONENT(atmo::core::components::Sprite2d)

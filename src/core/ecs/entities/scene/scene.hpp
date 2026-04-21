@@ -1,9 +1,24 @@
 #pragma once
 
-#include "box2d/types.h"
-#include "core/ecs/components.hpp"
+#include "box2d/box2d.h"
 #include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "meta/meta.hpp"
+
+
+namespace atmo::core::components
+{
+    struct Scene {
+        bool singleton{ false };
+        b2WorldId world_id{ b2_nullWorldId };
+    };
+} // namespace atmo::core::components
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::Scene> {
+    static constexpr const char *name = "Scene";
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::Scene::singleton>("singleton"));
+};
 
 namespace atmo::core::ecs::entities
 {
@@ -22,13 +37,6 @@ namespace atmo::core::ecs::entities
             return "Scene";
         }
 
-        /**
-         * @brief Initialize the scene from a file.
-         *
-         * The file should be a JSON file.
-         *
-         * @param file_path Path to the scene file.
-         */
         void initFromFile(std::string_view file_path);
 
         void setSingleton(bool singleton);

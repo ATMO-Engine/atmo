@@ -7,6 +7,7 @@
 #include "box2d/box2d.h"
 #include "common/math.hpp"
 #include "flecs.h"
+#include "meta/meta.hpp"
 
 namespace atmo::core::types
 {
@@ -92,3 +93,57 @@ namespace atmo::core::types
 
     void register_core_types(flecs::world ecs);
 } // namespace atmo::core::types
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector2> {
+    static constexpr const char *name = "Vector2";
+    static constexpr auto fields =
+        std::make_tuple(atmo::meta::field<&atmo::core::types::Vector2::x>("x"), atmo::meta::field<&atmo::core::types::Vector2::y>("y"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector2i> {
+    static constexpr const char *name = "Vector2i";
+    static constexpr auto fields =
+        std::make_tuple(atmo::meta::field<&atmo::core::types::Vector2i::x>("x"), atmo::meta::field<&atmo::core::types::Vector2i::y>("y"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector3> {
+    static constexpr const char *name = "Vector3";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::types::Vector3::x>("x"), atmo::meta::field<&atmo::core::types::Vector3::y>("y"),
+        atmo::meta::field<&atmo::core::types::Vector3::z>("z"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector3i> {
+    static constexpr const char *name = "Vector3i";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::types::Vector3i::x>("x"), atmo::meta::field<&atmo::core::types::Vector3i::y>("y"),
+        atmo::meta::field<&atmo::core::types::Vector3i::z>("z"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector4> {
+    static constexpr const char *name = "Vector4";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::types::Vector4::x>("x"), atmo::meta::field<&atmo::core::types::Vector4::y>("y"),
+        atmo::meta::field<&atmo::core::types::Vector4::z>("z"), atmo::meta::field<&atmo::core::types::Vector4::w>("w"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector4i> {
+    static constexpr const char *name = "Vector4i";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::types::Vector4i::x>("x"), atmo::meta::field<&atmo::core::types::Vector4i::y>("y"),
+        atmo::meta::field<&atmo::core::types::Vector4i::z>("z"), atmo::meta::field<&atmo::core::types::Vector4i::w>("w"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::ColorRGBA> {
+    static constexpr const char *name = "ColorRGBA";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::types::ColorRGBA::r>("r"), atmo::meta::field<&atmo::core::types::ColorRGBA::g>("g"),
+        atmo::meta::field<&atmo::core::types::ColorRGBA::b>("b"), atmo::meta::field<&atmo::core::types::ColorRGBA::a>("a"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::types::ColorRGBAi> {
+    static constexpr const char *name = "ColorRGBAi";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::types::ColorRGBAi::r>("r"), atmo::meta::field<&atmo::core::types::ColorRGBAi::g>("g"),
+        atmo::meta::field<&atmo::core::types::ColorRGBAi::b>("b"), atmo::meta::field<&atmo::core::types::ColorRGBAi::a>("a"));
+};

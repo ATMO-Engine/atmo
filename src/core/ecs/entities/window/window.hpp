@@ -1,8 +1,37 @@
 #pragma once
 
-#include "core/ecs/components.hpp"
+#include <functional>
+#include <map>
+#include <optional>
+#include <string>
+
+#include "SDL3/SDL_render.h"
+#include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/resource/handle.hpp"
+#include "core/types.hpp"
+#include "impl/clay_types.hpp"
+#include "meta/meta.hpp"
+
+namespace atmo::core::components
+{
+    struct Window {
+        std::string title;
+        types::Vector2i size;
+        SDL_Window *window = nullptr;
+        Clay_SDL3RendererData renderer_data;
+        Clay_Arena clay_arena;
+        std::map<std::string, SDL_Texture *> texture_cache;
+        std::optional<std::function<void()>> close_callback;
+    };
+} // namespace atmo::core::components
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::Window> {
+    static constexpr const char *name = "Window";
+    static constexpr auto fields =
+        std::make_tuple(atmo::meta::field<&atmo::core::components::Window::title>("title"), atmo::meta::field<&atmo::core::components::Window::size>("size"));
+};
 
 namespace atmo::core::ecs::entities
 {
@@ -30,12 +59,6 @@ namespace atmo::core::ecs::entities
 
         SDL_Texture *getTextureFromHandle(const std::string &path);
 
-        /**
-         * @brief Set a callback function to be called when the window is closed. This can be used to perform cleanup tasks or prompt the user for confirmation
-         * before closing.
-         *
-         * @param callback Function to be called when the window is closed.
-         */
         void onClose(std::function<void()> callback);
 
     private:

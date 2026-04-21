@@ -3,6 +3,7 @@
 #include "box2d/box2d.h"
 #include "core/ecs/components.hpp"
 #include "core/types.hpp"
+#include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
 
 namespace atmo::core::ecs::entities
@@ -78,3 +79,5 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Scene);
+
+ATMO_REGISTER_COMPONENT(atmo::core::components::Scene)

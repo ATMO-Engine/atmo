@@ -1,4 +1,5 @@
 #include "kinematic_2d.hpp"
+#include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
 {
@@ -24,3 +25,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 REGISTER_ENTITY(entities::Kinematic2d);
+ATMO_REGISTER_COMPONENT(atmo::core::ecs::entities::Kinematic2d::Kinematic2dData)
