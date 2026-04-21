@@ -6,6 +6,7 @@
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
+#include "impl/clay_types.hpp"
 #include "meta/meta.hpp"
 
 
@@ -42,8 +43,8 @@ namespace atmo::core::ecs::entities
             return "UI";
         }
 
-        void internalDraw();
-        virtual void draw();
+        void internalDraw(ClaySdL3RendererData *data);
+        virtual void draw(ClaySdL3RendererData *data);
 
     protected:
         virtual Clay_ElementDeclaration buildDecl();

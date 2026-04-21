@@ -58,7 +58,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout::Siz
     static constexpr const char *name = "Size";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::Layout::SizingAxis::type>("type"),
-        atmo::meta::field<&atmo::core::components::Layout::SizingAxis::size>("size"));
+        atmo::meta::field<&atmo::core::components::Layout::SizingAxis::size>("size").skipFlecs());
 };
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout::Padding> {

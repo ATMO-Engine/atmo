@@ -48,7 +48,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UI::internalDraw()
+    void UI::internalDraw(ClaySdL3RendererData *data)
     {
         std::vector<Entity> children = getChildren();
         bool has_ui_child = false;
@@ -61,24 +61,24 @@ namespace atmo::core::ecs::entities
             Clay__OpenElement();
             Clay__ConfigureOpenElement(buildDecl());
 
-            draw();
+            draw(data);
 
             for (auto child : children) {
                 auto wrapped = EntityRegistry::Wrap(child);
                 if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
-                    ui->internalDraw();
+                    ui->internalDraw(data);
             }
 
             Clay__CloseElement();
         } else {
             Clay__OpenElement();
             Clay__ConfigureOpenElement(buildDecl());
-            draw();
+            draw(data);
             Clay__CloseElement();
         }
     }
 
-    void UI::draw() {}
+    void UI::draw(ClaySdL3RendererData *data) {}
 
     void UI::configureSizingAxis(Clay_SizingAxis &sizing, const components::Layout::SizingAxis &axis)
     {

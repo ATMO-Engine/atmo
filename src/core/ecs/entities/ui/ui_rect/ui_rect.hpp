@@ -31,6 +31,24 @@ namespace atmo::core::components
     };
 } // namespace atmo::core::components
 
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIRect::CornerRadius> {
+    static constexpr const char *name = "CornerRadius";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::UIRect::CornerRadius::top_left>("top_left"),
+        atmo::meta::field<&atmo::core::components::UIRect::CornerRadius::top_right>("top_right"),
+        atmo::meta::field<&atmo::core::components::UIRect::CornerRadius::bottom_left>("bottom_left"),
+        atmo::meta::field<&atmo::core::components::UIRect::CornerRadius::bottom_right>("bottom_right"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIRect::Border> {
+    static constexpr const char *name = "Border";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::UIRect::Border::left>("left"), atmo::meta::field<&atmo::core::components::UIRect::Border::right>("right"),
+        atmo::meta::field<&atmo::core::components::UIRect::Border::top>("top"), atmo::meta::field<&atmo::core::components::UIRect::Border::bottom>("bottom"),
+        atmo::meta::field<&atmo::core::components::UIRect::Border::between_children>("between_children"),
+        atmo::meta::field<&atmo::core::components::UIRect::Border::color>("color"));
+};
+
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIRect> {
     static constexpr const char *name = "Rect";
     static constexpr const char *category = "UI";
@@ -57,6 +75,6 @@ namespace atmo::core::ecs::entities
         }
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw() override;
+        void draw(ClaySdL3RendererData *data) override;
     };
 } // namespace atmo::core::ecs::entities

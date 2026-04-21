@@ -58,11 +58,6 @@ namespace atmo::core::ecs::entities
                 window.renderer_data.text_engine = nullptr;
             }
 
-            if (window.renderer_data.fonts) {
-                SDL_free(window.renderer_data.fonts);
-                window.renderer_data.fonts = nullptr;
-            }
-
             SDL_free(window.clay_arena.memory);
 
             if (window.close_callback.has_value()) {
@@ -73,9 +68,9 @@ namespace atmo::core::ecs::entities
 
     static inline Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
     {
-        TTF_Font **fonts = static_cast<TTF_Font **>(data);
-        TTF_Font *font = fonts[config->fontId];
+        auto d = (TTF_Text *)config->userData;
         int width, height;
+        TTF_Font *font = TTF_GetTextFont(d);
 
         TTF_SetFontSize(font, config->fontSize);
         if (!TTF_GetStringSize(font, text.chars, text.length, &width, &height)) {
@@ -104,12 +99,6 @@ namespace atmo::core::ecs::entities
                 return;
             }
 
-            window->renderer_data.fonts = (TTF_Font **)SDL_calloc(1, sizeof(TTF_Font *));
-            if (!window->renderer_data.fonts) {
-                spdlog::error("Failed to allocate memory for the font array: {}", SDL_GetError());
-                return;
-            }
-
             auto totalMemSize = Clay_MinMemorySize();
             window->clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
@@ -117,7 +106,7 @@ namespace atmo::core::ecs::entities
                                 spdlog::error("Clay error: {}", errorData.errorText.chars);
                             } });
 
-            Clay_SetMeasureTextFunction(measureText, window->renderer_data.fonts);
+            Clay_SetMeasureTextFunction(measureText, nullptr);
         } else if (args::ArgManager::Get<bool>("--headless") == false) {
             spdlog::error("Failed to create window and renderer: {}", SDL_GetError());
         } else {
@@ -218,7 +207,7 @@ namespace atmo::core::ecs::entities
             auto wrapped = EntityRegistry::Wrap(child);
             auto *ui = dynamic_cast<entities::UI *>(wrapped.get());
             if (ui && !child.getParent().hasComponent<components::UI>())
-                ui->internalDraw();
+                ui->internalDraw(&window.renderer_data);
         }
         auto clayCommands = Clay_EndLayout();
 

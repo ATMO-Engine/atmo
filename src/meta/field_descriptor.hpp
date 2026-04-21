@@ -26,6 +26,7 @@ namespace atmo::meta
         const char *category = nullptr; // editor group/section
         const char *widget = nullptr;   // widget hint: "color_picker", "file_path", …
         bool read_only = false;
+        bool skip_flecs = false;
         bool has_range = false;
         float range_min = 0.0f;
         float range_max = 0.0f;
@@ -71,6 +72,13 @@ namespace atmo::meta
         {
             FieldDescriptor copy = *this;
             copy.read_only = true;
+            return copy;
+        }
+
+        [[nodiscard]] constexpr FieldDescriptor skipFlecs() const
+        {
+            FieldDescriptor copy = *this;
+            copy.skip_flecs = true;
             return copy;
         }
     };

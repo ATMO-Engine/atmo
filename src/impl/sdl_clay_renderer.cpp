@@ -6,7 +6,9 @@
 #include <vector>
 
 #include "SDL3/SDL_stdinc.h"
+#include "SDL3_ttf/SDL_ttf.h"
 #include "clay_types.hpp"
+#include "core/resource/resource_manager.hpp"
 
 /* Global for convenience. Even in 4K this is enough for smooth curves (low radius or rect size coupled with
  * no AA or low resolution might make it appear as jagged curves) */
@@ -130,12 +132,12 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
             case CLAY_RENDER_COMMAND_TYPE_TEXT:
                 {
                     Clay_TextRenderData *config = &rcmd->renderData.text;
-                    TTF_Font *font = rendererData->fonts[config->fontId];
+                    auto text = (TTF_Text *)rcmd->userData;
+                    TTF_Font *font = TTF_GetTextFont(text);
                     TTF_SetFontSize(font, config->fontSize);
-                    TTF_Text *text = TTF_CreateText(rendererData->text_engine, font, config->stringContents.chars, config->stringContents.length);
+
                     TTF_SetTextColor(text, config->textColor.r, config->textColor.g, config->textColor.b, config->textColor.a);
                     TTF_DrawRendererText(text, rect.x, rect.y);
-                    TTF_DestroyText(text);
                 }
                 break;
             case CLAY_RENDER_COMMAND_TYPE_BORDER:

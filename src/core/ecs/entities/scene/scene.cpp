@@ -59,9 +59,6 @@ namespace atmo::core::ecs::entities
         auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
         worldDef.gravity = { .x = gravity.x, .y = gravity.y };
 
-        // TODO: implement debug drawing with b2DebugDraw and call b2World_Draw in a debug system
-        // b2World_Draw(b2WorldId worldId, b2DebugDraw *draw)
-
         scene->world_id = b2CreateWorld(&worldDef);
     }
 
