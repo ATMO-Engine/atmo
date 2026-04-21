@@ -54,39 +54,60 @@ jobs:
             echo "✅ Clang-format check passed."
           fi
 
-  # clang-tidy:
-  #   name: Clang Tidy Checks
-  #   runs-on: ubuntu-latest
+  clang-tidy:
+    name: Clang Tidy
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-  #     - name: Install Clang tools
-  #       run: sudo apt-get update && sudo apt-get install -y clang-tidy
+      - name: Cache LLVM apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: llvm-21-apt-${{ runner.os }}
 
-  #     - name: Install SDL3 build dependencies
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y \
-  #           build-essential git make pkg-config cmake ninja-build \
-  #           libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
-  #           libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
-  #           libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
-  #           libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
-  #           libpipewire-0.3-dev libwayland-dev libxinerama-dev
+      - name: Install LLVM 21 and system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg \
+            build-essential git make pkg-config cmake ninja-build \
+            libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+            libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
+            libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
+            libpipewire-0.3-dev libwayland-dev libxinerama-dev
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+          sudo apt-get install -y clang-tidy-21
 
-  #     - name: Setup Xmake
-  #       uses: xmake-io/github-action-setup-xmake@v1
-  #       with:
-  #         xmake-version: latest
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+          actions-cache-folder: .xmake-cache
 
-  #     - name: Export compile_commands.json with XMake
-  #       run: |
-  #         xmake f -y
-  #         xmake
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/.packages
+            ~/.xmake/packages
+          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
+          restore-keys: ${{ runner.os }}-
 
-  #     - name: Run clang-tidy check
-  #       run: run-clang-tidy -j $(nproc)
+      - name: Generate compile_commands.json
+        run: |
+          xmake f -y -m release
+          xmake
+
+      - name: Run clang-tidy
+        run: |
+          run-clang-tidy-21 -j $(nproc) -p . \
+            -clang-tidy-binary clang-tidy-21 \
+            -header-filter='^.*\/src\/.*' \
+            $(find src/ -name '*.cpp' | tr '\n' ' ')
