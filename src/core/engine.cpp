@@ -7,6 +7,7 @@
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
+#include "core/ecs/entities/script/script.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
@@ -170,6 +171,7 @@ namespace atmo::core
     void Engine::start()
     {
         m_running.store(true);
+        atmo::luau::Luau vm;
 
         auto window = ecs::EntityRegistry::Create<ecs::entities::Window>("Entity::Window");
         window->rename("_Root");
@@ -206,6 +208,13 @@ namespace atmo::core
         dynamic_body2->addShape(circle_shape);
         dynamic_body2->setPosition({ 450, 0 });
         dynamic_body2->setParent(*scene);
+
+        // Scripting
+        auto script = ecs::EntityRegistry::Create<ecs::entities::Script>("Entity::Script");
+        atmo::luau::ScriptInstance inst = vm.generateInstance();
+        script->setScriptInstance(&inst);
+        script->setScriptPath("project://assets/script/luau_main.luau");
+        script->setParent(*scene);
 
 
         auto last_time = std::chrono::steady_clock::now();

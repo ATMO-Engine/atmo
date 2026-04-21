@@ -1,6 +1,5 @@
 #include <csignal>
 #include <cstdlib>
-
 #include "atmo.hpp"
 
 int main(int argc, const char *const *argv)
