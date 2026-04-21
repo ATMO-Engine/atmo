@@ -56,6 +56,11 @@ namespace atmo
                     throw LoadException("catched " + expCatch + "during script loading");
                 }
             }
+
+            const std::string ScriptLoader::resourceTypeName()
+            {
+                return "Script";
+            }
         } // namespace resource
     } // namespace core
 } // namespace atmo

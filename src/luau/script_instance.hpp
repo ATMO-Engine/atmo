@@ -37,7 +37,7 @@ namespace atmo
             void create();
 
             /**
-             * @brief 
+             * @brief
              * Call the Update function of the entity
              * @param dt The deltatime between this and last call (tick)
              */

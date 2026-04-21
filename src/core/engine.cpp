@@ -1,7 +1,13 @@
 #include "engine.hpp"
+
+#include <csignal>
+#include <string>
+
+#include "args/arg_manager.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
+#include "core/ecs/entities/script/script.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
@@ -9,34 +15,174 @@
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
-#include "ecs/entities/script/script.hpp"
+#include "impl/profiler.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
-#include "resource/subresource_registry.hpp"
+#include "spdlog/spdlog.h"
 
-#include "luau/luau.hpp"
+#if !defined(ATMO_EXPORT)
+#include "editor/editor.hpp"
+#endif
 
-void atmo::core::Engine::start()
+static atmo::core::args::ArgManager::LaunchResult handleArgHelp(atmo::core::args::ArgManager &argManager)
 {
-    m_running.store(true);
-    atmo::luau::Luau vm;
+#if !defined(ATMO_EXPORT)
+    std::cout << ATMO_ASCII_ART << "\n";
+#endif
 
-    auto window = ecs::EntityRegistry::Create<ecs::entities::Window>("Entity::Window");
-    window->rename("_Root");
-    window->setName(project::ProjectManager::GetSettings().app.project_name);
-    window->onClose([&]() { stop(); });
+    std::cout << argManager.Help().str() << "\n";
 
-    auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
-    scene->setSingleton(false);
+    return atmo::core::args::ArgManager::LaunchResult::ExitSuccess;
+}
 
-    auto script = ecs::EntityRegistry::Create<ecs::entities::Script>("Entity::Script");
-    atmo::luau::ScriptInstance inst = vm.generateInstance();
-    script->setScriptInstance(&inst);
-    script->setScriptPath("project://assets/script/luau_main.luau");
-    script->setParent(*scene);
+#if !defined(ATMO_EXPORT)
+static atmo::core::args::ArgManager::LaunchResult handleArgPack(atmo::core::args::ArgManager &argManager)
+{
+    auto files = atmo::core::args::ArgManager::Get<std::vector<std::string>>("--pack");
 
-    m_ecs.changeScene(scene);
+    if (files.empty()) {
+        spdlog::error("No files provided to pack.");
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+    }
+
+    atmo::project::ProjectManager::GeneratePackedFile("packed_output.pck", files);
+
+    return atmo::core::args::ArgManager::LaunchResult::ExitSuccess;
+}
+
+static atmo::core::args::ArgManager::LaunchResult handleArgRead(atmo::core::args::ArgManager &argManager)
+{
+    auto args = atmo::core::args::ArgManager::Present<std::vector<std::string>>("--read");
+
+    if (args->size() == 2)
+        atmo::project::FileSystem::DisplayPackedFileContent(args->at(0), args->at(1));
+    else if (args->size() == 1)
+        atmo::project::FileSystem::DisplayPackedFileInfo(args->at(0));
+
+    return atmo::core::args::ArgManager::LaunchResult::ExitSuccess;
+}
+#endif
+
+namespace atmo::core
+{
+    int Engine::initLogger()
     {
+#if defined(ATMO_DEBUG)
+        spdlog::set_level(spdlog::level::debug);
+#endif
+
+        return 0;
+    }
+
+    int Engine::initArgs(int argc, const char *const *argv)
+    {
+        {
+            using namespace atmo::core::args;
+
+            ArgManager::AddArgument("--help", "-h").defaultValue(false).implicitValue(true).help("Show this help message.");
+            ArgManager::AddLaunchHandler(10000, "--help", handleArgHelp);
+
+#if !defined(ATMO_EXPORT)
+            auto group = ArgManager::AddMutuallyExclusiveGroup();
+            group.addArgument("--pack").nargs(ArgManager::NargsPattern::AtLeastOne).help("Pack one or more files into a .pck file.").metavar("files");
+            ArgManager::AddLaunchHandler(9000, "--pack", handleArgPack);
+
+            group.addArgument("--read")
+                .nargs(1, 2)
+                .help(
+                    "Read the contents of a .pck file. Provide a file path to display info, or provide a file path and an internal path to display the "
+                    "contents of a specific file.")
+                .metavar("file [path]");
+            ArgManager::AddLaunchHandler(9000, "--read", handleArgRead);
+#endif
+
+            using namespace atmo::core::args;
+
+            try {
+                ArgManager::Parse(argc, argv);
+            } catch (const std::exception &e) {
+                spdlog::error("Error parsing arguments: {}", e.what());
+                return 1;
+            }
+
+            ArgManager::ExecuteLaunchHandlers();
+
+            if (auto res = ArgManager::GetLaunchResult(); res != ArgManager::LaunchResult::Continue) {
+                if (res == ArgManager::LaunchResult::ExitSuccess)
+                    return -1;
+                else
+                    return 1;
+            }
+
+            return 0;
+        }
+    }
+
+    int Engine::initSDL()
+    {
+        if (SDL_Init(
+                SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR |
+                SDL_INIT_CAMERA) != true) {
+            spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
+            return 1;
+        }
+
+        std::atexit(SDL_Quit);
+
+        return 0;
+    }
+
+    int Engine::initDefaultInputs()
+    {
+        using namespace atmo::core;
+
+        InputManager::AddInput("ui_click", new InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
+        InputManager::AddInput("ui_scroll", new InputManager::MouseScrollEvent(), true);
+        InputManager::AddInput("ui_quit", new InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), false);
+        InputManager::AddInput("ui_confirm", new InputManager::KeyEvent(SDL_SCANCODE_RETURN, true), false);
+
+        return 0;
+    }
+
+    int Engine::init(int argc, const char *const *argv)
+    {
+        if (int ret = initLogger(); ret != 0)
+            return ret;
+
+        if (int ret = initArgs(argc, argv); ret != 0)
+            return ret;
+
+        if (int ret = initSDL(); ret != 0)
+            return ret;
+
+        if (int ret = initDefaultInputs(); ret != 0)
+            return ret;
+
+        static atmo::core::Engine &g_engine = *this;
+
+        std::signal(SIGINT, [](int signum) { g_engine.stop(); });
+        std::signal(SIGTERM, [](int signum) { g_engine.stop(); });
+
+        m_ecs.reset();
+
+        return 0;
+    }
+
+    void Engine::start()
+    {
+        m_running.store(true);
+        atmo::luau::Luau vm;
+
+        auto window = ecs::EntityRegistry::Create<ecs::entities::Window>("Entity::Window");
+        window->rename("_Root");
+        window->setName(project::ProjectManager::GetSettings().app.project_name);
+        window->onClose([&]() { stop(); });
+
+        auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
+        scene->setSingleton(false);
+        m_ecs.changeScene(scene);
+
+
         auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
         rectangle_shape->setSize({ 800, 100 });
 
@@ -62,118 +208,47 @@ void atmo::core::Engine::start()
         dynamic_body2->addShape(circle_shape);
         dynamic_body2->setPosition({ 450, 0 });
         dynamic_body2->setParent(*scene);
+
+        // Scripting
+        auto script = ecs::EntityRegistry::Create<ecs::entities::Script>("Entity::Script");
+        atmo::luau::ScriptInstance inst = vm.generateInstance();
+        script->setScriptInstance(&inst);
+        script->setScriptPath("project://assets/script/luau_main.luau");
+        script->setParent(*scene);
+
+
+        auto last_time = std::chrono::steady_clock::now();
+        float deltaTime = 0.0f;
+
+        while (m_ecs.progress(deltaTime)) {
+            ATMO_PROFILE_FRAME();
+            auto current_time = std::chrono::steady_clock::now();
+            std::chrono::duration<float> dt = current_time - last_time;
+            last_time = current_time;
+            deltaTime = dt.count();
+
+            if (InputManager::IsPressed("ui_quit"))
+                m_running.store(false);
+
+            InputManager::Tick();
+
+            if (!m_running.load())
+                m_ecs.stop();
+        }
     }
 
-    auto last_time = std::chrono::steady_clock::now();
-    float deltaTime = 0.0f;
-
-    while (m_ecs.progress(deltaTime)) {
-        auto current_time = std::chrono::steady_clock::now();
-        std::chrono::duration<float> dt = current_time - last_time;
-        last_time = current_time;
-        deltaTime = dt.count();
-
-        if (atmo::core::InputManager::IsPressed("ui_quit"))
-            m_running.store(false);
-
-        atmo::core::InputManager::Tick();
-
-        if (!m_running.load())
-            m_ecs.stop();
+    void Engine::stop()
+    {
+        m_running.store(false);
     }
-}
 
-void atmo::core::Engine::stop()
-{
-    m_running.store(false);
-}
+    void Engine::reset()
+    {
+        m_ecs.reset();
+    }
 
-void atmo::core::Engine::reset()
-{
-    m_ecs.reset();
-}
-
-atmo::core::ecs::ECS &atmo::core::Engine::getECS()
-{
-    return m_ecs;
-}
-
-// void atmo::core::Engine::init_systems()
-// {
-// ecs.system<components::Window>("PollEvents")
-//     .kind(flecs::PreUpdate)
-//     .each([this](flecs::iter &it, size_t, components::Window &window) {
-//         impl::WindowManager *wm = static_cast<impl::WindowManager *>(component_managers[it.entity(0).id()]);
-//         wm->pollEvents(it.delta_time());
-//     });
-
-// ecs.system<components::Window>("Draw")
-//     .kind(flecs::PostUpdate)
-//     .each([this](flecs::iter &it, size_t, components::Window &window) {
-//         impl::WindowManager *wm = static_cast<impl::WindowManager *>(component_managers[it.entity(0).id()]);
-//         wm->draw();
-//     });
-// ecs.observer<entities::Script>()
-//     .event(flecs::OnAdd)
-//     .each(
-//         [](flecs::entity e, entities::Script &s)
-//         {
-//             lua_getglobal(s.luau.get_state(), "ready");
-
-//             if (!lua_isfunction(s.luau.get_state(), -1)) {
-//                 lua_pop(s.luau.get_state(), 1);
-//                 return;
-//             }
-
-//             if (lua_pcall(s.luau.get_state(), 0, 0, 0) != LUA_OK) {
-//                 spdlog::error("Error calling ready: {}", lua_tostring(s.luau.get_state(), -1));
-//                 lua_pop(s.luau.get_state(), 1);
-//             }
-
-//             lua_pop(s.luau.get_state(), 1);
-//         });
-
-// ecs.system<entities::Script>("ScriptProcess")
-//     .kind(flecs::OnUpdate)
-//     .each(
-//         [](flecs::iter &it, size_t, entities::Script &s)
-//         {
-//             lua_getglobal(s.luau.get_state(), "process");
-
-//             if (!lua_isfunction(s.luau.get_state(), -1)) {
-//                 lua_pop(s.luau.get_state(), 1);
-//                 return;
-//             }
-
-//             lua_pushnumber(s.luau.get_state(), it.delta_time());
-
-//             if (lua_pcall(s.luau.get_state(), 1, 0, 0) != LUA_OK) {
-//                 spdlog::error("Error calling process: {}", lua_tostring(s.luau.get_state(), -1));
-//                 lua_pop(s.luau.get_state(), 1);
-//             }
-
-//             lua_pop(s.luau.get_state(), 1);
-//         });
-
-// ecs.system<entities::Script>("ScriptPhysicsProcess")
-//     .kind(flecs::PostUpdate)
-//     .each(
-//         [](flecs::iter &it, size_t, entities::Script &s)
-//         {
-//             lua_getglobal(s.luau.get_state(), "physics_process");
-
-//             if (!lua_isfunction(s.luau.get_state(), -1)) {
-//                 lua_pop(s.luau.get_state(), 1);
-//                 return;
-//             }
-
-//             lua_pushnumber(s.luau.get_state(), it.delta_time());
-
-//             if (lua_pcall(s.luau.get_state(), 1, 0, 0) != LUA_OK) {
-//                 spdlog::error("Error calling physics_process: {}", lua_tostring(s.luau.get_state(), -1));
-//                 lua_pop(s.luau.get_state(), 1);
-//             }
-
-//             lua_pop(s.luau.get_state(), 1);
-//         });
-// }
+    ecs::ECS &Engine::getECS()
+    {
+        return m_ecs;
+    }
+} // namespace atmo::core

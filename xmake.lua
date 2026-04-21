@@ -1,7 +1,7 @@
 set_policy("check.auto_ignore_flags", false)
 
-add_rules("mode.release", "mode.debug")
-set_allowedmodes("release", "debug")
+add_rules("mode.release", "mode.debug", "mode.profile")
+set_allowedmodes("release", "debug", "profile")
 
 set_languages("c++23")
 
@@ -18,6 +18,10 @@ end
 set_policy("build.warning", true)
 
 if is_mode("release") then
+    set_optimize("fastest")
+end
+
+if is_mode("profile") then
     set_optimize("fastest")
 end
 
@@ -265,6 +269,13 @@ package("semver")
     end)
 package_end()
 
+package("tracy")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy"))
+    on_install(function (package)
+        os.cp("public/*", package:installdir("include"))
+    end)
+package_end()
+
 package("box2d")
 
     if is_plat("linux", "bsd") then
@@ -274,7 +285,7 @@ package("box2d")
     add_deps("cmake")
     set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "box2d"))
 
-    on_install("!bsd", function (package)
+    on_install("!bsd", function(package)
         if package:is_plat("windows") and package:is_debug() then
             package:add("defines", "B2_ENABLE_ASSERT")
         end
@@ -300,6 +311,14 @@ package("box2d")
     end)
 package_end()
 
+package("argparse")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "argparse"))
+
+    on_install(function(package)
+        os.cp("include/argparse/argparse.hpp", package:installdir("include/argparse"))
+    end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -311,7 +330,9 @@ add_requires(
     "clay", { system = false },
     "catch2", { system = false },
     "semver", { system = false },
-    "box2d", { system = false }
+    "box2d", { system = false },
+    "argparse", { system = false },
+    "tracy", { system = false }
 )
 
 function platform_specifics()
@@ -349,7 +370,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d", "argparse", "tracy")
 end
 
 target("atmo")
@@ -359,6 +380,12 @@ target("atmo")
     add_files("src/**.cpp")
     add_includedirs("src")
     platform_specifics()
+    if is_mode("debug") or is_mode("profile") then
+        add_defines("ATMO_PROFILING")
+        add_defines("ATMO_PROFILER_TRACY")
+        add_defines("TRACY_ENABLE")
+        add_files(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy/public/TracyClient.cpp"))
+    end
 
     if is_mode("debug") then
         add_defines("ATMO_DEBUG")
