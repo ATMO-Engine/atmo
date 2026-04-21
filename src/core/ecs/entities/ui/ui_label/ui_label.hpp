@@ -11,17 +11,6 @@
 namespace atmo::core::components
 {
     struct UILabel {
-        // Clay_TextElementConfigWrapMode wrapMode{
-        //     CLAY_TEXT_WRAP_WORDS(default),
-        //     CLAY_TEXT_WRAP_NEWLINES,
-        //     CLAY_TEXT_WRAP_NONE,
-        // };
-        // Clay_TextAlignment textAlignment{
-        //     CLAY_TEXT_ALIGN_LEFT(default),
-        //     CLAY_TEXT_ALIGN_CENTER,
-        //     CLAY_TEXT_ALIGN_RIGHT,
-        // };
-
         enum class WrapMode {
             WRAP_WORDS,
             WRAP_NEWLINES,

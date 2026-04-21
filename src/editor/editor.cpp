@@ -1,4 +1,5 @@
 #include "editor.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -68,15 +69,15 @@ namespace atmo::editor
         m_menu_bar = makePlatformMenuBar();
         m_menu_bar->build(*scene, m_commands);
 
-        auto white_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &white_rect_rect = white_rect->getComponentMutable<core::components::UIRect>();
-        auto &white_rect_layout = white_rect->getComponentMutable<core::components::Layout>();
-        white_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        white_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        white_rect_layout.padding = { 8, 8, 8, 8 };
-        white_rect_layout.child_gap = 8;
-        white_rect->rename("white rect");
-        white_rect->setParent(*scene);
+        // auto white_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        // auto &white_rect_rect = white_rect->getComponentMutable<core::components::UIRect>();
+        // auto &white_rect_layout = white_rect->getComponentMutable<core::components::Layout>();
+        // white_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        // white_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        // white_rect_layout.padding = { 8, 8, 8, 8 };
+        // white_rect_layout.child_gap = 8;
+        // white_rect->rename("white rect");
+        // white_rect->setParent(*scene);
 
         // auto red_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         // auto &red_rect_rect = red_rect->getComponentMutable<core::components::UIRect>();
@@ -113,10 +114,10 @@ namespace atmo::editor
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-        auto &label_label = label->getComponentMutable<core::components::UILabel>();
-        label_label.text = "Hello, World!";
+        label->setText("Hello, World!");
         label->rename("hello world");
-        label->setParent(*white_rect);
+        label->setParent(*scene);
+        auto &label_layout = label->getComponentMutable<core::components::Layout>();
 
         spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
     }

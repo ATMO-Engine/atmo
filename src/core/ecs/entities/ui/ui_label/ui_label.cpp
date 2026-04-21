@@ -80,15 +80,17 @@ namespace atmo::core::ecs::entities
 
         TTF_SetTextEngine(label.ttf_text, data->text_engine);
 
-        Clay_TextElementConfig conf = { .userData = (void *)label.ttf_text,
-                                        .textColor = (types::Color::WHITE * ui.modulate).toFloat<Clay_Color>(255),
-                                        .letterSpacing = label.letter_spacing,
-                                        .lineHeight = label.line_height,
-                                        .wrapMode = static_cast<Clay_TextElementConfigWrapMode>(label.wrap_mode),
-                                        .textAlignment = static_cast<Clay_TextAlignment>(label.text_alignment) };
-
         Clay_String str = Clay_String{ .isStaticallyAllocated = false, .length = static_cast<int32_t>(label.text.size()), .chars = label.text.data() };
-        CLAY_TEXT(str, &conf);
+        CLAY_TEXT(
+            str,
+            CLAY_TEXT_CONFIG(
+                { .userData = (void *)label.ttf_text,
+                  .textColor = (types::Color::WHITE * ui.modulate).toFloat<Clay_Color>(255),
+                  .fontSize = static_cast<uint16_t>(label.font_size),
+                  .letterSpacing = label.letter_spacing,
+                  .lineHeight = label.line_height,
+                  .wrapMode = static_cast<Clay_TextElementConfigWrapMode>(label.wrap_mode),
+                  .textAlignment = static_cast<Clay_TextAlignment>(label.text_alignment) }));
     }
 } // namespace atmo::core::ecs::entities
 
