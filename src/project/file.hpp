@@ -168,7 +168,10 @@ namespace atmo
                 iface.size = [](void *userdata) { return (Sint64)((File *)userdata)->size(); };
                 iface.seek = [](void *userdata, Sint64 off, SDL_IOWhence w) { return (Sint64)((File *)userdata)->seek(off, static_cast<SeekWhence>(w)); };
                 iface.read = [](void *userdata, void *ptr, size_t len, SDL_IOStatus *s) { return ((File *)userdata)->read(ptr, len); };
-                iface.close = [](void *userdata) -> bool { delete (File *)userdata; return true; };
+                iface.close = [](void *userdata) -> bool {
+                    delete (File *)userdata;
+                    return true;
+                };
 
                 return SDL_OpenIO(&iface, self);
             }

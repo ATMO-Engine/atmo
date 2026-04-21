@@ -12,7 +12,8 @@ namespace atmo::meta
 {
     namespace detail
     {
-        template <typename Owner, auto MemberPtr> void register_flecs_field(flecs::world &world, flecs::component<Owner> &c, const FieldDescriptor<Owner, MemberPtr> &fd)
+        template <typename Owner, auto MemberPtr>
+        void register_flecs_field(flecs::world &world, flecs::component<Owner> &c, const FieldDescriptor<Owner, MemberPtr> &fd)
         {
             if (fd.skip_flecs) {
                 return;
