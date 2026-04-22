@@ -7,6 +7,7 @@
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/resource_ref.hpp"
 #include "core/types.hpp"
+#include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
@@ -59,7 +60,7 @@ namespace atmo::core::ecs::entities
     void UILabel::setText(const std::string &text)
     {
         auto &label = getComponentMutable<components::UILabel>();
-        label.text = text;
+        label.text = locale::LocaleManager::GetTranslation(text);
 
         if (label.ttf_text) {
             if (!TTF_SetTextString(label.ttf_text, text.c_str(), text.size()))
@@ -67,10 +68,27 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    std::string_view UILabel::getText()
+    std::string_view UILabel::getText() const noexcept
     {
         const auto &label = getComponent<components::UILabel>();
         return label.text;
+    }
+
+    void UILabel::setFontSize(std::uint16_t font_size)
+    {
+        auto &label = getComponentMutable<components::UILabel>();
+        TTF_Font *font = TTF_GetTextFont(label.ttf_text);
+
+        label.font_size = font_size;
+
+        if (font != nullptr)
+            TTF_SetFontSize(font, font_size);
+    }
+
+    std::uint16_t UILabel::getFontSize() const noexcept
+    {
+        const auto &label = getComponent<components::UILabel>();
+        return label.font_size;
     }
 
     void UILabel::draw(ClaySdL3RendererData *data)

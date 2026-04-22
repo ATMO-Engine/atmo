@@ -24,11 +24,11 @@ namespace atmo::core::components
         };
 
         std::string text;
-        float font_size = 24.0f;
+        std::uint16_t font_size = 24;
         std::string font_path = "project://assets/fonts/Nunito/Nunito.ttf";
         resource::Handle<TTF_Font> font_handle;
-        uint16_t letter_spacing = 0;
-        uint16_t line_height = 0;
+        std::uint16_t letter_spacing = 0;
+        std::uint16_t line_height = 0;
         TTF_Text *ttf_text = nullptr;
 
         WrapMode wrap_mode = WrapMode::WRAP_WORDS;
@@ -68,7 +68,16 @@ namespace atmo::core::ecs::entities
         std::string_view getFontPath() const noexcept;
 
         void setText(const std::string &text);
-        std::string_view getText();
+        std::string_view getText() const noexcept;
+
+        void setFontSize(std::uint16_t font_size);
+        std::uint16_t getFontSize() const noexcept;
+
+        // TODO: setLetterSpacing
+        // TODO: getLetterSpacing
+
+        // TODO: setLineHeight
+        // TODO: getLineHeight
 
         void draw(ClaySdL3RendererData *data) override;
     };

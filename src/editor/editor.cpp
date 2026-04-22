@@ -115,6 +115,7 @@ namespace atmo::editor
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
         label->setText("Hello, World!");
+        label->setFontSize(48);
         label->rename("hello world");
         label->setParent(*scene);
         auto &label_layout = label->getComponentMutable<core::components::Layout>();
