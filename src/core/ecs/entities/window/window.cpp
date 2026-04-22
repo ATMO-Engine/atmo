@@ -1,13 +1,22 @@
+#include "SDL3/SDL_error.h"
+#include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
+#include <cstdint>
+#include "core/args/arg_manager.hpp"
 #include "core/ecs/components.hpp"
+#include "core/ecs/entities/scene/scene.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/resource_manager.hpp"
+#include "core/types.hpp"
 #include "impl/clay_types.hpp"
+#include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
+#include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 #include "window.hpp"
 
@@ -16,15 +25,10 @@
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
 
-void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
+void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
 
 namespace atmo::core::ecs::entities
 {
-    void Window::RegisterComponents(flecs::world *world)
-    {
-        world->component<components::Window>();
-    }
-
     void Window::RegisterSystems(flecs::world *world)
     {
         world->system<components::Window>("PollEvents").kind(flecs::PreUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
@@ -54,11 +58,6 @@ namespace atmo::core::ecs::entities
                 window.renderer_data.text_engine = nullptr;
             }
 
-            if (window.renderer_data.fonts) {
-                SDL_free(window.renderer_data.fonts);
-                window.renderer_data.fonts = nullptr;
-            }
-
             SDL_free(window.clay_arena.memory);
 
             if (window.close_callback.has_value()) {
@@ -69,9 +68,9 @@ namespace atmo::core::ecs::entities
 
     static inline Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
     {
-        TTF_Font **fonts = static_cast<TTF_Font **>(data);
-        TTF_Font *font = fonts[config->fontId];
+        auto d = (TTF_Text *)config->userData;
         int width, height;
+        TTF_Font *font = TTF_GetTextFont(d);
 
         TTF_SetFontSize(font, config->fontSize);
         if (!TTF_GetStringSize(font, text.chars, text.length, &width, &height)) {
@@ -88,54 +87,46 @@ namespace atmo::core::ecs::entities
         setComponent<components::Window>({ "Atmo Engine", { 800, 600 } });
         auto window = p_handle.get_ref<components::Window>();
 
-        static constexpr SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
+        static constexpr SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY | RENDERING_PLATFORM;
 
-        window->window = SDL_CreateWindow(window->title.c_str(), window->size.x, window->size.y, flags);
+        if (args::ArgManager::Get<bool>("--headless") == false &&
+            SDL_CreateWindowAndRenderer(window->title.c_str(), window->size.x, window->size.y, flags, &window->window, &window->renderer_data.renderer)) {
+            SDL_SetWindowResizable(window->window, true);
 
-        if (!window->window) {
-            spdlog::error("Failed to create SDL window: {}", SDL_GetError());
-            throw std::runtime_error("Failed to create SDL window");
+            window->renderer_data.text_engine = TTF_CreateRendererTextEngine(window->renderer_data.renderer);
+            if (!window->renderer_data.text_engine) {
+                spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
+                return;
+            }
+
+            auto totalMemSize = Clay_MinMemorySize();
+            window->clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
+
+            Clay_Initialize(window->clay_arena, { (float)window->size.x, (float)window->size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
+                                spdlog::error("Clay error: {}", errorData.errorText.chars);
+                            } });
+
+            Clay_SetMeasureTextFunction(measureText, nullptr);
+        } else if (args::ArgManager::Get<bool>("--headless") == false) {
+            spdlog::error("Failed to create window and renderer: {}", SDL_GetError());
+        } else {
+            window->headless = true;
         }
-
-        window->renderer_data.renderer = SDL_CreateRenderer(window->window, "metal,vulkan");
-
-        if (!window->renderer_data.renderer) {
-            spdlog::error("Failed to create SDL renderer: {}", SDL_GetError());
-            throw std::runtime_error("Failed to create SDL renderer");
-        }
-
-        SDL_SetWindowResizable(window->window, true);
-
-        window->renderer_data.text_engine = TTF_CreateRendererTextEngine(window->renderer_data.renderer);
-        if (!window->renderer_data.text_engine) {
-            spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
-            throw std::runtime_error("Failed to create text engine from renderer");
-        }
-
-        window->renderer_data.fonts = (TTF_Font **)SDL_calloc(1, sizeof(TTF_Font *));
-        if (!window->renderer_data.fonts) {
-            spdlog::error("Failed to allocate memory for the font array: {}", SDL_GetError());
-            throw std::runtime_error("Failed to allocate memory for the font array");
-        }
-
-        auto totalMemSize = Clay_MinMemorySize();
-        window->clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
-
-        Clay_Initialize(window->clay_arena, { (float)window->size.x, (float)window->size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
-                            spdlog::error("Clay error: {}", errorData.errorText.chars);
-                        } });
-
-        Clay_SetMeasureTextFunction(measureText, window->renderer_data.fonts);
     }
 
-    void Window::setName(const std::string &name)
+    bool Window::setTitle(const std::string &name)
     {
         auto window = p_handle.get_ref<components::Window>();
 
+        if (window->headless)
+            return false;
+
         if (SDL_SetWindowTitle(window->window, name.c_str())) {
             window->title = name;
+            return true;
         } else {
             spdlog::error("Failed to set window title: {}", SDL_GetError());
+            return false;
         }
     }
 
@@ -184,12 +175,19 @@ namespace atmo::core::ecs::entities
 
     void Window::beginDraw(components::Window &window)
     {
+        static const types::Color &clear_color = project::ProjectManager::GetSettings().window.background_color;
+        static std::array<std::uint8_t, 4> clear_color_sdl = clear_color.toInt<std::array<std::uint8_t, 4>>();
+
+        SDL_SetRenderDrawColor(window.renderer_data.renderer, clear_color_sdl[0], clear_color_sdl[1], clear_color_sdl[2], clear_color_sdl[3]);
         SDL_RenderClear(window.renderer_data.renderer);
         SDL_SetRenderDrawBlendMode(window.renderer_data.renderer, SDL_BLENDMODE_BLEND);
     }
 
     void Window::draw(components::Window &window)
     {
+        if (window.headless)
+            return;
+
         if (core::InputManager::IsJustPressed("ui_click")) {
             auto pos = core::InputManager::GetMousePosition();
             Clay_SetPointerState({ pos.x, pos.y }, true);
@@ -205,42 +203,17 @@ namespace atmo::core::ecs::entities
             Clay_UpdateScrollContainers(true, { scroll.first.x, scroll.first.y }, scroll.second);
 
         Clay_BeginLayout();
+        for (auto &child : getChildren(true)) {
+            auto wrapped = EntityRegistry::Wrap(child);
+            auto *ui = dynamic_cast<entities::UI *>(wrapped.get());
+            if (ui && !child.getParent().hasComponent<components::UI>())
+                ui->internalDraw(&window.renderer_data);
+        }
+        auto clayCommands = Clay_EndLayout();
 
-        p_handle.children([this](flecs::entity child) { declareEntityUi(child); });
-
-        auto commands = Clay_EndLayout();
-
-        SDL_SetRenderDrawColor(window.renderer_data.renderer, 0, 0, 0, 255);
-
-        SDL_Clay_RenderClayCommands(&window.renderer_data, &commands);
+        SDL_Clay_RenderClayCommands(&window.renderer_data, &clayCommands);
 
         SDL_RenderPresent(window.renderer_data.renderer);
-    }
-
-    Clay_ElementId Window::getIdForEntity(flecs::entity e)
-    {
-        std::string path = std::format("#{}", e.id());
-        Clay_String s{ false, static_cast<std::int32_t>(path.size()), path.c_str() };
-        return Clay_GetElementId(s);
-    }
-
-    Clay_ElementDeclaration Window::buildDecl(flecs::entity e)
-    {
-        Clay_ElementDeclaration d{};
-
-        d.id = getIdForEntity(e);
-
-        return d;
-    }
-
-    void Window::declareEntityUi(flecs::entity e)
-    {
-        Clay_ElementDeclaration decl = buildDecl(e);
-
-        CLAY(decl)
-        {
-            e.children([this](flecs::entity child) { declareEntityUi(child); });
-        }
     }
 
     SDL_Texture *Window::getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle)
@@ -266,5 +239,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Window);
+ATMO_REGISTER_ENTITY(entities::Window);
 ATMO_REGISTER_COMPONENT(atmo::core::components::Window)

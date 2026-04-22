@@ -9,8 +9,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Entity::RegisterComponents(flecs::world *world) {}
-
     void Entity::RegisterSystems(flecs::world *world) {}
 
     void Entity::Unregister(flecs::world *world) {}
@@ -20,7 +18,8 @@ namespace atmo::core::ecs::entities
     EntityData Entity::serialize() const
     {
         EntityData output;
-        output.type = FullName();
+        const auto &comp = getComponent<components::EntityType>();
+        output.type = comp.type_name;
         output.name = p_handle.name();
 
         p_handle.each([&](flecs::id id) {
@@ -46,11 +45,18 @@ namespace atmo::core::ecs::entities
         return output;
     }
 
-    void Entity::deserialize(std::string_view json)
+    void Entity::deserializeJson(std::string_view json)
     {
         EntityData data;
         if (glz::read_json(data, json))
             return;
+
+        deserialize(data);
+    }
+
+    void Entity::deserialize(const EntityData &data)
+    {
+        rename(data.name);
 
         for (const auto &[comp_name, comp_json] : data.components) {
             const meta::TypeInfo *ti = meta::MetaRegistry::Instance().find(comp_name);
@@ -61,20 +67,36 @@ namespace atmo::core::ecs::entities
             if (!comp)
                 continue;
 
-            ti->from_json(comp, comp_json.str);
+            ti->from_json(comp, comp_json.dump().value());
+        }
+
+        for (const EntityData &child : data.children) {
+            auto child_entity = ecs::EntityRegistry::Create(child.type);
+            child_entity->deserialize(child);
+            child_entity->setParent(*this);
         }
     }
 
-    std::vector<Entity> Entity::getChildren()
+    std::vector<Entity> Entity::getChildren(bool recursive) const
     {
         std::vector<Entity> res;
 
-        p_handle.children([&res](flecs::entity child) { res.push_back(child); });
+        p_handle.children([&res, &recursive](flecs::entity child) {
+            res.push_back(child);
+
+            if (recursive) {
+                Entity entity(child);
+
+                std::vector<Entity> sub_res = entity.getChildren(recursive);
+                res.reserve(res.size() + sub_res.size());
+                res.insert(res.end(), sub_res.begin(), sub_res.end());
+            }
+        });
 
         return res;
     }
 
-    Entity Entity::getChild(std::string_view name)
+    Entity Entity::getChild(std::string_view name) const
     {
         return p_handle.lookup(name.data());
     }
@@ -122,6 +144,11 @@ namespace atmo::core::ecs::entities
 
         return nullptr;
     }
+
+    std::uint64_t Entity::getID() const
+    {
+        return p_handle.id();
+    }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Entity);
+ATMO_REGISTER_ENTITY(entities::Entity);

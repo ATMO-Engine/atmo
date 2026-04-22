@@ -44,14 +44,5 @@ namespace atmo
 
             return p == pattern.size();
         }
-
-        core::types::ColorRGBAi Utils::HexToRGBAi(std::uint32_t hex) noexcept
-        {
-            return core::types::ColorRGBAi(
-                static_cast<std::uint8_t>((hex >> 24) & 0xFF),
-                static_cast<std::uint8_t>((hex >> 16) & 0xFF),
-                static_cast<std::uint8_t>((hex >> 8) & 0xFF),
-                static_cast<std::uint8_t>(hex & 0xFF));
-        }
     } // namespace common
 } // namespace atmo

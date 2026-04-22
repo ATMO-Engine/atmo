@@ -10,6 +10,7 @@
 
 #include "flecs.h"
 #include "glaze/glaze.hpp"
+#include "glaze/json/prettify.hpp"
 
 #include "meta/component_meta.hpp"
 #include "meta/field_descriptor.hpp"
@@ -43,7 +44,7 @@ namespace atmo::meta
 
         void (*register_flecs)(flecs::world &) = nullptr;
         std::uint64_t (*resolve_flecs_id)(flecs::world &) = nullptr;
-        std::string (*to_json)(const void *component) = nullptr;
+        glz::generic (*to_json)(const void *component) = nullptr;
         bool (*from_json)(void *component, std::string_view json) = nullptr;
     };
 
@@ -114,9 +115,9 @@ namespace atmo::meta
 
         ti.resolve_flecs_id = [](flecs::world &w) -> std::uint64_t { return w.component<T>().id(); };
 
-        ti.to_json = [](const void *component) -> std::string {
-            auto result = glz::write_json(*static_cast<const T *>(component));
-            return result.value_or("");
+        ti.to_json = [](const void *component) -> glz::generic {
+            auto json_str = glz::write_json(*static_cast<const T *>(component)).value_or("{}");
+            return glz::read_json<glz::generic>(json_str).value_or(glz::generic{});
         };
 
         ti.from_json = [](void *component, std::string_view json) -> bool {

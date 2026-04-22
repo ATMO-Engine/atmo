@@ -38,6 +38,9 @@ namespace atmo::common::math
         return value;
     }
 
+    float Round(float value);
+    double Round(double value);
+
     /**
      * @brief Linearly interpolate between two values
      *

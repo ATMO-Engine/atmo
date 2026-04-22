@@ -3,11 +3,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Dynamic2d::RegisterComponents(flecs::world *world)
-    {
-        world->component<Dynamic2dData>();
-    }
-
     void Dynamic2d::RegisterSystems(flecs::world *world) {}
 
     void Dynamic2d::initialize()
@@ -24,5 +19,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Dynamic2d);
+ATMO_REGISTER_ENTITY(entities::Dynamic2d);
 ATMO_REGISTER_COMPONENT(atmo::core::ecs::entities::Dynamic2d::Dynamic2dData)
