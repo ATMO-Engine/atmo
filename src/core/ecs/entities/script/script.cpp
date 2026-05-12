@@ -86,4 +86,5 @@ namespace atmo::core::ecs::entities
 
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Script);
+ATMO_REGISTER_ENTITY(entities::Script);
+ATMO_REGISTER_COMPONENT(atmo::core::components::ScriptTest)

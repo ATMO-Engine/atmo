@@ -14,16 +14,23 @@
 #include "impl/clay_types.hpp"
 #include "meta/meta.hpp"
 
+#if defined(__APPLE__)
+#define RENDERING_PLATFORM SDL_WINDOW_METAL
+#else
+#define RENDERING_PLATFORM SDL_WINDOW_VULKAN
+#endif
+
 namespace atmo::core::components
 {
     struct Window {
         std::string title;
         types::Vector2i size;
         SDL_Window *window = nullptr;
-        Clay_SDL3RendererData renderer_data;
+        ClaySdL3RendererData renderer_data;
         Clay_Arena clay_arena;
         std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
         std::optional<std::function<void()>> close_callback;
+        bool headless = false;
     };
 } // namespace atmo::core::components
 
@@ -40,7 +47,6 @@ namespace atmo::core::ecs::entities
     public:
         using EntityRegistry::Registrable<Window, Entity>::Registrable;
 
-        static void RegisterComponents(flecs::world *world);
         static void RegisterSystems(flecs::world *world);
 
         void initialize();
@@ -50,7 +56,7 @@ namespace atmo::core::ecs::entities
             return "Window";
         }
 
-        void setName(const std::string &name);
+        bool setTitle(const std::string &name);
         void setSize(const core::types::Vector2i &size);
         void focus();
 
@@ -66,8 +72,7 @@ namespace atmo::core::ecs::entities
         void beginDraw(components::Window &window);
         void draw(components::Window &window);
 
-        Clay_ElementId getIdForEntity(flecs::entity e);
-        Clay_ElementDeclaration buildDecl(flecs::entity e);
-        void declareEntityUi(flecs::entity e);
+        Clay_ElementId getIdForEntity(const Entity &e);
+        Clay_ElementDeclaration buildDecl(const Entity &e);
     };
 } // namespace atmo::core::ecs::entities

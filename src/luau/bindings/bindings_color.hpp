@@ -11,20 +11,20 @@ namespace atmo::luau
 
     using namespace atmo::core::types;
 
-    template <> class LuaBindings<ColorRGBA> : public atmo::luau::LuaBindingsBase<atmo::luau::LuaBindings<ColorRGBA>, ColorRGBA>
+    template <> class LuaBindings<Color> : public atmo::luau::LuaBindingsBase<atmo::luau::LuaBindings<Color>, Color>
     {
     public:
         static void RegisterType(lua_State *state)
         {
             luaL_newmetatable(state, name);
 
-            lua_pushcfunction(state, GC, "ColorRGBA.__gc");
+            lua_pushcfunction(state, GC, "Color.__gc");
             lua_setfield(state, -2, "__gc");
 
-            lua_pushcfunction(state, Index, "ColorRGBA.__index");
+            lua_pushcfunction(state, Index, "Color.__index");
             lua_setfield(state, -2, "__index");
 
-            lua_pushcfunction(state, NewIndex, "ColorRGBA.__newindex");
+            lua_pushcfunction(state, NewIndex, "Color.__newindex");
             lua_setfield(state, -2, "__newindex");
 
             lua_newtable(state);
@@ -38,12 +38,12 @@ namespace atmo::luau
         }
 
         static Property m_properties[];
-        static constexpr const char *name = "ColorRGBA";
+        static constexpr const char *name = "Color";
 
     private:
-        static std::shared_ptr<ColorRGBA> &Check(lua_State *state, int index)
+        static std::shared_ptr<Color> &Check(lua_State *state, int index)
         {
-            return *(std::shared_ptr<ColorRGBA> *)luaL_checkudata(state, index, name);
+            return *(std::shared_ptr<Color> *)luaL_checkudata(state, index, name);
         }
 
         static int New(lua_State *state)
@@ -53,8 +53,8 @@ namespace atmo::luau
             float b = (float)luaL_checknumber(state, 3);
             float a = (float)luaL_checknumber(state, 4);
 
-            void *mem = lua_newuserdata(state, sizeof(std::shared_ptr<ColorRGBA>));
-            new (mem) std::shared_ptr<ColorRGBA>(std::make_shared<ColorRGBA>(r, g, b, a));
+            void *mem = lua_newuserdata(state, sizeof(std::shared_ptr<Color>));
+            new (mem) std::shared_ptr<Color>(std::make_shared<Color>(r, g, b, a));
 
             luaL_getmetatable(state, name);
             lua_setmetatable(state, -2);
@@ -64,8 +64,8 @@ namespace atmo::luau
 
         static int GC(lua_State *state)
         {
-            auto *ptr = (std::shared_ptr<ColorRGBA> *)luaL_checkudata(state, 1, name);
-            ptr->~shared_ptr<ColorRGBA>();
+            auto *ptr = (std::shared_ptr<Color> *)luaL_checkudata(state, 1, name);
+            ptr->~shared_ptr<Color>();
             return 0;
         }
     };

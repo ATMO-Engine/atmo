@@ -17,6 +17,12 @@ namespace atmo::core::components
     };
 } // namespace atmo::core::components
 
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::ScriptTest> {
+    static constexpr const char *name = "ScriptTest";
+    static constexpr const char *category = "Luau";
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::ScriptTest::script_path>("script_path").withWidget("file_path"));
+};
+
 namespace atmo::core::ecs::entities
 {
     class Script : public EntityRegistry::Registrable<Script, Entity>

@@ -71,7 +71,7 @@ namespace atmo
         void Luau::registerBindings()
         {
             LuaBindings<atmo::core::types::Vector2>::RegisterType(p_L);
-            LuaBindings<atmo::core::types::ColorRGBA>::RegisterType(p_L);
+            LuaBindings<atmo::core::types::Color>::RegisterType(p_L);
             return;
         }
 

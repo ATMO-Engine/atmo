@@ -11,6 +11,7 @@
 
 #include "file_system.hpp"
 #include "glaze/json/write.hpp"
+#include "impl/romver.hpp"
 #include "project/project_settings.hpp"
 
 #define ATMO_PROJECT_FILE "project.atmo"
@@ -77,8 +78,8 @@ namespace atmo
                     throw std::runtime_error("Project file already exists at: " + project_file_path.string());
 
                 Instance().m_settings = {};
-                Instance().m_settings.app.engine_version = ATMO_VERSION_STRING;
-                impl::Romver::Parse(ATMO_VERSION_STRING);
+                Instance().m_settings.app.engine_version = impl::Romver::Parse(ATMO_VERSION);
+                impl::Romver::Parse(ATMO_VERSION);
 
                 std::ofstream project_file(project_file_path, std::ios::binary);
                 if (!project_file.is_open())
@@ -122,8 +123,7 @@ namespace atmo
             static void GeneratePackedFile(std::string_view output_path = std::string_view(), const std::vector<std::string> &files = {})
             {
                 std::string path = output_path.empty()
-                    ? std::format(
-                          "{}.{}.{}", Instance().m_settings.app.project_name, Instance().m_settings.app.project_version, std::string(ATMO_PACKED_EXT, 4))
+                    ? std::format("{}.{}.{}", Instance().m_settings.app.project_name, Instance().m_settings.app.project_version.toString(), ATMO_PACKED_EXT)
                     : std::string(output_path);
                 std::ofstream out(path, std::ios::binary);
                 if (!out.is_open())
@@ -146,7 +146,7 @@ namespace atmo
                             FileSystem::PackedEntry packed_entry;
                             packed_entry.path = strdup(entry.path().lexically_relative(GetCurrentProjectPath()).string().c_str());
                             packed_entry.offset = 0;
-                            packed_entry.size = static_cast<uint64_t>(size);
+                            packed_entry.size = static_cast<std::uint64_t>(size);
                             entries.push_back(packed_entry);
                             in.close();
                         }
@@ -163,13 +163,13 @@ namespace atmo
                         FileSystem::PackedEntry packed_entry;
                         packed_entry.path = entry.c_str();
                         packed_entry.offset = 0;
-                        packed_entry.size = static_cast<uint64_t>(size);
+                        packed_entry.size = static_cast<std::uint64_t>(size);
                         entries.push_back(packed_entry);
                         in.close();
                     }
                 }
 
-                uint64_t current_offset = 0;
+                std::uint64_t current_offset = 0;
                 for (auto &entry : entries) {
                     entry.offset = current_offset;
                     current_offset += entry.size;
@@ -185,8 +185,8 @@ namespace atmo
                 WriteStructure(out, &header);
                 for (const auto &entry : entries) {
                     out.write(entry.path, std::strlen(entry.path) + 1);
-                    out.write(reinterpret_cast<const char *>(&entry.offset), sizeof(uint64_t));
-                    out.write(reinterpret_cast<const char *>(&entry.size), sizeof(uint64_t));
+                    out.write(reinterpret_cast<const char *>(&entry.offset), sizeof(std::uint64_t));
+                    out.write(reinterpret_cast<const char *>(&entry.size), sizeof(std::uint64_t));
                 }
                 for (const auto &entry : entries) {
                     std::ifstream in(entry.path, std::ios::binary);
@@ -210,12 +210,16 @@ namespace atmo
         private:
             ProjectManager()
             {
-                auto settings_search = project::FileSystem::SearchFiles("project://.atmo/project_settings.json");
+                try {
+                    auto settings_search = project::FileSystem::SearchFiles("project://.atmo/project_settings.json");
 
-                if (!settings_search.empty()) {
-                    File settings_file = project::FileSystem::OpenFile("project://.atmo/project_settings.json");
-                    LoadProjectSettings(settings_file);
-                }
+                    if (!settings_search.empty()) {
+                        File settings_file = project::FileSystem::OpenFile("project://.atmo/project_settings.json");
+                        LoadProjectSettings(settings_file);
+                    }
+                } catch (const std::runtime_error &err) {
+                    spdlog::warn("Couldn't load project settings: {}", err.what());
+                };
             }
 
             ~ProjectManager() = default;
