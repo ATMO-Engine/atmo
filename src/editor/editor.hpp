@@ -4,9 +4,9 @@
 #include <string_view>
 
 #include "core/engine.hpp"
-#include "luau/luau.hpp"
 #include "editor/commands/commands.hpp"
 #include "editor/menu_bar/i_platform_menu_bar.hpp"
+#include "luau/luau.hpp"
 
 #if !defined(ATMO_EXPORT)
 
