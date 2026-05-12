@@ -14,6 +14,16 @@ namespace atmo::common::math
         return radians * (180.0 / PI);
     }
 
+    float Round(float value)
+    {
+        return round(value);
+    }
+
+    double Round(double value)
+    {
+        return round(value);
+    }
+
     float MeterToPixel(float meters)
     {
         return meters * atmo::project::ProjectManager::GetSettings().engine.pixels_per_meter;

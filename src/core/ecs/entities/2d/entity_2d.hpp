@@ -37,7 +37,6 @@ namespace atmo::core::ecs::entities
     public:
         using EntityRegistry::Registrable<Entity2d, Entity>::Registrable;
 
-        static void RegisterComponents(flecs::world *world);
         static void RegisterSystems(flecs::world *world);
 
         void initialize();

@@ -59,4 +59,9 @@ namespace atmo::core::ecs
     {
         m_scene_manager.changeSceneToFile(scene_path);
     }
+
+    std::shared_ptr<entities::Scene> ECS::getCurrentScene() const
+    {
+        return m_scene_manager.getCurrentScene();
+    }
 } // namespace atmo::core::ecs
