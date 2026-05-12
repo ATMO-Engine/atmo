@@ -57,25 +57,20 @@ namespace atmo::core::ecs::entities
             if (entity.hasComponent<components::UI>())
                 has_ui_child = true;
 
+        Clay__OpenElement();
+        Clay__ConfigureOpenElement(buildDecl());
+
+        draw(data);
+
         if (has_ui_child) {
-            Clay__OpenElement();
-            Clay__ConfigureOpenElement(buildDecl());
-
-            draw(data);
-
             for (auto child : children) {
                 auto wrapped = EntityRegistry::Wrap(child);
                 if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
                     ui->internalDraw(data);
             }
-
-            Clay__CloseElement();
-        } else {
-            Clay__OpenElement();
-            Clay__ConfigureOpenElement(buildDecl());
-            draw(data);
-            Clay__CloseElement();
         }
+
+        Clay__CloseElement();
     }
 
     void UI::draw(ClaySdL3RendererData *data) {}
