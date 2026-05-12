@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include <string_view>
 #include "SDL3_ttf/SDL_ttf.h"
 #include "core/ecs/entities/ui/ui.hpp"
-#include "core/resource/handle.hpp"
+#include "core/resource/resource_ref.hpp"
 #include "core/types.hpp"
 #include "meta/meta.hpp"
 
@@ -26,7 +27,7 @@ namespace atmo::core::components
         std::string text;
         std::uint16_t font_size = 24;
         std::string font_path = "project://assets/fonts/Nunito/Nunito.ttf";
-        resource::Handle<TTF_Font> font_handle;
+        std::unique_ptr<resource::ResourceRef<TTF_Font>> m_res;
         std::uint16_t letter_spacing = 0;
         std::uint16_t line_height = 0;
         TTF_Text *ttf_text = nullptr;

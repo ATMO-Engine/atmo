@@ -35,30 +35,27 @@ namespace atmo
                  * @brief get the resource associated to the handle if possible,
                  *        throw an exception if the handle is outdated
                  *
-                 * @param handle handle associated to the ressource you want to get
-                 * @return std::any ressource ready to use
+                 * @param path The path (project or absolute) of associated to the ressource you want to get
+                 * @return std::unique_ptr<ResourceRef<T>> A unique ptr to the ResourceRef of the resource
                  */
-                template <typename T> ResourceRef<T> getResource(const std::string &path) // TODO: créer l'exception pour les handle périmé
+                template <typename T> std::unique_ptr<ResourceRef<T>> getResource(const std::string &path) // TODO: créer l'exception pour les handle périmé
                 {
                     ResourceTypeStore<T> &store = getPool<T>();
 
                     if (store.mapHandle.find(path) != store.mapHandle.end()) {
                         try {
-                            ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
-                            return ref;
+                            return store.pool->getRef(store.mapHandle.at(path), m_currentTick);
                         } catch (const typename ResourcePool<T>::HandleOutDated &e) {
                             StoreHandle newHandle = store.pool->create(path, m_currentTick);
                             store.mapHandle.at(path) = newHandle;
 
-                            ResourceRef<T> ref = store.pool->getRef(store.mapHandle.at(path), m_currentTick);
-                            return ref;
+                            return store.pool->getRef(store.mapHandle.at(path), m_currentTick);
                         }
                     } else {
                         StoreHandle newHandle = store.pool->create(path, m_currentTick);
                         store.mapHandle.insert(std::pair<std::string, StoreHandle>(path, newHandle));
 
-                        ResourceRef<T> ref = store.pool->getRef(newHandle, m_currentTick);
-                        return ref;
+                        return store.pool->getRef(newHandle, m_currentTick);
                     }
                 }
 

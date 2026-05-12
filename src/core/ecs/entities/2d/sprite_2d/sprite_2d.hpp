@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include "SDL3/SDL_surface.h"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -11,7 +12,7 @@ namespace atmo::core::components
 {
     struct Sprite2d {
         std::string texture_path;
-        resource::ResourceRef<SDL_Surface> *m_res = nullptr;
+        std::unique_ptr<resource::ResourceRef<SDL_Surface>> m_res;
         types::Vector2 texture_size{ 0.0f, 0.0f };
     };
 } // namespace atmo::core::components

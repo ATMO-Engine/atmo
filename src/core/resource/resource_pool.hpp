@@ -171,15 +171,14 @@ namespace atmo
                  *
                  * @param handle The index of the resource
                  * @param tick The tick when the action is performed
-                 * @return ResourceRef<T> The ResourceRef of the resource
+                 * @return std::unqiue_ptr<ResourceRef<T>> A unique ptr to the ResourceRef of the resource
                  */
-                ResourceRef<T> getRef(StoreHandle &handle, uint64_t tick)
+                std::unique_ptr<ResourceRef<T>> getRef(StoreHandle &handle, uint64_t tick)
                 {
                     if (handle.generation != m_entries.at(handle.index).generation) {
                         throw HandleOutDated("Handle " + std::to_string(handle.index) + " out dated");
                     }
-                    ResourceRef<T> ref(this, handle, tick);
-                    return ref;
+                    return std::unique_ptr<ResourceRef<T>>(new ResourceRef<T>(this, handle, tick));
                 }
 
                 /**

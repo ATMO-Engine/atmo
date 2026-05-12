@@ -40,7 +40,7 @@ namespace atmo::core::ecs::entities
             });
 
         world->observer<components::Sprite2d>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2d &sprite) {
-            // potential cleanup
+            sprite.m_res = nullptr;
         });
     }
 
@@ -59,13 +59,15 @@ namespace atmo::core::ecs::entities
         if (sprite->texture_path.empty())
             return;
 
-        resource::ResourceRef<SDL_Surface> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->texture_path);
+        {
+            std::unique_ptr<resource::ResourceRef<SDL_Surface>> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->texture_path);
 
-        sprite->m_res = &res;
+            sprite->m_res = std::move(res);
+        }
 
         spdlog::debug("Loaded Sprite2D texture for entity {}: {}", p_handle.name().c_str(), sprite->texture_path);
 
-        std::shared_ptr<SDL_Surface> surface = res.get();
+        std::shared_ptr<SDL_Surface> surface = sprite->m_res->get();
 
         spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
 
