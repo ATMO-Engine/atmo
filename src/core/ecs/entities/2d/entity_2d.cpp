@@ -6,11 +6,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Entity2d::RegisterComponents(flecs::world *world)
-    {
-        world->component<components::Transform2d>();
-    }
-
     void Entity2d::RegisterSystems(flecs::world *world)
     {
         world->system<components::Transform2d>("Transform2d_IdentityGlobal").kind(flecs::OnValidate).each([](flecs::entity e, components::Transform2d &t) {
@@ -97,5 +92,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Entity2d);
+ATMO_REGISTER_ENTITY(entities::Entity2d);
 ATMO_REGISTER_COMPONENT(atmo::core::components::Transform2d)

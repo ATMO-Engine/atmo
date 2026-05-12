@@ -29,10 +29,16 @@ namespace atmo::core::ecs
         std::shared_ptr<entities::Scene> createScene(const std::string &scene_name, bool singleton);
         void changeScene(std::shared_ptr<entities::Scene> scene);
         void changeSceneToFile(std::string_view scene_path);
+        std::shared_ptr<entities::Scene> getCurrentScene() const;
 
         bool progress(float delta_time = 0.0f) const
         {
             return m_world.progress(delta_time);
+        }
+
+        flecs::world &getWorld()
+        {
+            return m_world;
         }
     };
 } // namespace atmo::core::ecs

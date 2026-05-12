@@ -143,10 +143,6 @@ namespace atmo::core::args
         public:
             MutuallyExclusiveGroup(bool required = false) : m_group(Instance().m_args.add_mutually_exclusive_group(required)) {}
 
-            // template <typename... Args> static ArgBuilder AddArgument(const std::string &arg, Args... args)
-            // {
-            //     return ArgBuilder(arg, std::forward<Args>(args)...);
-            // }
             template <typename... Args> ArgBuilder addArgument(const std::string &arg, Args... args)
             {
                 ArgBuilder builder = ArgBuilder(m_group.add_argument(arg, std::forward<Args>(args)...));
@@ -189,18 +185,17 @@ namespace atmo::core::args
             return MutuallyExclusiveGroup(required);
         }
 
-
-    private:
-        ArgManager() = default;
-        ~ArgManager() = default;
-
         static ArgManager &Instance()
         {
             static ArgManager instance;
             return instance;
         }
 
-        argparse::ArgumentParser m_args{ "atmo", ATMO_VERSION_STRING, argparse::default_arguments::none };
+    private:
+        ArgManager() = default;
+        ~ArgManager() = default;
+
+        argparse::ArgumentParser m_args{ "atmo", ATMO_VERSION, argparse::default_arguments::none };
         std::map<int, std::vector<std::pair<std::string, ArgManagerCallback>>, std::greater<int>> m_launchHandlers;
         LaunchResult m_launchResult = LaunchResult::Continue;
     };

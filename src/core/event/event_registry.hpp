@@ -29,10 +29,7 @@ namespace atmo::core::event
             return new Type();
         }
 
-        template <typename Type> static void OnRegister()
-        {
-            spdlog::info("Registering event: {}", Type::FullName());
-        }
+        template <typename Type> static void OnRegister() {}
 
         /**
          * @brief Set a callback function for a specific event type. The callback will be called whenever an event of the specified type is dispatched. The

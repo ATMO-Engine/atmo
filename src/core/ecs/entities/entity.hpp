@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -19,7 +20,7 @@ namespace atmo::core::ecs::entities
         std::string name;
         std::string type;
 
-        std::unordered_map<std::string, glz::raw_json> components;
+        std::unordered_map<std::string, glz::generic> components;
 
         std::vector<EntityData> children;
     };
@@ -29,6 +30,8 @@ namespace atmo::core::ecs::entities
     public:
         Entity() = default;
         Entity(const flecs::entity &handle) : p_handle(handle) {}
+        Entity(const Entity &copy) : p_handle(copy.p_handle) {}
+        virtual ~Entity() = default;
 
         operator flecs::entity() const
         {
@@ -46,7 +49,8 @@ namespace atmo::core::ecs::entities
         }
 
         EntityData serialize() const;
-        void deserialize(std::string_view data);
+        void deserializeJson(std::string_view data);
+        void deserialize(const EntityData &data);
 
         /**
          * @brief Set a component for the entity.
@@ -68,13 +72,6 @@ namespace atmo::core::ecs::entities
         {
             p_handle.add<Component>();
         }
-
-        /**
-         * @brief Method to register components related to this entity type. Called once when world is initialized before RegisterSystems.
-         *
-         * @param world
-         */
-        static void RegisterComponents(flecs::world *world);
 
         /**
          * @brief Method to register systems related to this entity type. Called once when world is initialized.
@@ -99,9 +96,10 @@ namespace atmo::core::ecs::entities
         /**
          * @brief Get all of this entity's children.
          *
+         * @param bool Should the returned list contain children of children recursively?
          * @return std::vector<Entity> containing all of this entity's children.
          */
-        std::vector<Entity> getChildren();
+        std::vector<Entity> getChildren(bool recursive = false) const;
 
         /**
          * @brief Get the child of entity by name.
@@ -109,7 +107,7 @@ namespace atmo::core::ecs::entities
          * @param name Name of the child entity.
          * @return Entity Child entity.
          */
-        Entity getChild(std::string_view name);
+        Entity getChild(std::string_view name) const;
 
         /**
          * @brief Set the parent of this entity.
@@ -172,7 +170,43 @@ namespace atmo::core::ecs::entities
          */
         std::shared_ptr<entities::Scene> getScene() const;
 
+        /**
+         * @brief Returns the internal ID of the entity.
+         *
+         * @return std::uint64_t internal ID
+         */
+        std::uint64_t getID() const;
+
+        /**
+         * @brief Check if the entity has a component.
+         *
+         * @tparam Component component of the entity
+         * @return true Entity has component
+         * @return false Entity does not have component
+         */
+        template <typename Component> bool hasComponent() const
+        {
+            return p_handle.has<Component>();
+        }
+
+        template <typename Component> const Component &getComponent() const
+        {
+            return p_handle.get<Component>();
+        }
+
+        template <typename Component> Component &getComponentMutable()
+        {
+            return p_handle.get_mut<Component>();
+        }
+
     protected:
         flecs::entity p_handle;
     };
 } // namespace atmo::core::ecs::entities
+
+namespace atmo::core::components
+{
+    struct EntityType {
+        std::string type_name;
+    };
+} // namespace atmo::core::components

@@ -3,11 +3,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Kinematic2d::RegisterComponents(flecs::world *world)
-    {
-        world->component<Kinematic2dData>();
-    }
-
     void Kinematic2d::RegisterSystems(flecs::world *world) {}
 
     void Kinematic2d::initialize()
@@ -24,5 +19,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Kinematic2d);
+ATMO_REGISTER_ENTITY(entities::Kinematic2d);
 ATMO_REGISTER_COMPONENT(atmo::core::ecs::entities::Kinematic2d::Kinematic2dData)

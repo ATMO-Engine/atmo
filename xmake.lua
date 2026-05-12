@@ -15,6 +15,8 @@ if is_mode("debug") then
     end
 end
 
+set_policy("build.intermediate_directory", false)
+
 set_policy("build.warning", true)
 
 if is_mode("release") then
@@ -27,7 +29,7 @@ end
 
 set_config("build.compdb", true)
 add_rules("plugin.compile_commands.autoupdate", {
-    arguments = {"--target=" .. (get_config("target") or "all")}
+    arguments = {"--target=" .. (get_config("target") or "atmo")}
 })
 
 local SUBMODULE_PATH = "submodules/"
@@ -360,6 +362,10 @@ function platform_specifics()
         )
     end
 
+    if is_plat("linux") then
+        add_syslinks("dl")
+    end
+
     if is_plat("windows") then
         add_cxxflags("/utf-8")
         add_syslinks(
@@ -379,6 +385,9 @@ target("atmo")
     packages()
     add_files("src/**.cpp")
     add_includedirs("src")
+    if is_plat("macosx") then
+        add_files("src/editor/menu_bar/macos_menu_bar.mm")
+    end
     platform_specifics()
     if is_mode("debug") or is_mode("profile") then
         add_defines("ATMO_PROFILING")
@@ -427,14 +436,14 @@ target("atmo")
         local files = {}
         table.join2(files, os.files("translation/**"))
         table.join2(files, os.files("assets/**"))
-        -- normalize to forward slashes
+
         for i, f in ipairs(files) do
             files[i] = path.unix(f)
         end
 
         print(bin .. ": Packing " .. #files .. " files...")
 
-        os.runv(bin, table.join({"--pack"}, files))
+        os.runv(bin, table.join({"--headless", "--pack"}, files))
 
         local pck = path.absolute("packed_output.pck")
 
