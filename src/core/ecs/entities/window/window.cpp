@@ -224,7 +224,8 @@ namespace atmo::core::ecs::entities
             return window->texture_cache[path];
         }
 
-        std::unique_ptr<atmo::core::resource::ResourceRef<SDL_Surface>> res = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(path);
+        std::unique_ptr<atmo::core::resource::ResourceRef<SDL_Surface>> res =
+            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(path);
         std::shared_ptr<SDL_Surface> surface = res->get();
 
         SDL_Texture *texture = SDL_CreateTextureFromSurface(window->renderer_data.renderer, surface.get());

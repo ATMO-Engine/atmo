@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
 #include "SDL3/SDL_surface.h"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/ecs/entity_registry.hpp"
