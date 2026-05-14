@@ -19,9 +19,7 @@ namespace atmo::core::ecs::entities
             if (label.font_path.empty())
                 return;
 
-            resource::ResourceRef<TTF_Font> res = resource::ResourceManager::GetInstance().getResource<TTF_Font>(label.font_handle.assetId);
-
-            res.unpin();
+            label.m_res = nullptr;
 
             TTF_DestroyText(label.ttf_text);
         });
@@ -42,13 +40,13 @@ namespace atmo::core::ecs::entities
         if (label->font_path.empty())
             return;
 
-        label->font_handle = resource::Handle<TTF_Font>{ .assetId = label->font_path };
+        {
+            std::unique_ptr<resource::ResourceRef<TTF_Font>> res = resource::ResourceManager::GetInstance().getResource<TTF_Font>(label->font_path);
 
-        resource::ResourceRef<TTF_Font> res = resource::ResourceManager::GetInstance().getResource<TTF_Font>(label->font_handle.assetId);
+            label->m_res = std::move(res);
+        }
 
-        res.pin();
-
-        label->ttf_text = TTF_CreateText(nullptr, res.get().get(), label->text.c_str(), label->text.size());
+        label->ttf_text = TTF_CreateText(nullptr, label->m_res->get().get(), label->text.c_str(), label->text.size());
     }
 
     std::string_view UILabel::getFontPath() const noexcept
