@@ -9,6 +9,7 @@
 #include "SDL3_ttf/SDL_ttf.h"
 #include "clay_types.hpp"
 #include "core/resource/resource_manager.hpp"
+#include "core/types.hpp"
 
 /* Global for convenience. Even in 4K this is enough for smooth curves (low radius or rect size coupled with
  * no AA or low resolution might make it appear as jagged curves) */
@@ -100,15 +101,15 @@ static void SDL_Clay_RenderArc(
 
 static SDL_Rect currentClippingRectangle;
 
-void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_RenderCommandArray *rcommands)
+void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_RenderCommandArray *rcommands, const atmo::core::types::Vector2 &dpi_scale)
 {
     for (size_t i = 0; i < rcommands->length; i++) {
         Clay_RenderCommand *rcmd = Clay_RenderCommandArray_Get(rcommands, i);
         const Clay_BoundingBox bounding_box = rcmd->boundingBox;
-        const SDL_FRect rect = { static_cast<float>(bounding_box.x),
-                                 static_cast<float>(bounding_box.y),
-                                 static_cast<float>(bounding_box.width),
-                                 static_cast<float>(bounding_box.height) };
+        const SDL_FRect rect = { static_cast<float>(bounding_box.x * dpi_scale.x),
+                                 static_cast<float>(bounding_box.y * dpi_scale.y),
+                                 static_cast<float>(bounding_box.width * dpi_scale.x),
+                                 static_cast<float>(bounding_box.height * dpi_scale.y) };
 
         switch (rcmd->commandType) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
@@ -134,7 +135,7 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                     Clay_TextRenderData *config = &rcmd->renderData.text;
                     auto text = (TTF_Text *)rcmd->userData;
                     TTF_Font *font = TTF_GetTextFont(text);
-                    TTF_SetFontSize(font, config->fontSize);
+                    TTF_SetFontSize(font, config->fontSize * dpi_scale.x);
 
                     TTF_SetTextColor(text, config->textColor.r, config->textColor.g, config->textColor.b, config->textColor.a);
                     TTF_DrawRendererText(text, rect.x, rect.y);
@@ -209,10 +210,10 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                 {
                     Clay_BoundingBox boundingBox = rcmd->boundingBox;
                     currentClippingRectangle = SDL_Rect{
-                        .x = static_cast<int>(boundingBox.x),
-                        .y = static_cast<int>(boundingBox.y),
-                        .w = static_cast<int>(boundingBox.width),
-                        .h = static_cast<int>(boundingBox.height),
+                        .x = static_cast<int>(boundingBox.x * dpi_scale.x),
+                        .y = static_cast<int>(boundingBox.y * dpi_scale.y),
+                        .w = static_cast<int>(boundingBox.width * dpi_scale.x),
+                        .h = static_cast<int>(boundingBox.height * dpi_scale.y),
                     };
                     SDL_SetRenderClipRect(rendererData->renderer, &currentClippingRectangle);
                     break;
