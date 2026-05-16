@@ -50,6 +50,12 @@ namespace atmo::core
         static void StartTextInput(SDL_Window *window) noexcept;
         static void StopTextInput(SDL_Window *window) noexcept;
 
+        static InputManager &Instance()
+        {
+            static InputManager instance;
+            return instance;
+        }
+
         class KeyEvent : public Input
         {
         public:
@@ -98,12 +104,6 @@ namespace atmo::core
 
     protected:
         InputManager();
-
-        static InputManager &Instance()
-        {
-            static InputManager instance;
-            return instance;
-        }
 
         static void HandleKeyboardEvent(const SDL_KeyboardEvent &e, std::shared_ptr<KeyEvent> keyEvent);
         static void HandleMouseButtonEvent(const SDL_MouseButtonEvent &e, std::shared_ptr<MouseButtonEvent> mouseEvent);

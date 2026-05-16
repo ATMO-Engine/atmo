@@ -8,7 +8,7 @@ TEST_CASE("Simple version Parse method", "[romver]")
 
     atmo::impl::Romver result = atmo::impl::Romver::Parse(version);
 
-    REQUIRE(version == result.to_string());
+    REQUIRE(version == result.toString());
 }
 
 TEST_CASE("Simple version constructor", "[romver]")
@@ -17,7 +17,7 @@ TEST_CASE("Simple version constructor", "[romver]")
 
     atmo::impl::Romver result(version);
 
-    REQUIRE(version == result.to_string());
+    REQUIRE(version == result.toString());
 }
 
 TEST_CASE("Version + pre", "[romver]")
@@ -26,7 +26,7 @@ TEST_CASE("Version + pre", "[romver]")
 
     atmo::impl::Romver result(version);
 
-    REQUIRE(version == result.to_string());
+    REQUIRE(version == result.toString());
 }
 
 TEST_CASE("Version + build", "[romver]")
@@ -35,7 +35,7 @@ TEST_CASE("Version + build", "[romver]")
 
     atmo::impl::Romver result(version);
 
-    REQUIRE(version == result.to_string());
+    REQUIRE(version == result.toString());
 }
 
 TEST_CASE("Version + pre + build", "[romver]")
@@ -44,7 +44,7 @@ TEST_CASE("Version + pre + build", "[romver]")
 
     atmo::impl::Romver result(version);
 
-    REQUIRE(version == result.to_string());
+    REQUIRE(version == result.toString());
 }
 
 TEST_CASE("Invalid string 1", "[romver]")
@@ -53,7 +53,7 @@ TEST_CASE("Invalid string 1", "[romver]")
 
     atmo::impl::Romver result(version);
 
-    REQUIRE(result.to_string() == "0.0.1");
+    REQUIRE(result.toString() == "0.0.1");
 }
 
 TEST_CASE("Invalid string 2", "[romver]")
@@ -62,5 +62,5 @@ TEST_CASE("Invalid string 2", "[romver]")
 
     atmo::impl::Romver result(version);
 
-    REQUIRE(result.to_string() == "0.0.1");
+    REQUIRE(result.toString() == "0.0.1");
 }

@@ -2,6 +2,18 @@
   "atmo": {
     "create": "Create",
     "create_new_project": "Create New Project",
-    "open_project": "Open Project"
+    "open_project": "Open Project",
+    "commands": {
+      "file": {
+        "category": "File",
+        "save": "Save",
+        "quit": "Quit"
+      },
+      "edit": {
+        "category": "Edit",
+        "undo": "Undo",
+        "redo": "Redo"
+      }
+    }
   }
 }

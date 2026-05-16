@@ -11,11 +11,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Sprite2d::RegisterComponents(flecs::world *world)
-    {
-        world->component<components::Sprite2d>();
-    }
-
     void Sprite2d::RegisterSystems(flecs::world *world)
     {
         world->system<components::Sprite2d, components::Transform2d>("Sprite2D_Render")
@@ -31,7 +26,7 @@ namespace atmo::core::ecs::entities
 
                 Window window_entity(root);
 
-                SDL_Texture *texture = window_entity.getTextureFromHandle(sprite.m_handle);
+                SDL_Texture *texture = window_entity.getTextureFromHandle(sprite.texture_path);
                 if (!texture)
                     return;
 
@@ -45,14 +40,7 @@ namespace atmo::core::ecs::entities
             });
 
         world->observer<components::Sprite2d>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2d &sprite) {
-            if (sprite.texture_path.empty())
-                return;
-
-            resource::ResourceRef<SDL_Surface> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.m_handle.assetId);
-
-            res.unpin();
-
-            spdlog::debug("Unpinned Sprite2D texture for entity {}: {}", e.name().c_str(), sprite.texture_path);
+            sprite.m_res = nullptr;
         });
     }
 
@@ -71,15 +59,15 @@ namespace atmo::core::ecs::entities
         if (sprite->texture_path.empty())
             return;
 
-        sprite->m_handle = resource::Handle<SDL_Surface>{ .assetId = sprite->texture_path };
+        {
+            std::unique_ptr<resource::ResourceRef<SDL_Surface>> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->texture_path);
 
-        resource::ResourceRef<SDL_Surface> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->m_handle.assetId);
-
-        res.pin();
+            sprite->m_res = std::move(res);
+        }
 
         spdlog::debug("Loaded Sprite2D texture for entity {}: {}", p_handle.name().c_str(), sprite->texture_path);
 
-        std::shared_ptr<SDL_Surface> surface = res.get();
+        std::shared_ptr<SDL_Surface> surface = sprite->m_res->get();
 
         spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
 
@@ -99,5 +87,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-REGISTER_ENTITY(entities::Sprite2d);
+ATMO_REGISTER_ENTITY(entities::Sprite2d);
 ATMO_REGISTER_COMPONENT(atmo::core::components::Sprite2d)
