@@ -57,7 +57,8 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        std::unique_ptr<resource::ResourceRef<resource::Bytecode>> res = resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script->script_path);
+        std::unique_ptr<resource::ResourceRef<resource::Bytecode>> res =
+            resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script->script_path);
 
         script->m_res = std::move(res);
 
