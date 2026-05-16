@@ -21,9 +21,6 @@ namespace atmo::core::ecs::entities
             script.instance->physiqueUpdate(dt);
         });
 
-        // auto ScriptTestPrefab = Prefab(world, "scriptTest").set(components::ScriptTest{ .script_path = "", .m_handle = {}, .instance = nullptr });
-        // addPrefab(ScriptTestPrefab);
-
         world->observer<components::ScriptTest>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::ScriptTest &script) {
             if (script.script_path.empty())
                 return;
@@ -32,13 +29,7 @@ namespace atmo::core::ecs::entities
             }
 
             script.instance->destroy();
-
-            atmo::core::resource::ResourceRef<resource::Bytecode> res =
-                atmo::core::resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.m_handle.assetId);
-
-            res.unpin();
-
-            spdlog::debug("Unpinned Script for entity {}: {}", e.name().c_str(), script.script_path);
+            script.m_res = nullptr;
         });
     }
 
@@ -66,15 +57,14 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        script->m_handle = resource::Handle<resource::Bytecode>{ .assetId = script->script_path };
+        std::unique_ptr<resource::ResourceRef<resource::Bytecode>> res =
+            resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script->script_path);
 
-        resource::ResourceRef<resource::Bytecode> res = resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script->m_handle.assetId);
-
-        res.pin();
+        script->m_res = std::move(res);
 
         spdlog::debug("Loaded script for entity {}: {}", p_handle.name().c_str(), script->script_path);
 
-        script->instance->load("script test", res.get()->data, res.get()->size, p_handle.id());
+        script->instance->load("script test", script->m_res->get()->data, script->m_res->get()->size, p_handle.id());
         script->instance->create();
     }
 
