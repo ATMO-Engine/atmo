@@ -122,34 +122,80 @@ To maintain consistency and code quality across the project, please follow these
 - Keep functions small and focused on a single responsibility
 - Avoid premature optimization unless necessary
 - Comment only when needed (explain *why*, not *what*)
-- Comment must follows the Doxygen convention (        
-
-
-
-        LINK TO DOXYGEN
-
-
-
-)
+- Comment must follows the Doxygen convention (https://www.doxygen.nl/manual/docblocks.html#cppblock)
 
 ### Naming Conventions
 
+This project uses `clang-tidy` to enforce naming consistency across the codebase.
 
+#### Identifier Rules
 
-    EXPLAIN CLANG TIDY RULES
+##### Classes, Structs, and Enums
 
+Use `CamelCase`:
 
+```cpp
+class RenderPipeline {};
+struct WindowConfig {};
+enum RenderMode {};
+```
+
+##### Methods
+
+Use `camelBack` for methods and functions:
+
+```cpp
+void renderFrame();
+void initializeRenderer();
+```
+
+##### Member Variables
+
+Member variables must use `lower_case` with prefixes depending on visibility:
+
+```cpp
+private:
+    int m_frame_count;
+
+protected:
+    int p_render_width;
+```
+
+Prefixes:
+- `m_` → private members
+- `p_` → protected members
+
+#### General Guidelines
 
 - Use descriptive and meaningful names
 - Avoid abbreviations unless they are widely understood
 - Be consistent with existing naming patterns in the codebase
 
 Examples:
-good: renderFrame()
-bad: rf()
 
-good: playerPosition
-bad: pp                         Remove this                         
+Good:
+```cpp
+renderFrame();
+playerPosition;
+```
+
+Bad:
+```cpp
+rf();
+pp;
+```
+
+#### Additional clang-tidy Rules
+
+The project also enables several modernization and safety checks, including:
+
+- `modernize-use-nullptr`
+- `modernize-use-default-member-init`
+- `modernize-use-bool-literals`
+- `modernize-deprecated-headers`
+- `cppcoreguidelines-pro-type-member-init`
+
+Contributors are expected to follow these rules and resolve related warnings when modifying code.
 
 ### Code Style
 
@@ -197,9 +243,7 @@ This project uses `clang-format` to enforce a consistent coding style.
 
 ### How to Format
 
-On VS Code you can install the extension (
-    link to extension                           
-    ) to apply this format each time you save your code
+On VS Code you can install the extension (https://marketplace.visualstudio.com/items?itemName=xaver.clang-format) to apply this format each time you save your code
 You can format files manually using:
 
 For every file in src:

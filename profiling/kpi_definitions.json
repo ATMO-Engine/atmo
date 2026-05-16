@@ -48,26 +48,12 @@
     "warning": 3072,
     "critical": 4096
   },
-  "peak_memory_usage": {
-    "description": "Peak RAM usage during a scene",
-    "unit": "MB",
-    "target": 2048,
-    "warning": 3072,
-    "critical": 4096
-  },
   "allocations_per_frame": {
     "description": "Number of memory allocations per frame",
     "unit": "count",
     "target": 50,
     "warning": 100,
     "critical": 200
-  },
-  "memory_leaks": {
-    "description": "Detected memory leaks",
-    "unit": "count",
-    "target": 0,
-    "warning": 0,
-    "critical": 1
   },
   "thread_utilization": {
     "description": "Worker threads CPU utilization percentage",
@@ -104,32 +90,11 @@
     "warning": 1.0,
     "critical": 2.0
   },
-  "streaming_performance": {
-    "description": "Time to stream assets during gameplay",
-    "unit": "ms",
-    "target": 10.0,
-    "warning": 20.0,
-    "critical": 50.0
-  },
   "hot_reload_time": {
     "description": "Time to hot-reload assets or scripts",
     "unit": "seconds",
     "target": 0.5,
     "warning": 1.0,
     "critical": 3.0
-  },
-  "crash_rate": {
-    "description": "Number of crashes per session",
-    "unit": "count",
-    "target": 0,
-    "warning": 1,
-    "critical": 2
-  },
-  "assertion_failures": {
-    "description": "Number of assertion / runtime errors",
-    "unit": "count",
-    "target": 0,
-    "warning": 5,
-    "critical": 10
   }
 }
