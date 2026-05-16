@@ -11,6 +11,7 @@
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
+#include "core/ecs/entities/script/script.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
@@ -196,6 +197,15 @@ namespace atmo::core
         auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
         scene->setSingleton(false);
         m_ecs.changeScene(scene);
+
+        atmo::luau::Luau vm;
+
+        // Scripting
+        auto script = core::ecs::EntityRegistry::Create<core::ecs::entities::Script>("Entity::Script");
+        atmo::luau::ScriptInstance inst = vm.generateInstance();
+        script->setScriptInstance(&inst);
+        script->setScriptPath("project://assets/script/luau_main.luau");
+        script->setParent(*scene);
 
 #if !defined(ATMO_EXPORT)
         editor::Editor editor(*this, "");
