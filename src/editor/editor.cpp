@@ -100,9 +100,10 @@ namespace atmo::editor
         auto button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &button_rect = button->getComponentMutable<core::components::UIRect>();
         button_rect.color = core::types::Color::GREEN;
+        button_rect.color.a = 0.2f;
         auto &button_layout = button->getComponentMutable<core::components::Layout>();
         button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
+        button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
         button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
         // button_layout.padding = { 16, 16, 60, 16 };
