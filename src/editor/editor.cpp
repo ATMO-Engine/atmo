@@ -1,6 +1,8 @@
 #include "editor.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
+#include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
@@ -13,7 +15,6 @@
 #include "SDL3/SDL_keycode.h"
 #include "core/ecs/ecs.hpp"
 #include "core/ecs/entities/entity.hpp"
-#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 
 #ifdef __APPLE__
 static constexpr SDL_Keymod PRIMARY_MOD = SDL_KMOD_GUI;
@@ -94,6 +95,20 @@ namespace atmo::editor
         // red_rect_layout.padding = { 16, 16, 60, 16 };
         red_rect->rename("red rect");
         red_rect->setParent(*white_rect);
+
+
+        auto button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &button_rect = button->getComponentMutable<core::components::UIRect>();
+        button_rect.color = core::types::Color::GREEN;
+        auto &button_layout = button->getComponentMutable<core::components::Layout>();
+        button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
+        button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
+        // button_layout.padding = { 16, 16, 60, 16 };
+        button->rename("buttton");
+        button->setParent(*scene);
+
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
