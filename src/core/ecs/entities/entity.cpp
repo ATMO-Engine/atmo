@@ -9,16 +9,31 @@
 
 namespace atmo::core::ecs::entities
 {
-    void Entity::RegisterSystems(flecs::world *world) {}
+    void Entity::RegisterSystems(flecs::world *world)
+    {
+        world->observer<components::EntityBase>("EntityBase_remove").event(flecs::OnRemove).each([](flecs::entity e, components::EntityBase &base) {
+            for (auto &signal : base.signals) {
+                signal.second->disconnectAll();
+                delete signal.second;
+                signal.second = nullptr;
+            }
+        });
+    }
 
     void Entity::Unregister(flecs::world *world) {}
 
-    void Entity::initialize() {}
+    void Entity::initialize()
+    {
+        createSignal<>("initialize");
+        createSignal<Entity *>("child_added");
+        createSignal<Entity *>("child_removed");
+        createSignal<std::string, std::string>("renamed");
+    }
 
     EntityData Entity::serialize() const
     {
         EntityData output;
-        const auto &comp = getComponent<components::EntityType>();
+        const auto &comp = getComponent<components::EntityBase>();
         output.type = comp.type_name;
         output.name = p_handle.name();
 
@@ -123,6 +138,7 @@ namespace atmo::core::ecs::entities
 
     void Entity::rename(const std::string &new_name)
     {
+        getSignal<std::string, std::string>("renamed").emit(p_handle.name().c_str(), new_name);
         p_handle.set_name(new_name.c_str());
     }
 
