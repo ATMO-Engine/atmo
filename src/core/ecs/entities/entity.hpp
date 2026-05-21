@@ -1,16 +1,71 @@
 #pragma once
 
+#include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <typeindex>
 #include <unordered_map>
 #include <vector>
 
 #include "flecs.h"
 #include "glaze/glaze.hpp"
 
+namespace atmo::core
+{
+    struct ISignal {
+        virtual ~ISignal() = default;
+        virtual std::type_index type() const = 0;
+        virtual void disconnectAll() = 0;
+    };
+
+    template <typename... Args> class Signal : public ISignal
+    {
+    public:
+        using Callback = std::function<void(Args...)>;
+
+        std::type_index type() const override
+        {
+            return typeid(Signal<Args...>);
+        }
+
+        void connect(Callback cb)
+        {
+            m_callbacks.emplace_back(std::move(cb));
+        }
+
+        void disconnectAll() override
+        {
+            m_callbacks.clear();
+        }
+
+        void disconnectIndex(std::uint32_t index)
+        {
+            m_callbacks.erase(index);
+        }
+
+        void emit(Args... args)
+        {
+            for (auto &cb : m_callbacks) {
+                cb(args...);
+            }
+        }
+
+    private:
+        std::vector<Callback> m_callbacks;
+    };
+} // namespace atmo::core
+
+namespace atmo::core::components
+{
+    struct EntityBase {
+        std::string type_name;
+        std::unordered_map<std::string, ISignal *> signals;
+    };
+} // namespace atmo::core::components
 
 namespace atmo::core::ecs::entities
 {
@@ -189,24 +244,66 @@ namespace atmo::core::ecs::entities
             return p_handle.has<Component>();
         }
 
+        /**
+         * @brief Get the Component of the entity.
+         *
+         * @tparam Component to get.
+         * @return const Component& read-only component of the entity.
+         */
         template <typename Component> const Component &getComponent() const
         {
             return p_handle.get<Component>();
         }
 
+        /**
+         * @brief Get the Mutable Component of the entity.
+         *
+         * @tparam Component to get.
+         * @return Component& component of the entity.
+         */
         template <typename Component> Component &getComponentMutable()
         {
             return p_handle.get_mut<Component>();
+        }
+
+        /**
+         * @brief Create a Signal definition for the entity.
+         *
+         * @tparam Args of the signal
+         * @param id Key name of the signal
+         * @return Signal<Args...>& Signal object with all connections
+         */
+        template <typename... Args> Signal<Args...> &createSignal(const std::string &id)
+        {
+            auto *ptr = new Signal<Args...>;
+            auto &base_comp = getComponentMutable<components::EntityBase>();
+
+            base_comp.signals[id] = ptr;
+
+            return *ptr;
+        }
+
+        /**
+         * @brief Get the Signal object definition of the entity.
+         *
+         * @tparam Args of the signal
+         * @param id Key name of the signal
+         * @return Signal<Args...>& Signal object with all connections
+         */
+        template <typename... Args> Signal<Args...> &getSignal(const std::string &id)
+        {
+            auto &base_comp = getComponentMutable<components::EntityBase>();
+            auto it = base_comp.signals.find(id);
+            assert(it != base_comp.signals.end());
+
+            auto *base = it->second;
+
+            assert(base->type() == typeid(Signal<Args...>));
+
+            return *static_cast<Signal<Args...> *>(base);
         }
 
     protected:
         flecs::entity p_handle;
     };
 } // namespace atmo::core::ecs::entities
-
-namespace atmo::core::components
-{
-    struct EntityType {
-        std::string type_name;
-    };
-} // namespace atmo::core::components

@@ -20,10 +20,10 @@ namespace atmo::core::ecs
 
     std::unique_ptr<entities::Entity> EntityRegistry::Wrap(const entities::Entity &e)
     {
-        if (!e.hasComponent<components::EntityType>())
+        if (!e.hasComponent<components::EntityBase>())
             return nullptr;
 
-        const auto &type_name = e.getComponent<components::EntityType>().type_name;
+        const auto &type_name = e.getComponent<components::EntityBase>().type_name;
         auto it = Instance().m_wrap_factories.find(type_name);
         if (it == Instance().m_wrap_factories.end())
             return nullptr;
