@@ -92,7 +92,7 @@ jobs:
 
   build-macos:
     name: macOS build
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -121,7 +121,7 @@ jobs:
 
   test-macos:
     name: macOS unit tests
-    runs-on: macos-latest
+    runs-on: macos-26
     needs: build-macos
     steps:
       - name: Checkout repository

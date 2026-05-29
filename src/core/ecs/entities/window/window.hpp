@@ -25,10 +25,11 @@ namespace atmo::core::components
     struct Window {
         std::string title;
         types::Vector2i size;
+        types::Vector2 dpi_scale;
         SDL_Window *window = nullptr;
         ClaySdL3RendererData renderer_data;
         Clay_Arena clay_arena;
-        std::map<core::resource::Handle<SDL_Surface>, SDL_Texture *> texture_cache;
+        std::map<std::string, SDL_Texture *> texture_cache;
         std::optional<std::function<void()>> close_callback;
         bool headless = false;
     };
@@ -63,7 +64,7 @@ namespace atmo::core::ecs::entities
         core::types::Vector2i getSize() const noexcept;
         std::string getTitle() const noexcept;
 
-        SDL_Texture *getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle);
+        SDL_Texture *getTextureFromHandle(const std::string &path);
 
         void onClose(std::function<void()> callback);
 
@@ -71,6 +72,7 @@ namespace atmo::core::ecs::entities
         void pollEvents(float deltaTime);
         void beginDraw(components::Window &window);
         void draw(components::Window &window);
+        void updateDPI(components::Window &window);
 
         Clay_ElementId getIdForEntity(const Entity &e);
         Clay_ElementDeclaration buildDecl(const Entity &e);

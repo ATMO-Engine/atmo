@@ -25,7 +25,7 @@
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
 
-void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_RenderCommandArray *rcommands);
+void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_RenderCommandArray *rcommands, const atmo::core::types::Vector2 &dpi_scale);
 
 namespace atmo::core::ecs::entities
 {
@@ -91,6 +91,7 @@ namespace atmo::core::ecs::entities
 
         if (args::ArgManager::Get<bool>("--headless") == false &&
             SDL_CreateWindowAndRenderer(window->title.c_str(), window->size.x, window->size.y, flags, &window->window, &window->renderer_data.renderer)) {
+            updateDPI(*window.get());
             SDL_SetWindowResizable(window->window, true);
 
             window->renderer_data.text_engine = TTF_CreateRendererTextEngine(window->renderer_data.renderer);
@@ -112,6 +113,18 @@ namespace atmo::core::ecs::entities
         } else {
             window->headless = true;
         }
+    }
+
+    void Window::updateDPI(components::Window &window)
+    {
+        int windowW, windowH;
+        SDL_GetWindowSize(window.window, &windowW, &windowH);
+
+        int pixelW, pixelH;
+        SDL_GetWindowSizeInPixels(window.window, &pixelW, &pixelH);
+
+        window.dpi_scale.x = (float)pixelW / windowW;
+        window.dpi_scale.y = (float)pixelH / windowH;
     }
 
     bool Window::setTitle(const std::string &name)
@@ -211,24 +224,25 @@ namespace atmo::core::ecs::entities
         }
         auto clayCommands = Clay_EndLayout();
 
-        SDL_Clay_RenderClayCommands(&window.renderer_data, &clayCommands);
+        SDL_Clay_RenderClayCommands(&window.renderer_data, &clayCommands, window.dpi_scale);
 
         SDL_RenderPresent(window.renderer_data.renderer);
     }
 
-    SDL_Texture *Window::getTextureFromHandle(const core::resource::Handle<SDL_Surface> &handle)
+    SDL_Texture *Window::getTextureFromHandle(const std::string &path)
     {
         auto window = p_handle.get_ref<components::Window>();
 
-        if (window->texture_cache.find(handle) != window->texture_cache.end()) {
-            return window->texture_cache[handle];
+        if (window->texture_cache.find(path) != window->texture_cache.end()) {
+            return window->texture_cache[path];
         }
 
-        atmo::core::resource::ResourceRef<SDL_Surface> res = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(handle.assetId);
-        std::shared_ptr<SDL_Surface> surface = res.get();
+        std::unique_ptr<atmo::core::resource::ResourceRef<SDL_Surface>> res =
+            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(path);
+        std::shared_ptr<SDL_Surface> surface = res->get();
 
         SDL_Texture *texture = SDL_CreateTextureFromSurface(window->renderer_data.renderer, surface.get());
-        window->texture_cache[handle] = texture;
+        window->texture_cache[path] = texture;
         return texture;
     }
 

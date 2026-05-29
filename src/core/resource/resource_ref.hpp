@@ -19,12 +19,14 @@ namespace atmo
 
                 ResourceRef(ResourcePool<T> *pool, StoreHandle handle, uint64_t tick) : m_pool(pool), m_handle(handle)
                 {
-                    retain(tick);
+                    m_tick = tick;
+                    pin();
                 }
 
                 ResourceRef(const ResourceRef &other, uint64_t tick) : m_pool(other.m_pool), m_handle(other.m_handle)
                 {
-                    retain(tick);
+                    m_tick = tick;
+                    pin();
                 }
 
                 ResourceRef(ResourceRef &&other) noexcept : m_pool(other.m_pool), m_handle(other.m_handle)
@@ -34,11 +36,15 @@ namespace atmo
 
                 ~ResourceRef()
                 {
-                    release();
+                    unpin();
                 }
 
-                std::shared_ptr<T> get() const
+                std::shared_ptr<T> get(uint64_t tick = -1)
                 {
+                    if (tick != -1) {
+                        m_tick = tick;
+                    }
+
                     if (m_pool) {
                         try {
                             return m_pool->getAsset(m_handle);
@@ -59,6 +65,12 @@ namespace atmo
                     return *get();
                 }
 
+            private:
+                ResourcePool<T> *m_pool = nullptr;
+                StoreHandle m_handle{};
+
+                uint64_t m_tick = 0;
+
                 /**
                  * @brief Pin the resource so it cannot be destroyed until unpin is called.
                  * This method has to be called to make sure the resource stay alive as long as the entity is alive.
@@ -67,7 +79,9 @@ namespace atmo
                  */
                 void pin()
                 {
-                    m_pool->pin(m_handle);
+                    if (m_pool) {
+                        m_pool->pin(m_handle, m_tick);
+                    }
                 }
 
                 /**
@@ -76,24 +90,8 @@ namespace atmo
                  */
                 void unpin()
                 {
-                    m_pool->unpin(m_handle);
-                }
-
-            private:
-                ResourcePool<T> *m_pool = nullptr;
-                StoreHandle m_handle{};
-
-                void retain(uint64_t tick)
-                {
                     if (m_pool) {
-                        m_pool->retain(m_handle, tick);
-                    }
-                }
-
-                void release()
-                {
-                    if (m_pool) {
-                        m_pool->release(m_handle);
+                        m_pool->unpin(m_handle, m_tick);
                     }
                 }
             };
