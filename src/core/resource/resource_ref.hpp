@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include "core/resource/resource_pool.hpp"
 #include "handle.hpp"
 
 namespace atmo
@@ -10,8 +11,6 @@ namespace atmo
     {
         namespace resource
         {
-            template <typename T> class ResourcePool;
-
             template <typename T> class ResourceRef
             {
             public:

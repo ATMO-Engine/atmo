@@ -54,6 +54,14 @@ namespace atmo::core::ecs
 
         static void UnregisterAll(flecs::world *world);
 
+        /**
+         * @brief Get the flecs entity from it's id
+         *
+         * @param id The id of the entity you want to retrieve
+         * @return flecs::entity The flecs entity
+         */
+        static flecs::entity GetEntityFromId(const int id);
+
     private:
         using WrapFactory = entities::Entity *(*)(flecs::entity);
 

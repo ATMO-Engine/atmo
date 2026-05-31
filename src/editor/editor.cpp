@@ -1,9 +1,9 @@
 #include "editor.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
-#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
 #include "glaze/json/prettify.hpp"
@@ -109,6 +109,18 @@ namespace atmo::editor
         // button_layout.padding = { 16, 16, 60, 16 };
         button->rename("buttton");
         button->setParent(*scene);
+
+        // auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        // auto &button_rect1 = button1->getComponentMutable<core::components::UIRect>();
+        // button_rect1.color = core::types::Color::GREEN;
+        // button_rect1.color.a = 0.2f;
+        // auto &button_layout1 = button1->getComponentMutable<core::components::Layout>();
+        // button_layout1.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // button_layout1.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
+        // button_layout1.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // button_layout1.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
+        // button1->rename("buttton1");
+        // button1->setParent(*scene);
 
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");

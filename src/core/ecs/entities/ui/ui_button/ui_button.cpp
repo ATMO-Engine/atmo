@@ -1,8 +1,10 @@
 #include "ui_button.hpp"
-#include "clay.h"
 #include <iostream>
-#include "core/event/events/ui_event/hover_event/hover_event.hpp"
+#include "clay.h"
+#include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entity_registry.hpp"
+#include "core/event/events/ui_event/hover_event/hover_event.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
@@ -14,12 +16,21 @@ namespace atmo::core::ecs::entities
     {
         UIRect::initialize();
 
-        //TODO: signals sytem to handle internal events
+        createSignal<UIButton &>("Hover");
+        createSignal<UIButton *>("Pressed");
+        createSignal<UIButton *>("Released");
+
+
+        getSignal<UIButton &>("Hover").connect([](UIButton &btn) {
+            auto &rect = btn.getComponentMutable<components::UIRect>();
+            rect.color = types::Color{ static_cast<uint8_t>(255), static_cast<uint8_t>(100), static_cast<uint8_t>(0), static_cast<uint8_t>(255) };
+        });
+
+
+        // TODO: signals sytem to handle internal events
         const auto &ui = getComponentMutable<components::UI>();
         event::EventRegistry::SetCallBack<event::events::HoverEvent>(
-            [ui](event::events::HoverEvent *event) {
-                std::cout << "UI element ID from event: " << ui.element_id.id << std::endl;
-            });
+            [ui](event::events::HoverEvent *event) { std::cout << "UI element ID from event: " << ui.element_id.id << std::endl; });
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
@@ -28,8 +39,7 @@ namespace atmo::core::ecs::entities
         label->rename("Button label");
         label->setParent(*this);
 
-
-        auto& label_comp = label->getComponentMutable<core::components::UILabel>();
+        auto &label_comp = label->getComponentMutable<core::components::UILabel>();
         label_comp.text_alignment = core::components::UILabel::TextAlignment::ALIGN_CENTER;
     }
 
@@ -39,22 +49,24 @@ namespace atmo::core::ecs::entities
 
         auto label = getChild("Button label");
         if (label.hasComponent<core::components::UILabel>()) {
-            auto& label_layout = label.getComponentMutable<core::components::Layout>();
+            auto &label_layout = label.getComponentMutable<core::components::Layout>();
             auto &selfLayout = getComponentMutable<core::components::Layout>();
 
-            auto halfSize = [](const auto& sizeVariant) -> float {
-                return std::visit([](auto&& size) -> float {
-                    using T = std::decay_t<decltype(size)>;
-                    if constexpr (std::is_same_v<T, float>) {
-                        return size / 2;
-                    } else {
-                        return size.max / 2;
-                    }
-                }, sizeVariant);
+            auto getSize = [](const auto &sizeVariant) -> float {
+                return std::visit(
+                    [](auto &&size) -> float {
+                        using T = std::decay_t<decltype(size)>;
+                        if constexpr (std::is_same_v<T, float>) {
+                            return size;
+                        } else {
+                            return size.max;
+                        }
+                    },
+                    sizeVariant);
             };
 
-            label_layout.padding.left = halfSize(selfLayout.width.size);
-            label_layout.padding.top  = halfSize(selfLayout.height.size);
+            label_layout.width.size = selfLayout.width.size;
+            label_layout.height.size = selfLayout.height.size;
         } else {
             spdlog::warn("Button label missing UILabel component");
         }
@@ -67,21 +79,20 @@ namespace atmo::core::ecs::entities
     //       be shared (and it should only call the signal assigned nothing more)
     void HoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
     {
-        auto *rect = reinterpret_cast<components::UIRect *>(userData);
+        int btnId = userData;
+
+        UIButton btn(core::ecs::EntityRegistry::GetEntityFromId(btnId));
+        auto &rect = btn.getComponentMutable<components::UIRect>();
 
         if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
-            rect->color = types::Color{ static_cast<uint8_t>(255), static_cast<uint8_t>(100), static_cast<uint8_t>(0), static_cast<uint8_t>(255) };
+            rect.color = types::Color{ static_cast<uint8_t>(255), static_cast<uint8_t>(100), static_cast<uint8_t>(0), static_cast<uint8_t>(255) };
         }
-
-        auto default_event = atmo::core::event::EventRegistry::Create<atmo::core::event::events::HoverEvent>("Event::UIEvent::HoverEvent");
-        atmo::core::event::EventRegistry::Dispatch(default_event);
     }
 
     void UIButton::draw(ClaySdL3RendererData *data)
     {
-        auto &rect = getComponentMutable<components::UIRect>();
-
-        Clay_OnHover(HoverCallBack, reinterpret_cast<intptr_t>(&rect));
+        int id = getID();
+        Clay_OnHover(HoverCallBack, id);
     }
 } // namespace atmo::core::ecs::entities
 

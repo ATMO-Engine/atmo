@@ -15,7 +15,6 @@
 #include "core/resource/resource.hpp"
 #include "i_resource_pool.hpp"
 #include "impl/profiler.hpp"
-#include "resource_ref.hpp"
 
 namespace atmo
 {
@@ -23,6 +22,8 @@ namespace atmo
     {
         namespace resource
         {
+            template <typename T> class ResourceRef;
+
             template <typename T> class ResourcePool : public IPoolGarbageCollector
             {
             public:

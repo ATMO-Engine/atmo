@@ -39,4 +39,11 @@ namespace atmo::core::ecs
             reg.unregister(world);
         }
     }
+
+    flecs::entity EntityRegistry::GetEntityFromId(const int id)
+    {
+        auto &instance = Instance();
+
+        return instance.m_world->entity(id);
+    }
 } // namespace atmo::core::ecs

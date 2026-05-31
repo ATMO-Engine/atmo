@@ -49,8 +49,9 @@ namespace atmo::core::ecs::entities
     protected:
         virtual Clay_ElementDeclaration buildDecl();
 
-    private:
         Clay_ElementId getIdForEntity();
+
+    private:
         void configureSizingAxis(Clay_SizingAxis &sizing, const components::Layout::SizingAxis &axis);
     };
 } // namespace atmo::core::ecs::entities
