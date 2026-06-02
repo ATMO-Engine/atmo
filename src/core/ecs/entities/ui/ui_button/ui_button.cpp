@@ -17,15 +17,8 @@ namespace atmo::core::ecs::entities
         UIRect::initialize();
 
         createSignal<UIButton &>("Hover");
-        createSignal<UIButton *>("Pressed");
-        createSignal<UIButton *>("Released");
-
-
-        getSignal<UIButton &>("Hover").connect([](UIButton &btn) {
-            auto &rect = btn.getComponentMutable<components::UIRect>();
-            rect.color = types::Color{ static_cast<uint8_t>(255), static_cast<uint8_t>(100), static_cast<uint8_t>(0), static_cast<uint8_t>(255) };
-        });
-
+        createSignal<UIButton &>("Pressed");
+        createSignal<UIButton &>("Released");
 
         // TODO: signals sytem to handle internal events
         const auto &ui = getComponentMutable<components::UI>();
@@ -80,12 +73,14 @@ namespace atmo::core::ecs::entities
     void HoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
     {
         int btnId = userData;
-
         UIButton btn(core::ecs::EntityRegistry::GetEntityFromId(btnId));
-        auto &rect = btn.getComponentMutable<components::UIRect>();
+        btn.getSignal<UIButton &>("Hover").emit(btn);
 
+        if (data.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+            btn.getSignal<UIButton &>("Pressed").emit(btn);
+        }
         if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
-            rect.color = types::Color{ static_cast<uint8_t>(255), static_cast<uint8_t>(100), static_cast<uint8_t>(0), static_cast<uint8_t>(255) };
+            btn.getSignal<UIButton &>("Released").emit(btn);
         }
     }
 
