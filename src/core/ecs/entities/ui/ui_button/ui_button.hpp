@@ -3,6 +3,19 @@
 #include <string>
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 
+namespace atmo::core::components
+{
+    struct UIButton {
+        enum class ButtonState {
+            IDLE,
+            HOVER,
+            PRESS
+        };
+
+        ButtonState state = UIButton::ButtonState::IDLE;
+    };
+} // namespace atmo::core::components
+
 namespace atmo::core::ecs::entities
 {
     class UIButton : public EntityRegistry::Registrable<UIButton, UIRect>

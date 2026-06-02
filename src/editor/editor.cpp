@@ -98,46 +98,64 @@ namespace atmo::editor
 
 
         auto button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        auto &button_rect = button->getComponentMutable<core::components::UIRect>();
-        button_rect.color = core::types::Color::GREEN;
-        button_rect.color.a = 0.2f;
+
+        button->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
+            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+            btnComp.state = core::components::UIButton::ButtonState::IDLE;
+
+            auto &rect = btn.getComponentMutable<core::components::UIRect>();
+            rect.color = core::types::Color::GREEN;
+            rect.color.a = 0.2f;
+        });
+        button->getSignal<core::ecs::entities::UIButton &>("ToIdle").emit(*button);
+
         auto &button_layout = button->getComponentMutable<core::components::Layout>();
         button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
         button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
-        // button_layout.padding = { 16, 16, 60, 16 };
         button->rename("buttton");
         button->setParent(*scene);
         button->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
+            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+            btnComp.state = core::components::UIButton::ButtonState::HOVER;
+
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color{ static_cast<uint8_t>(155), static_cast<uint8_t>(255), static_cast<uint8_t>(200), static_cast<uint8_t>(255) };
+
         });
         button->getSignal<core::ecs::entities::UIButton &>("Pressed").connect([](core::ecs::entities::UIButton &btn) {
+            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+            btnComp.state = core::components::UIButton::ButtonState::PRESS;
+
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color{ static_cast<uint8_t>(135), static_cast<uint8_t>(55), static_cast<uint8_t>(255), static_cast<uint8_t>(255) };
         });
         button->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color{ static_cast<uint8_t>(255), static_cast<uint8_t>(100), static_cast<uint8_t>(105), static_cast<uint8_t>(255) };
+            spdlog::info("Button released");
         });
 
 
-        auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        auto &button_rect1 = button1->getComponentMutable<core::components::UIRect>();
-        button_rect1.color = core::types::Color::GREEN;
-        button_rect1.color.a = 0.2f;
-        auto &button_layout1 = button1->getComponentMutable<core::components::Layout>();
-        button_layout1.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        button_layout1.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
-        button_layout1.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        button_layout1.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
-        button1->rename("buttton1");
-        button1->setParent(*scene);
-        button1->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color{ static_cast<uint8_t>(55), static_cast<uint8_t>(55), static_cast<uint8_t>(20), static_cast<uint8_t>(255) };
-        });
+        //auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        //auto &button_rect1 = button1->getComponentMutable<core::components::UIRect>();
+        //button_rect1.color = core::types::Color::GREEN;
+        //button_rect1.color.a = 0.2f;
+        //auto &button_layout1 = button1->getComponentMutable<core::components::Layout>();
+        //button_layout1.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        //button_layout1.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
+        //button_layout1.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        //button_layout1.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
+        //button1->rename("buttton1");
+        //button1->setParent(*scene);
+        //button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
+        //    auto &rect = btn.getComponentMutable<core::components::UIRect>();
+        //    rect.color = core::types::Color::GREEN;
+        //    rect.color.a = 0.2f;
+        //});
+        //button1->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
+        //    auto &rect = btn.getComponentMutable<core::components::UIRect>();
+        //    rect.color = core::types::Color{ static_cast<uint8_t>(55), static_cast<uint8_t>(55), static_cast<uint8_t>(20), static_cast<uint8_t>(255) };
+        //});
 
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");

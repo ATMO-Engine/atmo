@@ -174,9 +174,6 @@ namespace atmo::core::ecs::entities
                 case SDL_EVENT_WINDOW_RESIZED:
                     Clay_SetLayoutDimensions({ (float)event.window.data1, (float)event.window.data2 });
                     break;
-                case SDL_EVENT_MOUSE_MOTION:
-                    Clay_SetPointerState({ event.motion.x, event.motion.y }, event.motion.state & SDL_BUTTON_LMASK);
-                    break;
                 default:
                     auto default_event = atmo::core::event::EventRegistry::Create<atmo::core::event::events::InputEvent>("Event::SDLEvent::InputEvent");
                     default_event->sdl_event = event;
@@ -201,15 +198,16 @@ namespace atmo::core::ecs::entities
         if (window.headless)
             return;
 
-        if (core::InputManager::IsJustPressed("ui_click")) {
-            auto pos = core::InputManager::GetMousePosition();
-            Clay_SetPointerState({ pos.x, pos.y }, true);
-        }
+        bool clickState = false;
+        auto pos = core::InputManager::GetMousePosition();
 
-        if (core::InputManager::IsJustReleased("ui_click")) {
-            auto pos = core::InputManager::GetMousePosition();
-            Clay_SetPointerState({ pos.x, pos.y }, false);
-        }
+        if (core::InputManager::IsJustPressed("ui_click") || core::InputManager::IsPressed("ui_click")) {
+            clickState = true;
+        } /* Release is handled automatically
+        Frame x     -> press==true
+        Frame x+1   -> press==false so clay registered it as just Released
+        */
+        Clay_SetPointerState({ pos.x, pos.y }, clickState);
 
         auto scroll = core::InputManager::GetScrollDelta("ui_scroll");
         if (scroll.first.x != 0 || scroll.first.y != 0)

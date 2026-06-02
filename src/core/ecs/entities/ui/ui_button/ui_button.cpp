@@ -16,6 +16,9 @@ namespace atmo::core::ecs::entities
     {
         UIRect::initialize();
 
+        setComponent<components::UIButton>({});
+
+        createSignal<UIButton &>("ToIdle");
         createSignal<UIButton &>("Hover");
         createSignal<UIButton &>("Pressed");
         createSignal<UIButton &>("Released");
@@ -76,7 +79,7 @@ namespace atmo::core::ecs::entities
         UIButton btn(core::ecs::EntityRegistry::GetEntityFromId(btnId));
         btn.getSignal<UIButton &>("Hover").emit(btn);
 
-        if (data.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+        if (data.state == CLAY_POINTER_DATA_PRESSED) {
             btn.getSignal<UIButton &>("Pressed").emit(btn);
         }
         if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
@@ -86,8 +89,13 @@ namespace atmo::core::ecs::entities
 
     void UIButton::draw(ClaySdL3RendererData *data)
     {
+        auto &btnComp = getComponentMutable<core::components::UIButton>();
         int id = getID();
         Clay_OnHover(HoverCallBack, id);
+
+        if (!Clay_Hovered() && btnComp.state != core::components::UIButton::ButtonState::IDLE) {
+            getSignal<UIButton &>("ToIdle").emit(*this);
+        }
     }
 } // namespace atmo::core::ecs::entities
 
