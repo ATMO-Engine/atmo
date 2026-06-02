@@ -1,5 +1,4 @@
 #include "ui_button.hpp"
-#include <iostream>
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
@@ -23,7 +22,7 @@ namespace atmo::core::ecs::entities
         createSignal<UIButton &>("Pressed");
         createSignal<UIButton &>("Released");
 
-        // TODO: signals sytem to handle internal events
+
         const auto &ui = getComponentMutable<components::UI>();
         event::EventRegistry::SetCallBack<event::events::HoverEvent>(
             [ui](event::events::HoverEvent *event) { std::cout << "UI element ID from event: " << ui.element_id.id << std::endl; });
@@ -100,3 +99,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIButton);
+ATMO_REGISTER_COMPONENT(atmo::core::components::UIButton)
