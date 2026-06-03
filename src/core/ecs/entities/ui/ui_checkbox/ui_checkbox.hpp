@@ -6,6 +6,13 @@
 namespace atmo::core::components
 {
     struct UICheckBox {
+        enum class CheckBoxState {
+            IDLE,
+            HOVER,
+            PRESS
+        };
+
+        CheckBoxState state = UICheckBox::CheckBoxState::IDLE;
         bool trigger = false;
     };
 } // namespace atmo::core::components
@@ -13,7 +20,10 @@ namespace atmo::core::components
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::UICheckBox> {
     static constexpr const char *name = "CheckBox";
     static constexpr const char *category = "UI";
-    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UICheckBox::trigger>("trigger"));
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::UICheckBox::trigger>("trigger"),
+        atmo::meta::field<&atmo::core::components::UICheckBox::state>("checkbox_state")
+    );
 };
 
 namespace atmo::core::ecs::entities

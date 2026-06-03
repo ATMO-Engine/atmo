@@ -1,6 +1,7 @@
 #include "editor.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
@@ -73,10 +74,11 @@ namespace atmo::editor
         auto white_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &white_rect_rect = white_rect->getComponentMutable<core::components::UIRect>();
         white_rect_rect.color = core::types::Color::WHITE;
+        white_rect_rect.color.a = 0.4;
         // white_rect_rect.color.a = 0.0f;
         auto &white_rect_layout = white_rect->getComponentMutable<core::components::Layout>();
         white_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        white_rect_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 500.0f, 320.0f };
+        white_rect_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 1000.0f, 1200.0f };
         white_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         white_rect_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 2000.0f, 2000.0f };
         white_rect_layout.direction = core::components::Layout::Direction::Vertical;
@@ -84,35 +86,24 @@ namespace atmo::editor
         white_rect_layout.child_gap = 8;
         white_rect->rename("white rect");
         white_rect->setParent(*scene);
-        auto red_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &red_rect_rect = red_rect->getComponentMutable<core::components::UIRect>();
-        red_rect_rect.color = core::types::Color::RED;
-        auto &red_rect_layout = red_rect->getComponentMutable<core::components::Layout>();
-        red_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        red_rect_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
-        red_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        red_rect_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 1029.0f, 1029.0f };
-        // red_rect_layout.padding = { 16, 16, 60, 16 };
-        red_rect->rename("red rect");
-        red_rect->setParent(*white_rect);
 
 
         auto button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-
         button->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color::GREEN;
             rect.color.a = 0.2f;
+
+            rect.border.color = core::types::Color::BLACK;
         });
         button->getSignal<core::ecs::entities::UIButton &>("ToIdle").emit(*button);
-
         auto &button_layout = button->getComponentMutable<core::components::Layout>();
         button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
         button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
         button->rename("buttton");
-        button->setParent(*scene);
+        button->setParent(*white_rect);
         button->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color{ static_cast<uint8_t>(155), static_cast<uint8_t>(255), static_cast<uint8_t>(200), static_cast<uint8_t>(255) };
@@ -126,26 +117,45 @@ namespace atmo::editor
         });
 
 
-        //auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        //auto &button_rect1 = button1->getComponentMutable<core::components::UIRect>();
-        //button_rect1.color = core::types::Color::GREEN;
-        //button_rect1.color.a = 0.2f;
-        //auto &button_layout1 = button1->getComponentMutable<core::components::Layout>();
-        //button_layout1.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        //button_layout1.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
-        //button_layout1.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        //button_layout1.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
-        //button1->rename("buttton1");
-        //button1->setParent(*scene);
-        //button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
-        //    auto &rect = btn.getComponentMutable<core::components::UIRect>();
-        //    rect.color = core::types::Color::GREEN;
-        //    rect.color.a = 0.2f;
-        //});
-        //button1->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
-        //    auto &rect = btn.getComponentMutable<core::components::UIRect>();
-        //    rect.color = core::types::Color{ static_cast<uint8_t>(55), static_cast<uint8_t>(55), static_cast<uint8_t>(20), static_cast<uint8_t>(255) };
-        //});
+        auto checkbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
+        checkbox->getSignal<core::ecs::entities::UICheckBox &>("ToIdle").emit(*checkbox);
+
+        auto &checkbox_layout = checkbox->getComponentMutable<core::components::Layout>();
+        checkbox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        checkbox_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
+        checkbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        checkbox_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
+        checkbox->rename("checkBox");
+        checkbox->setParent(*white_rect);
+
+
+        auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
+            auto &rect = btn.getComponentMutable<core::components::UIRect>();
+            rect.color = core::types::Color::GREEN;
+            rect.color.a = 0.2f;
+
+            rect.border.color = core::types::Color::BLACK;
+        });
+        button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").emit(*button1);
+        auto &button_layout1 = button1->getComponentMutable<core::components::Layout>();
+        button_layout1.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        button_layout1.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
+        button_layout1.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        button_layout1.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
+        button1->rename("buttton1");
+        button1->setParent(*white_rect);
+        button1->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
+            auto &rect = btn.getComponentMutable<core::components::UIRect>();
+            rect.color = core::types::Color{ static_cast<uint8_t>(155), static_cast<uint8_t>(255), static_cast<uint8_t>(200), static_cast<uint8_t>(255) };
+        });
+        button1->getSignal<core::ecs::entities::UIButton &>("Pressed").connect([](core::ecs::entities::UIButton &btn) {
+            auto &rect = btn.getComponentMutable<core::components::UIRect>();
+            rect.color = core::types::Color{ static_cast<uint8_t>(135), static_cast<uint8_t>(55), static_cast<uint8_t>(255), static_cast<uint8_t>(255) };
+        });
+        button1->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) {
+            spdlog::info("Button released");
+        });
 
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
