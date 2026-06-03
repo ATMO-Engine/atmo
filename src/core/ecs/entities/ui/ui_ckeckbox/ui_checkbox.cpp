@@ -33,7 +33,7 @@ namespace atmo::core::ecs::entities
     // TODO: WHEN signals done this function might be called by multiple
     //       ui_element so we should move it to somewhere where it will
     //       be shared (and it should only call the signal assigned nothing more)
-    void HoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
+    void ChecBoxHoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
     {
         int boxId = userData;
         UICheckBox chBox(core::ecs::EntityRegistry::GetEntityFromId(boxId));
@@ -48,7 +48,7 @@ namespace atmo::core::ecs::entities
     {
         auto &checkComp = getComponentMutable<core::components::UICheckBox>();
         int id = getID();
-        Clay_OnHover(HoverCallBack, id);
+        Clay_OnHover(ChecBoxHoverCallBack, id);
 
         if (!Clay_Hovered()) {
             getSignal<UICheckBox &>("ToIdle").emit(*this);

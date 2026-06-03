@@ -10,6 +10,12 @@ namespace atmo::core::components
     };
 } // namespace atmo::core::components
 
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::UICheckBox> {
+    static constexpr const char *name = "CheckBox";
+    static constexpr const char *category = "UI";
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UICheckBox::trigger>("trigger"));
+};
+
 namespace atmo::core::ecs::entities
 {
     class UICheckBox : public EntityRegistry::Registrable<UICheckBox, UIRect>

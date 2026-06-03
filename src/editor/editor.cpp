@@ -100,9 +100,6 @@ namespace atmo::editor
         auto button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
 
         button->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
-            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
-            btnComp.state = core::components::UIButton::ButtonState::IDLE;
-
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color::GREEN;
             rect.color.a = 0.2f;
@@ -117,17 +114,10 @@ namespace atmo::editor
         button->rename("buttton");
         button->setParent(*scene);
         button->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
-            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
-            btnComp.state = core::components::UIButton::ButtonState::HOVER;
-
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color{ static_cast<uint8_t>(155), static_cast<uint8_t>(255), static_cast<uint8_t>(200), static_cast<uint8_t>(255) };
-
         });
         button->getSignal<core::ecs::entities::UIButton &>("Pressed").connect([](core::ecs::entities::UIButton &btn) {
-            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
-            btnComp.state = core::components::UIButton::ButtonState::PRESS;
-
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color{ static_cast<uint8_t>(135), static_cast<uint8_t>(55), static_cast<uint8_t>(255), static_cast<uint8_t>(255) };
         });

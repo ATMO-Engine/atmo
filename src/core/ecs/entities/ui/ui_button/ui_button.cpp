@@ -18,14 +18,24 @@ namespace atmo::core::ecs::entities
         setComponent<components::UIButton>({});
 
         createSignal<UIButton &>("ToIdle");
+        getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
+            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+            btnComp.state = core::components::UIButton::ButtonState::IDLE;
+        });
+
         createSignal<UIButton &>("Hover");
+        getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
+            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+            btnComp.state = core::components::UIButton::ButtonState::HOVER;
+        });
+
         createSignal<UIButton &>("Pressed");
+        getSignal<core::ecs::entities::UIButton &>("Pressed").connect([](core::ecs::entities::UIButton &btn) {
+            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+            btnComp.state = core::components::UIButton::ButtonState::PRESS;
+        });
+
         createSignal<UIButton &>("Released");
-
-
-        const auto &ui = getComponentMutable<components::UI>();
-        event::EventRegistry::SetCallBack<event::events::HoverEvent>(
-            [ui](event::events::HoverEvent *event) { std::cout << "UI element ID from event: " << ui.element_id.id << std::endl; });
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
@@ -72,7 +82,7 @@ namespace atmo::core::ecs::entities
     // TODO: WHEN signals done this function might be called by multiple
     //       ui_element so we should move it to somewhere where it will
     //       be shared (and it should only call the signal assigned nothing more)
-    void HoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
+    void ButtonHoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
     {
         int btnId = userData;
         UIButton btn(core::ecs::EntityRegistry::GetEntityFromId(btnId));
@@ -90,7 +100,7 @@ namespace atmo::core::ecs::entities
     {
         auto &btnComp = getComponentMutable<core::components::UIButton>();
         int id = getID();
-        Clay_OnHover(HoverCallBack, id);
+        Clay_OnHover(ButtonHoverCallBack, id);
 
         if (!Clay_Hovered() && btnComp.state != core::components::UIButton::ButtonState::IDLE) {
             getSignal<UIButton &>("ToIdle").emit(*this);

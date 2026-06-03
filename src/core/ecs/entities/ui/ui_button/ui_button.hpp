@@ -16,6 +16,12 @@ namespace atmo::core::components
     };
 } // namespace atmo::core::components
 
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIButton> {
+    static constexpr const char *name = "Button";
+    static constexpr const char *category = "UI";
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UIButton::state>("button_state"));
+};
+
 namespace atmo::core::ecs::entities
 {
     class UIButton : public EntityRegistry::Registrable<UIButton, UIRect>
