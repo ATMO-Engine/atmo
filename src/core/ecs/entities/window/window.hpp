@@ -25,6 +25,7 @@ namespace atmo::core::components
     struct Window {
         std::string title;
         types::Vector2i size;
+        types::Vector2 dpi_scale;
         SDL_Window *window = nullptr;
         ClaySdL3RendererData renderer_data;
         Clay_Arena clay_arena;
@@ -71,6 +72,7 @@ namespace atmo::core::ecs::entities
         void pollEvents(float deltaTime);
         void beginDraw(components::Window &window);
         void draw(components::Window &window);
+        void updateDPI(components::Window &window);
 
         Clay_ElementId getIdForEntity(const Entity &e);
         Clay_ElementDeclaration buildDecl(const Entity &e);

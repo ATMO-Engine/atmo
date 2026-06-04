@@ -1,29 +1,16 @@
-Copyright (c) 2026 Atmo Engine
+MIT License
 
-All Rights Reserved
+Copyright (c) 2025-present Atmo Engine contributors (see AUTHORS.md).
 
-This software and associated documentation files (the "Software") are currently
-proprietary and all rights are reserved by the three creators (@Kapsulon, @albe2 and @Castres-Raphael) of the Atmo Engine.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to do so, subject to the
+following conditions:
 
-CONTRIBUTIONS:
-Contributors are freely permitted and encouraged to contribute to the development
-of this Software. By contributing, contributors agree that their contributions
-will be subject to the same license terms as this Software, including any future
-license changes.
-
-DISTRIBUTION AND USE:
-No part of this Software may be reproduced, distributed, or transmitted in any
-form or by any means, including photocopying, recording, or other electronic or
-mechanical methods, without the prior written permission of the creators, except
-for:
-
-- Contributing to the Software's development
-- Brief quotations embodied in critical reviews and certain other noncommercial
-  uses permitted by copyright law
-
-NOTICE: The license for this Software is intended to change to an open-source
-license in the future. The specific open-source license to be adopted has not
-yet been determined.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

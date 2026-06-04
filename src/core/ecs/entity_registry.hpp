@@ -43,9 +43,9 @@ namespace atmo::core::ecs
             flecs::entity handle = Instance().m_world->entity();
             Type *entity = new Type(handle);
 
-            entity->rename(std::format("{}#{}", Type::FullName(), handle.id()));
+            entity->setComponent(components::EntityBase{ std::string(Type::FullName()) });
             entity->initialize();
-            entity->setComponent(components::EntityType{ std::string(Type::FullName()) });
+            entity->rename(std::format("{}#{}", Type::FullName(), handle.id()));
 
             return entity;
         }
