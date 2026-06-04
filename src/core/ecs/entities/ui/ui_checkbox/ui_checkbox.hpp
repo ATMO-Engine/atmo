@@ -22,8 +22,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UICheckBox>
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::UICheckBox::trigger>("trigger"),
-        atmo::meta::field<&atmo::core::components::UICheckBox::state>("checkbox_state")
-    );
+        atmo::meta::field<&atmo::core::components::UICheckBox::state>("checkbox_state"));
 };
 
 namespace atmo::core::ecs::entities

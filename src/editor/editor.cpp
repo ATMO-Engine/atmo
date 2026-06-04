@@ -2,6 +2,7 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
+#include "core/ecs/entities/ui/ui_floating_window/ui_floating_window.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
@@ -112,9 +113,7 @@ namespace atmo::editor
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color{ static_cast<uint8_t>(135), static_cast<uint8_t>(55), static_cast<uint8_t>(255), static_cast<uint8_t>(255) };
         });
-        button->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) {
-            spdlog::info("Button released");
-        });
+        button->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) { spdlog::info("Button released"); });
 
 
         auto checkbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
@@ -128,6 +127,26 @@ namespace atmo::editor
         checkbox->rename("checkBox");
         checkbox->setParent(*white_rect);
 
+        auto floating_window = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFloatingWindow>("Entity::UI::UIRect::UIFloatingWindow");
+        auto &floating_window_layout = floating_window->getComponentMutable<core::components::Layout>();
+        floating_window_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        floating_window_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
+        floating_window_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        floating_window_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
+        floating_window->rename("floating window");
+        floating_window->setParent(*white_rect);
+        floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Open").connect(
+            [floating_window](core::ecs::entities::UIFloatingWindow &window) { floating_window->getComponentMutable<core::components::UI>().visible = true; });
+        floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Close").connect(
+            [floating_window](core::ecs::entities::UIFloatingWindow &window) { floating_window->getComponentMutable<core::components::UI>().visible = false; });
+
+        checkbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([floating_window](core::ecs::entities::UICheckBox &chBox) {
+            if (chBox.getComponent<core::components::UICheckBox>().trigger) {
+                floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Open").emit(*floating_window);
+            } else {
+                floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Close").emit(*floating_window);
+            }
+        });
 
         auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
@@ -153,9 +172,7 @@ namespace atmo::editor
             auto &rect = btn.getComponentMutable<core::components::UIRect>();
             rect.color = core::types::Color{ static_cast<uint8_t>(135), static_cast<uint8_t>(55), static_cast<uint8_t>(255), static_cast<uint8_t>(255) };
         });
-        button1->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) {
-            spdlog::info("Button released");
-        });
+        button1->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) { spdlog::info("Button released"); });
 
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
