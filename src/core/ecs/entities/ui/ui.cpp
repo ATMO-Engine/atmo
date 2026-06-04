@@ -64,6 +64,9 @@ namespace atmo::core::ecs::entities
 
         if (has_ui_child) {
             for (auto child : children) {
+                if (child.hasComponent<components::UI>())
+                    if (child.getComponentMutable<components::UI>().visible == false)
+                        continue;
                 auto wrapped = EntityRegistry::Wrap(child);
                 if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
                     ui->internalDraw(data);
