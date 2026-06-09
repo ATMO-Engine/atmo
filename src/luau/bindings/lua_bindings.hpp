@@ -5,6 +5,8 @@
 #include "lua.h"
 #include "lualib.h"
 
+#include "core/ecs/entities/2d/entity_2d.hpp"
+
 namespace atmo
 {
     namespace luau
@@ -27,6 +29,11 @@ namespace atmo
 
             static Property m_properties[];
             static constexpr const char *name = "Unknown";
+
+            // Push un Transform2d* existant sur la stack — appelé depuis getComponent
+            //  static void push(lua_State *L, atmo::core::components::Transform2d *t) {
+            //      std::cout << "basic push" << std::endl;
+            //  }
         };
 
         template <typename Derived, typename T> class LuaBindingsBase

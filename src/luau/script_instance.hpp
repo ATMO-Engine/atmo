@@ -7,6 +7,8 @@
 #include <string>
 #include "luau.hpp"
 
+#include "flecs.h"
+
 namespace atmo
 {
     namespace luau
@@ -28,7 +30,7 @@ namespace atmo
              * @return true The bytecode was loaded successfully
              * @return false The bytecode couldn't be loaded
              */
-            bool load(const std::string &name, const char *bytecode, size_t size, int id);
+            bool load(const std::string &name, const char *bytecode, size_t size, int id, flecs::entity &entity);
 
             /**
              * @brief

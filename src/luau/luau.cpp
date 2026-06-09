@@ -1,5 +1,8 @@
 #include "bindings/bindings_color.hpp"
+#include "bindings/bindings_entity.hpp"
+#include "bindings/bindings_transform2.hpp"
 #include "bindings/bindings_vector2.hpp"
+#include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/types.hpp"
 #include "script_instance.hpp"
 #include "spdlog/spdlog.h"
@@ -72,6 +75,8 @@ namespace atmo
         {
             LuaBindings<atmo::core::types::Vector2>::RegisterType(p_L);
             LuaBindings<atmo::core::types::Color>::RegisterType(p_L);
+            LuaBindings<atmo::core::components::Transform2d>::RegisterType(p_L);
+            LuaBindings<flecs::entity>::RegisterType(p_L);
             return;
         }
 

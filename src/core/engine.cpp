@@ -198,14 +198,50 @@ namespace atmo::core
         scene->setSingleton(false);
         m_ecs.changeScene(scene);
 
+
         atmo::luau::Luau vm;
 
-        // Scripting
-        auto script = core::ecs::EntityRegistry::Create<core::ecs::entities::Script>("Entity::Script");
+
+        auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape->setSize({ 800, 100 });
+
+        auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
+        static_body->addShape(rectangle_shape);
+        static_body->setPosition({ 800, 500 });
+        static_body->setParent(*scene);
+
+        atmo::core::components::ScriptTest t = {};
         atmo::luau::ScriptInstance inst = vm.generateInstance();
-        script->setScriptInstance(&inst);
-        script->setScriptPath("project://assets/script/luau_main.luau");
-        script->setParent(*scene);
+        t.instance = &inst;
+        t.script_path = "project://assets/script/luau_bindings_test.luau";
+
+        static_body->setComponent(t);
+
+        auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape2->setSize({ 80, 80 });
+
+        auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body->addShape(rectangle_shape2);
+        dynamic_body->setPosition({ 410, 300 });
+        dynamic_body->setParent(*scene);
+
+        auto circle_shape = resource::SubResourceRegistry::Create<resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
+        circle_shape->setRadius(40.0f);
+        circle_shape->getShapeDef().density = 2.0f;
+        circle_shape->getShapeDef().material.rollingResistance = 0.02f;
+
+        auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body2->addShape(circle_shape);
+        dynamic_body2->setPosition({ 450, 0 });
+        dynamic_body2->setParent(*scene);
+
+
+        // Scripting
+        // auto script = core::ecs::EntityRegistry::Create<core::ecs::entities::Script>("Entity::Script");
+        // atmo::luau::ScriptInstance inst = vm.generateInstance();
+        // script->setScriptInstance(&inst);
+        // script->setScriptPath("project://assets/script/luau_main.luau");
+        // script->setParent(*scene);
 
 #if !defined(ATMO_EXPORT)
         editor::Editor editor(*this, "");

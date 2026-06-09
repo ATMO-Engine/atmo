@@ -8,6 +8,10 @@
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 
+
+#include "bindings/bindings_entity.hpp"
+
+
 namespace atmo
 {
     namespace luau
@@ -54,7 +58,7 @@ namespace atmo
             m_envRef.set(ref);
         }
 
-        bool ScriptInstance::load(const std::string &name, const char *bytecode, size_t size, int id)
+        bool ScriptInstance::load(const std::string &name, const char *bytecode, size_t size, int id, flecs::entity &entity)
         {
             m_id = id; // TODO: Attach id to the env so debug call can be specific on the id (Maybe can be handled c++ side only ?)
 
@@ -62,6 +66,15 @@ namespace atmo
             luaL_sandboxthread(m_thread);
 
             createEnvironment(m_thread);
+
+
+            // Push "this" une seule fois pour ce thread
+            void *mem = lua_newuserdata(m_thread, sizeof(std::shared_ptr<flecs::entity>));
+            new (mem) std::shared_ptr<flecs::entity>(std::make_shared<flecs::entity>(entity));
+            luaL_getmetatable(m_thread, LuaBindings<flecs::entity>::name);
+            lua_setmetatable(m_thread, -2);
+            lua_setglobal(m_thread, "this");
+
 
             if (!m_vm.LoadBytecodeCoroutine(m_thread, name, bytecode, size, 0)) {
                 spdlog::warn("Byte code couldn't be loaded inside thread");

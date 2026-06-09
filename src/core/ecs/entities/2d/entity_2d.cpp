@@ -4,6 +4,8 @@
 #include "core/ecs/entity_registry.hpp"
 #include "meta/auto_register.hpp"
 
+#include <iostream>
+
 namespace atmo::core::ecs::entities
 {
     void Entity2d::RegisterSystems(flecs::world *world)
@@ -28,6 +30,52 @@ namespace atmo::core::ecs::entities
                 t.g_rotation = parent_t.g_rotation + t.rotation;
                 t.g_scale = { parent_t.g_scale.x * t.scale.x, parent_t.g_scale.y * t.scale.y };
             });
+
+
+        // S'exécute une seule fois par entité grâce à flecs::OnAdd
+        world->observer<components::ScriptTest>().event(flecs::OnSet).each([&](flecs::entity e, components::ScriptTest &script) {
+            std::cout << "here" << std::endl;
+
+            std::cout << "path: " << script.script_path << std::endl;
+            if (script.script_path.empty())
+                return;
+            if (script.instance == nullptr) {
+                return;
+            }
+
+            std::cout << script.script_path << std::endl;
+
+            std::unique_ptr<resource::ResourceRef<resource::Bytecode>> res =
+                resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);
+
+            script.m_res = std::move(res);
+
+            spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
+
+            script.instance->load("script test", script.m_res->get()->data, script.m_res->get()->size, e.id(), e);
+            script.instance->create();
+        });
+
+        world->system<components::ScriptTest>("Script_update").kind(flecs::OnValidate).each([](flecs::entity e, components::ScriptTest &script) {
+            if (script.instance == nullptr) {
+                return;
+            }
+            float dt = e.world().delta_time();
+
+            script.instance->update(dt);
+            script.instance->physiqueUpdate(dt);
+        });
+
+        world->observer<components::ScriptTest>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::ScriptTest &script) {
+            if (script.script_path.empty())
+                return;
+            if (script.instance == nullptr) {
+                return;
+            }
+
+            script.instance->destroy();
+            script.m_res = nullptr;
+        });
     }
 
     void Entity2d::initialize()
@@ -94,3 +142,4 @@ namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::Entity2d);
 ATMO_REGISTER_COMPONENT(atmo::core::components::Transform2d)
+// ATMO_REGISTER_COMPONENT(atmo::core::components::ScriptTest)

@@ -6,6 +6,9 @@
 #include "core/types.hpp"
 #include "lua_bindings.hpp"
 
+
+#include "core/ecs/entities/2d/entity_2d.hpp"
+
 namespace atmo::luau
 {
 
@@ -39,6 +42,10 @@ namespace atmo::luau
 
         static Property m_properties[];
         static constexpr const char *name = "Color";
+
+
+        // Push un Transform2d* existant sur la stack — appelé depuis getComponent
+        static void push(lua_State *L, atmo::core::components::Transform2d *t) {};
 
     private:
         static std::shared_ptr<Color> &Check(lua_State *state, int index)
