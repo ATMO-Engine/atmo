@@ -50,10 +50,6 @@ namespace atmo::luau
         static Property m_properties[];
         static constexpr const char *name = "Entity";
 
-
-        // Push un Transform2d* existant sur la stack — appelé depuis getComponent
-        static void push(lua_State *L, atmo::core::components::Transform2d *t) {};
-
     private:
         static int GC(lua_State *state);
         static int GetTransform(lua_State *state);

@@ -4,8 +4,6 @@
 #include "core/ecs/entity_registry.hpp"
 #include "meta/auto_register.hpp"
 
-#include <iostream>
-
 namespace atmo::core::ecs::entities
 {
     void Entity2d::RegisterSystems(flecs::world *world)
@@ -34,16 +32,11 @@ namespace atmo::core::ecs::entities
 
         // S'exécute une seule fois par entité grâce à flecs::OnAdd
         world->observer<components::ScriptTest>().event(flecs::OnSet).each([&](flecs::entity e, components::ScriptTest &script) {
-            std::cout << "here" << std::endl;
-
-            std::cout << "path: " << script.script_path << std::endl;
             if (script.script_path.empty())
                 return;
             if (script.instance == nullptr) {
                 return;
             }
-
-            std::cout << script.script_path << std::endl;
 
             std::unique_ptr<resource::ResourceRef<resource::Bytecode>> res =
                 resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);

@@ -53,10 +53,7 @@ namespace atmo::core::ecs::entities
         world->system<components::Transform2d, Body2dData>("Body2d_UpdateValuesFromPhysicsEngine")
             .kind(flecs::PostUpdate)
             .each([](flecs::entity e, components::Transform2d &transform, Body2dData &body_data) {
-                spdlog::warn("Before Pos {}, {}", transform.position.x, transform.position.y);
-
                 transform.position = b2Body_GetPosition(body_data.body_id);
-                spdlog::warn("After Pos {}, {}", transform.position.x, transform.position.y);
                 transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));
             });
     }

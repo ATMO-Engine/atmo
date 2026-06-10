@@ -1,8 +1,7 @@
 #include "bindings_entity.hpp"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 
-#include "bindings_transform2.hpp" // ← ajouter cet include
-
+#include "bindings_transform2.hpp"
 
 namespace atmo::luau
 {
@@ -25,16 +24,17 @@ namespace atmo::luau
 
         if (!entity->is_alive()) {
             lua_pushnil(state);
+            spdlog::warn("Entity is not alive");
             return 1;
         }
         if (!entity->has<atmo::core::components::Transform2d>()) {
             lua_pushnil(state);
+            spdlog::warn("No component Transform2d is the entity");
             return 1;
         }
 
         atmo::core::components::Transform2d &t = entity->get_mut<atmo::core::components::Transform2d>();
 
-        // Appelle le push de Transform2d, pas de Entity
         LuaBindings<atmo::core::components::Transform2d>::push(state, &t);
         return 1;
     }

@@ -210,13 +210,6 @@ namespace atmo::core
         static_body->setPosition({ 800, 500 });
         static_body->setParent(*scene);
 
-        atmo::core::components::ScriptTest t = {};
-        atmo::luau::ScriptInstance inst = vm.generateInstance();
-        t.instance = &inst;
-        t.script_path = "project://assets/script/luau_bindings_test.luau";
-
-        static_body->setComponent(t);
-
         auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
         rectangle_shape2->setSize({ 80, 80 });
 
@@ -235,6 +228,19 @@ namespace atmo::core
         dynamic_body2->setPosition({ 450, 0 });
         dynamic_body2->setParent(*scene);
 
+
+        // Sprite
+        auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+        sprite->setTexturePath("project://assets/atmo.png");
+        sprite->setPosition({ 1200, 500 });
+        sprite->setParent(*scene);
+
+
+        atmo::core::components::ScriptTest t = {};
+        atmo::luau::ScriptInstance inst = vm.generateInstance();
+        t.instance = &inst;
+        t.script_path = "project://assets/script/luau_bindings_test.luau";
+        sprite->setComponent(t);
 
         // Scripting
         // auto script = core::ecs::EntityRegistry::Create<core::ecs::entities::Script>("Entity::Script");
