@@ -201,6 +201,8 @@ namespace atmo::core
 
         atmo::luau::Luau vm;
 
+        InputManager::AddInput("D", new InputManager::KeyEvent(SDLK_D, false));
+        InputManager::AddInput("Q", new InputManager::KeyEvent(SDLK_Q, false));
 
         auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
         rectangle_shape->setSize({ 800, 100 });

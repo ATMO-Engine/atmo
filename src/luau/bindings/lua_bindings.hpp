@@ -33,6 +33,37 @@ namespace atmo
 
         template <typename Derived, typename T> class LuaBindingsBase
         {
+        public:
+            /**
+             * @brief Push a type T instance inside the luau context is it stored inside
+             * a shared_ptr with a no-op deleter before being pushed to the luau
+             *
+             * @param L the luau instance where the code runs
+             * @param t the type T you want to push
+             */
+            static void push(lua_State *L, T *t)
+            {
+                void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<T>));
+                new (mem) std::shared_ptr<T>(t, [](T *) {});
+                luaL_getmetatable(L, Derived::name);
+                lua_setmetatable(L, -2);
+            }
+
+
+            /**
+             * @brief Push a type T instance inside the luau context
+             *
+             * @param L the luau instance where the code runs
+             * @param t the type T you want to push that is already inside a shared_ptr
+             */
+            static void push(lua_State *L, std::shared_ptr<T> t)
+            {
+                void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<T>));
+                new (mem) std::shared_ptr<T>(std::move(t));
+                luaL_getmetatable(L, Derived::name);
+                lua_setmetatable(L, -2);
+            }
+
         protected:
             /**
              * @brief

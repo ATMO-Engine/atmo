@@ -42,36 +42,6 @@ namespace atmo::luau
         static Property m_properties[];
         static constexpr const char *name = "Vector2";
 
-        /**
-         * @brief Push a Vector2 instance inside the luau context is it stored inside
-         * a shared_ptr with a no-op deleter before being pushed to the luau
-         *
-         * @param L the luau instance where the code runs
-         * @param t the Vector2 you want to push
-         */
-        static void push(lua_State *L, Vector2 *v)
-        {
-            void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<Vector2>));
-            new (mem) std::shared_ptr<Vector2>(v, [](Vector2 *) {});
-            luaL_getmetatable(L, name);
-            lua_setmetatable(L, -2);
-        }
-
-
-        /**
-         * @brief Push a Vector2 instance inside the luau context
-         *
-         * @param L the luau instance where the code runs
-         * @param t the Vector2 you want to push that is already inside a shared_ptr
-         */
-        static void push(lua_State *L, std::shared_ptr<Vector2> v)
-        {
-            void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<Vector2>));
-            new (mem) std::shared_ptr<Vector2>(std::move(v));
-            luaL_getmetatable(L, name);
-            lua_setmetatable(L, -2);
-        }
-
     private:
         static std::shared_ptr<Vector2> &Check(lua_State *state, int index)
         {

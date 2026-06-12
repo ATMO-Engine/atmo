@@ -37,16 +37,11 @@ namespace atmo::luau
             lua_pushcfunction(state, GetTransform, "Entity.getTransform");
             lua_setfield(state, -2, "getTransform");
 
-            // Ajoute ici tes futures méthodes :
-            // lua_pushcfunction(state, GetRigidbody, "Entity.getRigidbody");
-            // lua_setfield(state, -2, "getRigidbody");
-
             lua_setfield(state, -2, "__methods");
 
             lua_pop(state, 1);
         }
 
-        // Pas de m_properties pour l'instant — l'entité n'a pas de champs directs
         static Property m_properties[];
         static constexpr const char *name = "Entity";
 

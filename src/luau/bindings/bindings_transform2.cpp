@@ -22,7 +22,6 @@ namespace atmo::luau
     }
 
     // Helper Vector2 : position, g_position, scale, g_scale
-    // no-op deleter car Flecs gère la mémoire du Transform2d
     static Property makeVector2Property(const char *propName, Vector2 Transform2d::*member)
     {
         return Property{ propName,

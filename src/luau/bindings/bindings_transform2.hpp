@@ -36,36 +36,6 @@ namespace atmo::luau
         static Property m_properties[];
         static constexpr const char *name = "Transform2d";
 
-        /**
-         * @brief Push a Transform2d instance inside the luau context is it stored inside
-         * a shared_ptr with a no-op deleter before being pushed to the luau
-         *
-         * @param L the luau instance where the code runs
-         * @param t the Transform2d you want to push
-         */
-        static void push(lua_State *L, Transform2d *t)
-        {
-            void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<Transform2d>));
-            // No op deleter since luau doesn't hold the instance of the object
-            new (mem) std::shared_ptr<Transform2d>(t, [](Transform2d *) {});
-            luaL_getmetatable(L, name);
-            lua_setmetatable(L, -2);
-        }
-
-        /**
-         * @brief Push a Transform2d instance inside the luau context
-         *
-         * @param L the luau instance where the code runs
-         * @param t the Transform2d you want to push that is already inside a shared_ptr
-         */
-        static void push(lua_State *L, std::shared_ptr<Transform2d> t)
-        {
-            void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<Transform2d>));
-            new (mem) std::shared_ptr<Transform2d>(std::move(t));
-            luaL_getmetatable(L, name);
-            lua_setmetatable(L, -2);
-        }
-
     private:
         static int New(lua_State *state)
         {

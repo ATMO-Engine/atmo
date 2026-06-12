@@ -2,15 +2,12 @@
 #include "core/ecs/entities/2d/entity_2d.hpp"
 
 #include "bindings_transform2.hpp"
+#include "lua_bindings.hpp"
 
 namespace atmo::luau
 {
-    // Tableau de propriétés vide — l'entité n'expose pas de champs directs
-    // Tu peux ajouter ici plus tard : name, id, etc.
     Property LuaBindings<flecs::entity>::m_properties[] = { { nullptr, nullptr, nullptr } };
 
-    // Détruit le shared_ptr<flecs::entity> quand Lua GC le userdata
-    // Ne détruit PAS l'entité Flecs — juste le shared_ptr côté Lua
     int LuaBindings<flecs::entity>::GC(lua_State *state)
     {
         auto *ptr = (std::shared_ptr<flecs::entity> *)luaL_checkudata(state, 1, name);
