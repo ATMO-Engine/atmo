@@ -30,7 +30,6 @@ namespace atmo::core::ecs::entities
             });
 
 
-        // S'exécute une seule fois par entité grâce à flecs::OnAdd
         world->observer<components::ScriptTest>().event(flecs::OnSet).each([&](flecs::entity e, components::ScriptTest &script) {
             if (script.script_path.empty())
                 return;

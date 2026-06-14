@@ -19,19 +19,15 @@ namespace atmo::luau
         {
             luaL_newmetatable(state, name);
 
-            // __gc : détruit le shared_ptr quand Lua GC le userdata
             lua_pushcfunction(state, GC, "Entity.__gc");
             lua_setfield(state, -2, "__gc");
 
-            // __index : accès aux propriétés et méthodes
             lua_pushcfunction(state, Index, "Entity.__index");
             lua_setfield(state, -2, "__index");
 
-            // __newindex : écriture sur les propriétés
             lua_pushcfunction(state, NewIndex, "Entity.__newindex");
             lua_setfield(state, -2, "__newindex");
 
-            // Table des méthodes accessibles depuis Luau
             lua_newtable(state);
 
             lua_pushcfunction(state, GetTransform, "Entity.getTransform");
