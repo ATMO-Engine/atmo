@@ -44,7 +44,7 @@ namespace atmo::core::ecs::entities
 
             spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
 
-            script.instance->load("script test", script.m_res->get()->data, script.m_res->get()->size, e.id(), e);
+            script.instance->load("script test", script.m_res->get()->data, script.m_res->get()->size, e);
             script.instance->create();
         });
 

@@ -30,7 +30,7 @@ namespace atmo
              * @return true The bytecode was loaded successfully
              * @return false The bytecode couldn't be loaded
              */
-            bool load(const std::string &name, const char *bytecode, size_t size, int id, flecs::entity &entity);
+            bool load(const std::string &name, const char *bytecode, size_t size, flecs::entity &entity);
 
             /**
              * @brief
@@ -74,8 +74,6 @@ namespace atmo
 
             lua_State *m_thread = nullptr;
             LuauRef m_threadRef;
-
-            int m_id = -1;
 
             bool m_stop = false;
 
