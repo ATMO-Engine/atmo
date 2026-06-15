@@ -126,7 +126,7 @@ namespace atmo
             handleCall(result);
         }
 
-        void ScriptInstance::physiqueUpdate(float dt)
+        void ScriptInstance::physicsUpdate(float dt)
         {
             if (m_stop == true) {
                 return;
@@ -136,7 +136,7 @@ namespace atmo
                 spdlog::warn("Thread null, code not running");
             }
 
-            lua_getglobal(m_thread, "PhysiqueUpdate");
+            lua_getglobal(m_thread, "PhysicsUpdate");
             lua_pushnumber(m_thread, dt);
             int result = lua_pcall(m_thread, 1, 0, 0);
             handleCall(result);

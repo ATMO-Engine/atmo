@@ -237,7 +237,7 @@ namespace atmo::core
         sprite->setParent(*scene);
 
 
-        atmo::core::components::ScriptTest t = {};
+        atmo::core::components::Script t = {};
         atmo::luau::ScriptInstance inst = vm.generateInstance();
         t.instance = &inst;
         t.script_path = "project://assets/script/luau_bindings_test.luau";

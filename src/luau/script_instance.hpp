@@ -47,10 +47,10 @@ namespace atmo
 
             /**
              * @brief
-             * Call the PhysiqueUpdate function of the entity
+             * Call the physicsUpdate function of the entity
              * @param dt The deltatime between this and last call (tick)
              */
-            void physiqueUpdate(float dt);
+            void physicsUpdate(float dt);
 
             /**
              * @brief

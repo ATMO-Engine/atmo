@@ -14,6 +14,6 @@ function Update(deltaTime)
     end
 end
 
-function PhysiqueUpdate(deltaTime)
+function PhysicsUpdate(deltaTime)
 end
 

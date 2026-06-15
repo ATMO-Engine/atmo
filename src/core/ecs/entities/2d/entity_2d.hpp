@@ -9,12 +9,6 @@
 #include "meta/meta.hpp"
 
 
-#include "core/resource/loaders/script_loader.hpp"
-#include "core/resource/resource_manager.hpp"
-#include "core/resource/resource_ref.hpp"
-#include "luau/script_instance.hpp"
-
-
 namespace atmo::core::components
 {
     struct Transform2d {
@@ -27,19 +21,7 @@ namespace atmo::core::components
         types::Vector2 scale{ 1.0f, 1.0f };
         types::Vector2 g_scale{ 1.0f, 1.0f };
     };
-
-    struct ScriptTest {
-        std::string script_path;
-        std::unique_ptr<resource::ResourceRef<resource::Bytecode>> m_res;
-        atmo::luau::ScriptInstance *instance = nullptr;
-    };
 } // namespace atmo::core::components
-
-template <> struct atmo::meta::ComponentMeta<atmo::core::components::ScriptTest> {
-    static constexpr const char *name = "ScriptTest";
-    static constexpr const char *category = "Luau";
-    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::ScriptTest::script_path>("script_path").withWidget("file_path"));
-};
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::Transform2d> {
     static constexpr const char *name = "Transform2d";
