@@ -174,6 +174,9 @@ namespace atmo::core::ecs::entities
                 case SDL_EVENT_WINDOW_RESIZED:
                     Clay_SetLayoutDimensions({ (float)event.window.data1, (float)event.window.data2 });
                     break;
+                case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+                    updateDPI(getComponentMutable<components::Window>());
+                    break;
                 default:
                     auto default_event = atmo::core::event::EventRegistry::Create<atmo::core::event::events::InputEvent>("Event::SDLEvent::InputEvent");
                     default_event->sdl_event = event;
