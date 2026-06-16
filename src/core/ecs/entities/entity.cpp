@@ -18,6 +18,45 @@ namespace atmo::core::ecs::entities
                 signal.second = nullptr;
             }
         });
+
+        world->observer<components::Script>().event(flecs::OnSet).each([&](flecs::entity e, components::Script &script) {
+            if (script.script_path.empty())
+                return;
+            if (script.instance == nullptr) {
+                return;
+            }
+
+            std::unique_ptr<resource::ResourceRef<resource::Bytecode>> res =
+                resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);
+
+            script.m_res = std::move(res);
+
+            spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
+
+            script.instance->load("script test", script.m_res->get()->data, script.m_res->get()->size, e);
+            script.instance->create();
+        });
+
+        world->system<components::Script>("Script_update").kind(flecs::OnValidate).each([](flecs::entity e, components::Script &script) {
+            if (script.instance == nullptr) {
+                return;
+            }
+            float dt = e.world().delta_time();
+
+            script.instance->update(dt);
+            script.instance->physicsUpdate(dt);
+        });
+
+        world->observer<components::Script>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Script &script) {
+            if (script.script_path.empty())
+                return;
+            if (script.instance == nullptr) {
+                return;
+            }
+
+            script.instance->destroy();
+            script.m_res = nullptr;
+        });
     }
 
     void Entity::Unregister(flecs::world *world) {}
@@ -168,3 +207,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::Entity);
+ATMO_REGISTER_COMPONENT(atmo::core::components::Script);
