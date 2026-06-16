@@ -93,4 +93,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::Entity2d);
-ATMO_REGISTER_COMPONENT(atmo::core::components::Transform2d)
+ATMO_REGISTER_COMPONENT(atmo::core::components::Transform2d);

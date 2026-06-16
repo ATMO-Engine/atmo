@@ -8,6 +8,7 @@
 #include "flecs.h"
 #include "meta/meta.hpp"
 
+
 namespace atmo::core::components
 {
     struct Transform2d {
