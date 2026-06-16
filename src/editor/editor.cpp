@@ -2,12 +2,12 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
-#include "core/ecs/entities/ui/ui_floating_window/ui_floating_window.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
+#include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "glaze/json/prettify.hpp"
 #include "project/file_system.hpp"
 #include "spdlog/spdlog.h"
@@ -74,8 +74,8 @@ namespace atmo::editor
 
         auto white_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &white_rect_rect = white_rect->getComponentMutable<core::components::UIRect>();
-        white_rect_rect.color = core::types::Color::WHITE;
-        white_rect_rect.color.a = 0.4;
+        white_rect_rect.color = core::types::Color::RED;
+        white_rect_rect.color.a = 1.0f;
         // white_rect_rect.color.a = 0.0f;
         auto &white_rect_layout = white_rect->getComponentMutable<core::components::Layout>();
         white_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
@@ -134,7 +134,7 @@ namespace atmo::editor
         floating_window_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         floating_window_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
         floating_window->rename("floating window");
-        floating_window->setParent(*white_rect);
+        floating_window->setParent(*checkbox);
         floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Open").connect(
             [floating_window](core::ecs::entities::UIFloatingWindow &window) { floating_window->getComponentMutable<core::components::UI>().visible = true; });
         floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Close").connect(
@@ -143,8 +143,14 @@ namespace atmo::editor
         checkbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([floating_window](core::ecs::entities::UICheckBox &chBox) {
             if (chBox.getComponent<core::components::UICheckBox>().trigger) {
                 floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Open").emit(*floating_window);
+                auto parent = chBox.getParent<core::ecs::entities::UIRect>();
+                auto &parent_layout = parent.getComponentMutable<core::components::Layout>();
+                parent_layout.padding.left += 100;
             } else {
                 floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Close").emit(*floating_window);
+                auto parent = chBox.getParent<core::ecs::entities::UIRect>();
+                auto &parent_layout = parent.getComponentMutable<core::components::Layout>();
+                parent_layout.padding.left -= 100;
             }
         });
 
@@ -180,7 +186,7 @@ namespace atmo::editor
         label->setText("Hello, World!");
         label->setFontSize(48);
         label->rename("hello world");
-        label->setParent(*scene);
+        label->setParent(*floating_window);
         auto &label_layout = label->getComponentMutable<core::components::Layout>();
 
         spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());

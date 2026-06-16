@@ -179,7 +179,13 @@ namespace atmo::core::ecs::entities
          *
          * @return Entity parent entity.
          */
-        Entity getParent();
+        template <typename ParentType = Entity> ParentType getParent()
+        {
+            auto parent_handle = p_handle.parent();
+            if (!parent_handle.is_valid())
+                return ParentType();
+            return ParentType(parent_handle);
+        }
 
         /**
          * @brief Destroy the entity and remove it from scene.

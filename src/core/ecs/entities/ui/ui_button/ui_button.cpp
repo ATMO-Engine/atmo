@@ -46,6 +46,11 @@ namespace atmo::core::ecs::entities
 
         auto &label_comp = label->getComponentMutable<core::components::UILabel>();
         label_comp.text_alignment = core::components::UILabel::TextAlignment::ALIGN_CENTER;
+        auto label_layout = label->getComponentMutable<core::components::Layout>();
+        label_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        label_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        label_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        label_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
     }
 
     Clay_ElementDeclaration UIButton::buildDecl()

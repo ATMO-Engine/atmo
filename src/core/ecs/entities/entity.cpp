@@ -116,11 +116,6 @@ namespace atmo::core::ecs::entities
         return p_handle.lookup(name.data());
     }
 
-    Entity Entity::getParent()
-    {
-        return p_handle.parent();
-    }
-
     void Entity::destroy()
     {
         p_handle.destruct();

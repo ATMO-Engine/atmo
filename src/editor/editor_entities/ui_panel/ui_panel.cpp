@@ -1,4 +1,4 @@
-#include "ui_floating_window.hpp"
+#include "ui_panel.hpp"
 #include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
@@ -17,6 +17,13 @@ namespace atmo::core::ecs::entities
     Clay_ElementDeclaration UIFloatingWindow::buildDecl()
     {
         Clay_ElementDeclaration d = UIRect::buildDecl();
+        d.floating.attachTo = CLAY_ATTACH_TO_PARENT;
+        d.floating.attachPoints = {
+            .element = CLAY_ATTACH_POINT_LEFT_CENTER,
+            .parent = CLAY_ATTACH_POINT_RIGHT_CENTER,
+        };
+        d.floating.offset = { 0, 0 };
+        d.floating.zIndex = 10;
 
         return d;
     }

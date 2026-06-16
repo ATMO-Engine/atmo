@@ -14,6 +14,7 @@ namespace atmo::core::components
 {
     struct UI {
         bool visible{ true };
+        bool grabability = false;
         types::Color modulate{ types::Color::WHITE };
         Clay_ElementId element_id;
     };
@@ -23,7 +24,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UI> {
     static constexpr const char *name = "UI";
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::UI::UI::visible>("visible"),
+        atmo::meta::field<&atmo::core::components::UI::UI::visible>("visible"), atmo::meta::field<&atmo::core::components::UI::UI::grabability>("grabability"),
         atmo::meta::field<&atmo::core::components::UI::UI::modulate>("modulate").withWidget("color_picker"));
 };
 
