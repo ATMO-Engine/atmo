@@ -5,6 +5,7 @@
 #include <fstream>
 #include <glaze/glaze.hpp>
 #include <semver.hpp>
+#include <set>
 #include <spdlog/spdlog.h>
 #include <string_view>
 #include <vector>
@@ -116,6 +117,29 @@ namespace atmo
 #endif
 
 #if !defined(ATMO_EXPORT)
+            static std::set<std::filesystem::path> GetFilesToPack(const std::vector<std::string> &entries)
+            {
+                std::set<std::filesystem::path> out;
+
+                for (const auto &entry : entries) {
+                    if (!std::filesystem::exists(entry)) {
+                        spdlog::warn(R"(File/Folder "{}" does not exist.)", entry);
+                        continue;
+                    } else if (std::filesystem::is_directory(entry)) {
+                        for (const auto &rec_iter : std::filesystem::recursive_directory_iterator(entry)) {
+                            if (rec_iter.is_regular_file())
+                                out.emplace(rec_iter);
+                        }
+                    } else if (std::filesystem::is_regular_file(entry)) {
+                        out.emplace(entry);
+                    }
+                }
+
+                return out;
+            }
+#endif
+
+#if !defined(ATMO_EXPORT)
             /**
              * @brief Generates a packed .pck file from the current project directory. This file may get appended to an atmo or atmo-export executable.
              *
@@ -131,42 +155,23 @@ namespace atmo
 
                 FileSystem::PackedHeader header;
 
+                std::set<std::filesystem::path> files_to_pack = GetFilesToPack(files);
                 std::vector<FileSystem::PackedEntry> entries;
 
-                if (files.empty()) {
-                    for (const auto &entry : std::filesystem::recursive_directory_iterator(GetCurrentProjectPath())) {
-                        if (entry.is_regular_file() && entry.path().filename() != ATMO_PROJECT_FILE) {
-                            std::ifstream in(entry.path(), std::ios::binary | std::ios::ate);
-                            if (!in.is_open()) {
-                                spdlog::warn("Failed to open file for packing: {}", entry.path().string());
-                                continue;
-                            }
-                            std::streamsize size = in.tellg();
-                            in.seekg(0, std::ios::beg);
-                            FileSystem::PackedEntry packed_entry;
-                            packed_entry.path = strdup(entry.path().lexically_relative(GetCurrentProjectPath()).string().c_str());
-                            packed_entry.offset = 0;
-                            packed_entry.size = static_cast<std::uint64_t>(size);
-                            entries.push_back(packed_entry);
-                            in.close();
-                        }
+                for (const auto &entry : files_to_pack) {
+                    std::ifstream in(entry, std::ios::binary | std::ios::ate);
+                    if (!in.is_open()) {
+                        spdlog::warn("Failed to open file for packing: {}", entry.c_str());
+                        continue;
                     }
-                } else {
-                    for (const auto &entry : files) {
-                        std::ifstream in(entry, std::ios::binary | std::ios::ate);
-                        if (!in.is_open()) {
-                            spdlog::warn("Failed to open file for packing: {}", entry);
-                            continue;
-                        }
-                        std::streamsize size = in.tellg();
-                        in.seekg(0, std::ios::beg);
-                        FileSystem::PackedEntry packed_entry;
-                        packed_entry.path = entry.c_str();
-                        packed_entry.offset = 0;
-                        packed_entry.size = static_cast<std::uint64_t>(size);
-                        entries.push_back(packed_entry);
-                        in.close();
-                    }
+                    std::streamsize size = in.tellg();
+                    in.seekg(0, std::ios::beg);
+                    FileSystem::PackedEntry packed_entry;
+                    packed_entry.path = entry.c_str();
+                    packed_entry.offset = 0;
+                    packed_entry.size = static_cast<std::uint64_t>(size);
+                    entries.push_back(packed_entry);
+                    in.close();
                 }
 
                 std::uint64_t current_offset = 0;
@@ -194,7 +199,13 @@ namespace atmo
                         spdlog::warn("Failed to open file for packing data: {}", entry.path);
                         continue;
                     }
-                    out << in.rdbuf();
+                    if (entry.size > 0) {
+                        out << in.rdbuf();
+                        if (!out.good()) {
+                            spdlog::error("Write error while packing: {}", entry.path);
+                            out.clear();
+                        }
+                    }
                     in.close();
                 }
 

@@ -441,11 +441,13 @@ target("atmo")
             files[i] = path.unix(f)
         end
 
-        print(bin .. ": Packing " .. #files .. " files...")
+        print(target:targetfile() .. ": Packing " .. #files .. " files...")
 
         os.runv(bin, table.join({"--headless", "--pack"}, files))
 
         local pck = path.absolute("packed_output.pck")
+
+        print(target:targetfile() .. ": Packed output size is " .. string.format("%.2f mb", os.filesize(pck) / 1000000))
 
         append_file(bin, pck)
 
