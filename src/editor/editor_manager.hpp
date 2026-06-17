@@ -8,6 +8,8 @@
 #include "editor/menu_bar/i_platform_menu_bar.hpp"
 #include "luau/luau.hpp"
 
+#include "editor_registry.hpp"
+
 #if !defined(ATMO_EXPORT)
 
 #define ATMO_ASCII_ART                                                         \
@@ -42,11 +44,11 @@
 
 namespace atmo::editor
 {
-    class Editor
+    class EditorManager
     {
     public:
-        Editor(atmo::core::Engine &engine, const std::string &project_path);
-        ~Editor() = default;
+        EditorManager(atmo::core::Engine &engine, const std::string &project_path);
+        ~EditorManager() = default;
 
         void init();
 

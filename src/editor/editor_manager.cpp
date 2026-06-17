@@ -1,4 +1,4 @@
-#include "editor.hpp"
+#include "editor_manager.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
@@ -27,9 +27,9 @@ static constexpr SDL_Keymod PRIMARY_MOD = SDL_KMOD_CTRL;
 
 namespace atmo::editor
 {
-    Editor::Editor(atmo::core::Engine &engine, const std::string &project_path) : m_engine(engine), m_project_path(project_path) {}
+    EditorManager::EditorManager(atmo::core::Engine &engine, const std::string &project_path) : m_engine(engine), m_project_path(project_path) {}
 
-    void Editor::registerDefaultCommands()
+    void EditorManager::registerDefaultCommands()
     {
         m_commands.registerCommand(
             {
@@ -64,7 +64,7 @@ namespace atmo::editor
             });
     }
 
-    void Editor::init()
+    void EditorManager::init()
     {
         registerDefaultCommands();
 
