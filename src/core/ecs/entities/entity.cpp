@@ -2,6 +2,7 @@
 #include <memory>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
+#include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "glaze/glaze.hpp"
 #include "meta/meta_registry.hpp"
@@ -84,7 +85,7 @@ namespace atmo::core::ecs::entities
             if (!ti || !ti->to_json)
                 return;
 
-            const void *comp = p_handle.get(id);
+            const void *comp = p_handle.try_get(id);
             if (!comp)
                 return;
 
