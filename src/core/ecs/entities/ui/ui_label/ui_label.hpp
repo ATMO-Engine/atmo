@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -7,6 +8,7 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/resource/resource_ref.hpp"
 #include "core/types.hpp"
+#include "meta/field_descriptor.hpp"
 #include "meta/meta.hpp"
 
 namespace atmo::core::components
@@ -74,6 +76,8 @@ namespace atmo::core::ecs::entities
         void setFontSize(std::uint16_t font_size);
         std::uint16_t getFontSize() const noexcept;
 
+        void setFontBold(bool bold);
+        void setFontItalic(bool italic);
         // TODO: setLetterSpacing
         // TODO: getLetterSpacing
 

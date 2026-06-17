@@ -243,12 +243,28 @@ namespace atmo::editor
         scene_viewport_container_layout.width.size = 1.0f;
         scene_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         scene_viewport_container_layout.height.size = 0.95f;
-        scene_viewport_container_layout.direction = core::components::Layout::Direction::Horizontal;
-        scene_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
-        scene_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        scene_viewport_container_layout.direction = core::components::Layout::Direction::Vertical;
+        scene_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        scene_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        scene_viewport_container_layout.child_gap = 12;
         scene_viewport_container_layout.padding = { 0, 16, 8, 16 };
         scene_viewport_container->rename("scene viewport container");
         scene_viewport_container->setParent(*content_left_panel_container);
+
+        for (auto &entity : scene->getChildren(true)) {
+            spdlog::info("NOUILLE : {}", entity.FullName());
+            if (entity.getComponent<atmo::core::components::EntityBase>().type_name.starts_with("Entity::Entity2d")) {
+                spdlog::info("LOUTRE");
+                auto entity2d_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+                entity2d_label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+                entity2d_label->setText(entity.name().data());
+                entity2d_label->setFontSize(12);
+                entity2d_label->setFontBold(true);
+                entity2d_label->setParent(*scene_viewport_container);
+                entity2d_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+                auto &label_layout = entity2d_label->getComponentMutable<core::components::Layout>();
+            }
+        }
 
         // auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         // spdlog::info("child count: {}", button1->getChildren().size());

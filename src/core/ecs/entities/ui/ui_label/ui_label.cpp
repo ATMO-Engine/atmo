@@ -89,6 +89,32 @@ namespace atmo::core::ecs::entities
         return label.font_size;
     }
 
+    void UILabel::setFontBold(bool bold)
+    {
+        auto &label = getComponentMutable<components::UILabel>();
+        TTF_Font *font = TTF_GetTextFont(label.ttf_text);
+
+        if (font != nullptr) {
+            if (bold)
+                TTF_SetFontStyle(font, TTF_STYLE_BOLD);
+            else
+                TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
+        }
+    }
+
+    void UILabel::setFontItalic(bool italic)
+    {
+        auto &label = getComponentMutable<components::UILabel>();
+        TTF_Font *font = TTF_GetTextFont(label.ttf_text);
+
+        if (font != nullptr) {
+            if (italic)
+                TTF_SetFontStyle(font, TTF_STYLE_ITALIC);
+            else
+                TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
+        }
+    }
+
     void UILabel::draw(ClaySdL3RendererData *data)
     {
         const auto &ui = getComponent<components::UI>();

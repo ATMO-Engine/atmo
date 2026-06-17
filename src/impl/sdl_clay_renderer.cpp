@@ -3,8 +3,10 @@
 
 #include <SDL3/SDL.h>
 #include <clay.h>
+#include <cstddef>
 #include <vector>
 
+#include "SDL3/SDL_error.h"
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "clay_types.hpp"
@@ -135,10 +137,32 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                     Clay_TextRenderData *config = &rcmd->renderData.text;
                     auto text = (TTF_Text *)rcmd->userData;
                     TTF_Font *font = TTF_GetTextFont(text);
-                    TTF_SetFontSize(font, config->fontSize * dpi_scale.x);
-
+                    TTF_SetFontSizeDPI(font, config->fontSize, dpi_scale.x * 96.0f, dpi_scale.y * 96.0f);
                     TTF_SetTextColor(text, config->textColor.r, config->textColor.g, config->textColor.b, config->textColor.a);
-                    TTF_DrawRendererText(text, rect.x, rect.y);
+
+                    auto surface = TTF_RenderText_Blended(
+                        font,
+                        text->text,
+                        0,
+                        (SDL_Color){ (Uint8)config->textColor.r, (Uint8)config->textColor.g, (Uint8)config->textColor.b, (Uint8)config->textColor.a });
+
+                    if (!surface) {
+                        SDL_Log("TTF error: %s", SDL_GetError());
+                        return;
+                    }
+
+                    SDL_Texture *texture = SDL_CreateTextureFromSurface(rendererData->renderer, surface);
+
+                    SDL_DestroySurface(surface);
+
+                    if (!texture) {
+                        SDL_Log("Texture error: %s", SDL_GetError());
+                        return;
+                    }
+
+                    SDL_RenderTexture(rendererData->renderer, texture, nullptr, &rect);
+
+                    SDL_DestroyTexture(texture);
                 }
                 break;
             case CLAY_RENDER_COMMAND_TYPE_BORDER:
