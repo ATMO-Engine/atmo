@@ -4,26 +4,28 @@
 
 namespace atmo::core::components
 {
-    struct UIFloatingWindowState {
+    struct UIPanelState {
+        bool open = false;
         bool is_dragging = false;
         float drag_offset_x = 0.0f;
     };
 } // namespace atmo::core::components
 
-template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIFloatingWindowState> {
-    static constexpr const char *name = "UIFloatingWindowState";
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIPanelState> {
+    static constexpr const char *name = "UIPanelState";
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::UIFloatingWindowState::is_dragging>("is_dragging"),
-        atmo::meta::field<&atmo::core::components::UIFloatingWindowState::drag_offset_x>("drag_offset_x"));
+        atmo::meta::field<&atmo::core::components::UIPanelState::open>("open"),
+        atmo::meta::field<&atmo::core::components::UIPanelState::is_dragging>("is_dragging"),
+        atmo::meta::field<&atmo::core::components::UIPanelState::drag_offset_x>("drag_offset_x"));
 };
 
 namespace atmo::core::ecs::entities
 {
-    class UIFloatingWindow : public EntityRegistry::Registrable<UIFloatingWindow, UIRect>
+    class UIPanel : public EntityRegistry::Registrable<UIPanel, UIRect>
     {
     public:
-        using EntityRegistry::Registrable<UIFloatingWindow, UIRect>::Registrable;
+        using EntityRegistry::Registrable<UIPanel, UIRect>::Registrable;
 
         static void RegisterSystems(flecs::world *world);
 
@@ -31,7 +33,7 @@ namespace atmo::core::ecs::entities
 
         static constexpr std::string_view LocalName()
         {
-            return "UIFloatingWindow";
+            return "UIPanel";
         }
 
         Clay_ElementDeclaration buildDecl() override;

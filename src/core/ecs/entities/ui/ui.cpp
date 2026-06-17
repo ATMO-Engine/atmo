@@ -40,6 +40,14 @@ namespace atmo::core::ecs::entities
             d.layout.padding.right = layout.padding.right;
             d.layout.padding.bottom = layout.padding.bottom;
             d.layout.padding.top = layout.padding.top;
+            d.layout.childAlignment = {
+                layout.child_alignment.horizontal == components::Layout::ChildAlignment::Start        ? CLAY_ALIGN_X_LEFT
+                    : layout.child_alignment.horizontal == components::Layout::ChildAlignment::Center ? CLAY_ALIGN_X_CENTER
+                                                                                                      : CLAY_ALIGN_X_RIGHT,
+                layout.child_alignment.vertical == components::Layout::ChildAlignment::Start        ? CLAY_ALIGN_Y_TOP
+                    : layout.child_alignment.vertical == components::Layout::ChildAlignment::Center ? CLAY_ALIGN_Y_CENTER
+                                                                                                    : CLAY_ALIGN_Y_BOTTOM,
+            };
 
             d.layout.childGap = layout.child_gap;
             d.layout.layoutDirection = layout.direction == components::Layout::Direction::Horizontal ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM;

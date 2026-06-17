@@ -72,122 +72,280 @@ namespace atmo::editor
         m_menu_bar = makePlatformMenuBar();
         m_menu_bar->build(*scene, m_commands);
 
-        auto white_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &white_rect_rect = white_rect->getComponentMutable<core::components::UIRect>();
-        white_rect_rect.color = core::types::Color::RED;
-        white_rect_rect.color.a = 1.0f;
-        // white_rect_rect.color.a = 0.0f;
-        auto &white_rect_layout = white_rect->getComponentMutable<core::components::Layout>();
-        white_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        white_rect_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 1000.0f, 1200.0f };
-        white_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        white_rect_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 2000.0f, 2000.0f };
-        white_rect_layout.direction = core::components::Layout::Direction::Vertical;
-        white_rect_layout.padding = { 16, 0, 60, 8 };
-        white_rect_layout.child_gap = 8;
-        white_rect->rename("white rect");
-        white_rect->setParent(*scene);
+        auto window_ui_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &window_ui_container_rect = window_ui_container->getComponentMutable<core::components::UIRect>();
+        window_ui_container_rect.color.a = 0.0f;
+        auto &window_ui_container_layout = window_ui_container->getComponentMutable<core::components::Layout>();
+        window_ui_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        window_ui_container_layout.width.size = 1.0f;
+        window_ui_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        window_ui_container_layout.height.size = 1.0f;
+        window_ui_container_layout.direction = core::components::Layout::Direction::Vertical;
+        window_ui_container->rename("window ui container");
+        window_ui_container->setParent(*scene);
+
+        auto topbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &topbar_container_rect = topbar_container->getComponentMutable<core::components::UIRect>();
+        topbar_container_rect.color = core::types::Color::WHITE;
+        topbar_container_rect.color.a = 0.0f;
+        auto &topbar_container_layout = topbar_container->getComponentMutable<core::components::Layout>();
+        topbar_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        topbar_container_layout.width.size = 1.0f;
+        topbar_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        topbar_container_layout.height.size = 0.1f;
+        topbar_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        topbar_container_layout.padding = { 16, 16, 12, 8 };
+        topbar_container->rename("topbar container");
+        topbar_container->setParent(*window_ui_container);
+
+        auto topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
+        auto &topbar_rect = topbar->getComponentMutable<core::components::UIRect>();
+        topbar_rect.color = core::types::Color::WHITE;
+        topbar_container_rect.corner_radius = { 4, 4, 4, 4 };
+        auto &topbar_layout = topbar->getComponentMutable<core::components::Layout>();
+        topbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        topbar_layout.width.size = 1.0f;
+        topbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        topbar_layout.height.size = 0.6f;
+        topbar->rename("topbar");
+        topbar->setParent(*topbar_container);
+
+        auto scene_ui_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &scene_ui_container_rect = scene_ui_container->getComponentMutable<core::components::UIRect>();
+        scene_ui_container_rect.color.a = 0.0f;
+        auto &scene_ui_container_layout = scene_ui_container->getComponentMutable<core::components::Layout>();
+        scene_ui_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        scene_ui_container_layout.width.size = 1.0f;
+        scene_ui_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        scene_ui_container_layout.height.size = 0.9f;
+        scene_ui_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        scene_ui_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        scene_ui_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::End;
+        scene_ui_container->rename("scene ui container");
+        scene_ui_container->setParent(*window_ui_container);
+
+        auto left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &left_panel_container_rect = left_panel_container->getComponentMutable<core::components::UIRect>();
+        left_panel_container_rect.color = core::types::Color::WHITE;
+        left_panel_container_rect.color.a = 0.0f;
+        auto &left_panel_container_layout = left_panel_container->getComponentMutable<core::components::Layout>();
+        left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_container_layout.width.size = 0.2f;
+        left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_container_layout.height.size = 1.0f;
+        left_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        left_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        left_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        left_panel_container_layout.padding = { 16, 0, 8, 16 };
+        left_panel_container->rename("left panel container");
+        left_panel_container->setParent(*scene_ui_container);
 
 
-        auto button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        button->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color::GREEN;
-            rect.color.a = 0.2f;
-
-            rect.border.color = core::types::Color::BLACK;
+        auto left_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
+        auto &left_panel_rect = left_panel->getComponentMutable<core::components::UIRect>();
+        left_panel_rect.color = core::types::Color::WHITE;
+        left_panel_container_rect.corner_radius = { 4, 4, 4, 4 };
+        auto &left_panel_layout = left_panel->getComponentMutable<core::components::Layout>();
+        left_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_layout.width.size = 1.0f;
+        left_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_layout.height.size = 1.0f;
+        left_panel_layout.direction = core::components::Layout::Direction::Vertical;
+        left_panel->rename("left panel");
+        left_panel->setParent(*left_panel_container);
+        left_panel->getSignal<core::ecs::entities::UIPanel &>("Open").connect([left_panel](core::ecs::entities::UIPanel &window) {
+            left_panel->getComponentMutable<core::components::UIPanelState>().open = true;
+            auto parent = window.getParent<core::ecs::entities::UIRect>();
+            auto &parent_layout = parent.getComponentMutable<core::components::Layout>();
+            parent_layout.padding.left += 100;
         });
-        button->getSignal<core::ecs::entities::UIButton &>("ToIdle").emit(*button);
-        auto &button_layout = button->getComponentMutable<core::components::Layout>();
-        button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
-        button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
-        button->rename("buttton");
-        button->setParent(*white_rect);
-        button->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color{ static_cast<uint8_t>(155), static_cast<uint8_t>(255), static_cast<uint8_t>(200), static_cast<uint8_t>(255) };
-        });
-        button->getSignal<core::ecs::entities::UIButton &>("Pressed").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color{ static_cast<uint8_t>(135), static_cast<uint8_t>(55), static_cast<uint8_t>(255), static_cast<uint8_t>(255) };
-        });
-        button->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) { spdlog::info("Button released"); });
-
-
-        auto checkbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
-        checkbox->getSignal<core::ecs::entities::UICheckBox &>("ToIdle").emit(*checkbox);
-
-        auto &checkbox_layout = checkbox->getComponentMutable<core::components::Layout>();
-        checkbox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        checkbox_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
-        checkbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        checkbox_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
-        checkbox->rename("checkBox");
-        checkbox->setParent(*white_rect);
-
-        auto floating_window = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFloatingWindow>("Entity::UI::UIRect::UIFloatingWindow");
-        auto &floating_window_layout = floating_window->getComponentMutable<core::components::Layout>();
-        floating_window_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        floating_window_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
-        floating_window_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        floating_window_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
-        floating_window->rename("floating window");
-        floating_window->setParent(*checkbox);
-        floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Open").connect(
-            [floating_window](core::ecs::entities::UIFloatingWindow &window) { floating_window->getComponentMutable<core::components::UI>().visible = true; });
-        floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Close").connect(
-            [floating_window](core::ecs::entities::UIFloatingWindow &window) { floating_window->getComponentMutable<core::components::UI>().visible = false; });
-
-        checkbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([floating_window](core::ecs::entities::UICheckBox &chBox) {
-            if (chBox.getComponent<core::components::UICheckBox>().trigger) {
-                floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Open").emit(*floating_window);
-                auto parent = chBox.getParent<core::ecs::entities::UIRect>();
-                auto &parent_layout = parent.getComponentMutable<core::components::Layout>();
-                parent_layout.padding.left += 100;
-            } else {
-                floating_window->getSignal<core::ecs::entities::UIFloatingWindow &>("Close").emit(*floating_window);
-                auto parent = chBox.getParent<core::ecs::entities::UIRect>();
-                auto &parent_layout = parent.getComponentMutable<core::components::Layout>();
-                parent_layout.padding.left -= 100;
-            }
+        left_panel->getSignal<core::ecs::entities::UIPanel &>("Close").connect([left_panel](core::ecs::entities::UIPanel &window) {
+            left_panel->getComponentMutable<core::components::UIPanelState>().open = false;
+            auto parent = window.getParent<core::ecs::entities::UIRect>();
+            auto &parent_layout = parent.getComponentMutable<core::components::Layout>();
+            parent_layout.padding.left -= 100;
         });
 
-        auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color::GREEN;
-            rect.color.a = 0.2f;
+        auto top_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &top_left_panel_container_rect = top_left_panel_container->getComponentMutable<core::components::UIRect>();
+        top_left_panel_container_rect.color = core::types::Color::WHITE;
+        top_left_panel_container_rect.color.a = 0.0f;
+        auto &top_left_panel_container_layout = top_left_panel_container->getComponentMutable<core::components::Layout>();
+        top_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        top_left_panel_container_layout.width.size = 1.0f;
+        top_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        top_left_panel_container_layout.height.size = 0.1f;
+        top_left_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        // top_left_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        // top_left_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        top_left_panel_container_layout.padding = { 16, 16, 8, 8 };
+        topbar_container_layout.child_gap = 12;
+        top_left_panel_container->rename("top left panel container");
+        top_left_panel_container->setParent(*left_panel);
 
-            rect.border.color = core::types::Color::BLACK;
-        });
-        button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").emit(*button1);
-        auto &button_layout1 = button1->getComponentMutable<core::components::Layout>();
-        button_layout1.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        button_layout1.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
-        button_layout1.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        button_layout1.height.size = core::components::Layout::SizingAxis::MinMax{ 102.0f, 102.0f };
-        button1->rename("buttton1");
-        button1->setParent(*white_rect);
-        button1->getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color{ static_cast<uint8_t>(155), static_cast<uint8_t>(255), static_cast<uint8_t>(200), static_cast<uint8_t>(255) };
-        });
-        button1->getSignal<core::ecs::entities::UIButton &>("Pressed").connect([](core::ecs::entities::UIButton &btn) {
-            auto &rect = btn.getComponentMutable<core::components::UIRect>();
-            rect.color = core::types::Color{ static_cast<uint8_t>(135), static_cast<uint8_t>(55), static_cast<uint8_t>(255), static_cast<uint8_t>(255) };
-        });
-        button1->getSignal<core::ecs::entities::UIButton &>("Released").connect([](core::ecs::entities::UIButton &btn) { spdlog::info("Button released"); });
+        auto left_panel_search_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &left_panel_search_bar_rect = left_panel_search_bar->getComponentMutable<core::components::UIRect>();
+        left_panel_search_bar_rect.color = core::types::Color::BLACK;
+        left_panel_search_bar_rect.color.a = 0.30f;
+        auto &left_panel_search_bar_layout = left_panel_search_bar->getComponentMutable<core::components::Layout>();
+        left_panel_search_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_search_bar_layout.width.size = 0.9f;
+        left_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_search_bar_layout.height.size = 0.4f;
+        left_panel_search_bar->rename("search bar");
+        left_panel_search_bar->setParent(*top_left_panel_container);
 
+        auto left_panel_pin = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &left_panel_pin_rect = left_panel_pin->getComponentMutable<core::components::UIRect>();
+        left_panel_pin_rect.color = core::types::Color::BLACK;
+        left_panel_pin_rect.color.a = 1.0f;
+        auto &left_panel_pin_layout = left_panel_pin->getComponentMutable<core::components::Layout>();
+        left_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_pin_layout.width.size = 0.1f;
+        left_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        left_panel_pin_layout.height.size = 0.4f;
+        left_panel_pin->rename("pin");
+        left_panel_pin->setParent(*top_left_panel_container);
 
-        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-        label->setText("Hello, World!");
-        label->setFontSize(48);
-        label->rename("hello world");
-        label->setParent(*floating_window);
-        auto &label_layout = label->getComponentMutable<core::components::Layout>();
+        auto content_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &content_left_panel_container_rect = content_left_panel_container->getComponentMutable<core::components::UIRect>();
+        content_left_panel_container_rect.color = core::types::Color::WHITE;
+        content_left_panel_container_rect.color.a = 1.0f;
+        auto &content_left_panel_container_layout = content_left_panel_container->getComponentMutable<core::components::Layout>();
+        content_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        content_left_panel_container_layout.width.size = 1.0f;
+        content_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        content_left_panel_container_layout.height.size = 0.90f;
+        content_left_panel_container_layout.direction = core::components::Layout::Direction::Vertical;
+        content_left_panel_container_layout.child_gap = 8;
+        content_left_panel_container_layout.padding = { 16, 16, 0, 0 };
+        content_left_panel_container->rename("content left panel container");
+        content_left_panel_container->setParent(*left_panel);
+
+        auto add_node_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &add_node_button_rect = add_node_button->getComponentMutable<core::components::UIRect>();
+        add_node_button_rect.color = core::types::Color::BLACK;
+        add_node_button_rect.color.a = 0.3f;
+        auto &add_node_button_layout = add_node_button->getComponentMutable<core::components::Layout>();
+        add_node_button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        add_node_button_layout.width.size = 1.0f;
+        add_node_button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        add_node_button_layout.height.size = 0.05f;
+        add_node_button->rename("add node button");
+        add_node_button->setParent(*content_left_panel_container);
+
+        auto scene_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &scene_viewport_container_rect = scene_viewport_container->getComponentMutable<core::components::UIRect>();
+        scene_viewport_container_rect.color = core::types::Color::BLUE;
+        scene_viewport_container_rect.color.a = 0.3f;
+        auto &scene_viewport_container_layout = scene_viewport_container->getComponentMutable<core ::components::Layout>();
+        scene_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        scene_viewport_container_layout.width.size = 1.0f;
+        scene_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        scene_viewport_container_layout.height.size = 0.95f;
+        scene_viewport_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        scene_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        scene_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        scene_viewport_container_layout.padding = { 0, 16, 8, 16 };
+        scene_viewport_container->rename("scene viewport container");
+        scene_viewport_container->setParent(*content_left_panel_container);
+
+        // auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        // spdlog::info("child count: {}", button1->getChildren().size());
+        // auto children = button1->getChildren();
+        // if (!children.empty() && children[0].isAlive()) {
+        //     spdlog::info("Destroying child");
+        //     children[0].destroy();
+        //     spdlog::info("caca");
+        // }
+        // button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
+        //     auto &rect = btn.getComponentMutable<core::components::UIRect>();
+        //     rect.color = core::types::Color::GREEN;
+        //     rect.color.a = 0.2f;
+
+        //     rect.border.color = core::types::Color::BLACK;
+        // });
+        // button1->getSignal<core::ecs::entities::UIButton &>("ToIdle").emit(*button1);
+        // auto &button_layout1 = button1->getComponentMutable<core::components::Layout>();
+        // button_layout1.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // button_layout1.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // button_layout1.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // button_layout1.height.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        // button1->rename("buttton1");
+        // button1->setParent(*floating_window);
+
+        // button1->getSignal<core::ecs::entities::UIButton &>("Pressed").connect([floating_window](core::ecs::entities::UIButton &btn) {
+        //     auto &window_state = floating_window->getComponentMutable<core::components::UIPanelState>();
+        //     if (window_state.open) {
+        //         floating_window->getSignal<core::ecs::entities::UIPanel &>("Close").emit(*floating_window);
+        //     } else {
+        //         floating_window->getSignal<core::ecs::entities::UIPanel &>("Open").emit(*floating_window);
+        //     }
+        // });
+
+        auto middle_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &middle_panel_container_rect = middle_panel_container->getComponentMutable<core::components::UIRect>();
+        middle_panel_container_rect.color = core::types::Color::WHITE;
+        middle_panel_container_rect.color.a = 0.0f;
+        auto &middle_panel_container_layout = middle_panel_container->getComponentMutable<core::components::Layout>();
+        middle_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        middle_panel_container_layout.width.size = 0.6f;
+        middle_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        middle_panel_container_layout.height.size = 0.1f;
+        middle_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        middle_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        middle_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        left_panel_container_layout.padding = { 0, 0, 0, 16 };
+        middle_panel_container->rename("middle panel container");
+        middle_panel_container->setParent(*scene_ui_container);
+
+        auto middle_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
+        auto &middle_panel_rect = middle_panel->getComponentMutable<core::components::UIRect>();
+        middle_panel_rect.color = core::types::Color::WHITE;
+        middle_panel_container_rect.corner_radius = { 4, 4, 4, 4 };
+        auto &middle_panel_layout = middle_panel->getComponentMutable<core::components::Layout>();
+        middle_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        middle_panel_layout.width.size = 0.3f;
+        middle_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        middle_panel_layout.height.size = 0.6f;
+        middle_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        middle_panel->rename("middle panel");
+        middle_panel->setParent(*middle_panel_container);
+
+        auto right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &right_panel_container_rect = right_panel_container->getComponentMutable<core::components::UIRect>();
+        right_panel_container_rect.color = core::types::Color::WHITE;
+        right_panel_container_rect.color.a = 0.0f;
+        auto &right_panel_container_layout = right_panel_container->getComponentMutable<core::components::Layout>();
+        right_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        right_panel_container_layout.width.size = 0.2f;
+        right_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        right_panel_container_layout.height.size = 1.0f;
+        right_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        right_panel_container_layout.padding = { 0, 16, 8, 16 };
+        right_panel_container->rename("right panel container");
+        right_panel_container->setParent(*scene_ui_container);
+
+        auto right_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
+        auto &right_panel_rect = right_panel->getComponentMutable<core::components::UIRect>();
+        right_panel_rect.color = core::types::Color::WHITE;
+        right_panel_container_rect.corner_radius = { 4, 4, 4, 4 };
+        auto &right_panel_layout = right_panel->getComponentMutable<core::components::Layout>();
+        right_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        right_panel_layout.width.size = 1.0f;
+        right_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        right_panel_layout.height.size = 1.0f;
+        right_panel_container_layout.direction = core::components::Layout::Direction::Vertical;
+        right_panel->rename("right panel");
+        right_panel->setParent(*right_panel_container);
+
+        // auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        // label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        // label->setText("Hello, World!");
+        // label->setFontSize(48);
+        // label->rename("hello world");
+        // label->setParent(*floating_window);
+        // auto &label_layout = label->getComponentMutable<core::components::Layout>();
 
         spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
     }

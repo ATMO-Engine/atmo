@@ -37,49 +37,58 @@ namespace atmo::core::ecs::entities
 
         createSignal<UIButton &>("Released");
 
-        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-        label->setText("Button text");
-        label->setFontSize(32);
-        label->rename("Button label");
-        label->setParent(*this);
+        // auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        // label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        // label->setText("Button text");
+        // label->setFontSize(32);
+        // label->rename("Button label");
+        // label->setParent(*this);
 
-        auto &label_comp = label->getComponentMutable<core::components::UILabel>();
-        label_comp.text_alignment = core::components::UILabel::TextAlignment::ALIGN_CENTER;
-        auto label_layout = label->getComponentMutable<core::components::Layout>();
-        label_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        label_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
-        label_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        label_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // auto &label_comp = label->getComponentMutable<core::components::UILabel>();
+        // label_comp.text_alignment = core::components::UILabel::TextAlignment::ALIGN_CENTER;
+        // auto label_layout = label->getComponentMutable<core::components::Layout>();
+        // label_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        // label_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // label_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        // label_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        // label_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        // label_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
     }
 
     Clay_ElementDeclaration UIButton::buildDecl()
     {
         Clay_ElementDeclaration d = UIRect::buildDecl();
 
-        auto label = getChild("Button label");
-        if (label.hasComponent<core::components::UILabel>()) {
-            auto &label_layout = label.getComponentMutable<core::components::Layout>();
-            auto &selfLayout = getComponentMutable<core::components::Layout>();
+        // d.floating.attachTo = CLAY_ATTACH_TO_PARENT;
+        // d.floating.attachPoints = {
+        //     .element = CLAY_ATTACH_POINT_LEFT_CENTER,
+        //     .parent = CLAY_ATTACH_POINT_RIGHT_CENTER,
+        // };
+        // d.floating.offset = { 0, 0 };
+        // d.floating.zIndex = 10;
+        // auto label = getChild("Button label");
+        // if (label.hasComponent<core::components::UILabel>()) {
+        //     auto &label_layout = label.getComponentMutable<core::components::Layout>();
+        //     auto &selfLayout = getComponentMutable<core::components::Layout>();
 
-            auto getSize = [](const auto &sizeVariant) -> float {
-                return std::visit(
-                    [](auto &&size) -> float {
-                        using T = std::decay_t<decltype(size)>;
-                        if constexpr (std::is_same_v<T, float>) {
-                            return size;
-                        } else {
-                            return size.max;
-                        }
-                    },
-                    sizeVariant);
-            };
+        //     auto getSize = [](const auto &sizeVariant) -> float {
+        //         return std::visit(
+        //             [](auto &&size) -> float {
+        //                 using T = std::decay_t<decltype(size)>;
+        //                 if constexpr (std::is_same_v<T, float>) {
+        //                     return size;
+        //                 } else {
+        //                     return size.max;
+        //                 }
+        //             },
+        //             sizeVariant);
+        //     };
 
-            label_layout.width.size = selfLayout.width.size;
-            label_layout.height.size = selfLayout.height.size;
-        } else {
-            spdlog::warn("Button label missing UILabel component");
-        }
+        //     label_layout.width.size = selfLayout.width.size;
+        //     label_layout.height.size = selfLayout.height.size;
+        // } else {
+        //     spdlog::warn("Button label missing UILabel component");
+        // }
 
         return d;
     }

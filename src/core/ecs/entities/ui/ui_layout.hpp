@@ -37,11 +37,23 @@ namespace atmo::core::components
             std::uint16_t bottom = 0;
         };
 
+        enum class ChildAlignment {
+            Start,
+            Center,
+            End
+        };
+
+        struct ChildAlignmentAxis {
+            ChildAlignment horizontal = ChildAlignment::Start;
+            ChildAlignment vertical = ChildAlignment::Start;
+        };
+
         Direction direction = Direction::Horizontal;
         SizingAxis width;
         SizingAxis height;
 
         Padding padding;
+        ChildAlignmentAxis child_alignment;
 
         std::uint16_t child_gap = 0;
     };
