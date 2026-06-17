@@ -2,6 +2,7 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
+#include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
@@ -236,8 +237,8 @@ namespace atmo::editor
 
         auto scene_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &scene_viewport_container_rect = scene_viewport_container->getComponentMutable<core::components::UIRect>();
-        scene_viewport_container_rect.color = core::types::Color::BLUE;
-        scene_viewport_container_rect.color.a = 0.3f;
+        scene_viewport_container_rect.color = core::types::Color::WHITE;
+        scene_viewport_container_rect.color.a = 0.0f;
         auto &scene_viewport_container_layout = scene_viewport_container->getComponentMutable<core ::components::Layout>();
         scene_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         scene_viewport_container_layout.width.size = 1.0f;
@@ -251,20 +252,23 @@ namespace atmo::editor
         scene_viewport_container->rename("scene viewport container");
         scene_viewport_container->setParent(*content_left_panel_container);
 
-        for (auto &entity : scene->getChildren(true)) {
-            spdlog::info("NOUILLE : {}", entity.FullName());
-            if (entity.getComponent<atmo::core::components::EntityBase>().type_name.starts_with("Entity::Entity2d")) {
-                spdlog::info("LOUTRE");
-                auto entity2d_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-                entity2d_label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-                entity2d_label->setText(entity.name().data());
-                entity2d_label->setFontSize(12);
-                entity2d_label->setFontBold(true);
-                entity2d_label->setParent(*scene_viewport_container);
-                entity2d_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-                auto &label_layout = entity2d_label->getComponentMutable<core::components::Layout>();
-            }
-        }
+        // for (auto &entity : scene->getChildren(true)) {
+        //     if (entity.getComponent<atmo::core::components::EntityBase>().type_name.starts_with("Entity::Entity2d")) {
+        //         auto child_UI =
+        //         core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIButton::UIFoldableTreeItem"); auto
+        //         &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
+
+        //         child_UI_layout.direction = core::components::Layout::Direction::Horizontal;
+        //         child_UI_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        //         child_UI_layout.width.size = 1.0f;
+        //         child_UI_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        //         child_UI_layout.height.size = 0.01f;
+        //         child_UI_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        //         child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        //         child_UI_layout.child_gap = 8;
+        //         child_UI->setParent(*scene_viewport_container);
+        //     }
+        // }
 
         // auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         // spdlog::info("child count: {}", button1->getChildren().size());

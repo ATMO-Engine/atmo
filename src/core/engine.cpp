@@ -233,15 +233,16 @@ namespace atmo::core
         // Sprite
         auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
         sprite->setTexturePath("project://assets/atmo.png");
-        sprite->setPosition({ 1200, 500 });
-        sprite->setParent(*scene);
+        // sprite->setPosition({ 1200, 500 });
+        sprite->setParent(*dynamic_body2);
+        sprite->setScale(types::Vector2(0.25, 0.25));
 
 
-        atmo::core::components::Script t = {};
-        atmo::luau::ScriptInstance inst = vm.generateInstance();
-        t.instance = &inst;
-        t.script_path = "project://assets/script/luau_bindings_test.luau";
-        sprite->setComponent(t);
+        // atmo::core::components::Script t = {};
+        // atmo::luau::ScriptInstance inst = vm.generateInstance();
+        // t.instance = &inst;
+        // t.script_path = "project://assets/script/luau_bindings_test.luau";
+        // sprite->setComponent(t);
 
 #if !defined(ATMO_EXPORT)
         editor::Editor editor(*this, "");
