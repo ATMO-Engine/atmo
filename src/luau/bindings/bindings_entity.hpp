@@ -1,14 +1,8 @@
 #pragma once
 #include <flecs.h>
-#include <memory>
+#include "core/ecs/entities/2d/entity_2d.hpp"
 #include "lua_bindings.hpp"
 #include "lualib.h"
-
-
-#include "core/ecs/entities/2d/entity_2d.hpp"
-
-
-#include <iostream>
 
 namespace atmo::luau
 {

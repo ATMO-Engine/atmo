@@ -1,4 +1,5 @@
 #include "bindings_transform2.hpp"
+#include "bindings_vector2.hpp"
 
 namespace atmo::luau
 {
@@ -7,33 +8,35 @@ namespace atmo::luau
         return Property{ propName,
 
                          [member](lua_State *L, void *obj) {
-                             Transform2d *t = *(Transform2d **)obj;
-                             push_value(L, t->*member);
+                             auto *compHandle = static_cast<ComponentHandle *>(obj);
+                             auto *component = static_cast<Transform2d *>(compHandle->component);
+                             push_value(L, component->*member);
                          },
 
                          [member](lua_State *L, void *obj) {
-                             Transform2d *t = *(Transform2d **)obj;
+                             auto *compHandle = static_cast<ComponentHandle *>(obj);
+                             auto *component = static_cast<Transform2d *>(compHandle->component);
 
-                             t->*member = read_value<float>(L, 3);
+                             component->*member = read_value<float>(L, 3);
                          } };
     }
 
     static Property makeVector2Property(const char *propName, Vector2 Transform2d::*member)
     {
         return Property{ propName,
-
                          [member](lua_State *L, void *obj) {
-                             Transform2d *t = *(Transform2d **)obj;
-                             void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<Vector2>));
-                             new (mem) std::shared_ptr<Vector2>(&(t->*member), [](Vector2 *) {});
-                             luaL_getmetatable(L, LuaBindings<Vector2>::name);
-                             lua_setmetatable(L, -2);
+                             auto *compHandle = static_cast<ComponentHandle *>(obj);
+                             auto *component = static_cast<Transform2d *>(compHandle->component);
+                             LuaBindings<Vector2>::push(L, &(component->*member));
                          },
-
                          [member](lua_State *L, void *obj) {
-                             Transform2d *t = *(Transform2d **)obj;
-                             auto &vec = *(std::shared_ptr<Vector2> *)luaL_checkudata(L, 3, LuaBindings<Vector2>::name);
-                             t->*member = *vec;
+                             auto *compHandle = static_cast<ComponentHandle *>(obj);
+                             auto *component = static_cast<Transform2d *>(compHandle->component);
+                             auto *vec = LuaBindings<Vector2>::check_ptr(L, 3);
+                             if (!vec) {
+                                 return;
+                             }
+                             component->*member = *vec;
                          } };
     }
 

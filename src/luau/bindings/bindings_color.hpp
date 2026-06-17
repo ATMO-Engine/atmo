@@ -1,13 +1,7 @@
 #pragma once
-
-#include "lualib.h"
-
-#include <memory>
 #include "core/types.hpp"
 #include "lua_bindings.hpp"
-
-
-#include "core/ecs/entities/2d/entity_2d.hpp"
+#include "lualib.h"
 
 namespace atmo::luau
 {
@@ -44,11 +38,6 @@ namespace atmo::luau
         static constexpr const char *name = "Color";
 
     private:
-        static std::shared_ptr<Color> &Check(lua_State *state, int index)
-        {
-            return *(std::shared_ptr<Color> *)luaL_checkudata(state, index, name);
-        }
-
         static int New(lua_State *state)
         {
             float r = (float)luaL_checknumber(state, 1);
@@ -56,20 +45,13 @@ namespace atmo::luau
             float b = (float)luaL_checknumber(state, 3);
             float a = (float)luaL_checknumber(state, 4);
 
-            void *mem = lua_newuserdata(state, sizeof(std::shared_ptr<Color>));
-            new (mem) std::shared_ptr<Color>(std::make_shared<Color>(r, g, b, a));
-
-            luaL_getmetatable(state, name);
-            lua_setmetatable(state, -2);
-
+            push(state, new Color(r, g, b, a), true);
             return 1;
         }
 
         static int GC(lua_State *state)
         {
-            auto *ptr = (std::shared_ptr<Color> *)luaL_checkudata(state, 1, name);
-            ptr->~shared_ptr<Color>();
-            return 0;
+            return LuaBindingsBase<LuaBindings<Color>, Color>::GC(state);
         }
     };
 } // namespace atmo::luau
