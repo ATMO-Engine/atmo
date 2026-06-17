@@ -27,7 +27,7 @@
 #include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)
-#include "editor/editor.hpp"
+#include "editor/editor_manager.hpp"
 #endif
 
 static atmo::core::args::ArgManager::LaunchResult handleArgHelp(atmo::core::args::ArgManager &argManager)
@@ -247,7 +247,7 @@ namespace atmo::core
         sprite->setComponent(t);
 
 #if !defined(ATMO_EXPORT)
-        editor::Editor editor(*this, "");
+        editor::EditorManager editor(*this, "");
         editor.init();
 #endif
 

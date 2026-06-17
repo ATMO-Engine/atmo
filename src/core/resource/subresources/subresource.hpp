@@ -12,25 +12,19 @@
 #include "core/types.hpp"
 #include "spdlog/spdlog.h"
 
-namespace atmo
+namespace atmo::core::resource
 {
-    namespace core
+    class SubResource
     {
-        namespace resource
+    public:
+        virtual ~SubResource() = default;
+
+        static constexpr std::string_view FullName()
         {
-            class SubResource
-            {
-            public:
-                virtual ~SubResource() = default;
+            return "SubResource";
+        }
 
-                static constexpr std::string_view FullName()
-                {
-                    return "SubResource";
-                }
-
-                virtual std::string serialize() const = 0;
-                virtual void deserialize(const std::string &data) = 0;
-            };
-        } // namespace resource
-    } // namespace core
-} // namespace atmo
+        virtual std::string serialize() const = 0;
+        virtual void deserialize(const std::string &data) = 0;
+    };
+} // namespace atmo::core::resource
