@@ -266,8 +266,10 @@ namespace atmo::core
 
             InputManager::Tick();
 
-            if (!m_running.load())
+            if (!m_running.load()) {
                 m_ecs.stop();
+                continue;
+            }
 
             auto current_time = std::chrono::steady_clock::now();
             std::chrono::duration<float> dt = current_time - last_time;
