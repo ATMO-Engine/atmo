@@ -144,7 +144,7 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                         font,
                         text->text,
                         0,
-                        (SDL_Color){ (Uint8)config->textColor.r, (Uint8)config->textColor.g, (Uint8)config->textColor.b, (Uint8)config->textColor.a });
+                        SDL_Color{ (Uint8)config->textColor.r, (Uint8)config->textColor.g, (Uint8)config->textColor.b, (Uint8)config->textColor.a });
 
                     if (!surface) {
                         SDL_Log("TTF error: %s", SDL_GetError());

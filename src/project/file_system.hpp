@@ -109,7 +109,7 @@ namespace atmo
 
 #pragma pack(push, 1)
             typedef struct PackedEntry {
-                const char *path = nullptr;
+                std::string path;
                 uint64_t offset = 0;
                 uint64_t size = 0;
             } PackedEntry;
@@ -259,10 +259,6 @@ namespace atmo
             {
                 if (m_resources && m_resources->is_open())
                     m_resources->close();
-
-                for (auto &pair : m_index) {
-                    std::free(const_cast<char *>(pair.second.path));
-                }
             }
 
             static std::vector<std::uint32_t> FindAllAtmoPcks(std::shared_ptr<std::fstream> stream)

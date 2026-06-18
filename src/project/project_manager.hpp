@@ -161,13 +161,13 @@ namespace atmo
                 for (const auto &entry : files_to_pack) {
                     std::ifstream in(entry, std::ios::binary | std::ios::ate);
                     if (!in.is_open()) {
-                        spdlog::warn("Failed to open file for packing: {}", entry.c_str());
+                        spdlog::warn("Failed to open file for packing: {}", entry.string());
                         continue;
                     }
                     std::streamsize size = in.tellg();
                     in.seekg(0, std::ios::beg);
                     FileSystem::PackedEntry packed_entry;
-                    packed_entry.path = entry.c_str();
+                    packed_entry.path = entry.string();
                     packed_entry.offset = 0;
                     packed_entry.size = static_cast<std::uint64_t>(size);
                     entries.push_back(packed_entry);
@@ -184,12 +184,13 @@ namespace atmo
                 header.offset_to_files =
                     sizeof(FileSystem::PackedHeader) + (sizeof(FileSystem::PackedEntry::offset) + sizeof(FileSystem::PackedEntry::size)) * entries.size();
                 for (const auto &entry : entries) {
-                    header.offset_to_files += std::strlen(entry.path) + 1;
+                    header.offset_to_files += entry.path.size() + 1;
                 }
 
                 WriteStructure(out, &header);
                 for (const auto &entry : entries) {
-                    out.write(entry.path, std::strlen(entry.path) + 1);
+                    out.write(entry.path.c_str(), entry.path.size());
+                    out.write("\0", 1);
                     out.write(reinterpret_cast<const char *>(&entry.offset), sizeof(std::uint64_t));
                     out.write(reinterpret_cast<const char *>(&entry.size), sizeof(std::uint64_t));
                 }
