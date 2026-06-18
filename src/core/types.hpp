@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 #include "SDL3/SDL_pixels.h"
 #include "box2d/box2d.h"
@@ -10,6 +11,8 @@
 #include "common/math.hpp"
 #include "flecs.h"
 #include "meta/meta.hpp"
+#include "spdlog/fmt/bundled/base.h"
+#include "spdlog/fmt/bundled/format.h"
 
 namespace atmo::core::types
 {
@@ -83,6 +86,7 @@ namespace atmo::core::types
 
         Color(float r, float g, float b, float a);
         Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
+        Color(std::string_view hex);
 
         Color operator+(const Color &modulator) const;
         Color operator-(const Color &modulator) const;
@@ -109,10 +113,59 @@ namespace atmo::core::types
         static const Color RED;
         static const Color GREEN;
         static const Color BLUE;
+
+    private:
+        static float HexElementToFloat(std::string_view elem);
     };
 
     void register_core_types(flecs::world ecs);
 } // namespace atmo::core::types
+
+template <> struct fmt::formatter<atmo::core::types::Color> {
+    enum class Mode {
+        hex,
+        rgb
+    };
+
+    Mode mode = Mode::hex;
+
+    constexpr auto parse(fmt::format_parse_context &ctx)
+    {
+        auto it = ctx.begin();
+        auto end = ctx.end();
+
+        if (it != end && *it != '}') {
+            if (*it == 'r') {
+                mode = Mode::rgb;
+                ++it;
+            } else if (*it == 'h') {
+                mode = Mode::hex;
+                ++it;
+            } else {
+                throw fmt::format_error("invalid color format");
+            }
+        }
+
+        return it;
+    }
+
+    template <typename FormatContext> auto format(const atmo::core::types::Color &c, FormatContext &ctx) const
+    {
+        auto out = ctx.out();
+
+        auto toByte = [](float v) { return static_cast<unsigned>(v * 255.0f + 0.5f); };
+
+        switch (mode) {
+            case Mode::hex:
+                return fmt::format_to(out, "#{:02X}{:02X}{:02X}{:02X}", toByte(c.r), toByte(c.g), toByte(c.b), toByte(c.a));
+
+            case Mode::rgb:
+                return fmt::format_to(out, "rgba({}, {}, {}, {:.2f})", toByte(c.r), toByte(c.g), toByte(c.b), c.a);
+        }
+
+        return out;
+    }
+};
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::types::Vector2> {
     static constexpr const char *name = "Vector2";

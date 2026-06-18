@@ -2,9 +2,11 @@
 
 #include <memory>
 #include <string_view>
+#include <vector>
 
 #include "core/engine.hpp"
 #include "editor/commands/commands.hpp"
+#include "editor/editors/editor.hpp"
 #include "editor/menu_bar/i_platform_menu_bar.hpp"
 #include "luau/luau.hpp"
 
@@ -59,6 +61,7 @@ namespace atmo::editor
         std::string_view m_project_path;
         Commands m_commands;
         std::unique_ptr<IPlatformMenuBar> m_menu_bar;
+        std::vector<std::unique_ptr<Editor>> m_editors;
     };
 } // namespace atmo::editor
 

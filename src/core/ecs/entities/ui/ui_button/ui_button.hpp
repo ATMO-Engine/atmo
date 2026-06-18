@@ -6,20 +6,15 @@
 namespace atmo::core::components
 {
     struct UIButton {
-        enum class ButtonState {
-            IDLE,
-            HOVER,
-            PRESS
-        };
-
-        ButtonState state = UIButton::ButtonState::IDLE;
+        bool is_hovered = false;
+        bool is_pressed = false;
     };
 } // namespace atmo::core::components
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIButton> {
     static constexpr const char *name = "Button";
     static constexpr const char *category = "UI";
-    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UIButton::state>("button_state"));
+    static constexpr auto fields = std::make_tuple();
 };
 
 namespace atmo::core::ecs::entities
