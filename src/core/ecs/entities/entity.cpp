@@ -1,9 +1,12 @@
 #include "entity.hpp"
+#include <algorithm>
+#include <iterator>
 #include <memory>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "flecs/addons/cpp/c_types.hpp"
 #include "glaze/glaze.hpp"
 #include "meta/meta_registry.hpp"
 #include "spdlog/spdlog.h"
@@ -68,6 +71,7 @@ namespace atmo::core::ecs::entities
         createSignal<Entity *>("child_added");
         createSignal<Entity *>("child_removed");
         createSignal<std::string, std::string>("renamed");
+        p_handle.add(flecs::OrderedChildren);
     }
 
     EntityData Entity::serialize() const
@@ -161,7 +165,7 @@ namespace atmo::core::ecs::entities
         p_handle.destruct();
     }
 
-    bool Entity::isAlive()
+    bool Entity::isAlive() const
     {
         return p_handle.is_valid();
     }
@@ -199,6 +203,24 @@ namespace atmo::core::ecs::entities
     std::uint64_t Entity::getID() const
     {
         return p_handle.id();
+    }
+
+    void Entity::swap(const Entity &dest)
+    {
+        if (getParent() != dest.getParent())
+            return;
+
+        std::vector<flecs::entity_t> children;
+
+        getParent().p_handle.children([&children](flecs::entity_t child) { children.push_back(child); });
+
+        auto this_it = std::find(children.begin(), children.end(), p_handle);
+        auto this_index = std::distance(children.begin(), this_it);
+        auto dest_it = std::find(children.begin(), children.end(), dest.p_handle);
+        auto dest_index = std::distance(children.begin(), dest_it);
+        std::swap(children[this_index], children[dest_index]);
+
+        getParent().p_handle.set_child_order(children.data(), static_cast<int32_t>(children.size()));
     }
 } // namespace atmo::core::ecs::entities
 

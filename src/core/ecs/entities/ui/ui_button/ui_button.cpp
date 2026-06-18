@@ -1,8 +1,11 @@
 #include "ui_button.hpp"
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/events/ui_event/hover_event/hover_event.hpp"
+#include "core/types.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
@@ -35,6 +38,9 @@ namespace atmo::core::ecs::entities
         label_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 90.0f, 100.0f };
         label_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         label_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 90.0f, 100.0f };
+
+        auto &label_UI_comp = label->getComponentMutable<core::components::UI>();
+        label_UI_comp.modulate = types::Color::BLACK;
     }
 
     Clay_ElementDeclaration UIButton::buildDecl()

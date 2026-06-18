@@ -182,7 +182,7 @@ namespace atmo::core::ecs::entities
          *
          * @return Entity parent entity.
          */
-        template <typename ParentType = Entity> ParentType getParent()
+        template <typename ParentType = Entity> ParentType getParent() const
         {
             auto parent_handle = p_handle.parent();
             if (!parent_handle.is_valid())
@@ -202,7 +202,7 @@ namespace atmo::core::ecs::entities
          * @return true Entity is valid and alive.
          * @return false Entity is either invalid or destroyed.
          */
-        bool isAlive();
+        bool isAlive() const;
 
         /**
          * @brief Get the entity's name.
@@ -311,6 +311,13 @@ namespace atmo::core::ecs::entities
 
             return *static_cast<Signal<Args...> *>(base);
         }
+
+        /**
+         * @brief Swap the current entity with the dest Entity.
+         *
+         * @param dest dest Entity
+         */
+        void swap(const Entity &dest);
 
     protected:
         flecs::entity p_handle;
