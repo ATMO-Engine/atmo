@@ -1,7 +1,9 @@
 #include "types.hpp"
+#include <string_view>
 
 #include "common/math.hpp"
 #include "meta/flecs_bridge.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::core::types
 {
@@ -30,6 +32,63 @@ namespace atmo::core::types
         this->g = g / 255.0f;
         this->b = b / 255.0f;
         this->a = a / 255.0f;
+    }
+
+    Color::Color(std::string_view hex)
+    {
+        bool removed_hashtag = false;
+
+        if (hex.starts_with("#")) {
+            hex.remove_prefix(1);
+            removed_hashtag = true;
+        }
+
+        if (hex.find_first_not_of("0123456789abcdefABCDEF") != std::string_view::npos) {
+            spdlog::warn(R"(Invalid color string characters: {}{})", removed_hashtag ? "#" : "", hex);
+            return;
+        }
+
+        switch (hex.length()) {
+            case 3:
+                r = HexElementToFloat(hex.substr(0, 1));
+                g = HexElementToFloat(hex.substr(1, 1));
+                b = HexElementToFloat(hex.substr(2, 1));
+                break;
+            case 4:
+                r = HexElementToFloat(hex.substr(0, 1));
+                g = HexElementToFloat(hex.substr(1, 1));
+                b = HexElementToFloat(hex.substr(2, 1));
+                a = HexElementToFloat(hex.substr(3, 1));
+                break;
+            case 6:
+                r = HexElementToFloat(hex.substr(0, 2));
+                g = HexElementToFloat(hex.substr(2, 2));
+                b = HexElementToFloat(hex.substr(4, 2));
+                break;
+            case 8:
+                r = HexElementToFloat(hex.substr(0, 2));
+                g = HexElementToFloat(hex.substr(2, 2));
+                b = HexElementToFloat(hex.substr(4, 2));
+                a = HexElementToFloat(hex.substr(6, 2));
+                break;
+            default:
+                spdlog::warn(R"(Invalid color string length: {}{})", removed_hashtag ? "#" : "", hex);
+        }
+    }
+
+    float Color::HexElementToFloat(std::string_view elem)
+    {
+        uint32_t value{};
+
+        auto [ptr, ec] = std::from_chars(elem.data(), elem.data() + elem.size(), value, 16);
+
+        if (ec != std::errc{} || ptr != elem.data() + elem.size() || elem.empty() || elem.size() > 2)
+            throw std::invalid_argument("invalid hex component");
+
+        if (elem.size() == 1)
+            value *= 17;
+
+        return static_cast<float>(value) * (1.0f / 255.0f);
     }
 
     Color Color::operator+(const Color &additive) const

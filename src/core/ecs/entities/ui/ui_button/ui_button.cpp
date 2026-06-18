@@ -3,7 +3,6 @@
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/event/events/ui_event/hover_event/hover_event.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
@@ -17,25 +16,10 @@ namespace atmo::core::ecs::entities
 
         setComponent<components::UIButton>({});
 
-        createSignal<UIButton &>("ToIdle");
-        getSignal<core::ecs::entities::UIButton &>("ToIdle").connect([](core::ecs::entities::UIButton &btn) {
-            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
-            btnComp.state = core::components::UIButton::ButtonState::IDLE;
-        });
-
-        createSignal<UIButton &>("Hover");
-        getSignal<core::ecs::entities::UIButton &>("Hover").connect([](core::ecs::entities::UIButton &btn) {
-            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
-            btnComp.state = core::components::UIButton::ButtonState::HOVER;
-        });
-
-        createSignal<UIButton &>("Pressed");
-        getSignal<core::ecs::entities::UIButton &>("Pressed").connect([](core::ecs::entities::UIButton &btn) {
-            auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
-            btnComp.state = core::components::UIButton::ButtonState::PRESS;
-        });
-
-        createSignal<UIButton &>("Released");
+        createSignal<>("MouseEntered");
+        createSignal<>("MouseExited");
+        createSignal<>("Pressed");
+        createSignal<>("Released");
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
@@ -60,20 +44,19 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    // TODO: WHEN signals done this function might be called by multiple
-    //       ui_element so we should move it to somewhere where it will
-    //       be shared (and it should only call the signal assigned nothing more)
     void ButtonHoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
     {
         int btnId = userData;
         UIButton btn(core::ecs::EntityRegistry::GetEntityFromId(btnId));
-        btn.getSignal<UIButton &>("Hover").emit(btn);
+        auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
 
-        if (data.state == CLAY_POINTER_DATA_PRESSED) {
-            btn.getSignal<UIButton &>("Pressed").emit(btn);
+        if (data.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+            btnComp.is_pressed = true;
+            btn.getSignal<>("Pressed").emit();
         }
         if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
-            btn.getSignal<UIButton &>("Released").emit(btn);
+            btnComp.is_pressed = false;
+            btn.getSignal<>("Released").emit();
         }
     }
 
@@ -83,8 +66,13 @@ namespace atmo::core::ecs::entities
         int id = getID();
         Clay_OnHover(ButtonHoverCallBack, id);
 
-        if (!Clay_Hovered() && btnComp.state != core::components::UIButton::ButtonState::IDLE) {
-            getSignal<UIButton &>("ToIdle").emit(*this);
+        if (btnComp.is_hovered != Clay_Hovered()) {
+            btnComp.is_hovered = Clay_Hovered();
+
+            if (!btnComp.is_hovered && btnComp.is_pressed)
+                btnComp.is_pressed = false;
+
+            btnComp.is_hovered ? getSignal<>("MouseEntered").emit() : getSignal<>("MouseExited").emit();
         }
     }
 } // namespace atmo::core::ecs::entities
