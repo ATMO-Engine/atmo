@@ -64,6 +64,36 @@ namespace atmo::editor
             });
     }
 
+    void fodableTreeinit(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent)
+    {
+
+        if (entity.getComponent<atmo::core::components::EntityBase>().type_name.starts_with("Entity::Entity2d")) {
+            auto child_UI = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIButton::UIFoldableTreeItem");
+            auto &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
+            auto &child_UI_rect = child_UI->getComponentMutable<core::components::UIRect>();
+            auto child_UI_button_label = static_cast<core::ecs::entities::UILabel>(child_UI->getChildren()[0].getChildren()[1]);
+
+            child_UI_rect.color.a = 0.0f;
+            child_UI_layout.direction = core::components::Layout::Direction::Vertical;
+            child_UI_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            child_UI_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            child_UI_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 0.0f };
+            child_UI_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+            child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+            child_UI_layout.child_gap = 8;
+            child_UI->setParent(parent);
+            child_UI_button_label.setText(entity.getComponent<atmo::core::components::EntityBase>().type_name);
+
+            for (auto &child : entity.getChildren()) fodableTreeinit(child, child_UI->getChildren()[1]);
+
+            // if (entity.getChildren().empty()) {
+            //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();
+
+            //     child_container.visible = false;
+            // }
+        }
+    }
+
     void EditorManager::init()
     {
         registerDefaultCommands();
@@ -87,7 +117,6 @@ namespace atmo::editor
 
         auto topbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &topbar_container_rect = topbar_container->getComponentMutable<core::components::UIRect>();
-        topbar_container_rect.color = core::types::Color::WHITE;
         topbar_container_rect.color.a = 0.0f;
         auto &topbar_container_layout = topbar_container->getComponentMutable<core::components::Layout>();
         topbar_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -117,23 +146,18 @@ namespace atmo::editor
         auto &scene_ui_container_layout = scene_ui_container->getComponentMutable<core::components::Layout>();
         scene_ui_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         scene_ui_container_layout.width.size = 1.0f;
-        scene_ui_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        scene_ui_container_layout.height.size = 0.9f;
+        scene_ui_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         scene_ui_container_layout.direction = core::components::Layout::Direction::Horizontal;
-        scene_ui_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
-        scene_ui_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::End;
         scene_ui_container->rename("scene ui container");
         scene_ui_container->setParent(*window_ui_container);
 
         auto left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &left_panel_container_rect = left_panel_container->getComponentMutable<core::components::UIRect>();
-        left_panel_container_rect.color = core::types::Color::WHITE;
         left_panel_container_rect.color.a = 0.0f;
         auto &left_panel_container_layout = left_panel_container->getComponentMutable<core::components::Layout>();
         left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         left_panel_container_layout.width.size = 0.2f;
-        left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_container_layout.height.size = 1.0f;
+        left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
         left_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         left_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -147,10 +171,8 @@ namespace atmo::editor
         left_panel_rect.color = core::types::Color::WHITE;
         left_panel_container_rect.corner_radius = { 4, 4, 4, 4 };
         auto &left_panel_layout = left_panel->getComponentMutable<core::components::Layout>();
-        left_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_layout.width.size = 1.0f;
-        left_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_layout.height.size = 1.0f;
+        left_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        left_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_layout.direction = core::components::Layout::Direction::Vertical;
         left_panel->rename("left panel");
         left_panel->setParent(*left_panel_container);
@@ -169,11 +191,9 @@ namespace atmo::editor
 
         auto top_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &top_left_panel_container_rect = top_left_panel_container->getComponentMutable<core::components::UIRect>();
-        top_left_panel_container_rect.color = core::types::Color::WHITE;
         top_left_panel_container_rect.color.a = 0.0f;
         auto &top_left_panel_container_layout = top_left_panel_container->getComponentMutable<core::components::Layout>();
-        top_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        top_left_panel_container_layout.width.size = 1.0f;
+        top_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         top_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         top_left_panel_container_layout.height.size = 0.1f;
         top_left_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
@@ -189,8 +209,7 @@ namespace atmo::editor
         left_panel_search_bar_rect.color = core::types::Color::BLACK;
         left_panel_search_bar_rect.color.a = 0.30f;
         auto &left_panel_search_bar_layout = left_panel_search_bar->getComponentMutable<core::components::Layout>();
-        left_panel_search_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_search_bar_layout.width.size = 0.9f;
+        left_panel_search_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         left_panel_search_bar_layout.height.size = 0.4f;
         left_panel_search_bar->rename("search bar");
@@ -201,10 +220,10 @@ namespace atmo::editor
         left_panel_pin_rect.color = core::types::Color::BLACK;
         left_panel_pin_rect.color.a = 1.0f;
         auto &left_panel_pin_layout = left_panel_pin->getComponentMutable<core::components::Layout>();
-        left_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_pin_layout.width.size = 0.1f;
-        left_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_pin_layout.height.size = 0.4f;
+        left_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        left_panel_pin_layout.width.size = core::components::Layout::SizingAxis::MinMax(12.0f, 12.0f);
+        left_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        left_panel_pin_layout.height.size = core::components::Layout::SizingAxis::MinMax(12.0f, 12.0f);
         left_panel_pin->rename("pin");
         left_panel_pin->setParent(*top_left_panel_container);
 
@@ -213,10 +232,8 @@ namespace atmo::editor
         content_left_panel_container_rect.color = core::types::Color::WHITE;
         content_left_panel_container_rect.color.a = 1.0f;
         auto &content_left_panel_container_layout = content_left_panel_container->getComponentMutable<core::components::Layout>();
-        content_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        content_left_panel_container_layout.width.size = 1.0f;
-        content_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        content_left_panel_container_layout.height.size = 0.90f;
+        content_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        content_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         content_left_panel_container_layout.direction = core::components::Layout::Direction::Vertical;
         content_left_panel_container_layout.child_gap = 8;
         content_left_panel_container_layout.padding = { 16, 16, 0, 0 };
@@ -237,38 +254,21 @@ namespace atmo::editor
 
         auto scene_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &scene_viewport_container_rect = scene_viewport_container->getComponentMutable<core::components::UIRect>();
-        scene_viewport_container_rect.color = core::types::Color::WHITE;
         scene_viewport_container_rect.color.a = 0.0f;
         auto &scene_viewport_container_layout = scene_viewport_container->getComponentMutable<core ::components::Layout>();
-        scene_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        scene_viewport_container_layout.width.size = 1.0f;
-        scene_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        scene_viewport_container_layout.height.size = 0.95f;
+        scene_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        scene_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         scene_viewport_container_layout.direction = core::components::Layout::Direction::Vertical;
         scene_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         scene_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
-        scene_viewport_container_layout.child_gap = 12;
-        scene_viewport_container_layout.padding = { 0, 16, 8, 16 };
+        scene_viewport_container_layout.child_gap = 0;
+        scene_viewport_container_layout.padding = { 0, 0, 8, 16 };
         scene_viewport_container->rename("scene viewport container");
         scene_viewport_container->setParent(*content_left_panel_container);
 
-        // for (auto &entity : scene->getChildren(true)) {
-        //     if (entity.getComponent<atmo::core::components::EntityBase>().type_name.starts_with("Entity::Entity2d")) {
-        //         auto child_UI =
-        //         core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIButton::UIFoldableTreeItem"); auto
-        //         &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
-
-        //         child_UI_layout.direction = core::components::Layout::Direction::Horizontal;
-        //         child_UI_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        //         child_UI_layout.width.size = 1.0f;
-        //         child_UI_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        //         child_UI_layout.height.size = 0.01f;
-        //         child_UI_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
-        //         child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
-        //         child_UI_layout.child_gap = 8;
-        //         child_UI->setParent(*scene_viewport_container);
-        //     }
-        // }
+        for (auto &entity : scene->getChildren()) {
+            fodableTreeinit(entity, *scene_viewport_container);
+        }
 
         // auto button1 = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         // spdlog::info("child count: {}", button1->getChildren().size());

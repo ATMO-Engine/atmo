@@ -240,6 +240,30 @@ namespace atmo::core
         sprite->setParent(*dynamic_body2);
         sprite->setScale(types::Vector2(0.25, 0.25));
 
+        auto sprite2 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+        sprite2->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite2->setParent(*dynamic_body2);
+        sprite2->setScale(types::Vector2(0.25, 0.25));
+
+        auto sprite3 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+        sprite3->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite3->setParent(*sprite2);
+        sprite3->setScale(types::Vector2(0.25, 0.25));
+
+        auto sprite4 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+        sprite4->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite4->setParent(*dynamic_body2);
+        sprite4->setScale(types::Vector2(0.25, 0.25));
+
+        auto sprite5 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
+        sprite5->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite5->setParent(*sprite3);
+        sprite5->setScale(types::Vector2(0.25, 0.25));
+
 
         // atmo::core::components::Script t = {};
         // atmo::luau::ScriptInstance inst = vm.generateInstance();
