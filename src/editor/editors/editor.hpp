@@ -18,20 +18,9 @@ namespace atmo::editor
         }
 
 
-        static std::string_view Name()
-        {
-            throw std::logic_error("Name() not implemented");
-        }
-
-        static std::string_view Description()
-        {
-            throw std::logic_error("Description() not implemented");
-        }
-
-        static std::string_view IconPath()
-        {
-            throw std::logic_error("IconPath() not implemented");
-        }
+        virtual std::string_view name() = 0;
+        virtual std::string_view description() = 0;
+        virtual std::string_view iconPath() = 0;
 
         virtual void init(atmo::core::ecs::entities::UI &container) = 0;
     };

@@ -15,21 +15,21 @@ namespace atmo::editor
             return "SceneEditor";
         }
 
-        static std::string_view Name()
+        std::string_view name() override
         {
             return "atmo.editors.scene_editor.name";
         }
 
-        static std::string_view Description()
+        std::string_view description() override
         {
             return "atmo.editors.scene_editor.description";
         }
 
-        static std::string_view IconPath()
+        std::string_view iconPath() override
         {
             return "project://atmo.png";
         }
 
-        void init(atmo::core::ecs::entities::UI &container);
+        void init(atmo::core::ecs::entities::UI &container) override;
     };
 } // namespace atmo::editor
