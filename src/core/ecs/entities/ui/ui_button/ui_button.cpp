@@ -3,15 +3,27 @@
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/event/events/ui_event/hover_event/hover_event.hpp"
 #include "core/types.hpp"
+#include "flecs/addons/cpp/mixins/query/impl.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
-    void UIButton::RegisterSystems(flecs::world *world) {}
+    flecs::query<components::UIButton, components::UIRect> *UIButton::m_query = nullptr;
+
+    void UIButton::RegisterSystems(flecs::world *world)
+    {
+        m_query = new flecs::query<components::UIButton, components::UIRect>(world->query<components::UIButton &, components::UIRect &>());
+    }
+
+    void UIButton::Unregister(flecs::world *world)
+    {
+        delete m_query;
+        m_query = nullptr;
+    }
 
     void UIButton::initialize()
     {
@@ -23,6 +35,22 @@ namespace atmo::core::ecs::entities
         createSignal<>("MouseExited");
         createSignal<>("Pressed");
         createSignal<>("Released");
+        createSignal<int>("Toggle");
+
+        getSignal<int>("Toggle").connect([ent = this->p_handle](int group_id) {
+            auto ent_button = UIButton(ent);
+            ent_button.m_query->each([group_id](components::UIButton &btn, components::UIRect &rect) {
+                if (btn.group == group_id) {
+                    btn.is_pressed = false;
+                    rect.color = types::Color::WHITE;
+                    rect.color.a = 0.0f;
+                }
+            });
+
+            ent_button.getComponentMutable<core::components::UIButton>().is_pressed = true;
+            ent_button.getComponentMutable<core::components::UIRect>().color = types::Color::BLACK;
+            ent_button.getComponentMutable<core::components::UIRect>().color.a = 0.4f;
+        });
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
@@ -56,13 +84,20 @@ namespace atmo::core::ecs::entities
         UIButton btn(core::ecs::EntityRegistry::GetEntityFromId(btnId));
         auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
 
-        if (data.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
-            btnComp.is_pressed = true;
-            btn.getSignal<>("Pressed").emit();
-        }
-        if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
-            btnComp.is_pressed = false;
-            btn.getSignal<>("Released").emit();
+        if (!btnComp.toggle) {
+            if (data.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+                btnComp.is_pressed = true;
+                btn.getSignal<>("Pressed").emit();
+            }
+            if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
+                btnComp.is_pressed = false;
+                btn.getSignal<>("Released").emit();
+            }
+        } else {
+            if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
+                btnComp.is_pressed = !btnComp.is_pressed;
+                btn.getSignal<int>("Toggle").emit(btnComp.group);
+            }
         }
     }
 

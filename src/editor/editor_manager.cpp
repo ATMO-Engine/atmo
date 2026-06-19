@@ -69,10 +69,12 @@ namespace atmo::editor
     {
 
         if (entity.getComponent<atmo::core::components::EntityBase>().type_name.starts_with("Entity::Entity2d")) {
-            auto child_UI = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIButton::UIFoldableTreeItem");
+            auto child_UI = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
             auto &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
             auto &child_UI_rect = child_UI->getComponentMutable<core::components::UIRect>();
-            auto child_UI_button_label = static_cast<core::ecs::entities::UILabel>(child_UI->getChildren()[0].getChildren()[1]);
+            auto title_button = child_UI->getTitleButton();
+            auto &title_button_comp = title_button.getComponentMutable<core::components::UIButton>();
+            auto title_label = child_UI->getTitleLabel();
 
             child_UI_rect.color.a = 0.0f;
             child_UI_layout.direction = core::components::Layout::Direction::Vertical;
@@ -83,9 +85,11 @@ namespace atmo::editor
             child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
             child_UI_layout.child_gap = 8;
             child_UI->setParent(parent);
-            child_UI_button_label.setText(entity.getComponent<atmo::core::components::EntityBase>().type_name);
+            title_label.setText(entity.getComponent<atmo::core::components::EntityBase>().type_name);
+            title_button_comp.toggle = true;
+            title_button_comp.group = 1;
 
-            for (auto &child : entity.getChildren()) fodableTreeinit(child, child_UI->getChildren()[1]);
+            for (auto &child : entity.getChildren()) fodableTreeinit(child, child_UI->getChildContainer());
 
             // if (entity.getChildren().empty()) {
             //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();

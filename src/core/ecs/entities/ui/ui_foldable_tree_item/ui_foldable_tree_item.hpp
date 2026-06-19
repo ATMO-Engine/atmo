@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 
 namespace atmo::core::components
 {
@@ -17,10 +19,10 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIFoldableT
 
 namespace atmo::core::ecs::entities
 {
-    class UIFoldableTreeItem : public EntityRegistry::Registrable<UIFoldableTreeItem, UIButton>
+    class UIFoldableTreeItem : public EntityRegistry::Registrable<UIFoldableTreeItem, UIRect>
     {
     public:
-        using EntityRegistry::Registrable<UIFoldableTreeItem, UIButton>::Registrable;
+        using EntityRegistry::Registrable<UIFoldableTreeItem, UIRect>::Registrable;
 
         static void RegisterSystems(flecs::world *world);
 
@@ -30,6 +32,10 @@ namespace atmo::core::ecs::entities
         {
             return "UIFoldableTreeItem";
         }
+
+        UIButton getTitleButton() const;
+        UILabel getTitleLabel() const;
+        UIRect getChildContainer() const;
 
         Clay_ElementDeclaration buildDecl() override;
         void draw(ClaySdL3RendererData *data) override;

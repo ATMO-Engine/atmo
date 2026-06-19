@@ -3,6 +3,7 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -11,11 +12,19 @@
 
 namespace atmo::core::ecs::entities
 {
+    namespace
+    {
+        constexpr std::string_view TitleBarName = "Foldable tree title bar";
+        constexpr std::string_view OpenBoxName = "Foldable tree open checkbox";
+        constexpr std::string_view TitleButtonName = "Foldable tree title button";
+        constexpr std::string_view ChildContainerName = "Foldable tree child container";
+    } // namespace
+
     void UIFoldableTreeItem::RegisterSystems(flecs::world *world) {}
 
     void UIFoldableTreeItem::initialize()
     {
-        UIButton::initialize();
+        UIRect::initialize();
 
         setComponent<components::UIFoldableTreeItem>({});
 
@@ -30,6 +39,7 @@ namespace atmo::core::ecs::entities
         title_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         title_bar_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         title_bar_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        title_bar->rename(std::string(TitleBarName));
         title_bar->setParent(*this);
 
         auto openbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
@@ -39,6 +49,7 @@ namespace atmo::core::ecs::entities
         openbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         openbox_layout.height.size = core::components::Layout::SizingAxis::MinMax(18.0f, 18.0f);
 
+        openbox->rename(std::string(OpenBoxName));
         openbox->setParent(*title_bar);
         openbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([](core::ecs::entities::UICheckBox &chBox) {
             auto &fodableTreeComp = chBox.getParent().getParent().getComponentMutable<core::components::UIFoldableTreeItem>();
@@ -47,7 +58,9 @@ namespace atmo::core::ecs::entities
             fodableTreeComp.open = chBoxComp.trigger;
         });
 
-        getChildren()[0].setParent(*title_bar);
+        auto title_bar_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        title_bar_button->rename(std::string(TitleButtonName));
+        title_bar_button->setParent(*title_bar);
 
         auto child_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &child_container_layout = child_container->getComponentMutable<core::components::Layout>();
@@ -58,7 +71,24 @@ namespace atmo::core::ecs::entities
         child_container_layout.direction = core::components::Layout::Direction::Vertical;
         child_container_layout.child_gap = 8;
         child_container_layout.padding = { 16, 0, 12, 0 };
+        child_container->rename(std::string(ChildContainerName));
         child_container->setParent(*this);
+    }
+
+    UIButton UIFoldableTreeItem::getTitleButton() const
+    {
+        Entity title_bar = getChild(TitleBarName);
+        return UIButton(title_bar.getChild(TitleButtonName));
+    }
+
+    UILabel UIFoldableTreeItem::getTitleLabel() const
+    {
+        return UILabel(getTitleButton().getChild("Button label"));
+    }
+
+    UIRect UIFoldableTreeItem::getChildContainer() const
+    {
+        return UIRect(getChild(ChildContainerName));
     }
 
     Clay_ElementDeclaration UIFoldableTreeItem::buildDecl()
@@ -71,7 +101,7 @@ namespace atmo::core::ecs::entities
     void UIFoldableTreeItem::draw(ClaySdL3RendererData *data)
     {
         bool is_open = getComponentMutable<components::UIFoldableTreeItem>().open;
-        auto child_container = getChildren()[1];
+        auto child_container = getChildContainer();
         auto &chContainer_comp = child_container.getComponentMutable<components::UI>();
 
         chContainer_comp.visible = is_open;
