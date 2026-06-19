@@ -10,6 +10,7 @@
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
+#include "editor/editor_registry.hpp"
 #include "glaze/json/prettify.hpp"
 #include "locale/locale_manager.hpp"
 #include "project/file_system.hpp"
@@ -394,11 +395,12 @@ namespace atmo::editor
         open_editor_popup->setParent(*m_engine.getECS().getCurrentScene());
         auto open_editor_bg = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         open_editor_bg->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        open_editor_bg->getComponentMutable<core::components::Layout>().width.size = 0.5f;
+        open_editor_bg->getComponentMutable<core::components::Layout>().width.size = 0.35f;
         open_editor_bg->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        open_editor_bg->getComponentMutable<core::components::Layout>().height.size = 0.5f;
+        open_editor_bg->getComponentMutable<core::components::Layout>().height.size = 0.75f;
         open_editor_bg->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
         open_editor_bg->getComponentMutable<core::components::Layout>().padding = { 8, 8, 8, 8 };
+        open_editor_bg->getComponentMutable<core::components::Layout>().child_gap = 8;
         open_editor_bg->setParent(*open_editor_popup);
         auto open_editor_top_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         open_editor_top_bar->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Horizontal;
@@ -422,13 +424,40 @@ namespace atmo::editor
         auto &close_open_editor_btn_rect = close_open_editor_btn->getComponentMutable<core::components::UIRect>();
         close_open_editor_btn_rect.color = core::types::Color::BLACK;
         auto &close_open_editor_btn_layout = close_open_editor_btn->getComponentMutable<core::components::Layout>();
-        close_open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        close_open_editor_btn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
-        close_open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        close_open_editor_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
+        close_open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_open_editor_btn_layout.aspect_ratio = { 1.0f, 1.0f };
         close_open_editor_btn->getChildren()[0].destroy();
         close_open_editor_btn->setParent(*close_btn_holder);
         close_open_editor_btn->getSignal<>("Released").connect([open_editor_popup]() { open_editor_popup->destroy(); });
+
+        auto editor_creation_button_list = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        editor_creation_button_list->getComponentMutable<core::components::UIRect>().color = core::types::Color("#6087b5");
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().child_gap = 8;
+        editor_creation_button_list->setParent(*open_editor_bg);
+
+        for (auto t : EditorRegistry::GetEntries()) {
+            makeEditorCreationButton(t).setParent(*editor_creation_button_list);
+        }
+    }
+
+    core::ecs::entities::UIButton EditorManager::makeEditorCreationButton(const std::string &editor)
+    {
+        auto open_editor_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &open_editor_btn_rect = open_editor_btn->getComponentMutable<core::components::UIRect>();
+        open_editor_btn_rect.color = core::types::Color("#434343");
+        auto &open_editor_btn_layout = open_editor_btn->getComponentMutable<core::components::Layout>();
+        open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        open_editor_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 120.0f, 0.0f };
+        open_editor_btn->getChildren()[0].destroy();
+        open_editor_btn->getSignal<>("Released").connect([editor]() { spdlog::info("Creating: {}", editor); });
+
+        // auto open_editor_image
+
+        return *open_editor_btn;
     }
 } // namespace atmo::editor
 

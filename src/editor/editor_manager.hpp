@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/engine.hpp"
 #include "editor/commands/commands.hpp"
 #include "editor/editors/editor.hpp"
@@ -57,6 +58,7 @@ namespace atmo::editor
         void init();
 
         void openNewEditorSelectionPopup();
+        core::ecs::entities::UIButton makeEditorCreationButton(const std::string &editor);
 
     private:
         void registerDefaultCommands();

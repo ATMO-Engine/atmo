@@ -15,6 +15,16 @@
         "redo": "Redo"
       }
     },
-    "open_new_editor": "Open new editor"
+    "open_new_editor": "Open new editor",
+    "editors": {
+      "scene_editor": {
+        "name": "Scene Editor",
+        "description": "Create and edit game scenes by placing, organizing, and configuring entities."
+      },
+      "texture_editor": {
+        "name": "Texture Editor",
+        "description": "Create and edit textures by drawing, layering, and animating 2D artwork."
+      }
+    }
   }
 }
