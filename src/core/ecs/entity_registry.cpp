@@ -14,6 +14,7 @@ namespace atmo::core::ecs
         }
 
         instance.m_world = world;
+        SignalQueue::SetWorld(world);
 
         for (auto &reg : instance.m_registers) reg.systems(world);
     }
@@ -40,7 +41,7 @@ namespace atmo::core::ecs
         }
     }
 
-    flecs::entity EntityRegistry::GetEntityFromId(const int id)
+    flecs::entity EntityRegistry::GetEntityFromId(uint64_t id)
     {
         auto &instance = Instance();
 

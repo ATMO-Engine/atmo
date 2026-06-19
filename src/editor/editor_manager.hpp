@@ -1,9 +1,11 @@
 #pragma once
 
 #include <memory>
+#include <stack>
 #include <string_view>
 #include <vector>
 
+#include "core/ecs/entities/entity.hpp"
 #include "core/engine.hpp"
 #include "editor/commands/commands.hpp"
 #include "editor/editors/editor.hpp"
@@ -53,6 +55,8 @@ namespace atmo::editor
         ~EditorManager() = default;
 
         void init();
+
+        void openNewEditorSelectionPopup();
 
     private:
         void registerDefaultCommands();

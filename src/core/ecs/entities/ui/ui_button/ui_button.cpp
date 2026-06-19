@@ -52,8 +52,12 @@ namespace atmo::core::ecs::entities
 
     void ButtonHoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
     {
-        int btnId = userData;
+        uint64_t btnId = static_cast<uint64_t>(userData);
         UIButton btn(core::ecs::EntityRegistry::GetEntityFromId(btnId));
+
+        if (!btn.isAlive())
+            return;
+
         auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
 
         if (data.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -69,7 +73,7 @@ namespace atmo::core::ecs::entities
     void UIButton::draw(ClaySdL3RendererData *data)
     {
         auto &btnComp = getComponentMutable<core::components::UIButton>();
-        int id = getID();
+        intptr_t id = static_cast<intptr_t>(getID());
         Clay_OnHover(ButtonHoverCallBack, id);
 
         if (btnComp.is_hovered != Clay_Hovered()) {

@@ -206,10 +206,7 @@ namespace atmo::core::ecs::entities
 
         if (core::InputManager::IsJustPressed("ui_click") || core::InputManager::IsPressed("ui_click")) {
             clickState = true;
-        } /* Release is handled automatically
-        Frame x     -> press==true
-        Frame x+1   -> press==false so clay registered it as just Released
-        */
+        }
         Clay_SetPointerState({ pos.x, pos.y }, clickState);
 
         auto scroll = core::InputManager::GetScrollDelta("ui_scroll");

@@ -1,8 +1,8 @@
 {
   "atmo": {
     "create": "Create",
-    "create_new_project": "Create New Project",
-    "open_project": "Open Project",
+    "create_new_project": "Create new project",
+    "open_project": "Open project",
     "commands": {
       "file": {
         "category": "File",
@@ -14,6 +14,7 @@
         "undo": "Undo",
         "redo": "Redo"
       }
-    }
+    },
+    "open_new_editor": "Open new editor"
   }
 }
