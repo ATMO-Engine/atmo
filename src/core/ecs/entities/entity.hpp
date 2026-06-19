@@ -18,6 +18,29 @@
 
 namespace atmo::core
 {
+    // Buffers signal callbacks emitted during Flecs readonly stages and flushes
+    // them after ecs_progress returns, when the world is writable again.
+    struct SignalQueue {
+        static void SetWorld(flecs::world *w) { s_world = w; }
+
+        static bool IsReadonly() { return s_world && s_world->is_readonly(); }
+
+        static void Enqueue(std::function<void()> fn) { s_pending.emplace_back(std::move(fn)); }
+
+        static void Flush()
+        {
+            while (!s_pending.empty()) {
+                auto tasks = std::move(s_pending);
+                s_pending.clear();
+                for (auto &t : tasks)
+                    t();
+            }
+        }
+
+        static inline flecs::world *s_world = nullptr;
+        static inline std::vector<std::function<void()>> s_pending;
+    };
+
     struct ISignal {
         virtual ~ISignal() = default;
         virtual std::type_index type() const = 0;
@@ -51,8 +74,14 @@ namespace atmo::core
 
         void emit(Args... args)
         {
-            for (auto &cb : m_callbacks) {
-                cb(args...);
+            if (SignalQueue::IsReadonly()) {
+                SignalQueue::Enqueue([this, args...]() mutable {
+                    for (auto &cb : m_callbacks)
+                        cb(args...);
+                });
+            } else {
+                for (auto &cb : m_callbacks)
+                    cb(args...);
             }
         }
 

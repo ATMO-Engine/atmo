@@ -14,7 +14,6 @@ namespace atmo::core::ecs::entities
         UIRect::initialize();
 
         getComponentMutable<components::UIRect>().color = types::Color("#8080805f");
-        spdlog::info("popup bg color: {}", getComponentMutable<components::UIRect>().color);
 
         auto &layout = getComponentMutable<components::Layout>();
         layout.child_alignment.horizontal = components::Layout::ChildAlignment::Center;

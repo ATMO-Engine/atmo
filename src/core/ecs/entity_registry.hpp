@@ -60,7 +60,7 @@ namespace atmo::core::ecs
          * @param id The id of the entity you want to retrieve
          * @return flecs::entity The flecs entity
          */
-        static flecs::entity GetEntityFromId(const int id);
+        static flecs::entity GetEntityFromId(uint64_t id);
 
     private:
         using WrapFactory = entities::Entity *(*)(flecs::entity);

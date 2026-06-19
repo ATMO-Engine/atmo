@@ -61,7 +61,7 @@ namespace atmo::core::ecs::entities
         label.text = locale::LocaleManager::GetTranslation(text);
 
         if (label.ttf_text) {
-            if (!TTF_SetTextString(label.ttf_text, text.c_str(), text.size()))
+            if (!TTF_SetTextString(label.ttf_text, label.text.c_str(), label.text.size()))
                 spdlog::error("setText on UILabel failed: {}", SDL_GetError());
         }
     }

@@ -11,6 +11,7 @@
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "glaze/json/prettify.hpp"
+#include "locale/locale_manager.hpp"
 #include "project/file_system.hpp"
 #include "spdlog/spdlog.h"
 
@@ -155,16 +156,7 @@ namespace atmo::editor
         open_editor_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
         open_editor_btn->getChildren()[0].destroy();
         open_editor_btn->setParent(*topbar);
-        // open_editor_btn->getSignal<>("Released").connect([&scene]() {
-        auto open_editor_popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
-        open_editor_popup->setParent(*scene);
-        auto open_editor_bg = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        open_editor_bg->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        open_editor_bg->getComponentMutable<core::components::Layout>().width.size = 0.5f;
-        open_editor_bg->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        open_editor_bg->getComponentMutable<core::components::Layout>().height.size = 0.5f;
-        open_editor_bg->setParent(*open_editor_popup);
-        // });
+        open_editor_btn->getSignal<>("Released").connect([this]() { openNewEditorSelectionPopup(); });
 
 
         auto scene_ui_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
@@ -398,6 +390,49 @@ namespace atmo::editor
         // auto &label_layout = label->getComponentMutable<core::components::Layout>();
 
         // spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
+    }
+
+    void EditorManager::openNewEditorSelectionPopup()
+    {
+        auto open_editor_popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
+        open_editor_popup->setParent(*m_engine.getECS().getCurrentScene());
+        auto open_editor_bg = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        open_editor_bg->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        open_editor_bg->getComponentMutable<core::components::Layout>().width.size = 0.5f;
+        open_editor_bg->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        open_editor_bg->getComponentMutable<core::components::Layout>().height.size = 0.5f;
+        open_editor_bg->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
+        open_editor_bg->getComponentMutable<core::components::Layout>().padding = { 8, 8, 8, 8 };
+        open_editor_bg->setParent(*open_editor_popup);
+        auto open_editor_top_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        open_editor_top_bar->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Horizontal;
+        open_editor_top_bar->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        open_editor_top_bar->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        open_editor_top_bar->setParent(*open_editor_bg);
+
+        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        label->setText("atmo.open_new_editor");
+        label->setFontBold(false);
+        label->setFontSize(16);
+        label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        label->setParent(*open_editor_top_bar);
+        auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        close_btn_holder->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_btn_holder->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        close_btn_holder->getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
+        close_btn_holder->setParent(*open_editor_top_bar);
+        auto close_open_editor_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &close_open_editor_btn_rect = close_open_editor_btn->getComponentMutable<core::components::UIRect>();
+        close_open_editor_btn_rect.color = core::types::Color::BLACK;
+        auto &close_open_editor_btn_layout = close_open_editor_btn->getComponentMutable<core::components::Layout>();
+        close_open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        close_open_editor_btn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
+        close_open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        close_open_editor_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
+        close_open_editor_btn->getChildren()[0].destroy();
+        close_open_editor_btn->setParent(*close_btn_holder);
+        close_open_editor_btn->getSignal<>("Released").connect([open_editor_popup]() { open_editor_popup->destroy(); });
     }
 } // namespace atmo::editor
 

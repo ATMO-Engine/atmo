@@ -282,6 +282,8 @@ namespace atmo::core
         int frame_count = 0;
 
         while (m_ecs.progress(deltaTime)) {
+            SignalQueue::Flush();
+
             ATMO_PROFILE_FRAME();
 
             if (InputManager::IsPressed("ui_quit"))
