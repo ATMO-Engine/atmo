@@ -61,6 +61,7 @@ namespace atmo::editor
 
         void openNewEditorSelectionPopup();
         core::ecs::entities::UIButton makeEditorCreationButton(const std::string &editor);
+        void updateTopBar();
 
     private:
         void registerDefaultCommands();
@@ -72,6 +73,7 @@ namespace atmo::editor
         std::vector<std::shared_ptr<Editor>> m_editors;
         std::vector<std::shared_ptr<core::ecs::entities::UI>> m_editor_containers;
         std::shared_ptr<core::ecs::entities::UI> m_editor_container;
+        std::shared_ptr<core::ecs::entities::UIRect> m_topbar;
     };
 } // namespace atmo::editor
 

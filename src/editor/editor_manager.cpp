@@ -91,9 +91,7 @@ namespace atmo::editor
         window_ui_container->rename("window ui container");
         window_ui_container->setParent(*scene);
 
-        auto topbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &topbar_container_rect = topbar_container->getComponentMutable<core::components::UIRect>();
-        topbar_container_rect.color.a = 0.0f;
+        auto topbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &topbar_container_layout = topbar_container->getComponentMutable<core::components::Layout>();
         topbar_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         topbar_container_layout.width.size = 1.0f;
@@ -104,17 +102,60 @@ namespace atmo::editor
         topbar_container->rename("topbar container");
         topbar_container->setParent(*window_ui_container);
 
-        auto topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
-        auto &topbar_rect = topbar->getComponentMutable<core::components::UIRect>();
+        m_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &topbar_rect = m_topbar->getComponentMutable<core::components::UIRect>();
         topbar_rect.color = core::types::Color::WHITE;
-        auto &topbar_layout = topbar->getComponentMutable<core::components::Layout>();
-        topbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        topbar_layout.width.size = 1.0f;
-        topbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        topbar_layout.height.size = 1.0f;
+        auto &topbar_layout = m_topbar->getComponentMutable<core::components::Layout>();
+        topbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        topbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         topbar_layout.padding = { 4, 4, 4, 4 };
-        topbar->rename("topbar");
-        topbar->setParent(*topbar_container);
+        topbar_layout.child_gap = 4;
+        m_topbar->setParent(*topbar_container);
+
+        updateTopBar();
+
+        m_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &editor_container_layout = m_editor_container->getComponentMutable<core::components::Layout>();
+        editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        editor_container_layout.width.size = 1.0f;
+        editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        m_editor_container->rename("scene ui container");
+        m_editor_container->setParent(*window_ui_container);
+        // spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
+    }
+
+    void EditorManager::updateTopBar()
+    {
+        for (auto &child : m_topbar->getChildren()) child.destroy();
+
+        std::uint64_t index = 0;
+        for (auto editor : m_editors) {
+            auto editor_select = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto &editor_select_rect = editor_select->getComponentMutable<core::components::UIRect>();
+            editor_select_rect.color = core::types::Color("#868686");
+            auto &editor_select_layout = editor_select->getComponentMutable<core::components::Layout>();
+            editor_select_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            editor_select_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            ((core::ecs::entities::UILabel)editor_select->getChildren()[0]).setText(std::string(editor->name()));
+            auto &editor_select_btn = editor_select->getComponentMutable<core::components::UIButton>();
+            editor_select_btn.group = 2;
+            editor_select_btn.toggle = true;
+            editor_select->setParent(*m_topbar);
+            editor_select->getSignal<>("Released").connect([]() { spdlog::info("caca"); });
+            editor_select->getSignal<int>("Toggle").connect([this, editor_select, index, editor_name = std::string(editor->name())](int group) {
+                auto &btn_cmp = editor_select->getComponentMutable<core::components::UIButton>();
+                auto &btn_rect = editor_select->getComponentMutable<core::components::UIRect>();
+                if (btn_cmp.is_pressed) {
+                    btn_rect.color = core::types::Color("#b25959");
+                    m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
+                } else {
+                    btn_rect.color = core::types::Color("#868686");
+                    m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
+                }
+                spdlog::info("{}: {}", editor_name, btn_cmp.is_pressed);
+            });
+            index++;
+        }
 
         auto open_editor_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &open_editor_btn_rect = open_editor_btn->getComponentMutable<core::components::UIRect>();
@@ -125,17 +166,8 @@ namespace atmo::editor
         open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         open_editor_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
         open_editor_btn->getChildren()[0].destroy();
-        open_editor_btn->setParent(*topbar);
+        open_editor_btn->setParent(*m_topbar);
         open_editor_btn->getSignal<>("Released").connect([this]() { openNewEditorSelectionPopup(); });
-
-        m_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        auto &editor_container_layout = m_editor_container->getComponentMutable<core::components::Layout>();
-        editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        editor_container_layout.width.size = 1.0f;
-        editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        m_editor_container->rename("scene ui container");
-        m_editor_container->setParent(*window_ui_container);
-        // spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
     }
 
     void EditorManager::openNewEditorSelectionPopup()
@@ -221,6 +253,7 @@ namespace atmo::editor
             m_editor_containers.emplace_back(editor_container);
 
             new_editor->init(*editor_container);
+            updateTopBar();
         });
 
         auto open_editor_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");

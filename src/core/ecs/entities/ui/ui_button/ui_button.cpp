@@ -3,6 +3,7 @@
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
@@ -51,6 +52,10 @@ namespace atmo::core::ecs::entities
             ent_button.getComponentMutable<core::components::UIRect>().color = types::Color::BLACK;
             ent_button.getComponentMutable<core::components::UIRect>().color.a = 0.4f;
         });
+
+        getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        getComponentMutable<core::components::Layout>().padding = { 4, 4, 4, 4 };
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
