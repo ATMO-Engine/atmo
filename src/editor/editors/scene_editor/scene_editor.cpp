@@ -315,7 +315,7 @@ namespace atmo::editor
             title_label.setText(entity.getComponent<atmo::core::components::EntityBase>().type_name);
             title_button_comp.toggle = true;
             title_button_comp.group = 1;
-            title_button.getSignal<int>("Toggle").connect([this, entity_handle, title_button_handle, component_container](int group_id) {
+            title_button.getSignal<bool>("Toggle").connect([this, entity_handle, title_button_handle, component_container](bool /*new_state*/) {
                 auto button = core::ecs::entities::Entity(title_button_handle);
                 auto &button_comp = button.getComponentMutable<core::components::UIButton>();
 

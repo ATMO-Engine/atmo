@@ -141,18 +141,16 @@ namespace atmo::editor
             editor_select_btn.group = 2;
             editor_select_btn.toggle = true;
             editor_select->setParent(*m_topbar);
-            editor_select->getSignal<>("Released").connect([]() { spdlog::info("caca"); });
-            editor_select->getSignal<int>("Toggle").connect([this, editor_select, index, editor_name = std::string(editor->name())](int group) {
-                auto &btn_cmp = editor_select->getComponentMutable<core::components::UIButton>();
+            editor_select->getSignal<bool>("Toggle").connect([this, editor_select, index, editor_name = std::string(editor->name())](bool new_state) {
                 auto &btn_rect = editor_select->getComponentMutable<core::components::UIRect>();
-                if (btn_cmp.is_pressed) {
+                if (new_state) {
                     btn_rect.color = core::types::Color("#b25959");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
                 } else {
                     btn_rect.color = core::types::Color("#868686");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
                 }
-                spdlog::info("{}: {}", editor_name, btn_cmp.is_pressed);
+                spdlog::info("{}: {}", editor_name, new_state);
             });
             index++;
         }
@@ -254,6 +252,8 @@ namespace atmo::editor
 
             new_editor->init(*editor_container);
             updateTopBar();
+
+            ((core::ecs::entities::UIButton)m_topbar->getChildren()[index]).press();
         });
 
         auto open_editor_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");

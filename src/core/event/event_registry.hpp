@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
@@ -38,10 +39,21 @@ namespace atmo::core::event
          * @tparam EventType
          * @param callback
          */
-        template <typename EventType> static void SetCallBack(std::function<void(EventType *)> callback)
+        template <typename EventType> static uint32_t SetCallBack(std::function<void(EventType *)> callback)
         {
+            uint32_t id = m_next_listener_id++;
             auto wrapper = [callback](events::Event *baseEvent) { callback(static_cast<EventType *>(baseEvent)); };
-            m_listeners[std::string(EventType::FullName())].push_back(wrapper);
+            m_listeners[std::string(EventType::FullName())].emplace_back(id, std::move(wrapper));
+            return id;
+        }
+
+        template <typename EventType> static void RemoveCallBack(uint32_t id)
+        {
+            auto it = m_listeners.find(std::string(EventType::FullName()));
+            if (it == m_listeners.end())
+                return;
+            auto &vec = it->second;
+            vec.erase(std::remove_if(vec.begin(), vec.end(), [id](const auto &p) { return p.first == id; }), vec.end());
         }
 
         /**
@@ -59,7 +71,7 @@ namespace atmo::core::event
             if (it == m_listeners.end())
                 return;
 
-            for (auto listener : it->second) {
+            for (auto &[id, listener] : it->second) {
                 listener(event.get());
                 if (event->isConsumed())
                     break;
@@ -67,6 +79,7 @@ namespace atmo::core::event
         }
 
     private:
-        static inline std::unordered_map<std::string, std::vector<std::function<void(events::Event *)>>> m_listeners;
+        static inline uint32_t m_next_listener_id = 1;
+        static inline std::unordered_map<std::string, std::vector<std::pair<uint32_t, std::function<void(events::Event *)>>>> m_listeners;
     };
 } // namespace atmo::core::event

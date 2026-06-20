@@ -6,25 +6,23 @@
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/ui_event/button_group_toggle_event/button_group_toggle_event.hpp"
 #include "core/types.hpp"
-#include "flecs/addons/cpp/mixins/query/impl.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
-    flecs::query<components::UIButton, components::UIRect> *UIButton::m_query = nullptr;
-
     void UIButton::RegisterSystems(flecs::world *world)
     {
-        m_query = new flecs::query<components::UIButton, components::UIRect>(world->query<components::UIButton &, components::UIRect &>());
+        world->observer<components::UIButton>("UIButton_remove").event(flecs::OnRemove).each([](flecs::entity, components::UIButton &btn) {
+            if (btn.group_event_listener_id != 0)
+                event::EventRegistry::RemoveCallBack<event::events::ButtonGroupToggleEvent>(btn.group_event_listener_id);
+        });
     }
 
-    void UIButton::Unregister(flecs::world *world)
-    {
-        delete m_query;
-        m_query = nullptr;
-    }
+    void UIButton::Unregister(flecs::world *) {}
 
     void UIButton::initialize()
     {
@@ -36,22 +34,29 @@ namespace atmo::core::ecs::entities
         createSignal<>("MouseExited");
         createSignal<>("Pressed");
         createSignal<>("Released");
-        createSignal<int>("Toggle");
+        createSignal<bool>("Toggle");
 
-        getSignal<int>("Toggle").connect([ent = this->p_handle](int group_id) {
-            auto ent_button = UIButton(ent);
-            ent_button.m_query->each([group_id](components::UIButton &btn, components::UIRect &rect) {
-                if (btn.group == group_id) {
-                    btn.is_pressed = false;
-                    rect.color = types::Color::WHITE;
-                    rect.color.a = 0.0f;
-                }
-            });
+        auto lid = event::EventRegistry::SetCallBack<event::events::ButtonGroupToggleEvent>([ent = this->p_handle](event::events::ButtonGroupToggleEvent *evt) {
+            auto self = UIButton(ent);
+            if (!self.isAlive())
+                return;
+            auto &btn = self.getComponentMutable<components::UIButton>();
+            auto &rect = self.getComponentMutable<components::UIRect>();
+            if (btn.group == 0 || btn.group != evt->group_id)
+                return;
 
-            ent_button.getComponentMutable<core::components::UIButton>().is_pressed = true;
-            ent_button.getComponentMutable<core::components::UIRect>().color = types::Color::BLACK;
-            ent_button.getComponentMutable<core::components::UIRect>().color.a = 0.4f;
+            if (static_cast<flecs::entity_t>(self.getID()) == evt->sender_id) {
+                btn.is_pressed = true;
+                rect.color = types::Color::BLACK;
+                rect.color.a = 0.4f;
+            } else {
+                btn.is_pressed = false;
+                rect.color = types::Color::WHITE;
+                rect.color.a = 0.0f;
+            }
+            self.getSignal<bool>("Toggle").emit(btn.is_pressed);
         });
+        getComponentMutable<components::UIButton>().group_event_listener_id = lid;
 
         getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -74,6 +79,27 @@ namespace atmo::core::ecs::entities
 
         auto &label_UI_comp = label->getComponentMutable<core::components::UI>();
         label_UI_comp.modulate = types::Color::BLACK;
+    }
+
+    void UIButton::press()
+    {
+        auto &btnComp = getComponentMutable<components::UIButton>();
+
+        if (!btnComp.toggle) {
+            btnComp.is_pressed = true;
+            getSignal<>("Pressed").emit();
+            return;
+        }
+
+        if (btnComp.group != 0) {
+            auto evt       = std::make_shared<event::events::ButtonGroupToggleEvent>();
+            evt->group_id  = btnComp.group;
+            evt->sender_id = static_cast<flecs::entity_t>(getID());
+            event::EventRegistry::Dispatch(evt);
+        } else {
+            btnComp.is_pressed = !btnComp.is_pressed;
+            getSignal<bool>("Toggle").emit(btnComp.is_pressed);
+        }
     }
 
     Clay_ElementDeclaration UIButton::buildDecl()
@@ -104,8 +130,15 @@ namespace atmo::core::ecs::entities
             }
         } else {
             if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
-                btnComp.is_pressed = !btnComp.is_pressed;
-                btn.getSignal<int>("Toggle").emit(btnComp.group);
+                if (btnComp.group != 0) {
+                    auto evt = std::make_shared<event::events::ButtonGroupToggleEvent>();
+                    evt->group_id = btnComp.group;
+                    evt->sender_id = static_cast<flecs::entity_t>(btn.getID());
+                    event::EventRegistry::Dispatch(evt);
+                } else {
+                    btnComp.is_pressed = !btnComp.is_pressed;
+                    btn.getSignal<bool>("Toggle").emit(btnComp.is_pressed);
+                }
             }
         }
     }
