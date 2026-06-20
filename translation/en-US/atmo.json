@@ -25,6 +25,21 @@
         "name": "Texture Editor",
         "description": "Create and edit textures by drawing, layering, and animating 2D artwork."
       }
+    },
+    "entities": {
+      "Entity": "Entity",
+      "Entity::Entity2d": "Entity2d",
+      "Entity::Entity2d::Body2d": "Body2d",
+      "Entity::Entity2d::Body2d::Dynamic2d": "Dynamic2d",
+      "Entity::Entity2d::Body2d::Kinematic2d": "Kinematic2d",
+      "Entity::Entity2d::Body2d::Static2d": "Static2d",
+      "Entity::Entity2d::Sprite2d": "Sprite2d",
+      "Entity::UI": "UI",
+      "Entity::UI::UIRect": "UIRect",
+      "Entity::UI::UILabel": "UILabel",
+      "Entity::UI::UIRect::UIButton": "UIButton",
+      "Entity::UI::UIRect::UICheckBox": "UICheckBox",
+      "Entity::UI::UIRect::UIButton::UIFoldableTreeItem": "UIFoldableTreeItem"
     }
   }
 }

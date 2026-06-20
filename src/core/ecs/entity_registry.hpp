@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <functional>
 #include <memory>
 #include <string_view>
@@ -10,6 +11,7 @@
 #include "core/registry/hierarchic_registry.hpp"
 #include "entities/entity.hpp"
 #include "flecs.h"
+#include "locale/locale_manager.hpp"
 #include "spdlog/spdlog.h"
 
 #define ATMO_REGISTER_ENTITY(entity)                \
@@ -45,7 +47,7 @@ namespace atmo::core::ecs
 
             entity->setComponent(components::EntityBase{ std::string(Type::FullName()) });
             entity->initialize();
-            entity->rename(std::format("{}#{}", Type::FullName(), handle.id()));
+            entity->rename(std::format("{}#{}", locale::LocaleManager::GetTranslation(std::format("atmo.entities.{}", Type::FullName())), handle.id()));
 
             return entity;
         }

@@ -1,4 +1,5 @@
 #include "scene_editor.hpp"
+#include <string>
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -142,8 +143,7 @@ namespace atmo::editor
 
         auto middle_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &middle_panel_container_layout = middle_panel_container->getComponentMutable<core::components::Layout>();
-        middle_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        middle_panel_container_layout.width.size = 0.6f;
+        middle_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         middle_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         middle_panel_container_layout.height.size = 0.1f;
         middle_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
@@ -256,7 +256,7 @@ namespace atmo::editor
             child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
             child_UI_layout.child_gap = 8;
             child_UI->setParent(parent);
-            title_label.setText(entity.getComponent<atmo::core::components::EntityBase>().type_name);
+            title_label.setText(std::string(entity.name()));
             title_button_comp.toggle = true;
             title_button_comp.group = 1;
             title_button.getSignal<int>("Toggle").connect([this, entity_handle, title_button_handle, component_container](int group_id) {
