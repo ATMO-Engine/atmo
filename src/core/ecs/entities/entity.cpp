@@ -7,6 +7,7 @@
 #include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "flecs/addons/cpp/c_types.hpp"
+#include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
 #include "meta/meta_registry.hpp"
 #include "spdlog/spdlog.h"
@@ -134,6 +135,11 @@ namespace atmo::core::ecs::entities
             child_entity->deserialize(child);
             child_entity->setParent(*this);
         }
+    }
+
+    flecs::entity Entity::getHandle() const
+    {
+        return p_handle;
     }
 
     std::vector<Entity> Entity::getChildren(bool recursive) const

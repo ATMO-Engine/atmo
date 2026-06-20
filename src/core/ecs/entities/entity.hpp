@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "flecs.h"
+#include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
 
 #include "meta/component_meta.hpp"
@@ -21,19 +22,27 @@ namespace atmo::core
     // Buffers signal callbacks emitted during Flecs readonly stages and flushes
     // them after ecs_progress returns, when the world is writable again.
     struct SignalQueue {
-        static void SetWorld(flecs::world *w) { s_world = w; }
+        static void SetWorld(flecs::world *w)
+        {
+            s_world = w;
+        }
 
-        static bool IsReadonly() { return s_world && s_world->is_readonly(); }
+        static bool IsReadonly()
+        {
+            return s_world && s_world->is_readonly();
+        }
 
-        static void Enqueue(std::function<void()> fn) { s_pending.emplace_back(std::move(fn)); }
+        static void Enqueue(std::function<void()> fn)
+        {
+            s_pending.emplace_back(std::move(fn));
+        }
 
         static void Flush()
         {
             while (!s_pending.empty()) {
                 auto tasks = std::move(s_pending);
                 s_pending.clear();
-                for (auto &t : tasks)
-                    t();
+                for (auto &t : tasks) t();
             }
         }
 
@@ -76,12 +85,10 @@ namespace atmo::core
         {
             if (SignalQueue::IsReadonly()) {
                 SignalQueue::Enqueue([this, args...]() mutable {
-                    for (auto &cb : m_callbacks)
-                        cb(args...);
+                    for (auto &cb : m_callbacks) cb(args...);
                 });
             } else {
-                for (auto &cb : m_callbacks)
-                    cb(args...);
+                for (auto &cb : m_callbacks) cb(args...);
             }
         }
 
@@ -179,6 +186,13 @@ namespace atmo::core::ecs::entities
          *
          */
         void initialize();
+
+        /**
+         * @brief Get the Handle object
+         *
+         * @return flecs::entity
+         */
+        flecs::entity getHandle() const;
 
         /**
          * @brief Get all of this entity's children.
