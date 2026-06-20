@@ -1,7 +1,9 @@
 #pragma once
 
-#include "string"
-#include "string_view"
+#include <string>
+#include <string_view>
+#include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 
 namespace atmo::editor
 {
@@ -15,7 +17,11 @@ namespace atmo::editor
             return "Editor";
         }
 
-        virtual std::string serialize() const = 0;
-        virtual void deserialize(const std::string &data) = 0;
+
+        virtual std::string_view name() = 0;
+        virtual std::string_view description() = 0;
+        virtual std::string_view iconPath() = 0;
+
+        virtual void init(atmo::core::ecs::entities::UI &container) = 0;
     };
 } // namespace atmo::editor

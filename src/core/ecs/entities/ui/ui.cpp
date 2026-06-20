@@ -36,6 +36,9 @@ namespace atmo::core::ecs::entities
             configureSizingAxis(d.layout.sizing.width, layout.width);
             configureSizingAxis(d.layout.sizing.height, layout.height);
 
+            if (layout.aspect_ratio.width > 0.0f && layout.aspect_ratio.height > 0.0f)
+                d.aspectRatio = { .aspectRatio = layout.aspect_ratio.width / layout.aspect_ratio.height };
+
             d.layout.padding.left = layout.padding.left;
             d.layout.padding.right = layout.padding.right;
             d.layout.padding.bottom = layout.padding.bottom;

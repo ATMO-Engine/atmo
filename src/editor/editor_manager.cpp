@@ -11,6 +11,7 @@
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
+#include "editor/editor_registry.hpp"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/json/prettify.hpp"
 #include "locale/locale_manager.hpp"
@@ -478,16 +479,19 @@ namespace atmo::editor
         open_editor_popup->setParent(*m_engine.getECS().getCurrentScene());
         auto open_editor_bg = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         open_editor_bg->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        open_editor_bg->getComponentMutable<core::components::Layout>().width.size = 0.5f;
+        open_editor_bg->getComponentMutable<core::components::Layout>().width.size = 0.35f;
         open_editor_bg->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        open_editor_bg->getComponentMutable<core::components::Layout>().height.size = 0.5f;
+        open_editor_bg->getComponentMutable<core::components::Layout>().height.size = 0.75f;
         open_editor_bg->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
         open_editor_bg->getComponentMutable<core::components::Layout>().padding = { 8, 8, 8, 8 };
+        open_editor_bg->getComponentMutable<core::components::Layout>().child_gap = 8;
+        open_editor_bg->getComponentMutable<core::components::UIRect>().color = core::types::Color("#9f9f9f");
         open_editor_bg->setParent(*open_editor_popup);
         auto open_editor_top_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         open_editor_top_bar->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Horizontal;
         open_editor_top_bar->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        open_editor_top_bar->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        open_editor_top_bar->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        open_editor_top_bar->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
         open_editor_top_bar->setParent(*open_editor_bg);
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
@@ -495,24 +499,84 @@ namespace atmo::editor
         label->setText("atmo.open_new_editor");
         label->setFontBold(false);
         label->setFontSize(16);
-        label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         label->setParent(*open_editor_top_bar);
         auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         close_btn_holder->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        close_btn_holder->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        close_btn_holder->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         close_btn_holder->getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
         close_btn_holder->setParent(*open_editor_top_bar);
         auto close_open_editor_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &close_open_editor_btn_rect = close_open_editor_btn->getComponentMutable<core::components::UIRect>();
-        close_open_editor_btn_rect.color = core::types::Color::BLACK;
+        close_open_editor_btn_rect.color = core::types::Color::RED;
         auto &close_open_editor_btn_layout = close_open_editor_btn->getComponentMutable<core::components::Layout>();
-        close_open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        close_open_editor_btn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
-        close_open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        close_open_editor_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
+        close_open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_open_editor_btn_layout.aspect_ratio = { 1.0f, 1.0f };
         close_open_editor_btn->getChildren()[0].destroy();
         close_open_editor_btn->setParent(*close_btn_holder);
         close_open_editor_btn->getSignal<>("Released").connect([open_editor_popup]() { open_editor_popup->destroy(); });
+
+        auto editor_creation_button_list = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        editor_creation_button_list->getComponentMutable<core::components::Layout>().child_gap = 8;
+        editor_creation_button_list->setParent(*open_editor_bg);
+
+        for (auto t : EditorRegistry::GetEntries()) {
+            makeEditorCreationButton(t).setParent(*editor_creation_button_list);
+        }
+    }
+
+    core::ecs::entities::UIButton EditorManager::makeEditorCreationButton(const std::string &editor)
+    {
+        auto new_editor = EditorRegistry::Create(editor);
+
+        auto open_editor_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &open_editor_btn_rect = open_editor_btn->getComponentMutable<core::components::UIRect>();
+        auto &open_editor_btn_layout = open_editor_btn->getComponentMutable<core::components::Layout>();
+        open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        open_editor_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 120.0f, 0.0f };
+        open_editor_btn_layout.padding = { 8, 8, 8, 8 };
+        open_editor_btn_layout.child_gap = 8;
+        open_editor_btn_layout.direction = core::components::Layout::Direction::Vertical;
+        open_editor_btn->getChildren()[0].destroy();
+        open_editor_btn->getSignal<>("Released").connect([editor]() { spdlog::info("Creating: {}", editor); });
+
+        auto open_editor_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        open_editor_topbar->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        open_editor_topbar->getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        open_editor_topbar->getComponentMutable<core::components::Layout>().child_gap = 8;
+        open_editor_topbar->setParent(*open_editor_btn);
+
+        auto open_editor_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        open_editor_image->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        open_editor_image->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
+        open_editor_image->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        open_editor_image->getComponentMutable<core::components::Layout>().aspect_ratio = { 1.0f, 1.0f };
+        open_editor_image->getComponentMutable<core::components::UIRect>().color = core::types::Color::GREEN;
+        open_editor_image->setParent(*open_editor_topbar);
+
+        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        label->setText(std::string(new_editor->name()));
+        label->setFontBold(false);
+        label->setFontSize(12);
+        label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        label->setParent(*open_editor_topbar);
+
+        auto description = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        description->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        description->setText(std::string(new_editor->description()));
+        description->setFontBold(false);
+        description->setFontSize(9);
+        description->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        description->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        description->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        description->setParent(*open_editor_btn);
+
+        return *open_editor_btn;
     }
 
     flecs::entity EditorManager::getSelectedEntity()

@@ -48,13 +48,19 @@ namespace atmo::core::components
             ChildAlignment vertical = ChildAlignment::Start;
         };
 
+        struct AspectRatio {
+            float width = 0.0f;
+            float height = 0.0f;
+        };
+
         Direction direction = Direction::Horizontal;
+
         SizingAxis width;
         SizingAxis height;
-
+        AspectRatio aspect_ratio;
         Padding padding;
-        ChildAlignmentAxis child_alignment;
 
+        ChildAlignmentAxis child_alignment;
         std::uint16_t child_gap = 0;
     };
 } // namespace atmo::core::components
