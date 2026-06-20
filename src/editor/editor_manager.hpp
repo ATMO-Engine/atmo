@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/engine.hpp"
 #include "editor/commands/commands.hpp"
@@ -61,12 +62,6 @@ namespace atmo::editor
         void openNewEditorSelectionPopup();
         core::ecs::entities::UIButton makeEditorCreationButton(const std::string &editor);
 
-        void
-        sceneEntityFodableTreeinit(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container);
-
-        flecs::entity getSelectedEntity();
-        void setSelectedEntity(flecs::entity new_slected_entity);
-
     private:
         void registerDefaultCommands();
 
@@ -74,8 +69,9 @@ namespace atmo::editor
         std::string_view m_project_path;
         Commands m_commands;
         std::unique_ptr<IPlatformMenuBar> m_menu_bar;
-        std::vector<std::unique_ptr<Editor>> m_editors;
-        flecs::entity m_selected_entity;
+        std::vector<std::shared_ptr<Editor>> m_editors;
+        std::vector<std::shared_ptr<core::ecs::entities::UI>> m_editor_containers;
+        std::shared_ptr<core::ecs::entities::UI> m_editor_container;
     };
 } // namespace atmo::editor
 
