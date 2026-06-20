@@ -81,14 +81,15 @@ namespace atmo::editor
         left_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_layout.direction = core::components::Layout::Direction::Vertical;
+        left_panel_layout.padding = { 16, 16, 8, 8 };
+        left_panel_layout.child_gap = 8;
         left_panel->setParent(*left_panel_container);
 
         auto top_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &top_left_panel_container_layout = top_left_panel_container->getComponentMutable<core::components::Layout>();
         top_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        top_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        top_left_panel_container_layout.height.size = 0.1f;
-        top_left_panel_container_layout.padding = { 16, 16, 8, 8 };
+        top_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        top_left_panel_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
         top_left_panel_container_layout.child_gap = 8;
         top_left_panel_container->setParent(*left_panel);
 
@@ -98,17 +99,17 @@ namespace atmo::editor
         left_panel_search_bar_rect.color.a = 0.30f;
         auto &left_panel_search_bar_layout = left_panel_search_bar->getComponentMutable<core::components::Layout>();
         left_panel_search_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        left_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_search_bar_layout.height.size = 0.4f;
+        left_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_search_bar->setParent(*top_left_panel_container);
 
         auto left_panel_pin = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &left_panel_pin_rect = left_panel_pin->getComponentMutable<core::components::UIRect>();
         left_panel_pin_rect.color = core::types::Color::BLACK;
-        left_panel_pin_rect.color.a = 1.0f;
         auto &left_panel_pin_layout = left_panel_pin->getComponentMutable<core::components::Layout>();
         left_panel_pin_layout.aspect_ratio = { 1, 1 };
         left_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        left_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        left_panel_pin_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
         left_panel_pin->setParent(*top_left_panel_container);
 
         auto content_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -117,7 +118,6 @@ namespace atmo::editor
         content_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         content_left_panel_container_layout.direction = core::components::Layout::Direction::Vertical;
         content_left_panel_container_layout.child_gap = 8;
-        content_left_panel_container_layout.padding = { 16, 16, 0, 0 };
         content_left_panel_container->setParent(*left_panel);
 
         auto add_node_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
