@@ -97,9 +97,9 @@ namespace atmo::editor
         topbar_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         topbar_container_layout.width.size = 1.0f;
         topbar_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        topbar_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 50.0f, 50.0f };
+        topbar_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 60.0f, 60.0f };
         topbar_container_layout.direction = core::components::Layout::Direction::Horizontal;
-        topbar_container_layout.padding = { 8, 8, 8, 8 };
+        topbar_container_layout.padding = { 16, 16, 16, 16 };
         topbar_container->rename("topbar container");
         topbar_container->setParent(*window_ui_container);
 
@@ -109,8 +109,8 @@ namespace atmo::editor
         auto &topbar_layout = m_topbar->getComponentMutable<core::components::Layout>();
         topbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         topbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        topbar_layout.padding = { 4, 4, 4, 4 };
-        topbar_layout.child_gap = 4;
+        topbar_layout.padding = { 8, 8, 8, 8 };
+        topbar_layout.child_gap = 8;
         m_topbar->setParent(*topbar_container);
 
         updateTopBar();
@@ -133,7 +133,6 @@ namespace atmo::editor
         for (auto editor : m_editors) {
             auto editor_select = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
             auto &editor_select_rect = editor_select->getComponentMutable<core::components::UIRect>();
-            editor_select_rect.color = core::types::Color("#868686");
             auto &editor_select_layout = editor_select->getComponentMutable<core::components::Layout>();
             editor_select_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
             editor_select_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -152,6 +151,11 @@ namespace atmo::editor
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
                 }
             });
+            auto editor_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+            editor_icon->getComponentMutable<core::components::UIImage>().texture_path = editor->iconPath();
+            editor_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            editor_icon->setParent(*editor_select);
+            editor_icon->swap(editor_select->getChildren()[0]);
             index++;
         }
 
@@ -267,12 +271,14 @@ namespace atmo::editor
         open_editor_topbar->getComponentMutable<core::components::Layout>().child_gap = 8;
         open_editor_topbar->setParent(*open_editor_btn);
 
-        auto open_editor_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto open_editor_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        open_editor_image->getComponentMutable<core::components::UIImage>().texture_path = new_editor->iconPath();
+        open_editor_image->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         open_editor_image->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         open_editor_image->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
         open_editor_image->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         open_editor_image->getComponentMutable<core::components::Layout>().aspect_ratio = { 1.0f, 1.0f };
-        open_editor_image->getComponentMutable<core::components::UIRect>().color = core::types::Color::GREEN;
+        open_editor_image->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         open_editor_image->setParent(*open_editor_topbar);
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");

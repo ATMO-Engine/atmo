@@ -27,7 +27,7 @@ namespace atmo::editor
 
         std::string_view iconPath() override
         {
-            return "project://atmo.png";
+            return "project://assets/icons/gamepad.svg";
         }
 
         void init(atmo::core::ecs::entities::UI &container) override;
