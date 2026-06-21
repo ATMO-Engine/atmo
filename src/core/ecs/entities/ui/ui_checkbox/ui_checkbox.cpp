@@ -82,8 +82,10 @@ namespace atmo::core::ecs::entities
     //       be shared (and it should only call the signal assigned nothing more)
     void ChecBoxHoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
     {
-        int boxId = userData;
+        uint64_t boxId = static_cast<uint64_t>(userData);
         UICheckBox chBox(core::ecs::EntityRegistry::GetEntityFromId(boxId));
+        if (!chBox.isAlive())
+            return;
         chBox.getSignal<UICheckBox &>("Hover").emit(chBox);
 
         if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
@@ -94,7 +96,7 @@ namespace atmo::core::ecs::entities
     void UICheckBox::draw(ClaySdL3RendererData *data)
     {
         auto &checkComp = getComponentMutable<core::components::UICheckBox>();
-        int id = getID();
+        intptr_t id = static_cast<intptr_t>(getID());
         Clay_OnHover(ChecBoxHoverCallBack, id);
 
         if (!Clay_Hovered() && checkComp.state != core::components::UICheckBox::CheckBoxState::IDLE) {

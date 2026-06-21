@@ -173,7 +173,7 @@ namespace atmo::core::ecs::entities
 
     bool Entity::isAlive() const
     {
-        return p_handle.is_valid();
+        return p_handle.is_alive();
     }
 
     std::string_view Entity::name() const

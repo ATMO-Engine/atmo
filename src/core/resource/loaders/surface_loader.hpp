@@ -10,11 +10,11 @@ namespace atmo
     {
         namespace resource
         {
-            class ImageLoader : public Resource<SDL_Surface>
+            class SurfaceLoader : public Resource<SDL_Surface>
             {
             public:
-                ImageLoader();
-                ~ImageLoader() override;
+                SurfaceLoader();
+                ~SurfaceLoader() override;
 
                 std::shared_ptr<SDL_Surface> load(const std::string &path) override;
 

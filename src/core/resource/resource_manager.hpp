@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include "SDL3/SDL_render.h"
 
 #include "core/resource/handle.hpp"
 #include "core/resource/loader_dispatcher.hpp"
@@ -23,6 +24,9 @@ namespace atmo
             {
             public:
                 static ResourceManager &GetInstance();
+
+                void setRenderer(SDL_Renderer *renderer) { m_renderer = renderer; }
+                SDL_Renderer *getRenderer() const { return m_renderer; }
 
                 ~ResourceManager()
                 {
@@ -105,6 +109,7 @@ namespace atmo
                 std::vector<IPoolGarbageCollector *> m_gcPools;
 
                 uint64_t m_currentTick = 0;
+                SDL_Renderer *m_renderer = nullptr;
             };
         } // namespace resource
     } // namespace core

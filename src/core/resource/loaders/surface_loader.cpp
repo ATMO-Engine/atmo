@@ -1,10 +1,8 @@
-#include "image_loader.hpp"
+#include "surface_loader.hpp"
 #include <exception>
 #include <memory>
 #include "SDL3_image/SDL_image.h"
 #include "project/file_system.hpp"
-
-#include "core/resource/loaders/image_loader.hpp"
 
 namespace atmo
 {
@@ -12,11 +10,11 @@ namespace atmo
     {
         namespace resource
         {
-            ImageLoader::ImageLoader() {}
+            SurfaceLoader::SurfaceLoader() {}
 
-            ImageLoader::~ImageLoader() {}
+            SurfaceLoader::~SurfaceLoader() {}
 
-            std::shared_ptr<SDL_Surface> ImageLoader::load(const std::string &path)
+            std::shared_ptr<SDL_Surface> SurfaceLoader::load(const std::string &path)
             {
                 auto file = project::FileSystem::OpenFile(path);
                 SDL_Surface *surface = IMG_Load_IO(file.toIOStream(), true);
@@ -31,9 +29,9 @@ namespace atmo
                 });
             }
 
-            const std::string ImageLoader::resourceTypeName()
+            const std::string SurfaceLoader::resourceTypeName()
             {
-                return "Image (SDL Surface)";
+                return "Image (CPU & RAM)";
             }
         } // namespace resource
     } // namespace core

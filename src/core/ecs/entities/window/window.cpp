@@ -8,6 +8,7 @@
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "core/input/input_manager.hpp"
@@ -43,6 +44,14 @@ namespace atmo::core::ecs::entities
         });
 
         world->observer<components::Window>().event(flecs::OnRemove).each([](flecs::entity e, components::Window &window) {
+            // Destroy all UILabel cached textures before the renderer is destroyed
+            e.world().each<components::UILabel>([](components::UILabel &label) {
+                if (label.m_render_cache && label.m_render_cache->texture) {
+                    SDL_DestroyTexture(label.m_render_cache->texture);
+                    label.m_render_cache->texture = nullptr;
+                }
+            });
+
             if (window.renderer_data.renderer) {
                 SDL_DestroyRenderer(window.renderer_data.renderer);
                 window.renderer_data.renderer = nullptr;
@@ -68,9 +77,12 @@ namespace atmo::core::ecs::entities
 
     static inline Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
     {
-        auto d = (TTF_Text *)config->userData;
+        auto *cache = static_cast<components::UILabel::TextRenderCache *>(config->userData);
+        if (!cache || !cache->ttf_text)
+            return Clay_Dimensions{ 0.0f, 0.0f };
+
         int width, height;
-        TTF_Font *font = TTF_GetTextFont(d);
+        TTF_Font *font = TTF_GetTextFont(cache->ttf_text);
 
         TTF_SetFontSize(font, config->fontSize);
         if (!TTF_GetStringSize(font, text.chars, text.length, &width, &height)) {
@@ -91,6 +103,7 @@ namespace atmo::core::ecs::entities
 
         if (args::ArgManager::Get<bool>("--headless") == false &&
             SDL_CreateWindowAndRenderer(window->title.c_str(), window->size.x, window->size.y, flags, &window->window, &window->renderer_data.renderer)) {
+            resource::ResourceManager::GetInstance().setRenderer(window->renderer_data.renderer);
             updateDPI(*window.get());
             SDL_SetWindowResizable(window->window, true);
 

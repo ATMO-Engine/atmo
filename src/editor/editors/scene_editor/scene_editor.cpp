@@ -73,6 +73,8 @@ namespace atmo::editor
         left_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         left_panel_container->setParent(*scene_editor_container);
 
+        // TODO: ask grok to refactor label text gen
+
         auto left_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
         auto &left_panel_rect = left_panel->getComponentMutable<core::components::UIRect>();
         left_panel_rect.color = core::types::Color::WHITE;

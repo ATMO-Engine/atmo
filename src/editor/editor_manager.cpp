@@ -5,6 +5,7 @@
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
 #include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
@@ -150,14 +151,13 @@ namespace atmo::editor
                     btn_rect.color = core::types::Color("#868686");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
                 }
-                spdlog::info("{}: {}", editor_name, new_state);
             });
             index++;
         }
 
         auto open_editor_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &open_editor_btn_rect = open_editor_btn->getComponentMutable<core::components::UIRect>();
-        open_editor_btn_rect.color = core::types::Color::BLACK;
+        open_editor_btn_rect.color.a = 0.0f;
         auto &open_editor_btn_layout = open_editor_btn->getComponentMutable<core::components::Layout>();
         open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         open_editor_btn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 26.0f };
@@ -166,6 +166,10 @@ namespace atmo::editor
         open_editor_btn->getChildren()[0].destroy();
         open_editor_btn->setParent(*m_topbar);
         open_editor_btn->getSignal<>("Released").connect([this]() { openNewEditorSelectionPopup(); });
+
+        auto open_editor_btn_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        open_editor_btn_image->getComponentMutable<core::components::UIImage>().texture_path = "project://assets/atmo.png";
+        open_editor_btn_image->setParent(*open_editor_btn);
     }
 
     void EditorManager::openNewEditorSelectionPopup()
@@ -193,7 +197,7 @@ namespace atmo::editor
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
         label->setText("atmo.open_new_editor");
         label->setFontBold(false);
-        label->setFontSize(16);
+        label->setFontSize(24);
         label->setParent(*open_editor_top_bar);
         auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         close_btn_holder->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -273,16 +277,14 @@ namespace atmo::editor
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
         label->setText(std::string(new_editor->name()));
-        label->setFontBold(false);
-        label->setFontSize(12);
+        label->setFontSize(18);
         label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         label->setParent(*open_editor_topbar);
 
         auto description = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         description->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
         description->setText(std::string(new_editor->description()));
-        description->setFontBold(false);
-        description->setFontSize(9);
+        description->setFontSize(13);
         description->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         description->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         description->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;

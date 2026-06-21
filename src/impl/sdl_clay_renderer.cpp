@@ -10,6 +10,7 @@
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "clay_types.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/types.hpp"
 
@@ -135,34 +136,52 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
             case CLAY_RENDER_COMMAND_TYPE_TEXT:
                 {
                     Clay_TextRenderData *config = &rcmd->renderData.text;
-                    auto text = (TTF_Text *)rcmd->userData;
-                    TTF_Font *font = TTF_GetTextFont(text);
+                    auto *cache = static_cast<atmo::core::components::UILabel::TextRenderCache *>(rcmd->userData);
+
+                    if (!cache || !cache->ttf_text)
+                        break;
+
+                    TTF_Font *font = TTF_GetTextFont(cache->ttf_text);
                     TTF_SetFontSizeDPI(font, config->fontSize, dpi_scale.x * 96.0f, dpi_scale.y * 96.0f);
-                    TTF_SetTextColor(text, config->textColor.r, config->textColor.g, config->textColor.b, config->textColor.a);
 
-                    auto surface = TTF_RenderText_Blended(
-                        font,
-                        text->text,
-                        0,
-                        SDL_Color{ (Uint8)config->textColor.r, (Uint8)config->textColor.g, (Uint8)config->textColor.b, (Uint8)config->textColor.a });
+                    SDL_Color cur_color = { (Uint8)config->textColor.r, (Uint8)config->textColor.g, (Uint8)config->textColor.b, (Uint8)config->textColor.a };
+                    bool needs_rebuild = cache->dirty
+                        || SDL_memcmp(&cache->last_color, &cur_color, sizeof(SDL_Color)) != 0
+                        || cache->last_font_size != config->fontSize
+                        || cache->last_dpi_x != dpi_scale.x
+                        || cache->last_dpi_y != dpi_scale.y;
 
-                    if (!surface) {
-                        SDL_Log("TTF error: %s", SDL_GetError());
-                        return;
+                    if (needs_rebuild) {
+                        if (cache->texture) {
+                            SDL_DestroyTexture(cache->texture);
+                            cache->texture = nullptr;
+                        }
+
+                        TTF_SetTextColor(cache->ttf_text, cur_color.r, cur_color.g, cur_color.b, cur_color.a);
+                        SDL_Surface *surface = TTF_RenderText_Blended(font, cache->ttf_text->text, 0, cur_color);
+
+                        if (!surface) {
+                            SDL_Log("TTF error: %s", SDL_GetError());
+                            break;
+                        }
+
+                        cache->texture = SDL_CreateTextureFromSurface(rendererData->renderer, surface);
+                        SDL_DestroySurface(surface);
+
+                        if (!cache->texture) {
+                            SDL_Log("Texture error: %s", SDL_GetError());
+                            break;
+                        }
+
+                        cache->dirty          = false;
+                        cache->last_color     = cur_color;
+                        cache->last_font_size = config->fontSize;
+                        cache->last_dpi_x     = dpi_scale.x;
+                        cache->last_dpi_y     = dpi_scale.y;
                     }
 
-                    SDL_Texture *texture = SDL_CreateTextureFromSurface(rendererData->renderer, surface);
-
-                    SDL_DestroySurface(surface);
-
-                    if (!texture) {
-                        SDL_Log("Texture error: %s", SDL_GetError());
-                        return;
-                    }
-
-                    SDL_RenderTexture(rendererData->renderer, texture, nullptr, &rect);
-
-                    SDL_DestroyTexture(texture);
+                    if (cache->texture)
+                        SDL_RenderTexture(rendererData->renderer, cache->texture, nullptr, &rect);
                 }
                 break;
             case CLAY_RENDER_COMMAND_TYPE_BORDER:
