@@ -127,10 +127,9 @@ namespace atmo::editor
         add_node_button_rect.color = core::types::Color::BLACK;
         add_node_button_rect.color.a = 0.3f;
         auto &add_node_button_layout = add_node_button->getComponentMutable<core::components::Layout>();
-        add_node_button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        add_node_button_layout.width.size = 1.0f;
-        add_node_button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        add_node_button_layout.height.size = 0.05f;
+        add_node_button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        add_node_button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        add_node_button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 36.0f, 36.0f };
         add_node_button->setParent(*content_left_panel_container);
 
         auto scene_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -140,14 +139,14 @@ namespace atmo::editor
         scene_viewport_container_layout.direction = core::components::Layout::Direction::Vertical;
         scene_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         scene_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
-        scene_viewport_container_layout.padding = { 0, 0, 8, 16 };
+        scene_viewport_container_layout.padding = { 0, 0, 8, 8 };
         scene_viewport_container->setParent(*content_left_panel_container);
 
         auto middle_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &middle_panel_container_layout = middle_panel_container->getComponentMutable<core::components::Layout>();
         middle_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        middle_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        middle_panel_container_layout.height.size = 0.1f;
+        middle_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        middle_panel_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 36.0f, 36.0f };
         middle_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         middle_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         middle_panel_container->setParent(*scene_editor_container);
@@ -180,26 +179,17 @@ namespace atmo::editor
         right_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         right_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         right_panel_layout.direction = core::components::Layout::Direction::Vertical;
+        right_panel_layout.padding = { 16, 16, 8, 8 };
+        right_panel_layout.child_gap = 8;
         right_panel->setParent(*right_panel_container);
 
         auto top_right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &top_right_panel_container_layout = top_right_panel_container->getComponentMutable<core::components::Layout>();
         top_right_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        top_right_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        top_right_panel_container_layout.height.size = 0.1f;
-        top_right_panel_container_layout.direction = core::components::Layout::Direction::Horizontal;
-        top_right_panel_container_layout.padding = { 16, 16, 8, 8 };
+        top_right_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        top_right_panel_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
         top_right_panel_container_layout.child_gap = 8;
         top_right_panel_container->setParent(*right_panel);
-
-        auto right_panel_pin = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &right_panel_pin_rect = right_panel_pin->getComponentMutable<core::components::UIRect>();
-        right_panel_pin_rect.color = core::types::Color::BLACK;
-        right_panel_pin_rect.color.a = 1.0f;
-        auto &right_panel_pin_layout = right_panel_pin->getComponentMutable<core::components::Layout>();
-        right_panel_pin_layout.aspect_ratio = { 1, 1 };
-        right_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        right_panel_pin->setParent(*top_right_panel_container);
 
         auto right_panel_search_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &right_panel_search_bar_rect = right_panel_search_bar->getComponentMutable<core::components::UIRect>();
@@ -207,9 +197,18 @@ namespace atmo::editor
         right_panel_search_bar_rect.color.a = 0.30f;
         auto &right_panel_search_bar_layout = right_panel_search_bar->getComponentMutable<core::components::Layout>();
         right_panel_search_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        right_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        right_panel_search_bar_layout.height.size = 0.4f;
+        right_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         right_panel_search_bar->setParent(*top_right_panel_container);
+
+        auto right_panel_pin = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &right_panel_pin_rect = right_panel_pin->getComponentMutable<core::components::UIRect>();
+        right_panel_pin_rect.color = core::types::Color::BLACK;
+        auto &right_panel_pin_layout = right_panel_pin->getComponentMutable<core::components::Layout>();
+        right_panel_pin_layout.aspect_ratio = { 1, 1 };
+        right_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        right_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        right_panel_pin_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
+        right_panel_pin->setParent(*top_right_panel_container);
 
         auto content_right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &content_right_panel_container_layout = content_right_panel_container->getComponentMutable<core::components::Layout>();
@@ -217,7 +216,6 @@ namespace atmo::editor
         content_right_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         content_right_panel_container_layout.direction = core::components::Layout::Direction::Vertical;
         content_right_panel_container_layout.child_gap = 8;
-        content_right_panel_container_layout.padding = { 16, 16, 0, 0 };
         content_right_panel_container->setParent(*right_panel);
 
         auto component_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -227,7 +225,7 @@ namespace atmo::editor
         component_viewport_container_layout.direction = core::components::Layout::Direction::Vertical;
         component_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         component_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
-        component_viewport_container_layout.padding = { 0, 0, 8, 16 };
+        component_viewport_container_layout.padding = { 0, 0, 8, 8 };
         component_viewport_container->setParent(*content_right_panel_container);
 
         for (auto &entity : container.getScene()->getChildren()) {
