@@ -168,7 +168,8 @@ namespace atmo::editor
         open_editor_btn->getSignal<>("Released").connect([this]() { openNewEditorSelectionPopup(); });
 
         auto open_editor_btn_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
-        open_editor_btn_image->getComponentMutable<core::components::UIImage>().texture_path = "project://assets/atmo.png";
+        open_editor_btn_image->getComponentMutable<core::components::UIImage>().texture_path = "project://assets/icons/plus.svg";
+        open_editor_btn_image->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         open_editor_btn_image->setParent(*open_editor_btn);
     }
 

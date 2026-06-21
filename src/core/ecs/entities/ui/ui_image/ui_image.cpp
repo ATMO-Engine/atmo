@@ -39,6 +39,7 @@ namespace atmo::core::ecs::entities
         if (!tex)
             return d;
 
+        d.backgroundColor = getComponent<components::UI>().modulate.toFloat<Clay_Color>(255);
         d.image = { .imageData = tex.get() };
 
         auto &w = d.layout.sizing.width;

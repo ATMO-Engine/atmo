@@ -269,7 +269,16 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
             case CLAY_RENDER_COMMAND_TYPE_IMAGE:
                 {
                     SDL_Texture *texture = (SDL_Texture *)rcmd->renderData.image.imageData;
+                    Clay_Color tint = rcmd->renderData.image.backgroundColor;
+                    if (tint.a > 0) {
+                        SDL_SetTextureColorModFloat(texture, tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f);
+                        SDL_SetTextureAlphaModFloat(texture, tint.a / 255.0f);
+                    }
                     SDL_RenderTexture(rendererData->renderer, texture, nullptr, &rect);
+                    if (tint.a > 0) {
+                        SDL_SetTextureColorModFloat(texture, 1.0f, 1.0f, 1.0f);
+                        SDL_SetTextureAlphaModFloat(texture, 1.0f);
+                    }
                     break;
                 }
             default:
