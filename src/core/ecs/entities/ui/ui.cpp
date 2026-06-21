@@ -1,6 +1,7 @@
 #include "ui.hpp"
 #include "common/math.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "meta/auto_register.hpp"
 
 #include "clay.h"
@@ -117,6 +118,20 @@ namespace atmo::core::ecs::entities
                 sizing.type = CLAY__SIZING_TYPE_PERCENT;
                 break;
         }
+    }
+
+    std::shared_ptr<entities::Window> UI::getWindow() const
+    {
+        flecs::entity current = p_handle;
+
+        while (current.is_valid()) {
+            if (current.has<components::Window>()) {
+                return std::make_shared<entities::Window>(current);
+            }
+            current = current.parent();
+        }
+
+        return nullptr;
     }
 } // namespace atmo::core::ecs::entities
 

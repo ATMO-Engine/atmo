@@ -4,6 +4,7 @@
 
 #include "clay.h"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
 #include "impl/clay_types.hpp"
@@ -46,6 +47,8 @@ namespace atmo::core::ecs::entities
 
         void internalDraw(ClaySdL3RendererData *data);
         virtual void draw(ClaySdL3RendererData *data);
+
+        std::shared_ptr<entities::Window> getWindow() const;
 
     protected:
         virtual Clay_ElementDeclaration buildDecl();
