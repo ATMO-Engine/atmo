@@ -207,30 +207,46 @@ namespace atmo::core::ecs::entities
         SDL_SetRenderClipRect(renderer, nullptr);
     }
 
-    void UIDrawingCanvas::paintLine(const atmo::core::types::Vector2i &from, const atmo::core::types::Vector2i &to, const atmo::core::types::Color &color)
+    void UIDrawingCanvas::paintCapsule(
+        const atmo::core::types::Vector2i &from, const atmo::core::types::Vector2i &to, int brushRadius, const atmo::core::types::Color &color)
     {
-        int x0 = from.x, y0 = from.y;
-        int x1 = to.x, y1 = to.y;
+        int radius = (brushRadius - 1) * 0.5f;
 
-        int deltaX = std::abs(x1 - x0);
-        int deltaY = std::abs(y1 - y0);
-        int stepX = x0 < x1 ? 1 : -1;
-        int stepY = y0 < y1 ? 1 : -1;
-        int accumulatedError = deltaX - deltaY;
+        int minX = std::min(from.x, to.x) - radius;
+        int maxX = std::max(from.x, to.x) + radius;
 
-        while (x0 != x1 || y0 != y1) {
-            paintPixel({ x0, y0 }, color);
-            int doubledError = 2 * accumulatedError;
-            if (doubledError > -deltaY) {
-                accumulatedError -= deltaY;
-                x0 += stepX;
-            }
-            if (doubledError < deltaX) {
-                accumulatedError += deltaX;
-                y0 += stepY;
+        int minY = std::min(from.y, to.y) - radius;
+        int maxY = std::max(from.y, to.y) + radius;
+
+        float dx = static_cast<float>(to.x - from.x);
+        float dy = static_cast<float>(to.y - from.y);
+
+        float segmentLengthSquared = dx * dx + dy * dy;
+        float radiusSquared = static_cast<float>(radius * radius);
+
+        for (int y = minY; y <= maxY; ++y) {
+            for (int x = minX; x <= maxX; ++x) {
+                float t = 0.0f;
+
+                if (segmentLengthSquared > 0.0f) {
+                    t = ((x - from.x) * dx + (y - from.y) * dy) / segmentLengthSquared;
+
+                    t = std::clamp(t, 0.0f, 1.0f);
+                }
+
+                float closestX = from.x + t * dx;
+                float closestY = from.y + t * dy;
+
+                float distX = x - closestX;
+                float distY = y - closestY;
+
+                float distanceSquared = distX * distX + distY * distY;
+
+                if (distanceSquared <= radiusSquared) {
+                    paintPixel({ x, y }, color);
+                }
             }
         }
-        paintPixel({ x1, y1 }, color);
     }
 
     void UIDrawingCanvas::paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color)
@@ -238,6 +254,9 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
         if (!comp.drawing_texture)
             return;
+        if (pos.x < 0 || pos.y < 0 || pos.x >= comp.textureSize.x || pos.y >= comp.textureSize.y) {
+            return;
+        }
 
         auto windowEntity = getWindow();
         if (!windowEntity)
@@ -261,12 +280,11 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
         if (isInsideTextureRect(mousePosInScreen, comp)) {
-            atmo::core::types::Color paintColor = atmo::core::types::Color::BLACK;
             if (core::InputManager::IsJustPressed("ui_click")) {
-                paintPixel(mousePosInCanvas, paintColor);
+                paintCapsule(mousePosInCanvas, mousePosInCanvas, comp.brushRadius, comp.brushColor);
             } else if (core::InputManager::IsPressed("ui_click")) {
                 if (mousePosInCanvas.x != comp.lastMousePos.x || mousePosInCanvas.y != comp.lastMousePos.y) {
-                    paintLine(comp.lastMousePos, mousePosInCanvas, paintColor);
+                    paintCapsule(comp.lastMousePos, mousePosInCanvas, comp.brushRadius, comp.brushColor);
                 }
             }
         }

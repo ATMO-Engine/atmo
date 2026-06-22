@@ -22,6 +22,8 @@ namespace atmo::core::components
         atmo::core::types::Vector2i lastMousePos = { 0, 0 };
         atmo::core::types::Vector2 lastPanMousePos = { 0.0f, 0.0f };
         bool panning = false;
+        int brushRadius = 10;
+        atmo::core::types::Color brushColor = atmo::core::types::Color::BLACK;
     };
 } // namespace atmo::core::components
 
@@ -59,7 +61,8 @@ namespace atmo::core::ecs::entities
 
     private:
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
-        void paintLine(const atmo::core::types::Vector2i &from, const atmo::core::types::Vector2i &to, const atmo::core::types::Color &color);
+        void
+        paintCapsule(const atmo::core::types::Vector2i &from, const atmo::core::types::Vector2i &to, int brushRadius, const atmo::core::types::Color &color);
 
         float computeFitScale(const components::UIDrawingCanvas &comp) const;
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;
