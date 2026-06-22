@@ -136,6 +136,7 @@ namespace atmo::editor
             auto &editor_select_layout = editor_select->getComponentMutable<core::components::Layout>();
             editor_select_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
             editor_select_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            editor_select_layout.child_gap = 8;
             ((core::ecs::entities::UILabel)editor_select->getChildren()[0]).setText(std::string(editor->name()));
             auto &editor_select_btn = editor_select->getComponentMutable<core::components::UIButton>();
             editor_select_btn.group = 2;
@@ -154,6 +155,11 @@ namespace atmo::editor
             auto editor_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
             editor_icon->getComponentMutable<core::components::UIImage>().texture_path = editor->iconPath();
             editor_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            auto &editor_icon_layout = editor_icon->getComponentMutable<core::components::Layout>();
+            editor_icon_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            editor_icon_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
+            editor_icon_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            editor_icon_layout.aspect_ratio = { 1.0f, 1.0f };
             editor_icon->setParent(*editor_select);
             editor_icon->swap(editor_select->getChildren()[0]);
             index++;
