@@ -34,20 +34,21 @@ namespace atmo::core::ecs::entities
         };
     }
 
-    void UIDrawingCanvas::updateFitScale(components::UIDrawingCanvas &comp)
+    float UIDrawingCanvas::computeFitScale(const components::UIDrawingCanvas &comp) const
     {
-        if (comp.textureSize.x <= 0 || comp.textureSize.y <= 0)
-            return;
+        if (comp.textureSize.x <= 0 || comp.textureSize.y <= 0) {
+            return 1;
+        }
 
-        float scaleX = comp.canvasSize.x / comp.textureSize.x;
-        float scaleY = comp.canvasSize.y / comp.textureSize.y;
+        float scaleX = comp.bounds.width  / comp.textureSize.x;
+        float scaleY = comp.bounds.height / comp.textureSize.y;
 
-        comp.fitScale = std::min(scaleX, scaleY);
+        return std::min(scaleX, scaleY);
     }
 
     SDL_FRect UIDrawingCanvas::computeTextureRect(const components::UIDrawingCanvas &comp) const
     {
-        float scale = comp.fitScale * comp.zoom;
+        float scale = computeFitScale(comp) * comp.zoom;
 
         float drawW = comp.textureSize.x * scale;
         float drawH = comp.textureSize.y * scale;
@@ -65,6 +66,28 @@ namespace atmo::core::ecs::entities
                screenPos.y >= rect.y && screenPos.y < rect.y + rect.h;
     }
 
+    void UIDrawingCanvas::clampOffset(components::UIDrawingCanvas &comp)
+    {
+        SDL_FRect textureRect = computeTextureRect(comp);
+
+        float marginX = comp.bounds.width * PAN_MARGIN_FACTOR;
+        float marginY = comp.bounds.height * PAN_MARGIN_FACTOR;
+
+        float halfPanX =
+            std::abs(textureRect.w - comp.bounds.width) / 2.0f +
+            marginX;
+
+        float halfPanY =
+            std::abs(textureRect.h - comp.bounds.height) / 2.0f +
+            marginY;
+
+        comp.offset.x =
+            common::math::Clamp(comp.offset.x, -halfPanX, halfPanX);
+
+        comp.offset.y =
+            common::math::Clamp(comp.offset.y, -halfPanY, halfPanY);
+    }
+
     void UIDrawingCanvas::draw(ClaySdL3RendererData *data)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
@@ -73,8 +96,6 @@ namespace atmo::core::ecs::entities
         if (elementData.found) {
             comp.bounds = elementData.boundingBox;
         }
-
-        updateFitScale(comp);
 
         auto mousePosInScreen = core::InputManager::GetMousePosition();
         auto mousePosInCanvas = screenToCanvas(mousePosInScreen);
@@ -92,11 +113,7 @@ namespace atmo::core::ecs::entities
                     comp.offset.x += (comp.bounds.width / 2.0f - (relativeX - 0.5f) * comp.bounds.width) * (comp.zoom - oldZoom);
                     comp.offset.y += (comp.bounds.height / 2.0f - (relativeY - 0.5f) * comp.bounds.height) * (comp.zoom - oldZoom);
 
-                    SDL_FRect textureRect = computeTextureRect(comp);
-                    float halfExcessX = std::max(0.0f, textureRect.w - comp.bounds.width) / 2.0f;
-                    float halfExcessY = std::max(0.0f, textureRect.h - comp.bounds.height) / 2.0f;
-                    comp.offset.x = common::math::Clamp(comp.offset.x, -halfExcessX, halfExcessX);
-                    comp.offset.y = common::math::Clamp(comp.offset.y, -halfExcessY, halfExcessY);
+                    clampOffset(comp);
 
                     if (comp.zoom == 1.0f)
                         comp.offset = {0.0f, 0.0f};
@@ -117,11 +134,7 @@ namespace atmo::core::ecs::entities
                     comp.offset.x += deltaX;
                     comp.offset.y += deltaY;
 
-                    SDL_FRect textureRect = computeTextureRect(comp);
-                    float halfExcessX = std::max(0.0f, textureRect.w - comp.bounds.width) / 2.0f;
-                    float halfExcessY = std::max(0.0f, textureRect.h - comp.bounds.height) / 2.0f;
-                    comp.offset.x = common::math::Clamp(comp.offset.x, -halfExcessX, halfExcessX);
-                    comp.offset.y = common::math::Clamp(comp.offset.y, -halfExcessY, halfExcessY);
+                    clampOffset(comp);
 
                     comp.lastPanMousePos = mousePosInScreen;
                 }

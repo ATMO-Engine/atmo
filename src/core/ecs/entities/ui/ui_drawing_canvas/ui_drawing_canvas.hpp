@@ -16,7 +16,6 @@ namespace atmo::core::components
         atmo::core::types::Vector2 textureSize = {0.0f, 0.0f};
 
         float zoom = 1.0f;
-        float fitScale = 1.0f;
         atmo::core::types::Vector2 offset = {0.0f, 0.0f};
         atmo::core::types::Vector2i lastMousePos = {0, 0};
         atmo::core::types::Vector2 lastPanMousePos = {0.0f, 0.0f};
@@ -35,6 +34,8 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIDrawingCa
 
 namespace atmo::core::ecs::entities
 {
+    constexpr float PAN_MARGIN_FACTOR = 0.25f;
+
     class UIDrawingCanvas : public EntityRegistry::Registrable<UIDrawingCanvas, UI>
     {
     public:
@@ -58,8 +59,10 @@ namespace atmo::core::ecs::entities
         void paintLine(atmo::core::types::Vector2i from, atmo::core::types::Vector2i to, atmo::core::types::Color color);
 
     private:
-        void updateFitScale(components::UIDrawingCanvas &comp);
+        float computeFitScale(const components::UIDrawingCanvas &comp) const;
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;
         bool isInsideTextureRect(atmo::core::types::Vector2 screenPos, const components::UIDrawingCanvas &comp) const;
+
+        void clampOffset(components::UIDrawingCanvas &comp);
     };
 } // namespace atmo::core::ecs::entities
