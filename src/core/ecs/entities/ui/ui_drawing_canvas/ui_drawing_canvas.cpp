@@ -34,10 +34,23 @@ namespace atmo::core::ecs::entities
         };
     }
 
+    void UIDrawingCanvas::updateFitScale(components::UIDrawingCanvas &comp)
+    {
+        if (comp.textureSize.x <= 0 || comp.textureSize.y <= 0)
+            return;
+
+        float scaleX = comp.canvasSize.x / comp.textureSize.x;
+        float scaleY = comp.canvasSize.y / comp.textureSize.y;
+
+        comp.fitScale = std::min(scaleX, scaleY);
+    }
+
     SDL_FRect UIDrawingCanvas::computeTextureRect(const components::UIDrawingCanvas &comp) const
     {
-        float drawW = comp.bounds.width * comp.zoom;
-        float drawH = comp.bounds.height * comp.zoom;
+        float scale = comp.fitScale * comp.zoom;
+
+        float drawW = comp.textureSize.x * scale;
+        float drawH = comp.textureSize.y * scale;
 
         float drawX = comp.bounds.x + (comp.bounds.width - drawW) / 2.0f + comp.offset.x;
         float drawY = comp.bounds.y + (comp.bounds.height - drawH) / 2.0f + comp.offset.y;
@@ -57,12 +70,14 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
         Clay_ElementData elementData = Clay_GetElementData(CLAY_ID("DrawingCanvas"));
-        if (elementData.found)
+        if (elementData.found) {
             comp.bounds = elementData.boundingBox;
+        }
+
+        updateFitScale(comp);
 
         auto mousePosInScreen = core::InputManager::GetMousePosition();
         auto mousePosInCanvas = screenToCanvas(mousePosInScreen);
-
         if (Clay_Hovered()) {
             /** Zoom */
             {
@@ -77,8 +92,9 @@ namespace atmo::core::ecs::entities
                     comp.offset.x += (comp.bounds.width / 2.0f - (relativeX - 0.5f) * comp.bounds.width) * (comp.zoom - oldZoom);
                     comp.offset.y += (comp.bounds.height / 2.0f - (relativeY - 0.5f) * comp.bounds.height) * (comp.zoom - oldZoom);
 
-                    float halfExcessX = comp.bounds.width  * std::abs(comp.zoom - 1.0f) / 2.0f;
-                    float halfExcessY = comp.bounds.height * std::abs(comp.zoom - 1.0f) / 2.0f;
+                    SDL_FRect textureRect = computeTextureRect(comp);
+                    float halfExcessX = std::max(0.0f, textureRect.w - comp.bounds.width) / 2.0f;
+                    float halfExcessY = std::max(0.0f, textureRect.h - comp.bounds.height) / 2.0f;
                     comp.offset.x = common::math::Clamp(comp.offset.x, -halfExcessX, halfExcessX);
                     comp.offset.y = common::math::Clamp(comp.offset.y, -halfExcessY, halfExcessY);
 
@@ -101,8 +117,9 @@ namespace atmo::core::ecs::entities
                     comp.offset.x += deltaX;
                     comp.offset.y += deltaY;
 
-                    float halfExcessX = comp.bounds.width  * std::abs(comp.zoom - 1.0f) / 2.0f;
-                    float halfExcessY = comp.bounds.height * std::abs(comp.zoom - 1.0f) / 2.0f;
+                    SDL_FRect textureRect = computeTextureRect(comp);
+                    float halfExcessX = std::max(0.0f, textureRect.w - comp.bounds.width) / 2.0f;
+                    float halfExcessY = std::max(0.0f, textureRect.h - comp.bounds.height) / 2.0f;
                     comp.offset.x = common::math::Clamp(comp.offset.x, -halfExcessX, halfExcessX);
                     comp.offset.y = common::math::Clamp(comp.offset.y, -halfExcessY, halfExcessY);
 

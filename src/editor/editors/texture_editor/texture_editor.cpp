@@ -12,7 +12,7 @@ namespace atmo::editor
 
         auto windowEntity = container.getWindow();
         auto &windowComp = windowEntity->getComponentMutable<core::components::Window>();
-        canvasInfo.textureSize = {128, 128};
+        canvasInfo.textureSize = {128, 80};
         canvasInfo.canvasSize = {640, 640};
 
         canvasInfo.render_target = SDL_CreateTexture(

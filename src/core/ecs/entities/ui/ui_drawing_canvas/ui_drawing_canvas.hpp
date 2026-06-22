@@ -16,6 +16,7 @@ namespace atmo::core::components
         atmo::core::types::Vector2 textureSize = {0.0f, 0.0f};
 
         float zoom = 1.0f;
+        float fitScale = 1.0f;
         atmo::core::types::Vector2 offset = {0.0f, 0.0f};
         atmo::core::types::Vector2i lastMousePos = {0, 0};
         atmo::core::types::Vector2 lastPanMousePos = {0.0f, 0.0f};
@@ -57,6 +58,7 @@ namespace atmo::core::ecs::entities
         void paintLine(atmo::core::types::Vector2i from, atmo::core::types::Vector2i to, atmo::core::types::Color color);
 
     private:
+        void updateFitScale(components::UIDrawingCanvas &comp);
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;
         bool isInsideTextureRect(atmo::core::types::Vector2 screenPos, const components::UIDrawingCanvas &comp) const;
     };
