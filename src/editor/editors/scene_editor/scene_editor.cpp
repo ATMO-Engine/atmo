@@ -4,6 +4,8 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
+#include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
+#include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -51,6 +53,12 @@ namespace atmo::editor
             child_UI->setParent(parent);
             title_label.setText(entity_ti->name);
             spdlog::info(entity_ti->name);
+
+            auto inputtest = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
+            // auto &input_type = inputtest->getComponentMutable<core::components::UIInput>();
+            // input_type.input_type = core::components::UIInput::InputType::Text;
+
+            inputtest->setParent(child_UI->getChildContainer());
         }
     }
 
