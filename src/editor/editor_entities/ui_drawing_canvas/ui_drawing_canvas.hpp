@@ -10,7 +10,8 @@ namespace atmo::core::components
 {
     struct UIDrawingCanvas {
         Clay_BoundingBox bounds = {};
-        SDL_Texture *render_target = nullptr;
+        SDL_Texture *drawing_texture = nullptr;
+        SDL_Texture *checkerboard_texture = nullptr;
 
         atmo::core::types::Vector2 canvasSize = { 0.0f, 0.0f };
         atmo::core::types::Vector2 textureSize = { 0.0f, 0.0f };

@@ -1,15 +1,27 @@
 #include "ui_drawing_canvas.hpp"
+#include "common/math.hpp"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "meta/auto_register.hpp"
-
-#include "common/math.hpp"
 #include "core/input/input_manager.hpp"
+#include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
 {
-    void UIDrawingCanvas::RegisterSystems(flecs::world *world) {}
+    void UIDrawingCanvas::RegisterSystems(flecs::world *world)
+    {
+        world->observer<components::UIDrawingCanvas>().event(flecs::OnRemove).each([](flecs::entity e, components::UIDrawingCanvas &comp) {
+            if (comp.drawing_texture) {
+                SDL_DestroyTexture(comp.drawing_texture);
+                comp.drawing_texture = nullptr;
+            }
+
+            if (comp.checkerboard_texture) {
+                SDL_DestroyTexture(comp.checkerboard_texture);
+                comp.checkerboard_texture = nullptr;
+            }
+        });
+    }
 
     void UIDrawingCanvas::initialize()
     {
@@ -169,7 +181,7 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        if (!comp.render_target) {
+        if (!comp.drawing_texture || !comp.checkerboard_texture) {
             return;
         }
 
@@ -190,7 +202,8 @@ namespace atmo::core::ecs::entities
 
         SDL_Rect clipRect = { (int)comp.bounds.x, (int)comp.bounds.y, (int)comp.bounds.width, (int)comp.bounds.height };
         SDL_SetRenderClipRect(renderer, &clipRect);
-        SDL_RenderTexture(renderer, comp.render_target, nullptr, &comp.cachedTextureRect);
+        SDL_RenderTexture(renderer, comp.checkerboard_texture, nullptr, &comp.cachedTextureRect);
+        SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &comp.cachedTextureRect);
         SDL_SetRenderClipRect(renderer, nullptr);
     }
 
@@ -223,7 +236,7 @@ namespace atmo::core::ecs::entities
     void UIDrawingCanvas::paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        if (!comp.render_target)
+        if (!comp.drawing_texture)
             return;
 
         auto windowEntity = getWindow();
@@ -236,7 +249,7 @@ namespace atmo::core::ecs::entities
 
         SDL_Renderer *renderer = window.renderer_data.renderer;
 
-        SDL_SetRenderTarget(renderer, comp.render_target);
+        SDL_SetRenderTarget(renderer, comp.drawing_texture);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         SDL_SetRenderDrawColor(renderer, color.r * 255, color.g * 255, color.b * 255, color.a * 255);
         SDL_RenderPoint(renderer, (float)pos.x, (float)pos.y);
