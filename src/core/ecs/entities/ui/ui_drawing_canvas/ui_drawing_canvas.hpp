@@ -11,11 +11,12 @@ namespace atmo::core::components
     struct UIDrawingCanvas {
         Clay_BoundingBox bounds = {};
         SDL_Texture *render_target = nullptr;
-        float zoom = 1.0f;
-        atmo::core::types::Vector2 offset = {0.0f, 0.0f};
 
         atmo::core::types::Vector2 canvasSize = {0.0f, 0.0f};
+        atmo::core::types::Vector2 textureSize = {0.0f, 0.0f};
 
+        float zoom = 1.0f;
+        atmo::core::types::Vector2 offset = {0.0f, 0.0f};
         atmo::core::types::Vector2i lastMousePos = {0, 0};
         atmo::core::types::Vector2 lastPanMousePos = {0.0f, 0.0f};
         bool panning = false;

@@ -21,20 +21,19 @@ namespace atmo::core::ecs::entities
 
     Clay_ElementDeclaration UIDrawingCanvas::buildDecl()
     {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
         return Clay_ElementDeclaration{
             .id = CLAY_ID("DrawingCanvas"),
             .layout = {
                 .sizing = {
-                    .width = CLAY_SIZING_FIXED(640),
-                    .height = CLAY_SIZING_FIXED(640),
+                    .width = CLAY_SIZING_FIXED(comp.canvasSize.x),
+                    .height = CLAY_SIZING_FIXED(comp.canvasSize.y),
                 }
             }
         };
     }
 
-    // Calcule le rectangle exact qu'occupe la texture dans l'espace UI selon le zoom
-    // zoom=1 -> texture remplit tout le bounds
-    // zoom<1 -> texture plus petite, centrée dans le bounds
     SDL_FRect UIDrawingCanvas::computeTextureRect(const components::UIDrawingCanvas &comp) const
     {
         float drawW = comp.bounds.width * comp.zoom;
@@ -114,7 +113,7 @@ namespace atmo::core::ecs::entities
                     comp.panning = false;
             }
 
-            /** Dessin — uniquement si la souris est dans la zone texture */
+            /** Dessin */
             {
                 if (isInsideTextureRect(mousePosInScreen, comp)) {
                     atmo::core::types::Color paintColor = atmo::core::types::Color::BLACK;
@@ -145,13 +144,11 @@ namespace atmo::core::ecs::entities
 
         SDL_Renderer *renderer = window.renderer_data.renderer;
 
-        // Fond gris pour les zones hors texture
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
         SDL_FRect canvasRect = { comp.bounds.x, comp.bounds.y, comp.bounds.width, comp.bounds.height };
         SDL_RenderFillRect(renderer, &canvasRect);
 
-        // Clip au bounds pour que la texture ne déborde jamais
         SDL_Rect clipRect = {
             (int)comp.bounds.x,
             (int)comp.bounds.y,
@@ -160,11 +157,9 @@ namespace atmo::core::ecs::entities
         };
         SDL_SetRenderClipRect(renderer, &clipRect);
 
-        // Rendu de la texture dans son rectangle calculé
         SDL_FRect textureRect = computeTextureRect(comp);
         SDL_RenderTexture(renderer, comp.render_target, nullptr, &textureRect);
 
-        // Retire le clip pour ne pas affecter le reste du rendu
         SDL_SetRenderClipRect(renderer, nullptr);
     }
 
@@ -176,12 +171,11 @@ namespace atmo::core::ecs::entities
         if (textureRect.w == 0 || textureRect.h == 0)
             return {0, 0};
 
-        // Position relative dans la texture (0.0 -> 1.0)
         float relativeX = (screenPos.x - textureRect.x) / textureRect.w;
         float relativeY = (screenPos.y - textureRect.y) / textureRect.h;
 
-        int textureX = (int)(relativeX * comp.canvasSize.x);
-        int textureY = (int)(relativeY * comp.canvasSize.y);
+        int textureX = (int)(relativeX * comp.textureSize.x);
+        int textureY = (int)(relativeY * comp.textureSize.y);
 
         return {textureX, textureY};
     }
@@ -192,8 +186,8 @@ namespace atmo::core::ecs::entities
         SDL_FRect textureRect = computeTextureRect(comp);
 
         return {
-            textureRect.x + (canvasPos.x / comp.canvasSize.x) * textureRect.w,
-            textureRect.y + (canvasPos.y / comp.canvasSize.y) * textureRect.h
+            textureRect.x + (canvasPos.x / comp.textureSize.x) * textureRect.w,
+            textureRect.y + (canvasPos.y / comp.textureSize.y) * textureRect.h
         };
     }
 

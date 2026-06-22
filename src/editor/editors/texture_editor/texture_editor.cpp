@@ -12,16 +12,18 @@ namespace atmo::editor
 
         auto windowEntity = container.getWindow();
         auto &windowComp = windowEntity->getComponentMutable<core::components::Window>();
+        canvasInfo.textureSize = {128, 128};
+        canvasInfo.canvasSize = {640, 640};
+
         canvasInfo.render_target = SDL_CreateTexture(
             windowComp.renderer_data.renderer,
             SDL_PIXELFORMAT_RGBA8888,
             SDL_TEXTUREACCESS_TARGET,
-            64,
-            64
+            canvasInfo.textureSize.x,
+            canvasInfo.textureSize.y
         );
         SDL_SetTextureScaleMode(canvasInfo.render_target, SDL_SCALEMODE_NEAREST);
 
-        canvasInfo.canvasSize = {64, 64};
 
         SDL_SetRenderTarget(windowComp.renderer_data.renderer, canvasInfo.render_target);
         SDL_SetRenderDrawColor(windowComp.renderer_data.renderer, 255, 255, 255, 255);
