@@ -1,10 +1,10 @@
 #pragma once
 
+#include "SDL3/SDL.h"
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/types.hpp"
 #include "meta/meta.hpp"
-#include "SDL3/SDL.h"
 
 namespace atmo::core::components
 {
@@ -12,13 +12,14 @@ namespace atmo::core::components
         Clay_BoundingBox bounds = {};
         SDL_Texture *render_target = nullptr;
 
-        atmo::core::types::Vector2 canvasSize = {0.0f, 0.0f};
-        atmo::core::types::Vector2 textureSize = {0.0f, 0.0f};
+        atmo::core::types::Vector2 canvasSize = { 0.0f, 0.0f };
+        atmo::core::types::Vector2 textureSize = { 0.0f, 0.0f };
 
+        SDL_FRect cachedTextureRect = {};
         float zoom = 1.0f;
-        atmo::core::types::Vector2 offset = {0.0f, 0.0f};
-        atmo::core::types::Vector2i lastMousePos = {0, 0};
-        atmo::core::types::Vector2 lastPanMousePos = {0.0f, 0.0f};
+        atmo::core::types::Vector2 offset = { 0.0f, 0.0f };
+        atmo::core::types::Vector2i lastMousePos = { 0, 0 };
+        atmo::core::types::Vector2 lastPanMousePos = { 0.0f, 0.0f };
         bool panning = false;
     };
 } // namespace atmo::core::components
@@ -28,8 +29,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIDrawingCa
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::UIDrawingCanvas::zoom>("zoom"),
-        atmo::meta::field<&atmo::core::components::UIDrawingCanvas::offset>("offset")
-    );
+        atmo::meta::field<&atmo::core::components::UIDrawingCanvas::offset>("offset"));
 };
 
 namespace atmo::core::ecs::entities
@@ -55,13 +55,19 @@ namespace atmo::core::ecs::entities
 
         atmo::core::types::Vector2i screenToCanvas(atmo::core::types::Vector2 screenPos) const;
         atmo::core::types::Vector2 canvasToScreen(atmo::core::types::Vector2i canvasPos) const;
-        void paintPixel(atmo::core::types::Vector2i pos, atmo::core::types::Color color);
-        void paintLine(atmo::core::types::Vector2i from, atmo::core::types::Vector2i to, atmo::core::types::Color color);
 
     private:
+        void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
+        void paintLine(const atmo::core::types::Vector2i &from, const atmo::core::types::Vector2i &to, const atmo::core::types::Color &color);
+
         float computeFitScale(const components::UIDrawingCanvas &comp) const;
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;
         bool isInsideTextureRect(atmo::core::types::Vector2 screenPos, const components::UIDrawingCanvas &comp) const;
+
+        void handleZoom(const atmo::core::types::Vector2 &mousePosInScreen);
+        void handlePan(const atmo::core::types::Vector2 &mousePosInScreen);
+        void handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2i &mousePosInCanvas);
+        void render();
 
         void clampOffset(components::UIDrawingCanvas &comp);
     };

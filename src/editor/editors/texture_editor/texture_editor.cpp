@@ -12,18 +12,15 @@ namespace atmo::editor
 
         auto windowEntity = container.getWindow();
         auto &windowComp = windowEntity->getComponentMutable<core::components::Window>();
-        canvasInfo.textureSize = {128, 80};
-        canvasInfo.canvasSize = {640, 640};
+        if (!windowComp.renderer_data.renderer) {
+            return;
+        }
 
+        canvasInfo.textureSize = { 128, 80 };
+        canvasInfo.canvasSize = { 0.40f, 0.30f };
         canvasInfo.render_target = SDL_CreateTexture(
-            windowComp.renderer_data.renderer,
-            SDL_PIXELFORMAT_RGBA8888,
-            SDL_TEXTUREACCESS_TARGET,
-            canvasInfo.textureSize.x,
-            canvasInfo.textureSize.y
-        );
+            windowComp.renderer_data.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, canvasInfo.textureSize.x, canvasInfo.textureSize.y);
         SDL_SetTextureScaleMode(canvasInfo.render_target, SDL_SCALEMODE_NEAREST);
-
 
         SDL_SetRenderTarget(windowComp.renderer_data.renderer, canvasInfo.render_target);
         SDL_SetRenderDrawColor(windowComp.renderer_data.renderer, 255, 255, 255, 255);
@@ -31,7 +28,7 @@ namespace atmo::editor
         SDL_SetRenderTarget(windowComp.renderer_data.renderer, nullptr);
 
         canvasInfo.zoom = 1.0f;
-        canvasInfo.offset = {0.0f, 0.0f};
+        canvasInfo.offset = { 0.0f, 0.0f };
 
         canvas->setParent(container);
     }

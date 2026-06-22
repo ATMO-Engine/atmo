@@ -25,8 +25,14 @@ namespace atmo
             public:
                 static ResourceManager &GetInstance();
 
-                void setRenderer(SDL_Renderer *renderer) { m_renderer = renderer; }
-                SDL_Renderer *getRenderer() const { return m_renderer; }
+                void setRenderer(SDL_Renderer *renderer)
+                {
+                    m_renderer = renderer;
+                }
+                SDL_Renderer *getRenderer() const
+                {
+                    return m_renderer;
+                }
 
                 ~ResourceManager()
                 {

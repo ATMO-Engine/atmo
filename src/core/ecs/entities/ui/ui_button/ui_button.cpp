@@ -92,8 +92,8 @@ namespace atmo::core::ecs::entities
         }
 
         if (btnComp.group != 0) {
-            auto evt       = std::make_shared<event::events::ButtonGroupToggleEvent>();
-            evt->group_id  = btnComp.group;
+            auto evt = std::make_shared<event::events::ButtonGroupToggleEvent>();
+            evt->group_id = btnComp.group;
             evt->sender_id = static_cast<flecs::entity_t>(getID());
             event::EventRegistry::Dispatch(evt);
         } else {
