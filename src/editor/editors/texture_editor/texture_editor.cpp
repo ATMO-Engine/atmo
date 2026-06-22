@@ -1,7 +1,7 @@
 #include "texture_editor.hpp"
 #include "editor/editor_registry.hpp"
 
-#include "core/ecs/entities/ui/ui_drawing_canvas/ui_drawing_canvas.hpp"
+#include "editor/editor_entities/ui_drawing_canvas/ui_drawing_canvas.hpp"
 
 namespace atmo::editor
 {
