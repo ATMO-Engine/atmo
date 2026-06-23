@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <optional>
 #include <type_traits>
-#include "core/types.hpp"
 
 namespace atmo::meta
 {
@@ -107,34 +106,6 @@ namespace atmo::meta
 
     template <> struct DefaultWidget<float> {
         static constexpr const char *value = "float";
-    };
-
-    template <> struct DefaultWidget<core::types::Color> {
-        static constexpr const char *value = "color_picker";
-    };
-
-    template <> struct DefaultWidget<core::types::Vector2> {
-        static constexpr const char *value = "vector2";
-    };
-
-    template <> struct DefaultWidget<core::types::Vector2i> {
-        static constexpr const char *value = "vector2i";
-    };
-
-    template <> struct DefaultWidget<core::types::Vector3> {
-        static constexpr const char *value = "vector3";
-    };
-
-    template <> struct DefaultWidget<core::types::Vector3i> {
-        static constexpr const char *value = "vector3i";
-    };
-
-    template <> struct DefaultWidget<core::types::Vector4> {
-        static constexpr const char *value = "vector4";
-    };
-
-    template <> struct DefaultWidget<core::types::Vector4i> {
-        static constexpr const char *value = "vector4i";
     };
 
 } // namespace atmo::meta

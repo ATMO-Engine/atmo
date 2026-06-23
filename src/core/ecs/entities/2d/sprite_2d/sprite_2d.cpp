@@ -15,8 +15,6 @@ namespace atmo::core::ecs::entities
 {
     void Sprite2d::RegisterSystems(flecs::world *world)
     {
-        // Load surface and texture_size when texture_path is set but m_res is not yet loaded.
-        // This handles the deserialization case where texture_path is restored from JSON but m_res is null.
         world->system<components::Sprite2d>("Sprite2d_Sync").kind(flecs::PreUpdate).each([](flecs::entity /*e*/, components::Sprite2d &sprite) {
             if (sprite.texture_path.empty() || sprite.m_res)
                 return;
