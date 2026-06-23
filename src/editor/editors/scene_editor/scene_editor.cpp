@@ -98,8 +98,8 @@ namespace atmo::editor
 
         auto left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &left_panel_container_layout = left_panel_container->getComponentMutable<core::components::Layout>();
-        left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        left_panel_container_layout.width.size = 0.2f;
+        left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        left_panel_container_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
         left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         left_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -217,8 +217,8 @@ namespace atmo::editor
 
         auto right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &right_panel_container_layout = right_panel_container->getComponentMutable<core::components::Layout>();
-        right_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        right_panel_container_layout.width.size = 0.2f;
+        right_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        right_panel_container_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
         right_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         right_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         right_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -230,6 +230,7 @@ namespace atmo::editor
         right_panel_rect.corner_radius = { 4, 4, 4, 4 };
         auto &right_panel_layout = right_panel->getComponentMutable<core::components::Layout>();
         right_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        right_panel_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 0.0f, 320.0f };
         right_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         right_panel_layout.direction = core::components::Layout::Direction::Vertical;
         right_panel_layout.padding = { 16, 16, 8, 8 };
