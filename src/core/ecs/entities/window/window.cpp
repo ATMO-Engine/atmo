@@ -2,6 +2,7 @@
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "core/ecs/world_context.hpp"
 
 #include <cstdint>
 #include "core/args/arg_manager.hpp"
@@ -32,6 +33,10 @@ namespace atmo::core::ecs::entities
 {
     void Window::RegisterSystems(flecs::world *world)
     {
+        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
+        if (ctx && ctx->is_editor_isolated)
+            return;
+
         world->system<components::Window>("PollEvents").kind(flecs::PreUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
             entities::Window entity(it.entity(i));
             entity.pollEvents(it.delta_time());

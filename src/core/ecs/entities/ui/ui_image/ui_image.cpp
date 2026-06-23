@@ -32,6 +32,15 @@ namespace atmo::core::ecs::entities
         Clay_ElementDeclaration d = UI::buildDecl();
 
         auto &img = getComponentMutable<components::UIImage>();
+
+        if (img.raw_texture) {
+            d.backgroundColor = getComponent<components::UI>().modulate.toFloat<Clay_Color>(255);
+            d.image = { .imageData = img.raw_texture };
+            d.layout.sizing.width = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
+            d.layout.sizing.height = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
+            return d;
+        }
+
         if (!img.res)
             return d;
 

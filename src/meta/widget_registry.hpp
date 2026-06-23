@@ -8,6 +8,7 @@
 
 #include "core/ecs/entities/entity.hpp"
 #include "meta/type_info.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::meta
 {
@@ -49,11 +50,13 @@ namespace atmo::meta
         [[nodiscard]] std::optional<core::ecs::entities::Entity> create(core::ecs::entities::Entity parent, void *value, const FieldInfo &field) const
         {
             if (!field.widget) {
+                spdlog::error(R"(Couldn't create widget for field of type "{}": widget not configured for field)", field.widget);
                 return std::nullopt;
             }
 
             auto it = m_widgets.find(field.widget);
             if (it == m_widgets.end()) {
+                spdlog::error(R"(Couldn't create widget for field of type "{}": widget not found in registry for type)", field.widget);
                 return std::nullopt;
             }
 

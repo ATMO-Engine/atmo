@@ -147,6 +147,15 @@ namespace atmo::core::ecs::entities
         void deserialize(const EntityData &data);
 
         /**
+         * @brief Deserialize an EntityData into this entity, creating children inside @p world.
+         *        Use this instead of deserialize() when this entity lives in an isolated (non-main) world.
+         *
+         * @param data Serialized entity data.
+         * @param world The isolated world to create child entities in.
+         */
+        void deserializeInWorld(const EntityData &data, flecs::world *world);
+
+        /**
          * @brief Set a component for the entity.
          *
          * @tparam Component Type of the component to set. Must not be a tag component (struct with no data).

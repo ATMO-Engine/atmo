@@ -4,8 +4,10 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
@@ -56,6 +58,28 @@ namespace atmo::editor
 
     void SceneEditor::init(atmo::core::ecs::entities::UI &container)
     {
+        // {
+        //     flecs::entity root = container.getHandle().world().lookup("_Root");
+        //     SDL_Renderer *renderer = nullptr;
+        //     if (root.is_valid() && root.has<core::components::Window>()) {
+        //         auto window = root.get_ref<core::components::Window>();
+        //         if (window)
+        //             renderer = window->renderer_data.renderer;
+        //     }
+        //     m_scene_ctx = std::make_unique<EditorSceneContext>();
+        //     m_scene_ctx->init(renderer, 800, 600);
+
+        //     container.getHandle().world().system<>("SceneEditor_Tick").kind(flecs::OnValidate).run([ctx = m_scene_ctx.get()](flecs::iter &it) {
+        //         flecs::entity root = it.world().lookup("_Root");
+        //         if (!root.is_valid() || !root.has<core::components::Window>())
+        //             return;
+        //         auto window = root.get_ref<core::components::Window>();
+        //         if (!window || !window->renderer_data.renderer)
+        //             return;
+        //         ctx->tick(it.delta_time(), window->renderer_data.renderer);
+        //     });
+        // }
+
         auto scene_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &scene_editor_container_layout = scene_editor_container->getComponentMutable<core::components::Layout>();
         scene_editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -72,8 +96,6 @@ namespace atmo::editor
         left_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         left_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         left_panel_container->setParent(*scene_editor_container);
-
-        // TODO: ask grok to refactor label text gen
 
         auto left_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
         auto &left_panel_rect = left_panel->getComponentMutable<core::components::UIRect>();
@@ -113,6 +135,22 @@ namespace atmo::editor
         left_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         left_panel_pin_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
         left_panel_pin->setParent(*top_left_panel_container);
+
+        // auto save_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        // auto &save_button_rect = save_button->getComponentMutable<core::components::UIRect>();
+        // save_button_rect.color = core::types::Color::BLACK;
+        // save_button_rect.color.a = 0.5f;
+        // auto &save_button_layout = save_button->getComponentMutable<core::components::Layout>();
+        // save_button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        // save_button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        // save_button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 60.0f, 60.0f };
+        // save_button->setParent(*top_left_panel_container);
+        // save_button->getSignal<bool>("Toggle").connect([this](bool /*state*/) {
+        //     if (!m_scene_ctx || !m_scene_ctx->isReady())
+        //         return;
+        //     const std::string path = m_scene_file_path.empty() ? "scene.json" : m_scene_file_path;
+        //     m_scene_ctx->saveSceneToFile(path);
+        // });
 
         auto content_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &content_left_panel_container_layout = content_left_panel_container->getComponentMutable<core::components::Layout>();
@@ -161,6 +199,13 @@ namespace atmo::editor
         middle_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         middle_panel_layout.height.size = 0.6f;
         middle_panel->setParent(*middle_panel_container);
+
+        // if (m_scene_ctx && m_scene_ctx->isReady()) {
+        //     auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        //     auto &viewport_img_comp = viewport_image->getComponentMutable<core::components::UIImage>();
+        //     viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
+        //     viewport_image->setParent(*middle_panel);
+        // }
 
         auto right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &right_panel_container_layout = right_panel_container->getComponentMutable<core::components::Layout>();
@@ -228,9 +273,11 @@ namespace atmo::editor
         component_viewport_container_layout.padding = { 0, 0, 8, 8 };
         component_viewport_container->setParent(*content_right_panel_container);
 
-        for (auto &entity : container.getScene()->getChildren()) {
-            sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
-        }
+        // if (m_scene_ctx && m_scene_ctx->isReady() && m_scene_ctx->getScene()) {
+        //     for (auto &entity : m_scene_ctx->getScene()->getChildren()) {
+        //         sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
+        //     }
+        // }
     }
 
     void SceneEditor::sceneEntityFodableTreeinit(
