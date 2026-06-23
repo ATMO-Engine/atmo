@@ -10,7 +10,6 @@
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
-
 #include "flecs.h"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
@@ -285,7 +284,6 @@ namespace atmo::core::ecs::entities
          * @return std::shared_ptr<entities::Scene> Scene that the entity belongs to.
          */
         std::shared_ptr<entities::Scene> getScene() const;
-
         /**
          * @brief Returns the internal ID of the entity.
          *

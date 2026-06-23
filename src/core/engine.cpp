@@ -6,6 +6,7 @@
 
 #include "SDL3/SDL_error.h"
 #include "SDL3/SDL_hints.h"
+#include "SDL3/SDL_scancode.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "args/arg_manager.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
@@ -148,6 +149,7 @@ namespace atmo::core
         InputManager::AddInput("ui_scroll", new InputManager::MouseScrollEvent(), true);
         InputManager::AddInput("ui_quit", new InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), false);
         InputManager::AddInput("ui_confirm", new InputManager::KeyEvent(SDL_SCANCODE_RETURN, true), false);
+        InputManager::AddInput("ui_delete", new InputManager::KeyEvent(SDL_SCANCODE_BACKSPACE, true), false);
 
         return 0;
     }

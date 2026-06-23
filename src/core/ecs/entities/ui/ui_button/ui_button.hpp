@@ -18,9 +18,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIButton> {
     static constexpr const char *name = "Button";
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::UIButton::toggle>("toggle"),
-        atmo::meta::field<&atmo::core::components::UIButton::group>("group")
-    );
+        atmo::meta::field<&atmo::core::components::UIButton::toggle>("toggle"), atmo::meta::field<&atmo::core::components::UIButton::group>("group"));
 };
 
 namespace atmo::core::ecs::entities
@@ -44,6 +42,5 @@ namespace atmo::core::ecs::entities
 
         Clay_ElementDeclaration buildDecl() override;
         void draw(ClaySdL3RendererData *data) override;
-
     };
 } // namespace atmo::core::ecs::entities

@@ -1,5 +1,6 @@
 #include "input_manager.hpp"
 #include <iostream>
+#include "SDL3/SDL_events.h"
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "spdlog/spdlog.h"
 
