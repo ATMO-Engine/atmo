@@ -67,7 +67,7 @@ namespace atmo::meta
             fi.label = fd.label;
             fi.tooltip = fd.tooltip;
             fi.category = fd.category;
-            fi.widget = fd.widget;
+            fi.widget = fd.widget ? fd.widget : DefaultWidget<FieldT>::value;
             fi.read_only = fd.read_only;
             fi.has_range = fd.has_range;
             fi.range_min = fd.range_min;

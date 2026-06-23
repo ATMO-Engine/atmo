@@ -137,6 +137,37 @@ namespace atmo::core::ecs::entities
         }
     }
 
+    void Entity::deserializeInWorld(const EntityData &data, flecs::world *world)
+    {
+        rename(data.name);
+
+        flecs::world entity_world = p_handle.world();
+
+        for (const auto &[comp_name, comp_json] : data.components) {
+            const meta::TypeInfo *ti = meta::MetaRegistry::Instance().find(comp_name);
+            if (!ti || !ti->from_json || !ti->resolve_flecs_id)
+                continue;
+
+            const uint64_t local_id = ti->resolve_flecs_id(entity_world);
+            if (local_id == 0)
+                continue;
+
+            void *comp = p_handle.get_mut(flecs::id(entity_world, local_id));
+            if (!comp)
+                continue;
+
+            ti->from_json(comp, comp_json.dump().value());
+        }
+
+        for (const EntityData &child : data.children) {
+            auto child_entity = ecs::EntityRegistry::CreateIn(world, child.type);
+            if (!child_entity)
+                continue;
+            child_entity->deserializeInWorld(child, world);
+            child_entity->setParent(*this);
+        }
+    }
+
     flecs::entity Entity::getHandle() const
     {
         return p_handle;

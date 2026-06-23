@@ -1,7 +1,11 @@
 #pragma once
 
+#include <memory>
+#include <string>
+
 #include "editor/editor_registry.hpp"
 #include "editor/editors/editor.hpp"
+#include "editor/editors/scene_editor/editor_scene_context.hpp"
 
 namespace atmo::editor
 {
@@ -38,7 +42,11 @@ namespace atmo::editor
         flecs::entity getSelectedEntity();
         void setSelectedEntity(flecs::entity new_slected_entity);
 
+        EditorSceneContext *getSceneContext() const { return m_scene_ctx.get(); }
+
     private:
         flecs::entity m_selected_entity;
+        std::unique_ptr<EditorSceneContext> m_scene_ctx;
+        std::string m_scene_file_path;
     };
 } // namespace atmo::editor

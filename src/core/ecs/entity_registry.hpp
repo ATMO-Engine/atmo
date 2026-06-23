@@ -57,6 +57,25 @@ namespace atmo::core::ecs
         static void UnregisterAll(flecs::world *world);
 
         /**
+         * @brief Create an entity of the given type inside a specific world, bypassing the global m_world pointer.
+         *        Safe to call outside of world.progress() on the main thread only.
+         *
+         * @param world Target world to create the entity in.
+         * @param type_name Full type name (e.g. "Entity::Scene").
+         * @return std::shared_ptr<entities::Entity> The created entity, or nullptr on failure.
+         */
+        static std::shared_ptr<entities::Entity> CreateIn(flecs::world *world, std::string_view type_name);
+
+        /**
+         * @brief Register all entity systems into @p world without overwriting the main world pointer.
+         *        Used by isolated worlds (e.g. per-SceneEditor ECS). Each entity type's RegisterSystems
+         *        is responsible for checking WorldContext::is_editor_isolated to gate systems appropriately.
+         *
+         * @param world The isolated world to register systems into.
+         */
+        static void RegisterSystemsForWorld(flecs::world *world);
+
+        /**
          * @brief Get the flecs entity from it's id
          *
          * @param id The id of the entity you want to retrieve

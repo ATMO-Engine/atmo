@@ -2,9 +2,11 @@
 
 #include "box2d/box2d.h"
 #include "core/ecs/components.hpp"
+#include "core/ecs/world_context.hpp"
 #include "core/types.hpp"
 #include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
@@ -20,6 +22,14 @@ namespace atmo::core::ecs::entities
                 b2DestroyWorld(scene.world_id);
             }
         });
+
+        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
+        const bool is_isolated = ctx && ctx->is_editor_isolated;
+
+        if (is_isolated) {
+            spdlog::debug("Scene::RegisterSystems: skipping physics systems for editor-isolated world");
+            return;
+        }
 
         static const float physics_dt = 1.0f / atmo::project::ProjectManager::GetSettings().engine.physics_frame_rate;
 

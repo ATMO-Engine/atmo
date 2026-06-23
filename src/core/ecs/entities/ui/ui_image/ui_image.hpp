@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDL3/SDL_render.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/resource/resource_ref.hpp"
 
@@ -11,6 +12,7 @@ namespace atmo::core::components
         std::unique_ptr<resource::ResourceRef<SDL_Texture>> res;
         float natural_width = 0.0f;
         float natural_height = 0.0f;
+        SDL_Texture *raw_texture = nullptr;
     };
 } // namespace atmo::core::components
 

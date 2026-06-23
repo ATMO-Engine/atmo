@@ -10,7 +10,6 @@
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
-
 #include "flecs.h"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
@@ -147,6 +146,15 @@ namespace atmo::core::ecs::entities
         void deserialize(const EntityData &data);
 
         /**
+         * @brief Deserialize an EntityData into this entity, creating children inside @p world.
+         *        Use this instead of deserialize() when this entity lives in an isolated (non-main) world.
+         *
+         * @param data Serialized entity data.
+         * @param world The isolated world to create child entities in.
+         */
+        void deserializeInWorld(const EntityData &data, flecs::world *world);
+
+        /**
          * @brief Set a component for the entity.
          *
          * @tparam Component Type of the component to set. Must not be a tag component (struct with no data).
@@ -276,7 +284,6 @@ namespace atmo::core::ecs::entities
          * @return std::shared_ptr<entities::Scene> Scene that the entity belongs to.
          */
         std::shared_ptr<entities::Scene> getScene() const;
-
         /**
          * @brief Returns the internal ID of the entity.
          *

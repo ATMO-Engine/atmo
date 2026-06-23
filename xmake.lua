@@ -321,6 +321,15 @@ package("argparse")
     end)
 package_end()
 
+package("ctre")
+    add_deps("cmake")
+    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "compile-time-regular-expressions"))
+
+    on_install(function (package)
+        import("package.tools.cmake").install(package, {"-DCTRE_BUILD_TESTS=OFF"})
+    end)
+package_end()
+
 add_requires(
     "spdlog", { system = false },
     "luau", { system = false },
@@ -334,7 +343,8 @@ add_requires(
     "semver", { system = false },
     "box2d", { system = false },
     "argparse", { system = false },
-    "tracy", { system = false }
+    "tracy", { system = false },
+    "ctre", {system = false }
 )
 
 function platform_specifics()
@@ -376,7 +386,7 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d", "argparse", "tracy")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d", "argparse", "tracy", "ctre")
 end
 
 target("atmo")

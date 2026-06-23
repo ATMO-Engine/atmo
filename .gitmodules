@@ -37,3 +37,6 @@
 [submodule "submodules/argparse"]
 	path = submodules/argparse
 	url = git@github.com:p-ranav/argparse.git
+[submodule "submodules/compile-time-regular-expressions"]
+	path = submodules/compile-time-regular-expressions
+	url = https://github.com/hanickadot/compile-time-regular-expressions.git
