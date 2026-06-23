@@ -5,6 +5,7 @@
 #include "core/types.hpp"
 #include "glaze/glaze.hpp"
 #include "impl/romver.hpp"
+#include "meta/glaze_bridge.hpp"
 
 #define ATMO_VERSION "1.0.0"
 

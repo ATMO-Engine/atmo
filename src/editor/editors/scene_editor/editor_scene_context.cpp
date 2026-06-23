@@ -74,7 +74,6 @@ namespace atmo::editor
 
         m_world.progress(delta_time);
 
-        SDL_FlushRenderer(m_renderer);
         SDL_SetRenderTarget(m_renderer, nullptr);
 
         SDL_SetRenderDrawColorFloat(m_renderer, r, g, b, a);
