@@ -42,7 +42,10 @@ namespace atmo::editor
         flecs::entity getSelectedEntity();
         void setSelectedEntity(flecs::entity new_slected_entity);
 
-        EditorSceneContext *getSceneContext() const { return m_scene_ctx.get(); }
+        EditorSceneContext *getSceneContext() const
+        {
+            return m_scene_ctx.get();
+        }
 
     private:
         flecs::entity m_selected_entity;

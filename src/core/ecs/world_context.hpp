@@ -14,7 +14,5 @@ namespace atmo::core::components
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::WorldContext> {
     static constexpr const char *name = "WorldContext";
-    static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::WorldContext::is_editor_isolated>("is_editor_isolated")
-    );
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::WorldContext::is_editor_isolated>("is_editor_isolated"));
 };

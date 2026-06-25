@@ -50,12 +50,18 @@ namespace atmo::editor
          * @brief Returns the off-screen SDL_Texture that receives the isolated world's rendering.
          *        The caller must NOT destroy this texture.
          */
-        SDL_Texture *getViewportTexture() const { return m_render_texture; }
+        SDL_Texture *getViewportTexture() const
+        {
+            return m_render_texture;
+        }
 
         /**
          * @brief Returns true after init() has succeeded.
          */
-        bool isReady() const { return m_ready; }
+        bool isReady() const
+        {
+            return m_ready;
+        }
 
         /**
          * @brief Serialize the isolated scene to a prettified JSON string.
@@ -78,9 +84,15 @@ namespace atmo::editor
          */
         void loadSceneFromFile(const std::string &path);
 
-        flecs::world &getWorld() { return m_world; }
+        flecs::world &getWorld()
+        {
+            return m_world;
+        }
 
-        std::shared_ptr<core::ecs::entities::Scene> getScene() const { return m_scene; }
+        std::shared_ptr<core::ecs::entities::Scene> getScene() const
+        {
+            return m_scene;
+        }
 
     private:
         void createRenderTexture(int width, int height);

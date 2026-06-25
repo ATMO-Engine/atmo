@@ -1,0 +1,172 @@
+#include "ui_color_picker.hpp"
+#include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
+#include "core/ecs/entities/ui/ui_slider/ui_slider.hpp"
+#include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
+#include "meta/auto_register.hpp"
+#include "spdlog/spdlog.h"
+
+namespace atmo::core::ecs::entities
+{
+    void UIColorPicker::RegisterSystems(flecs::world *world) {}
+
+    void UIColorPicker::_setupRow(const std::string &labelText, const std::string &rowName)
+    {
+        auto color_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &color_panel_rect = color_panel->getComponentMutable<core::components::UIRect>();
+        color_panel_rect.corner_radius.top_left = 5.0f;
+        color_panel_rect.corner_radius.top_right = 5.0f;
+        color_panel_rect.corner_radius.bottom_left = 5.0f;
+        color_panel_rect.corner_radius.bottom_right = 5.0f;
+        color_panel_rect.color = core::types::Color("#7d7d7d");
+
+        auto &color_panel_layout = color_panel->getComponentMutable<core::components::Layout>();
+        color_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        color_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        color_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        color_panel_layout.padding.left = 4;
+        color_panel_layout.padding.right = 4;
+        color_panel_layout.padding.top = 4;
+        color_panel_layout.padding.bottom = 4;
+        color_panel_layout.child_gap = 4;
+        color_panel_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        color_panel->rename(rowName + "panel");
+        color_panel->setParent(*this);
+
+        auto colorName = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        colorName->setText(labelText);
+        colorName->setFontSize(16);
+        colorName->rename(rowName + "label");
+        colorName->setParent(*color_panel);
+
+        auto slider = core::ecs::EntityRegistry::Create<core::ecs::entities::UISlider>("Entity::UI::UIRect::UISlider");
+        slider->setType(core::components::UISlider::SliderType::Float, 0.0f, 1.0f);
+        auto &slider_layout = slider->getComponentMutable<core::components::Layout>();
+        slider_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        slider_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        slider_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 16.0f, 16.0f };
+        slider->rename(rowName + "slider");
+        slider->setParent(*color_panel);
+
+        auto numberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+        auto &input_entity_comp = numberInput->getComponentMutable<core::components::UIInput>();
+        input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
+        input_entity_comp.input_data = "1.0";
+        numberInput->rename(rowName + "input");
+        numberInput->setParent(*color_panel);
+    }
+
+    void UIColorPicker::initialize()
+    {
+        UIRect::initialize();
+
+        setComponent<components::UIColorPicker>({});
+
+        createSignal<types::Color>("ColorChanged");
+
+        auto &rect = getComponentMutable<core::components::UIRect>();
+        rect.color = core::types::Color("#acacac");
+
+        auto &layout = getComponentMutable<core::components::Layout>();
+        layout.direction = core::components::Layout::Direction::Vertical;
+        layout.child_gap = 6;
+        layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+
+        auto handle = p_handle;
+
+        _setupRow("R", std::string(RowR));
+        auto color_panel = getChild(std::string(RowR) + "panel");
+        auto redSlider = color_panel.getChild(std::string(RowR) + "slider");
+        auto redSliderHandle = redSlider.getHandle();
+        redSlider.getSignal<float>("InternalFloatValueChanged").connect([handle, redSliderHandle](float val) {
+            if (!handle.is_alive() || !redSliderHandle.is_alive()) {
+                return;
+            }
+            UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(redSliderHandle));
+            UIColorPicker colorPicker(core::ecs::EntityRegistry::GetEntityFromId(handle));
+
+            auto &comp = colorPicker.getComponentMutable<core::components::UIColorPicker>();
+            colorPicker.setColor({ val, comp.current_color.g, comp.current_color.b, comp.current_color.a });
+        });
+
+        auto redNumberInput = getChild(std::string(RowR) + "input");
+
+
+        _setupRow("G", std::string(RowG));
+        _setupRow("B", std::string(RowB));
+        _setupRow("A", std::string(RowA));
+
+        //// Connecte les sliders
+        // flecs::entity self = p_handle;
+        // int channel = 0;
+        // for (auto rowName : { RowR, RowG, RowB, RowA }) {
+        //     auto row = getChild(rowName);
+        //     auto slider = UISlider(row.getChild(std::string(rowName) + " slider"));
+        //     int ch = channel;
+        //     slider.getSignal<float>("ValueChanged").connect([self, ch](float value) {
+        //         auto picker = UIColorPicker(self);
+        //         if (!picker.isAlive()) return;
+        //         picker._onSliderChanged(value, ch);
+        //     });
+        //     channel++;
+        // }
+    }
+
+    void UIColorPicker::_onSliderChanged(float value, int channel)
+    {
+        auto &comp = getComponentMutable<components::UIColorPicker>();
+
+        switch (channel) {
+            case 0:
+                comp.current_color.r = value;
+                break;
+            case 1:
+                comp.current_color.g = value;
+                break;
+            case 2:
+                comp.current_color.b = value;
+                break;
+            case 3:
+                comp.current_color.a = value;
+                break;
+        }
+
+        getSignal<types::Color>("ColorChanged").emit(comp.current_color);
+    }
+
+    void UIColorPicker::setColor(const types::Color &color)
+    {
+        auto &comp = getComponentMutable<components::UIColorPicker>();
+        comp.current_color = color;
+        getSignal<types::Color>("ColorChanged").emit(comp.current_color);
+    }
+
+    types::Color UIColorPicker::getColor() const
+    {
+        return getComponent<components::UIColorPicker>().current_color;
+    }
+
+    Clay_ElementDeclaration UIColorPicker::buildDecl()
+    {
+        Clay_ElementDeclaration d = UIRect::buildDecl();
+        return d;
+    }
+
+    void UIColorPicker::draw(ClaySdL3RendererData *data)
+    {
+        //    auto input = UINumberInput(row.getChild(std::string(rowName) + " input"));
+        //    auto &input_ui = input.getComponentMutable<core::components::UIInput>();
+        //
+        //    if (!input_ui.editing) {
+        //        auto &input_comp = input.getComponentMutable<core::components::UINumberInput>();
+        //        float val = std::get<float>(input_comp.value);
+        //        _onSliderChanged(val, static_cast<int>(&rowName - &RowR));
+        //    }
+    }
+} // namespace atmo::core::ecs::entities
+
+ATMO_REGISTER_ENTITY(entities::UIColorPicker);
+ATMO_REGISTER_COMPONENT(atmo::core::components::UIColorPicker)
