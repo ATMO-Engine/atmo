@@ -161,7 +161,6 @@ namespace atmo::core::ecs::entities
         getSignal<UIDrawingCanvas &>("FetchBrush").emit(*this);
 
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        spdlog::info("{} {} {} {}", comp.brushColor.r, comp.brushColor.g, comp.brushColor.b, comp.brushColor.a);
 
         Clay_ElementData elementData = Clay_GetElementData(CLAY_ID("DrawingCanvas"));
         if (elementData.found) {
@@ -274,7 +273,6 @@ namespace atmo::core::ecs::entities
 
         SDL_SetRenderTarget(renderer, comp.drawing_texture);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        spdlog::info("{} {} {} {}", color.r, color.g, color.b, color.a);
 
         SDL_SetRenderDrawColor(renderer, color.r * 255, color.g * 255, color.b * 255, color.a * 255);
         SDL_RenderPoint(renderer, (float)pos.x, (float)pos.y);

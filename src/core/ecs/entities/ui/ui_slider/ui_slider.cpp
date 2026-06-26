@@ -19,10 +19,8 @@ namespace atmo::core::ecs::entities
 
         setComponent<components::UISlider>({});
 
-        createSignal<float>("InternalFloatValueChanged");
-        createSignal<float>("ValueFloatChanged");
-        createSignal<int>("InternalIntValueChanged");
-        createSignal<int>("ValueIntChanged");
+        createSignal<float>("FloatValueChanged");
+        createSignal<int>("IntValueChanged");
 
         auto &layout = getComponentMutable<core::components::Layout>();
         layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
@@ -69,7 +67,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UISlider::setValue(float value)
+    void UISlider::setValue(float value, bool triggerSignal)
     {
         auto &comp = getComponentMutable<components::UISlider>();
 
@@ -79,10 +77,14 @@ namespace atmo::core::ecs::entities
 
         if (comp.type == components::UISlider::SliderType::Int) {
             comp.value = static_cast<int>(clamped);
-            getSignal<int>("InternalIntValueChanged").emit(clamped);
+            if (triggerSignal) {
+                getSignal<int>("IntValueChanged").emit(clamped);
+            }
         } else {
             comp.value = clamped;
-            getSignal<float>("InternalFloatValueChanged").emit(clamped);
+            if (triggerSignal) {
+                getSignal<float>("FloatValueChanged").emit(clamped);
+            }
         }
     }
 

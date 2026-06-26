@@ -48,7 +48,7 @@ namespace atmo::core::ecs::entities
         }
 
         void setType(components::UISlider::SliderType type, float min, float max);
-        void setValue(float value);
+        void setValue(float value, bool triggerSignal = true);
         float getValue() const;
 
         Clay_ElementDeclaration buildDecl() override;
