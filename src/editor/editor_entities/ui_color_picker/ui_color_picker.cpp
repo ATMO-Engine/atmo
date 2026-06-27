@@ -13,7 +13,7 @@ namespace atmo::core::ecs::entities
 {
     void UIColorPicker::RegisterSystems(flecs::world *world) {}
 
-    void UIColorPicker::_setupRow(const std::string &labelText, const std::string &rowName)
+    void UIColorPicker::setupRow(const std::string &labelText, const std::string &rowName)
     {
         auto color_panel = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &color_panel_rect = color_panel->getComponentMutable<core::components::UIRect>();
@@ -53,6 +53,10 @@ namespace atmo::core::ecs::entities
         slider->setParent(*color_panel);
 
         auto numberInput = core::ecs::EntityRegistry::Create<UINumberInput>("Entity::UI::UIInput::UINumberInput");
+        auto &input_rect_layout = numberInput->getComponentMutable<core::components::Layout>();
+        input_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        input_rect_layout.width.size = 0.1f;
+
         auto &input_entity_comp = numberInput->getComponentMutable<core::components::UIInput>();
         input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
         input_entity_comp.input_data = "1.0";
@@ -90,10 +94,14 @@ namespace atmo::core::ecs::entities
         layout.child_gap = 6;
         layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        layout.padding.left = 4;
+        layout.padding.right = 4;
+        layout.padding.top = 4;
+        layout.padding.bottom = 4;
 
         auto handle = p_handle;
         { /* Red slider */
-            _setupRow("R", std::string(RowR));
+            setupRow("R", std::string(RowR));
 
             auto color_panel = getChild(std::string(RowR) + "panel");
 
@@ -140,7 +148,7 @@ namespace atmo::core::ecs::entities
             numberInput.getSignal<float>("FloatValueChanged").emit(1.0f);
         }
         { /* Green slider */
-            _setupRow("G", std::string(RowG));
+            setupRow("G", std::string(RowG));
 
             auto color_panel = getChild(std::string(RowG) + "panel");
 
@@ -187,7 +195,7 @@ namespace atmo::core::ecs::entities
             numberInput.getSignal<float>("FloatValueChanged").emit(1.0f);
         }
         { /* Blue slider */
-            _setupRow("B", std::string(RowB));
+            setupRow("B", std::string(RowB));
 
             auto color_panel = getChild(std::string(RowB) + "panel");
 
@@ -234,7 +242,7 @@ namespace atmo::core::ecs::entities
             numberInput.getSignal<float>("FloatValueChanged").emit(1.0f);
         }
         { /* Alpha slider */
-            _setupRow("A", std::string(RowA));
+            setupRow("A", std::string(RowA));
 
             auto color_panel = getChild(std::string(RowA) + "panel");
 
@@ -282,28 +290,6 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIColorPicker::_onSliderChanged(float value, int channel)
-    {
-        auto &comp = getComponentMutable<components::UIColorPicker>();
-
-        switch (channel) {
-            case 0:
-                comp.current_color.r = value;
-                break;
-            case 1:
-                comp.current_color.g = value;
-                break;
-            case 2:
-                comp.current_color.b = value;
-                break;
-            case 3:
-                comp.current_color.a = value;
-                break;
-        }
-
-        getSignal<types::Color>("ColorChanged").emit(comp.current_color);
-    }
-
     void UIColorPicker::setColor(const types::Color &color)
     {
         auto &comp = getComponentMutable<components::UIColorPicker>();
@@ -322,17 +308,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIColorPicker::draw(ClaySdL3RendererData *data)
-    {
-        //    auto input = UINumberInput(row.getChild(std::string(rowName) + " input"));
-        //    auto &input_ui = input.getComponentMutable<core::components::UIInput>();
-        //
-        //    if (!input_ui.editing) {
-        //        auto &input_comp = input.getComponentMutable<core::components::UINumberInput>();
-        //        float val = std::get<float>(input_comp.value);
-        //        _onSliderChanged(val, static_cast<int>(&rowName - &RowR));
-        //    }
-    }
+    void UIColorPicker::draw(ClaySdL3RendererData *data) {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIColorPicker);

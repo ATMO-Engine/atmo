@@ -44,8 +44,6 @@ namespace atmo::core::ecs::entities
         void draw(ClaySdL3RendererData *data) override;
 
     private:
-        void _setupRow(const std::string &label, const std::string &rowName);
-        void _onSliderChanged(float value, int channel);
-        void _onInputValidated(int channel);
+        void setupRow(const std::string &label, const std::string &rowName);
     };
 } // namespace atmo::core::ecs::entities

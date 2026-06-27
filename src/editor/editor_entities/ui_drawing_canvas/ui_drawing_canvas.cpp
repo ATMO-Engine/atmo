@@ -5,6 +5,7 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "meta/auto_register.hpp"
+#include "SDL3_image/SDL_image.h"
 
 namespace atmo::core::ecs::entities
 {
@@ -292,6 +293,123 @@ namespace atmo::core::ecs::entities
                 }
             }
         }
+    }
+
+    void UIDrawingCanvas::exportCanvas(const std::string &path)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+        if (!comp.drawing_texture)
+            return;
+
+        auto windowEntity = getWindow();
+        if (!windowEntity)
+            return;
+
+        auto window = windowEntity->getComponentMutable<core::components::Window>();
+        SDL_Renderer *renderer = window.renderer_data.renderer;
+        if (!renderer)
+            return;
+
+        int w = (int)comp.textureSize.x;
+        int h = (int)comp.textureSize.y;
+
+        // Créer une surface pour lire les pixels de la texture
+        SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA32);
+        if (!surface)
+            return;
+
+        // Lire les pixels depuis la texture en rendant vers elle
+        SDL_SetRenderTarget(renderer, comp.drawing_texture);
+        surface = SDL_RenderReadPixels(renderer, nullptr);
+        SDL_SetRenderTarget(renderer, nullptr);
+
+        switch (comp.format) {
+            case core::components::UIDrawingCanvas::ExportFormat::PNG:
+                IMG_SavePNG(surface, path.c_str());
+                break;
+            case core::components::UIDrawingCanvas::ExportFormat::BMP:
+                SDL_SaveBMP(surface, path.c_str());
+                break;
+            case core::components::UIDrawingCanvas::ExportFormat::JPG:
+                IMG_SaveJPG(surface, path.c_str(), 90); // qualité 90
+                break;
+        }
+        SDL_DestroySurface(surface);
+    }
+
+    void UIDrawingCanvas::importCanvas(const std::string &path)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        auto windowEntity = getWindow();
+        if (!windowEntity)
+            return;
+
+        auto window = windowEntity->getComponentMutable<core::components::Window>();
+        SDL_Renderer *renderer = window.renderer_data.renderer;
+        if (!renderer)
+            return;
+
+        std::string ext = path.substr(path.find_last_of('.') + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        SDL_Surface *surface = nullptr;
+
+        if (ext == "bmp") {
+            comp.format = core::components::UIDrawingCanvas::ExportFormat::BMP;
+            surface = SDL_LoadBMP(path.c_str());
+        }
+
+        if (ext == "png") {
+            comp.format = core::components::UIDrawingCanvas::ExportFormat::PNG;
+            surface = IMG_Load(path.c_str());
+        }
+
+        if (ext == "jpg" || ext == "jpeg") {
+            comp.format = core::components::UIDrawingCanvas::ExportFormat::JPG;
+            surface = IMG_Load(path.c_str());
+        }
+        if (!surface) {
+            return;
+        }
+
+        SDL_Texture *newTexture = SDL_CreateTextureFromSurface(renderer, surface);
+
+        SDL_DestroySurface(surface);
+
+        if (!newTexture)
+            return;
+
+        // Mettre à jour la taille du canvas selon l'image importée
+        float w, h;
+        SDL_GetTextureSize(newTexture, &w, &h);
+        comp.textureSize = { w, h };
+
+        // Remplacer l'ancienne texture
+        if (comp.drawing_texture)
+            SDL_DestroyTexture(comp.drawing_texture);
+
+        // Recréer une texture render-target et y copier l'image importée
+        SDL_Texture *renderTarget = SDL_CreateTexture(
+            renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET,
+            (int)w, (int)h);
+
+        if (!renderTarget) {
+            SDL_DestroyTexture(newTexture);
+            return;
+        }
+        SDL_SetTextureScaleMode(renderTarget, SDL_SCALEMODE_NEAREST);
+
+        SDL_SetRenderTarget(renderer, renderTarget);
+        SDL_RenderTexture(renderer, newTexture, nullptr, nullptr);
+        SDL_SetRenderTarget(renderer, nullptr);
+        SDL_DestroyTexture(newTexture);
+
+        comp.drawing_texture = renderTarget;
+
+        // Reset zoom/offset
+        comp.zoom = 1.0f;
+        comp.offset = { 0.0f, 0.0f };
     }
 } // namespace atmo::core::ecs::entities
 

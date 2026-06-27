@@ -8,10 +8,18 @@
 
 namespace atmo::core::components
 {
+
     struct UIDrawingCanvas {
+        enum class ExportFormat {
+            PNG,
+            BMP,
+            JPG
+        };
+
         Clay_BoundingBox bounds = {};
         SDL_Texture *drawing_texture = nullptr;
         SDL_Texture *checkerboard_texture = nullptr;
+        ExportFormat format = ExportFormat::PNG;
 
         atmo::core::types::Vector2 canvasSize = { 0.0f, 0.0f };
         atmo::core::types::Vector2 textureSize = { 0.0f, 0.0f };
@@ -22,6 +30,7 @@ namespace atmo::core::components
         atmo::core::types::Vector2i lastMousePos = { 0, 0 };
         atmo::core::types::Vector2 lastPanMousePos = { 0.0f, 0.0f };
         bool panning = false;
+
         int brushRadius = 10;
         atmo::core::types::Color brushColor = atmo::core::types::Color::BLACK;
     };
@@ -59,6 +68,8 @@ namespace atmo::core::ecs::entities
         atmo::core::types::Vector2i screenToCanvas(atmo::core::types::Vector2 screenPos) const;
         atmo::core::types::Vector2 canvasToScreen(atmo::core::types::Vector2i canvasPos) const;
 
+        void exportCanvas(const std::string &path);
+        void importCanvas(const std::string &path);
     private:
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
         void
