@@ -70,6 +70,7 @@ namespace atmo::core::ecs::entities
 
         void exportCanvas(const std::string &path);
         void importCanvas(const std::string &path);
+
     private:
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
         void

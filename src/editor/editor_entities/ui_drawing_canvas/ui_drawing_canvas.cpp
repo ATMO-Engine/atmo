@@ -1,11 +1,11 @@
 #include "ui_drawing_canvas.hpp"
+#include "SDL3_image/SDL_image.h"
 #include "common/math.hpp"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "meta/auto_register.hpp"
-#include "SDL3_image/SDL_image.h"
 
 namespace atmo::core::ecs::entities
 {
@@ -390,9 +390,7 @@ namespace atmo::core::ecs::entities
             SDL_DestroyTexture(comp.drawing_texture);
 
         // Recréer une texture render-target et y copier l'image importée
-        SDL_Texture *renderTarget = SDL_CreateTexture(
-            renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET,
-            (int)w, (int)h);
+        SDL_Texture *renderTarget = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, (int)w, (int)h);
 
         if (!renderTarget) {
             SDL_DestroyTexture(newTexture);

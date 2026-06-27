@@ -109,9 +109,7 @@ namespace atmo::editor
             slider.setValue(val, false);
 
             auto &comp = slider.getComponentMutable<core::components::UISlider>();
-            int value = std::visit([](auto v) {
-                return static_cast<int>(v);
-                }, comp.max);
+            int value = std::visit([](auto v) { return static_cast<int>(v); }, comp.max);
             if (val > value) {
                 return;
             }
@@ -147,10 +145,7 @@ namespace atmo::editor
         auto colorPicker = core::ecs::EntityRegistry::Create<core::ecs::entities::UIColorPicker>("Entity::UI::UIRect::UIColorPicker");
         colorPicker->setParent(*texture_editor_panel);
         auto colorPickerHandle = colorPicker->getHandle();
-        colorPicker->getSignal<core::types::Color>("ColorChanged").connect([this](core::types::Color newColor)
-        {
-            this->brushColor = newColor;
-        });
+        colorPicker->getSignal<core::types::Color>("ColorChanged").connect([this](core::types::Color newColor) { this->brushColor = newColor; });
 
 
         auto canvas = core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
@@ -208,8 +203,7 @@ namespace atmo::editor
         canvas->setParent(*texture_editor_container);
 
         auto canvasHandle = canvas->getHandle();
-        exportBtn->getSignal<>("Pressed").connect([canvasHandle]()
-        {
+        exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {
             if (!canvasHandle.is_alive()) {
                 return;
             }
@@ -218,8 +212,7 @@ namespace atmo::editor
             canvas.exportCanvas("assets/save.png");
         });
 
-        importBtn->getSignal<>("Pressed").connect([canvasHandle]()
-        {
+        importBtn->getSignal<>("Pressed").connect([canvasHandle]() {
             if (!canvasHandle.is_alive()) {
                 return;
             }
