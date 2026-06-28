@@ -3,10 +3,23 @@
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/ecs/world_context.hpp"
+#include "core/event/event_registry.hpp"
 #include "core/types.hpp"
 #include "meta/widget_registry.hpp"
 #include "spdlog/spdlog.h"
 
+// void updateVector2Widget(atmo::editor::ProgressTickEvent *evt)
+// {
+//     if (value) {
+//         atmo::core::types::Vector2 vector;
+
+//         field.get(value, &vector);
+
+//         x_input_entity_comp.value = vector.x;
+//         y_input_entity_comp.value = vector.y;
+//     }
+// }
 
 std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
@@ -22,14 +35,8 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core:
     input_entity_comp_x.input_type = atmo::core::components::UIInput::InputType::Float;
     input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Float;
 
-    if (value) {
-        atmo::core::types::Vector2 vector;
-
-        field.get(value, &vector);
-
-        x_input_entity_comp.value = vector.x;
-        y_input_entity_comp.value = vector.y;
-    }
+    // atmo::core::event::EventRegistry::SetCallBack<atmo::editor::ProgressTickEvent>(
+    //     [](atmo::editor::ProgressTickEvent *evt) { updateVector2Widget(evt, value, field, ); });
 
     x_input_entity->setParent(*vector_container);
     y_input_entity->setParent(*vector_container);

@@ -14,7 +14,6 @@ namespace atmo::core::ecs::entities
         world->system<core::components::UINumberInput>("NumberInput_Update")
             .kind(flecs::OnStore)
             .each([world](flecs::entity e, core::components::UINumberInput &comp) {
-                spdlog::info("LOUTRE update : {}", std::get<float>(comp.value));
                 if (comp.value != comp.prev_value) {
                     auto wrapped = EntityRegistry::Wrap(e);
                     auto *ui = dynamic_cast<entities::UIInput *>(wrapped.get());
@@ -25,8 +24,6 @@ namespace atmo::core::ecs::entities
 
                     if (ui->getComponent<core::components::UIInput>().input_type == core::components::UIInput::InputType::Float) {
                         ui->getComponentMutable<core::components::UIInput>().input_data = std::to_string(std::get<float>(comp.value));
-                        spdlog::info("number input update comp value: {}", std::get<float>(comp.value));
-                        spdlog::info("number input update input value: {}", ui->getComponentMutable<core::components::UIInput>().input_data);
                     }
                 }
             });
