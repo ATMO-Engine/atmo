@@ -101,7 +101,7 @@ namespace atmo::core::ecs::entities
     {
         Entity::initialize();
 
-        setComponent<components::Window>({ "Atmo Engine", { 1280, 720 } });
+        setComponent<components::Window>({ "Atmo Engine", project::ProjectManager::GetSettings().window.size });
         auto window = p_handle.get_ref<components::Window>();
 
         static constexpr SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY | RENDERING_PLATFORM;

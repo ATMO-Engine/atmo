@@ -104,6 +104,8 @@ namespace atmo::editor
         if (m_width == width && m_height == height)
             return;
 
+        spdlog::info("Resizing scene editor to: {}, {}", width, height);
+
         m_width = width;
         m_height = height;
         destroyRenderTexture();
@@ -257,8 +259,9 @@ namespace atmo::editor
 
         SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
 
-        // Canvas bounds — outline of the scene area (0,0) → (m_width, m_height) in world space.
-        SDL_FRect canvas{ ox, oy, static_cast<float>(m_width) * z, static_cast<float>(m_height) * z };
+        // Canvas bounds — outline of the game window size from project settings.
+        const auto &win_size = project::ProjectManager::GetSettings().window.size;
+        SDL_FRect canvas{ ox, oy, static_cast<float>(win_size.x) * z, static_cast<float>(win_size.y) * z };
         SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 120);
         SDL_RenderRect(m_renderer, &canvas);
 

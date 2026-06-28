@@ -38,6 +38,7 @@ namespace atmo::core::ecs::entities
             d.image = { .imageData = img.raw_texture };
             d.layout.sizing.width = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
             d.layout.sizing.height = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
+            d.userData = &img.rendered_size[0];
             return d;
         }
 

@@ -93,31 +93,41 @@ namespace atmo::editor
             m_scene_ctx = std::make_unique<EditorSceneContext>();
             m_scene_ctx->init(renderer, 800, 600);
 
-            core::event::EventRegistry::SetCallBack<editor::ProgressTickEvent>([ctx = m_scene_ctx.get(), handle = root](editor::ProgressTickEvent *evt) {
-                SDL_Renderer *renderer = nullptr;
-                if (handle.is_valid() && handle.has<core::components::Window>()) {
-                    auto window = handle.get_ref<core::components::Window>();
-                    if (window) {
-                        renderer = window->renderer_data.renderer;
-                        ctx->tick(evt->delta_time, renderer);
-                    }
-                }
+            core::event::EventRegistry::SetCallBack<editor::ProgressTickEvent>(
+                [ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](editor::ProgressTickEvent *evt) {
+                    SDL_Renderer *renderer = nullptr;
+                    if (handle.is_valid() && handle.has<core::components::Window>()) {
+                        auto window = handle.get_ref<core::components::Window>();
+                        if (window) {
+                            renderer = window->renderer_data.renderer;
 
-                auto [scroll, scroll_dt] = core::InputManager::GetScrollDelta("ui_scroll");
-                if (scroll.x != 0.0f || scroll.y != 0.0f) {
-#if defined(__APPLE__)
-                    const bool ctrl_held = SDL_GetModState() & SDL_KMOD_GUI;
-#else
-                    const bool ctrl_held = SDL_GetModState() & SDL_KMOD_CTRL;
-#endif
-                    if (ctrl_held) {
-                        const float factor = std::pow(1.12f, scroll.y);
-                        ctx->zoom(factor, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
-                    } else {
-                        ctx->pan({ -scroll.x * 5.0f, scroll.y * 5.0f });
+                            if (vp_img.is_valid() && vp_img.has<core::components::UIImage>()) {
+                                auto img = vp_img.get_ref<core::components::UIImage>();
+                                const int w = static_cast<int>(img->rendered_size[0]);
+                                const int h = static_cast<int>(img->rendered_size[1]);
+                                if (w > 0 && h > 0)
+                                    ctx->resize(w, h);
+                            }
+
+                            ctx->tick(evt->delta_time, renderer);
+                        }
                     }
-                }
-            });
+
+                    auto [scroll, scroll_dt] = core::InputManager::GetScrollDelta("ui_scroll");
+                    if (scroll.x != 0.0f || scroll.y != 0.0f) {
+#if defined(__APPLE__)
+                        const bool ctrl_held = SDL_GetModState() & SDL_KMOD_GUI;
+#else
+                        const bool ctrl_held = SDL_GetModState() & SDL_KMOD_CTRL;
+#endif
+                        if (ctrl_held) {
+                            const float factor = std::pow(1.12f, scroll.y);
+                            ctx->zoom(factor, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
+                        } else {
+                            ctx->pan({ -scroll.x * 5.0f, scroll.y * 5.0f });
+                        }
+                    }
+                });
 
             if (m_scene_ctx && m_scene_ctx->isReady()) {
                 auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
@@ -129,6 +139,7 @@ namespace atmo::editor
                 viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
                 viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
                 viewport_image->setParent(container);
+                m_viewport_image = viewport_image->getHandle();
             } else {
                 spdlog::error("Couldn't create scene viewport");
             }

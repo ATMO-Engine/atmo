@@ -145,11 +145,8 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                     TTF_SetFontSizeDPI(font, config->fontSize, dpi_scale.x * 96.0f, dpi_scale.y * 96.0f);
 
                     SDL_Color cur_color = { (Uint8)config->textColor.r, (Uint8)config->textColor.g, (Uint8)config->textColor.b, (Uint8)config->textColor.a };
-                    bool needs_rebuild = cache->dirty
-                        || SDL_memcmp(&cache->last_color, &cur_color, sizeof(SDL_Color)) != 0
-                        || cache->last_font_size != config->fontSize
-                        || cache->last_dpi_x != dpi_scale.x
-                        || cache->last_dpi_y != dpi_scale.y;
+                    bool needs_rebuild = cache->dirty || SDL_memcmp(&cache->last_color, &cur_color, sizeof(SDL_Color)) != 0 ||
+                        cache->last_font_size != config->fontSize || cache->last_dpi_x != dpi_scale.x || cache->last_dpi_y != dpi_scale.y;
 
                     if (needs_rebuild) {
                         if (cache->texture) {
@@ -173,11 +170,11 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                             break;
                         }
 
-                        cache->dirty          = false;
-                        cache->last_color     = cur_color;
+                        cache->dirty = false;
+                        cache->last_color = cur_color;
                         cache->last_font_size = config->fontSize;
-                        cache->last_dpi_x     = dpi_scale.x;
-                        cache->last_dpi_y     = dpi_scale.y;
+                        cache->last_dpi_x = dpi_scale.x;
+                        cache->last_dpi_y = dpi_scale.y;
                     }
 
                     if (cache->texture)
@@ -278,6 +275,12 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                     if (tint.a > 0) {
                         SDL_SetTextureColorModFloat(texture, 1.0f, 1.0f, 1.0f);
                         SDL_SetTextureAlphaModFloat(texture, 1.0f);
+                    }
+                    // Write back actual rendered pixel size so owners can resize their texture.
+                    if (rcmd->userData) {
+                        auto *sz = static_cast<float *>(rcmd->userData);
+                        sz[0] = rect.w;
+                        sz[1] = rect.h;
                     }
                     break;
                 }
