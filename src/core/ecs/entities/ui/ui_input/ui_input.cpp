@@ -24,7 +24,6 @@ namespace atmo::core::ecs::entities
                 auto button = ui->getChildren()[0];
 
                 auto label = UILabel(button.getChildren()[0]);
-                spdlog::info("input update : {}", comp.input_data);
 
                 comp.prev_input_data = comp.input_data;
                 label.setText(comp.input_data);

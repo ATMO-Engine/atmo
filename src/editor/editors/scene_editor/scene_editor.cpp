@@ -428,11 +428,10 @@ namespace atmo::editor
             title_label.setText(std::string(entity.name()));
             title_button_comp.toggle = true;
             title_button_comp.group = 1;
-            title_button.getSignal<bool>("Toggle").connect([this, entity_handle, title_button_handle, component_container](bool /*new_state*/) {
+            title_button.getSignal<bool>("Toggle").connect([this, entity_handle, title_button_handle, component_container](bool state) {
                 auto button = core::ecs::entities::Entity(title_button_handle);
-                auto &button_comp = button.getComponentMutable<core::components::UIButton>();
 
-                if (button_comp.is_pressed) {
+                if (state) {
                     m_selected_entity = entity_handle;
                     auto children = component_container.getChildren();
 
