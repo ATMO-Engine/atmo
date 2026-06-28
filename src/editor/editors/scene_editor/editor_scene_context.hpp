@@ -11,7 +11,7 @@ namespace atmo::core::ecs::entities
 {
     class Camera2d;
     class Scene;
-}
+} // namespace atmo::core::ecs::entities
 
 namespace atmo::editor
 {
@@ -30,10 +30,8 @@ namespace atmo::editor
          *        so physics systems are skipped automatically.
          *
          * @param renderer  SDL_Renderer borrowed from the main Window (non-owning).
-         * @param width     Initial viewport width in pixels.
-         * @param height    Initial viewport height in pixels.
          */
-        void init(SDL_Renderer *renderer, int width, int height);
+        void init(SDL_Renderer *renderer);
 
         /**
          * @brief Advance the isolated world by delta_time.
@@ -64,8 +62,14 @@ namespace atmo::editor
             return m_ready;
         }
 
-        int getWidth() const { return m_width; }
-        int getHeight() const { return m_height; }
+        int getWidth() const
+        {
+            return m_width;
+        }
+        int getHeight() const
+        {
+            return m_height;
+        }
 
         /**
          * @brief Serialize the isolated scene to a prettified JSON string.

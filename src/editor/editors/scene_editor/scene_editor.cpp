@@ -91,7 +91,22 @@ namespace atmo::editor
                     renderer = window->renderer_data.renderer;
             }
             m_scene_ctx = std::make_unique<EditorSceneContext>();
-            m_scene_ctx->init(renderer, 800, 600);
+            m_scene_ctx->init(renderer);
+
+            if (m_scene_ctx && m_scene_ctx->isReady()) {
+                auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+                auto &viewport_img_comp = viewport_image->getComponentMutable<core::components::UIImage>();
+                auto &viewport_image_layout = viewport_image->getComponentMutable<core::components::Layout>();
+                viewport_image_layout.floating = true;
+                viewport_image_layout.z_index = -1;
+                viewport_image_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+                viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+                viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
+                viewport_image->setParent(container);
+                m_viewport_image = viewport_image->getHandle();
+            } else {
+                spdlog::error("Couldn't create scene viewport");
+            }
 
             core::event::EventRegistry::SetCallBack<editor::ProgressTickEvent>(
                 [ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](editor::ProgressTickEvent *evt) {
@@ -105,8 +120,10 @@ namespace atmo::editor
                                 auto img = vp_img.get_ref<core::components::UIImage>();
                                 const int w = static_cast<int>(img->rendered_size[0]);
                                 const int h = static_cast<int>(img->rendered_size[1]);
-                                if (w > 0 && h > 0)
+                                if (w > 0 && h > 0) {
                                     ctx->resize(w, h);
+                                    img->raw_texture = ctx->getViewportTexture();
+                                }
                             }
 
                             ctx->tick(evt->delta_time, renderer);
@@ -127,22 +144,11 @@ namespace atmo::editor
                             ctx->pan({ -scroll.x * 5.0f, scroll.y * 5.0f });
                         }
                     }
-                });
 
-            if (m_scene_ctx && m_scene_ctx->isReady()) {
-                auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
-                auto &viewport_img_comp = viewport_image->getComponentMutable<core::components::UIImage>();
-                auto &viewport_image_layout = viewport_image->getComponentMutable<core::components::Layout>();
-                viewport_image_layout.floating = true;
-                viewport_image_layout.z_index = -1;
-                viewport_image_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-                viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-                viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
-                viewport_image->setParent(container);
-                m_viewport_image = viewport_image->getHandle();
-            } else {
-                spdlog::error("Couldn't create scene viewport");
-            }
+                    float pinch = core::InputManager::GetPinchScale("ui_pinch");
+                    if (pinch != 0.0f)
+                        ctx->zoom(pinch, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
+                });
 
             auto rectangle_shape =
                 core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");

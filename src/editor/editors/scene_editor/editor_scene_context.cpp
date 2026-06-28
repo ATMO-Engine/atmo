@@ -25,18 +25,18 @@ namespace atmo::editor
         destroyRenderTexture();
     }
 
-    void EditorSceneContext::init(SDL_Renderer *renderer, int width, int height)
+    void EditorSceneContext::init(SDL_Renderer *renderer)
     {
         m_renderer = renderer;
-        m_width = width;
-        m_height = height;
+        m_width = project::ProjectManager::GetSettings().window.size.x;
+        m_height = project::ProjectManager::GetSettings().window.size.y;
 
         m_world.reset();
         m_world.init_builtin_components();
 
         core::components::register_core_components(m_world);
 
-        createRenderTexture(width, height);
+        createRenderTexture(m_width, m_height);
         m_world.set<core::components::WorldContext>({
             .is_editor_isolated = true,
             .renderer = m_renderer,
@@ -52,7 +52,6 @@ namespace atmo::editor
         }
         m_scene = std::static_pointer_cast<core::ecs::entities::Scene>(scene);
 
-        // Create the editor viewport camera — starts at world origin, zoom 1:1.
         auto camera = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Camera2d>(&m_world, "Entity::Entity2d::Camera2d");
         if (!camera) {
             spdlog::error("EditorSceneContext: failed to create Camera2d entity");
@@ -64,7 +63,7 @@ namespace atmo::editor
         m_camera = camera;
 
         m_ready = true;
-        spdlog::debug("EditorSceneContext: initialized isolated world ({}x{})", width, height);
+        spdlog::debug("EditorSceneContext: initialized isolated world ({}x{})", m_width, m_height);
     }
 
     void EditorSceneContext::tick(float delta_time, SDL_Renderer *renderer)

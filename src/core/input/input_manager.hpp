@@ -23,7 +23,8 @@ namespace atmo::core
             enum class Type {
                 Key,
                 MouseButton,
-                MouseScroll
+                MouseScroll,
+                FingerPinch
             };
 
             virtual Type getType() const = 0;
@@ -45,6 +46,7 @@ namespace atmo::core
         static void SetMousePosition(float x, float y);
         static types::Vector2 GetMousePosition();
         static std::pair<types::Vector2, float> GetScrollDelta(const std::string &inputName);
+        static float GetPinchScale(const std::string &inputName);
 
         static std::string ConsumeText() noexcept;
         static void StartTextInput(SDL_Window *window) noexcept;
@@ -100,6 +102,18 @@ namespace atmo::core
 
             types::Vector2 scroll;
             float delta_time = 0.0f;
+        };
+
+        class PinchEvent : public Input
+        {
+        public:
+            PinchEvent() {};
+            Type getType() const override
+            {
+                return Type::FingerPinch;
+            }
+
+            float scale = 0.0f;
         };
 
     protected:
