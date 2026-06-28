@@ -9,6 +9,7 @@ namespace atmo::core::components
 {
     struct UIInput {
         std::string input_data;
+        std::string prev_input_data;
 
         enum class InputType {
             Text,
@@ -44,6 +45,7 @@ namespace atmo::core::ecs::entities
 
         virtual void clear() = 0;
 
+        void setValue();
 
         static constexpr std::string_view LocalName()
         {

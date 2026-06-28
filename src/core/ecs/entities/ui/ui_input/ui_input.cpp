@@ -15,7 +15,22 @@ namespace atmo::core::ecs::entities
 {
     void UIInput::RegisterSystems(flecs::world *world)
     {
-        world->system<core::components::UIInput>("Input_Update").kind(flecs::OnUpdate).each([world](flecs::entity e, core::components::UIInput &comp) {
+        world->system<core::components::UIInput>("Input_Update").kind(flecs::OnStore).each([world](flecs::entity e, core::components::UIInput &comp) {
+            if (comp.input_data != comp.prev_input_data) {
+
+                auto wrapped = EntityRegistry::Wrap(e);
+                auto *ui = dynamic_cast<entities::UIInput *>(wrapped.get());
+
+                auto button = ui->getChildren()[0];
+
+                auto label = UILabel(button.getChildren()[0]);
+                spdlog::info("input update : {}", comp.input_data);
+
+                comp.prev_input_data = comp.input_data;
+                label.setText(comp.input_data);
+            }
+
+
             if (!comp.editing)
                 return;
 
@@ -45,14 +60,14 @@ namespace atmo::core::ecs::entities
         input_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         input_rect->setParent(*this);
 
-        flecs::entity test = p_handle;
+        flecs::entity handle = p_handle;
 
-        input_rect->getSignal<>("Pressed").connect([input_rect, test] {
+        input_rect->getSignal<>("Pressed").connect([input_rect, handle] {
             auto window = input_rect->getWindow()->getComponent<core::components::Window>().window;
-            auto wrapped = EntityRegistry::Wrap(test);
+            auto wrapped = EntityRegistry::Wrap(handle);
             auto *ui = dynamic_cast<entities::UIInput *>(wrapped.get());
 
-            test.world().each([](core::components::UIInput &input) { input.editing = false; });
+            handle.world().each([](core::components::UIInput &input) { input.editing = false; });
             ui->getComponentMutable<core::components::UIInput>().editing = true;
 
             if (window) {
@@ -66,7 +81,6 @@ namespace atmo::core::ecs::entities
         auto &input_comp = getComponentMutable<core::components::UIInput>();
         auto button = UIButton(getChildren()[0]);
         auto &button_comp = button.getComponentMutable<core::components::UIRect>();
-        auto label = UILabel(button.getChildren()[0]);
         auto window = getWindow()->getComponent<core::components::Window>().window;
 
         if (!input_comp.editing) {
@@ -86,7 +100,6 @@ namespace atmo::core::ecs::entities
         if (InputManager::IsJustPressed("ui_delete") && input_comp.input_data.size() > 0) {
             input_comp.input_data = input_comp.input_data.substr(0, input_comp.input_data.size() - 1);
         }
-        label.setText(input_comp.input_data);
     }
 } // namespace atmo::core::ecs::entities
 

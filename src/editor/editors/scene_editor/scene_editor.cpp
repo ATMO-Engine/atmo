@@ -1,5 +1,6 @@
 #include "scene_editor.hpp"
 #include <string>
+#include <utility>
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
@@ -22,13 +23,15 @@
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_registry.hpp"
+#include "flecs/addons/cpp/mixins/id/decl.hpp"
+#include "meta/widget_registry.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
 {
     void entityComponentFodableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent)
     {
-        std::vector<const meta::TypeInfo *> ti_vector;
+        std::vector<std::pair<flecs::id, const meta::TypeInfo *>> ti_vector;
 
         entity.each([&](flecs::id id) {
             if (id.is_pair())
@@ -42,7 +45,7 @@ namespace atmo::editor
             if (!comp)
                 return;
 
-            ti_vector.emplace_back(ti);
+            ti_vector.emplace_back(std::make_pair(id, ti));
         });
 
         for (auto &entity_ti : ti_vector) {
@@ -62,14 +65,15 @@ namespace atmo::editor
             child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
             child_UI_layout.child_gap = 8;
             child_UI->setParent(parent);
-            title_label.setText(entity_ti->name);
-            spdlog::info(entity_ti->name);
+            title_label.setText(entity_ti.second->name);
 
-            auto inputtest = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
+            for (auto &field_info : entity_ti.second->fields)
+                auto widget = meta::WidgetRegistry::get().create(child_UI->getChildContainer(), entity.try_get_mut(entity_ti.first), field_info);
+
             // auto &input_type = inputtest->getComponentMutable<core::components::UIInput>();
             // input_type.input_type = core::components::UIInput::InputType::Text;
 
-            inputtest->setParent(child_UI->getChildContainer());
+            // inputtest->setParent(child_UI->getChildContainer());
         }
     }
 
@@ -115,7 +119,8 @@ namespace atmo::editor
                 core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
             rectangle_shape->setSize({ 800, 100 });
 
-            auto static_body = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Static2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Static2d");
+            auto static_body =
+                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Static2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Static2d");
             static_body->addShape(rectangle_shape);
             static_body->setPosition({ 800, 500 });
             static_body->setParent(*m_scene_ctx->getScene());
@@ -124,7 +129,8 @@ namespace atmo::editor
                 core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
             rectangle_shape2->setSize({ 80, 80 });
 
-            auto dynamic_body = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+            auto dynamic_body =
+                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
             dynamic_body->addShape(rectangle_shape2);
             dynamic_body->setPosition({ 410, 300 });
             dynamic_body->setParent(*m_scene_ctx->getScene());
@@ -134,7 +140,8 @@ namespace atmo::editor
             circle_shape->getShapeDef().density = 2.0f;
             circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-            auto dynamic_body2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+            auto dynamic_body2 =
+                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
             dynamic_body2->addShape(circle_shape);
             dynamic_body2->setPosition({ 450, 0 });
             dynamic_body2->setParent(*m_scene_ctx->getScene());
@@ -364,6 +371,9 @@ namespace atmo::editor
         //         sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
         //     }
         // }
+        for (auto &entity : container.getScene()->getChildren()) {
+            sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
+        }
     }
 
     void SceneEditor::sceneEntityFodableTreeinit(
