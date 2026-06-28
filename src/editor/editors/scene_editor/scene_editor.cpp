@@ -32,7 +32,7 @@
 
 namespace atmo::editor
 {
-    void entityComponentFodableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent)
+    void entityComponentFodableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
     {
         std::vector<std::pair<flecs::id, const meta::TypeInfo *>> ti_vector;
 
@@ -70,8 +70,17 @@ namespace atmo::editor
             child_UI->setParent(parent);
             title_label.setText(entity_ti.second->name);
 
-            for (auto &field_info : entity_ti.second->fields)
+            for (auto &field_info : entity_ti.second->fields) {
                 auto widget = meta::WidgetRegistry::get().create(child_UI->getChildContainer(), entity.try_get_mut(entity_ti.first), field_info);
+                if (widget) {
+                    update_fns.push_back([entity, comp_id = entity_ti.first, field_info, w = *widget]() {
+                        void *ptr = entity.try_get_mut(comp_id);
+                        if (!ptr)
+                            return;
+                        meta::WidgetRegistry::get().update(w, ptr, field_info);
+                    });
+                }
+            }
 
             // auto &input_type = inputtest->getComponentMutable<core::components::UIInput>();
             // input_type.input_type = core::components::UIInput::InputType::Text;
@@ -109,7 +118,7 @@ namespace atmo::editor
             }
 
             core::event::EventRegistry::SetCallBack<editor::ProgressTickEvent>(
-                [ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](editor::ProgressTickEvent *evt) {
+                [this, ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](editor::ProgressTickEvent *evt) {
                     SDL_Renderer *renderer = nullptr;
                     if (handle.is_valid() && handle.has<core::components::Window>()) {
                         auto window = handle.get_ref<core::components::Window>();
@@ -148,6 +157,8 @@ namespace atmo::editor
                     float pinch = core::InputManager::GetPinchScale("ui_pinch");
                     if (pinch != 0.0f)
                         ctx->zoom(pinch, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
+
+                    for (auto &fn : m_inspector_update_fns) fn();
                 });
 
             auto rectangle_shape =
@@ -442,7 +453,8 @@ namespace atmo::editor
                     auto children = component_container.getChildren();
 
                     for (auto &child : children) child.destroy();
-                    entityComponentFodableTreeinit(m_selected_entity, component_container);
+                    m_inspector_update_fns.clear();
+                    entityComponentFodableTreeinit(m_selected_entity, component_container, m_inspector_update_fns);
                 }
             });
 

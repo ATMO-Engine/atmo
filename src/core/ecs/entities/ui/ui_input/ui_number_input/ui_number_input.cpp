@@ -1,7 +1,9 @@
 #include "ui_number_input.hpp"
 #include <cstdlib>
+#include <format>
 #include <string>
 #include <sys/stat.h>
+#include "common/math.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "ctre.hpp"
@@ -23,7 +25,7 @@ namespace atmo::core::ecs::entities
                         ui->getComponentMutable<core::components::UIInput>().input_data = std::to_string(std::get<int>(comp.value));
 
                     if (ui->getComponent<core::components::UIInput>().input_type == core::components::UIInput::InputType::Float) {
-                        ui->getComponentMutable<core::components::UIInput>().input_data = std::to_string(std::get<float>(comp.value));
+                        ui->getComponentMutable<core::components::UIInput>().input_data = std::format("{:.2f}", std::get<float>(comp.value));
                     }
                 }
             });

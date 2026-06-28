@@ -9,18 +9,6 @@
 #include "meta/widget_registry.hpp"
 #include "spdlog/spdlog.h"
 
-// void updateVector2Widget(atmo::editor::ProgressTickEvent *evt)
-// {
-//     if (value) {
-//         atmo::core::types::Vector2 vector;
-
-//         field.get(value, &vector);
-
-//         x_input_entity_comp.value = vector.x;
-//         y_input_entity_comp.value = vector.y;
-//     }
-// }
-
 std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
     auto vector_container = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UI>("Entity::UI");
@@ -44,4 +32,15 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core:
     return *vector_container;
 }
 
-ATMO_REGISTER_WIDGET("vector2", createVector2Widget, {});
+void updateVector2Widget(atmo::core::ecs::entities::Entity widget, void *value, const atmo::meta::FieldInfo &field)
+{
+    auto children = widget.getChildren();
+    if (children.size() < 2)
+        return;
+    atmo::core::types::Vector2 vec;
+    field.get(value, &vec);
+    children[0].getComponentMutable<atmo::core::components::UINumberInput>().value = vec.x;
+    children[1].getComponentMutable<atmo::core::components::UINumberInput>().value = vec.y;
+}
+
+ATMO_REGISTER_WIDGET("vector2", createVector2Widget, {}, updateVector2Widget);

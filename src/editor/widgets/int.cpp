@@ -16,4 +16,10 @@ std::optional<atmo::core::ecs::entities::Entity> createIntWidget(atmo::core::ecs
     return *int_input_entity;
 }
 
-ATMO_REGISTER_WIDGET("int", createIntWidget, {})
+void updateIntWidget(atmo::core::ecs::entities::Entity widget, void *value, const atmo::meta::FieldInfo &field)
+{
+    auto &comp = widget.getComponentMutable<atmo::core::components::UINumberInput>();
+    field.get(value, &comp.value);
+}
+
+ATMO_REGISTER_WIDGET("int", createIntWidget, {}, updateIntWidget)

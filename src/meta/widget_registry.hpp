@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <optional>
 #include <string>
@@ -10,14 +11,14 @@
 #include "meta/type_info.hpp"
 #include "spdlog/spdlog.h"
 
-#define ATMO_REGISTER_WIDGET(name, create, destroy)                       \
-    namespace                                                             \
-    {                                                                     \
-        static int _ = [] {                                               \
-            using namespace atmo::meta;                                   \
-            WidgetRegistry::get().register_widget(name, create, destroy); \
-            return 0;                                                     \
-        }();                                                              \
+#define ATMO_REGISTER_WIDGET(name, create, destroy, update)                       \
+    namespace                                                                     \
+    {                                                                             \
+        static int _ = [] {                                                       \
+            using namespace atmo::meta;                                           \
+            WidgetRegistry::get().register_widget(name, create, destroy, update); \
+            return 0;                                                             \
+        }();                                                                      \
     }
 
 namespace atmo::meta
@@ -27,10 +28,12 @@ namespace atmo::meta
     public:
         using CreateFn = std::function<std::optional<core::ecs::entities::Entity>(core::ecs::entities::Entity parent, void *value, const FieldInfo &field)>;
         using DestroyFn = std::function<void(core::ecs::entities::Entity widget)>;
+        using UpdateFn = std::function<void(core::ecs::entities::Entity widget, void *value, const FieldInfo &field)>;
 
         struct WidgetHandler {
             CreateFn create;
             DestroyFn destroy;
+            UpdateFn update;
         };
 
         static WidgetRegistry &get()
@@ -42,9 +45,9 @@ namespace atmo::meta
         WidgetRegistry(const WidgetRegistry &) = delete;
         WidgetRegistry &operator=(const WidgetRegistry &) = delete;
 
-        void register_widget(std::string_view name, CreateFn create, DestroyFn destroy)
+        void register_widget(std::string_view name, CreateFn create, DestroyFn destroy, UpdateFn update)
         {
-            m_widgets[std::string(name)] = WidgetHandler{ std::move(create), std::move(destroy) };
+            m_widgets[std::string(name)] = WidgetHandler{ std::move(create), std::move(destroy), std::move(update) };
         }
 
         /**
@@ -98,6 +101,21 @@ namespace atmo::meta
             }
 
             it->second.destroy(widget);
+        }
+
+
+        void update(core::ecs::entities::Entity widget, void *value, const FieldInfo &field) const
+        {
+            if (widget.isAlive() && !field.widget) {
+                return;
+            }
+
+            auto it = m_widgets.find(field.widget);
+            if (it == m_widgets.end()) {
+                return;
+            }
+
+            it->second.update(widget, value, field);
         }
 
         [[nodiscard]] bool hasWidget(std::string_view name) const
