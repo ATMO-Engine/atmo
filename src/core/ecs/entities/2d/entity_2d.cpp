@@ -90,6 +90,13 @@ namespace atmo::core::ecs::entities
         auto t = p_handle.get_ref<components::Transform2d>();
         return t->g_rotation;
     }
+
+    SDL_FRect Entity2d::computeAABB() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        constexpr float k_default_half = 10.f;
+        return { t->g_position.x - k_default_half, t->g_position.y - k_default_half, k_default_half * 2.f, k_default_half * 2.f };
+    }
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::Entity2d);

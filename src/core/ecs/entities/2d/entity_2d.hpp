@@ -58,5 +58,7 @@ namespace atmo::core::ecs::entities
         float getRotation() const;
         void setRotation(float rotation);
         float getGlobalRotation() const;
+
+        SDL_FRect computeAABB() const override;
     };
 } // namespace atmo::core::ecs::entities

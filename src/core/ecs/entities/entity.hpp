@@ -10,6 +10,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
+#include "SDL3/SDL_rect.h"
 #include "flecs.h"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
@@ -361,6 +362,12 @@ namespace atmo::core::ecs::entities
 
             return *static_cast<Signal<Args...> *>(base);
         }
+
+        /**
+         * @brief Compute an axis-aligned bounding box for this entity in world space.
+         *        Returns a zero rect by default; overridden by concrete 2D entity types.
+         */
+        virtual SDL_FRect computeAABB() const { return { 0.f, 0.f, 0.f, 0.f }; }
 
         /**
          * @brief Swap the current entity with the dest Entity.

@@ -1,5 +1,6 @@
 #include "editor_scene_context.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
@@ -7,6 +8,7 @@
 #include "SDL3/SDL_pixels.h"
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
+#include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -50,6 +52,17 @@ namespace atmo::editor
         }
         m_scene = std::static_pointer_cast<core::ecs::entities::Scene>(scene);
 
+        // Create the editor viewport camera — starts at world origin, zoom 1:1.
+        auto camera = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Camera2d>(&m_world, "Entity::Entity2d::Camera2d");
+        if (!camera) {
+            spdlog::error("EditorSceneContext: failed to create Camera2d entity");
+            return;
+        }
+        camera->setActive(true);
+        camera->setZoom(1.0f);
+        camera->setParent(*m_scene);
+        m_camera = camera;
+
         m_ready = true;
         spdlog::debug("EditorSceneContext: initialized isolated world ({}x{})", width, height);
     }
@@ -76,9 +89,9 @@ namespace atmo::editor
         SDL_SetRenderDrawColor(m_renderer, bg_color.r, bg_color.g, bg_color.b, 255);
         SDL_RenderClear(m_renderer);
 
-        // TODO: draw axis lines and grid.
-
         m_world.progress(delta_time);
+
+        drawOverlays();
 
         SDL_SetRenderTarget(m_renderer, nullptr);
 
@@ -175,5 +188,88 @@ namespace atmo::editor
         std::ostringstream ss;
         ss << file.rdbuf();
         loadSceneFromJson(ss.str());
+    }
+
+    void EditorSceneContext::pan(core::types::Vector2 delta_screen)
+    {
+        if (!m_camera)
+            return;
+        float inv_zoom = 1.0f / m_camera->getZoom();
+        auto pos = m_camera->getPosition();
+        m_camera->setPosition({ pos.x - delta_screen.x * inv_zoom, pos.y - delta_screen.y * inv_zoom });
+    }
+
+    void EditorSceneContext::zoom(float factor, core::types::Vector2 pivot_screen)
+    {
+        if (!m_camera)
+            return;
+        const core::types::Vector2 world_pivot = screenToWorld(pivot_screen);
+        const float new_zoom = std::clamp(m_camera->getZoom() * factor, 0.05f, 20.0f);
+        m_camera->setZoom(new_zoom);
+
+        // Keep the world point under the pivot fixed after zoom.
+        const float hw = static_cast<float>(m_width) * 0.5f;
+        const float hh = static_cast<float>(m_height) * 0.5f;
+        core::types::Vector2 new_cam{
+            world_pivot.x - (pivot_screen.x - hw) / new_zoom,
+            world_pivot.y - (pivot_screen.y - hh) / new_zoom,
+        };
+        m_camera->setPosition(new_cam);
+    }
+
+    core::types::Vector2 EditorSceneContext::screenToWorld(core::types::Vector2 screen) const
+    {
+        if (!m_camera)
+            return screen;
+        const float z = m_camera->getZoom();
+        const auto cam_pos = m_camera->getPosition();
+        return {
+            (screen.x - static_cast<float>(m_width) * 0.5f) / z + cam_pos.x,
+            (screen.y - static_cast<float>(m_height) * 0.5f) / z + cam_pos.y,
+        };
+    }
+
+    core::types::Vector2 EditorSceneContext::worldToScreen(core::types::Vector2 world) const
+    {
+        if (!m_camera)
+            return world;
+        const float z = m_camera->getZoom();
+        const auto cam_pos = m_camera->getPosition();
+        return {
+            (world.x - cam_pos.x) * z + static_cast<float>(m_width) * 0.5f,
+            (world.y - cam_pos.y) * z + static_cast<float>(m_height) * 0.5f,
+        };
+    }
+
+    void EditorSceneContext::drawOverlays()
+    {
+        if (!m_renderer || !m_camera)
+            return;
+
+        const float z = m_camera->getZoom();
+        const auto cam_pos = m_camera->getPosition();
+        const float hw = static_cast<float>(m_width) * 0.5f;
+        const float hh = static_cast<float>(m_height) * 0.5f;
+
+        // Screen-space position of the world origin (0, 0).
+        const float ox = -cam_pos.x * z + hw;
+        const float oy = -cam_pos.y * z + hh;
+
+        SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
+
+        // Canvas bounds — outline of the scene area (0,0) → (m_width, m_height) in world space.
+        SDL_FRect canvas{ ox, oy, static_cast<float>(m_width) * z, static_cast<float>(m_height) * z };
+        SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 120);
+        SDL_RenderRect(m_renderer, &canvas);
+
+        // X axis — red horizontal line at world y = 0.
+        SDL_SetRenderDrawColor(m_renderer, 220, 60, 60, 200);
+        SDL_RenderLine(m_renderer, 0.f, oy, static_cast<float>(m_width), oy);
+
+        // Y axis — green vertical line at world x = 0.
+        SDL_SetRenderDrawColor(m_renderer, 60, 200, 60, 200);
+        SDL_RenderLine(m_renderer, ox, 0.f, ox, static_cast<float>(m_height));
+
+        SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_NONE);
     }
 } // namespace atmo::editor

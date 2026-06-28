@@ -3,6 +3,7 @@
 #include "SDL3/SDL_rect.h"
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
+#include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
@@ -64,10 +65,26 @@ namespace atmo::core::ecs::entities
                 if (!texture || !renderer)
                     return;
 
-                const float w = sprite.texture_size.x * transform.g_scale.x;
-                const float h = sprite.texture_size.y * transform.g_scale.y;
+                // Apply camera transform if an active Camera2d exists in this world.
+                const auto *cam = world->try_get<components::WorldCameraState>();
+                int vp_w = 0, vp_h = 0;
+                SDL_GetCurrentRenderOutputSize(renderer, &vp_w, &vp_h);
 
-                SDL_FRect dst{ transform.g_position.x - (w * 0.5f), transform.g_position.y - (h * 0.5f), w, h };
+                float sx, sy, zoom;
+                if (cam && cam->has_camera) {
+                    zoom = cam->zoom;
+                    sx = (transform.g_position.x - cam->position.x) * zoom + static_cast<float>(vp_w) * 0.5f;
+                    sy = (transform.g_position.y - cam->position.y) * zoom + static_cast<float>(vp_h) * 0.5f;
+                } else {
+                    zoom = 1.0f;
+                    sx = transform.g_position.x;
+                    sy = transform.g_position.y;
+                }
+
+                const float w = sprite.texture_size.x * transform.g_scale.x * zoom;
+                const float h = sprite.texture_size.y * transform.g_scale.y * zoom;
+
+                SDL_FRect dst{ sx - w * 0.5f, sy - h * 0.5f, w, h };
                 SDL_FPoint center{ dst.w * 0.5f, dst.h * 0.5f };
 
                 SDL_RenderTextureRotated(renderer, texture, nullptr, &dst, transform.g_rotation, &center, SDL_FLIP_NONE);
@@ -118,6 +135,15 @@ namespace atmo::core::ecs::entities
     {
         auto sprite = p_handle.get_ref<components::Sprite2d>();
         return sprite->texture_size;
+    }
+
+    SDL_FRect Sprite2d::computeAABB() const
+    {
+        auto t = p_handle.get_ref<components::Transform2d>();
+        auto s = p_handle.get_ref<components::Sprite2d>();
+        const float w = s->texture_size.x * t->g_scale.x;
+        const float h = s->texture_size.y * t->g_scale.y;
+        return { t->g_position.x - w * 0.5f, t->g_position.y - h * 0.5f, w, h };
     }
 } // namespace atmo::core::ecs::entities
 

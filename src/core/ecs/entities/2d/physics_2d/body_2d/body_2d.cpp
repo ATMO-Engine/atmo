@@ -154,6 +154,16 @@ namespace atmo::core::ecs::entities
         shape->create(body_data->body_id);
     }
 
+    SDL_FRect Body2d::computeAABB() const
+    {
+        auto body_data = p_handle.get_ref<Body2dData>();
+        if (!b2Body_IsValid(body_data->body_id))
+            return Entity2d::computeAABB();
+
+        b2AABB aabb = b2Body_ComputeAABB(body_data->body_id);
+        return { aabb.lowerBound.x, aabb.lowerBound.y, aabb.upperBound.x - aabb.lowerBound.x, aabb.upperBound.y - aabb.lowerBound.y };
+    }
+
     void Body2d::DebugRenderRectangleShape(SDL_Renderer *renderer, types::Vector2 center, types::Vector2 size, float angle)
     {
         static constexpr SDL_FColor outlineColor = { 0.18f, 0.93f, 1.0f, 1.0f };

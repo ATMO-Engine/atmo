@@ -1,5 +1,7 @@
 #include "scene_editor.hpp"
+#include <cmath>
 #include <string>
+#include "SDL3/SDL_keyboard.h"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
@@ -16,6 +18,7 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
+#include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
@@ -95,6 +98,22 @@ namespace atmo::editor
                         ctx->tick(evt->delta_time, renderer);
                     }
                 }
+
+                // Pan / zoom the editor viewport via scroll input.
+                auto [scroll, scroll_dt] = core::InputManager::GetScrollDelta("ui_scroll");
+                if (scroll.x != 0.0f || scroll.y != 0.0f) {
+#if defined(__APPLE__)
+                    const bool ctrl_held = SDL_GetModState() & SDL_KMOD_GUI;
+#else
+                    const bool ctrl_held = SDL_GetModState() & SDL_KMOD_CTRL;
+#endif
+                    if (ctrl_held) {
+                        const float factor = std::pow(1.12f, scroll.y);
+                        ctx->zoom(factor, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
+                    } else {
+                        ctx->pan({ scroll.x * 5.0f, scroll.y * 5.0f });
+                    }
+                }
             });
 
             if (m_scene_ctx && m_scene_ctx->isReady()) {
@@ -115,7 +134,8 @@ namespace atmo::editor
                 core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
             rectangle_shape->setSize({ 800, 100 });
 
-            auto static_body = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Static2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Static2d");
+            auto static_body =
+                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Static2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Static2d");
             static_body->addShape(rectangle_shape);
             static_body->setPosition({ 800, 500 });
             static_body->setParent(*m_scene_ctx->getScene());
@@ -124,7 +144,8 @@ namespace atmo::editor
                 core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
             rectangle_shape2->setSize({ 80, 80 });
 
-            auto dynamic_body = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+            auto dynamic_body =
+                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
             dynamic_body->addShape(rectangle_shape2);
             dynamic_body->setPosition({ 410, 300 });
             dynamic_body->setParent(*m_scene_ctx->getScene());
@@ -134,7 +155,8 @@ namespace atmo::editor
             circle_shape->getShapeDef().density = 2.0f;
             circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-            auto dynamic_body2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+            auto dynamic_body2 =
+                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
             dynamic_body2->addShape(circle_shape);
             dynamic_body2->setPosition({ 450, 0 });
             dynamic_body2->setParent(*m_scene_ctx->getScene());

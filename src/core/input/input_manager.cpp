@@ -71,6 +71,11 @@ void atmo::core::InputManager::Tick()
             mouseEvent->just_pressed = false;
             mouseEvent->just_released = false;
         }
+        if (evt->getType() == Input::Type::MouseScroll) {
+            auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt);
+            mouseEvent->scroll = { 0.0f, 0.0f };
+            mouseEvent->delta_time = 0.0f;
+        }
     }
 }
 
