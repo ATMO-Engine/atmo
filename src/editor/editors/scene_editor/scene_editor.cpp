@@ -103,7 +103,6 @@ namespace atmo::editor
                     }
                 }
 
-                // Pan / zoom the editor viewport via scroll input.
                 auto [scroll, scroll_dt] = core::InputManager::GetScrollDelta("ui_scroll");
                 if (scroll.x != 0.0f || scroll.y != 0.0f) {
 #if defined(__APPLE__)
@@ -115,7 +114,7 @@ namespace atmo::editor
                         const float factor = std::pow(1.12f, scroll.y);
                         ctx->zoom(factor, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
                     } else {
-                        ctx->pan({ scroll.x * 5.0f, scroll.y * 5.0f });
+                        ctx->pan({ -scroll.x * 5.0f, scroll.y * 5.0f });
                     }
                 }
             });
@@ -385,13 +384,10 @@ namespace atmo::editor
         component_viewport_container_layout.padding = { 0, 0, 8, 8 };
         component_viewport_container->setParent(*content_right_panel_container);
 
-        // if (m_scene_ctx && m_scene_ctx->isReady() && m_scene_ctx->getScene()) {
-        //     for (auto &entity : m_scene_ctx->getScene()->getChildren()) {
-        //         sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
-        //     }
-        // }
-        for (auto &entity : container.getScene()->getChildren()) {
-            sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
+        if (m_scene_ctx && m_scene_ctx->isReady() && m_scene_ctx->getScene()) {
+            for (auto &entity : m_scene_ctx->getScene()->getChildren()) {
+                sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
+            }
         }
     }
 

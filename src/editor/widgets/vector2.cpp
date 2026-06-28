@@ -22,18 +22,17 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core:
     input_entity_comp_x.input_type = atmo::core::components::UIInput::InputType::Float;
     input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Float;
 
-    x_input_entity->setParent(*vector_container);
-    y_input_entity->setParent(*vector_container);
     if (value) {
         atmo::core::types::Vector2 vector;
 
         field.get(value, &vector);
 
-        spdlog::info("BEFORE : value: {}, prev value: {}", std::get<float>(x_input_entity_comp.value), std::get<float>(x_input_entity_comp.prev_value));
         x_input_entity_comp.value = vector.x;
         y_input_entity_comp.value = vector.y;
-        spdlog::info("AFTER : value: {}, prev value: {}", std::get<float>(x_input_entity_comp.value), std::get<float>(x_input_entity_comp.prev_value));
     }
+
+    x_input_entity->setParent(*vector_container);
+    y_input_entity->setParent(*vector_container);
 
     return *vector_container;
 }
