@@ -18,15 +18,14 @@ namespace atmo::core::ecs::entities
         auto &layout = getComponentMutable<components::Layout>();
         layout.child_alignment.horizontal = components::Layout::ChildAlignment::Center;
         layout.child_alignment.vertical = components::Layout::ChildAlignment::Center;
+        layout.width.type = components::Layout::SizingAxis::SizingAxisType::GROW;
+        layout.height.type = components::Layout::SizingAxis::SizingAxisType::GROW;
+        layout.floating = true;
     }
 
     Clay_ElementDeclaration UIPopup::buildDecl()
     {
         Clay_ElementDeclaration d = UIRect::buildDecl();
-
-        d.floating.attachTo = CLAY_ATTACH_TO_ROOT;
-        d.layout.sizing.width.type = CLAY__SIZING_TYPE_GROW;
-        d.layout.sizing.height.type = CLAY__SIZING_TYPE_GROW;
 
         return d;
     }

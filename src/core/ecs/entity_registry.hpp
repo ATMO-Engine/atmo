@@ -60,11 +60,22 @@ namespace atmo::core::ecs
          * @brief Create an entity of the given type inside a specific world, bypassing the global m_world pointer.
          *        Safe to call outside of world.progress() on the main thread only.
          *
-         * @param world Target world to create the entity in.
+         * @tparam T       Desired return type (must derive from Entity). Defaults to Entity.
+         * @param world    Target world to create the entity in.
          * @param type_name Full type name (e.g. "Entity::Scene").
-         * @return std::shared_ptr<entities::Entity> The created entity, or nullptr on failure.
+         * @return std::shared_ptr<T> The created entity cast to T, or nullptr on failure.
          */
-        static std::shared_ptr<entities::Entity> CreateIn(flecs::world *world, std::string_view type_name);
+        template <typename T = entities::Entity>
+            requires std::derived_from<T, entities::Entity>
+        static std::shared_ptr<T> CreateIn(flecs::world *world, std::string_view type_name)
+        {
+            auto &instance = Instance();
+            flecs::world *saved = instance.m_world;
+            instance.m_world = world;
+            auto result = Create<T>(type_name);
+            instance.m_world = saved;
+            return result;
+        }
 
         /**
          * @brief Register all entity systems into @p world without overwriting the main world pointer.

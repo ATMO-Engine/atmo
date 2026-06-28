@@ -10,14 +10,14 @@
 
 #include "events/event.hpp"
 
-#define REGISTER_EVENT(evt)                             \
-    namespace                                           \
-    {                                                   \
-        static int _ = [] {                             \
-            using namespace atmo::core::event;          \
-            EventRegistry::RegisterType<events::evt>(); \
-            return 0;                                   \
-        }();                                            \
+#define ATMO_REGISTER_EVENT(evt)                \
+    namespace                                   \
+    {                                           \
+        static int _ = [] {                     \
+            using namespace atmo::core::event;  \
+            EventRegistry::RegisterType<evt>(); \
+            return 0;                           \
+        }();                                    \
     }
 
 namespace atmo::core::event

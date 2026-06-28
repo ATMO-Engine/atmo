@@ -1,5 +1,8 @@
 #include "scene_editor.hpp"
 #include <string>
+#include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
+#include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -11,9 +14,15 @@
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/ecs/world_context.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/resource/subresource_registry.hpp"
+#include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
+#include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_registry.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::editor
 {
@@ -66,27 +75,102 @@ namespace atmo::editor
 
     void SceneEditor::init(atmo::core::ecs::entities::UI &container)
     {
-        // {
-        //     flecs::entity root = container.getHandle().world().lookup("_Root");
-        //     SDL_Renderer *renderer = nullptr;
-        //     if (root.is_valid() && root.has<core::components::Window>()) {
-        //         auto window = root.get_ref<core::components::Window>();
-        //         if (window)
-        //             renderer = window->renderer_data.renderer;
-        //     }
-        //     m_scene_ctx = std::make_unique<EditorSceneContext>();
-        //     m_scene_ctx->init(renderer, 800, 600);
+        {
+            flecs::entity root = container.getHandle().world().lookup("_Root");
+            SDL_Renderer *renderer = nullptr;
+            if (root.is_valid() && root.has<core::components::Window>()) {
+                auto window = root.get_ref<core::components::Window>();
+                if (window)
+                    renderer = window->renderer_data.renderer;
+            }
+            m_scene_ctx = std::make_unique<EditorSceneContext>();
+            m_scene_ctx->init(renderer, 800, 600);
 
-        //     container.getHandle().world().system<>("SceneEditor_Tick").kind(flecs::OnValidate).run([ctx = m_scene_ctx.get()](flecs::iter &it) {
-        //         flecs::entity root = it.world().lookup("_Root");
-        //         if (!root.is_valid() || !root.has<core::components::Window>())
-        //             return;
-        //         auto window = root.get_ref<core::components::Window>();
-        //         if (!window || !window->renderer_data.renderer)
-        //             return;
-        //         ctx->tick(it.delta_time(), window->renderer_data.renderer);
-        //     });
-        // }
+            core::event::EventRegistry::SetCallBack<editor::ProgressTickEvent>([ctx = m_scene_ctx.get(), handle = root](editor::ProgressTickEvent *evt) {
+                SDL_Renderer *renderer = nullptr;
+                if (handle.is_valid() && handle.has<core::components::Window>()) {
+                    auto window = handle.get_ref<core::components::Window>();
+                    if (window) {
+                        renderer = window->renderer_data.renderer;
+                        ctx->tick(evt->delta_time, renderer);
+                    }
+                }
+            });
+
+            if (m_scene_ctx && m_scene_ctx->isReady()) {
+                auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+                auto &viewport_img_comp = viewport_image->getComponentMutable<core::components::UIImage>();
+                auto &viewport_image_layout = viewport_image->getComponentMutable<core::components::Layout>();
+                viewport_image_layout.floating = true;
+                viewport_image_layout.z_index = -1;
+                viewport_image_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+                viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+                viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
+                viewport_image->setParent(container);
+            } else {
+                spdlog::error("Couldn't create scene viewport");
+            }
+
+            auto rectangle_shape =
+                core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+            rectangle_shape->setSize({ 800, 100 });
+
+            auto static_body = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Static2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Static2d");
+            static_body->addShape(rectangle_shape);
+            static_body->setPosition({ 800, 500 });
+            static_body->setParent(*m_scene_ctx->getScene());
+
+            auto rectangle_shape2 =
+                core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+            rectangle_shape2->setSize({ 80, 80 });
+
+            auto dynamic_body = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+            dynamic_body->addShape(rectangle_shape2);
+            dynamic_body->setPosition({ 410, 300 });
+            dynamic_body->setParent(*m_scene_ctx->getScene());
+
+            auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
+            circle_shape->setRadius(40.0f);
+            circle_shape->getShapeDef().density = 2.0f;
+            circle_shape->getShapeDef().material.rollingResistance = 0.02f;
+
+            auto dynamic_body2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+            dynamic_body2->addShape(circle_shape);
+            dynamic_body2->setPosition({ 450, 0 });
+            dynamic_body2->setParent(*m_scene_ctx->getScene());
+
+
+            // Sprite
+            auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            sprite->setTexturePath("project://assets/atmo.png");
+            // sprite->setPosition({ 1200, 500 });
+            sprite->setParent(*dynamic_body2);
+            sprite->setScale(core::types::Vector2(0.25, 0.25));
+
+            auto sprite2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            sprite2->setTexturePath("project://assets/atmo.png");
+            // sprite->setPosition({ 1200, 500 });
+            sprite2->setParent(*dynamic_body2);
+            sprite2->setScale(core::types::Vector2(0.25, 0.25));
+
+            auto sprite3 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            sprite3->setTexturePath("project://assets/atmo.png");
+            // sprite->setPosition({ 1200, 500 });
+            sprite3->setParent(*sprite2);
+            sprite3->setScale(core::types::Vector2(0.25, 0.25));
+
+            auto sprite4 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            sprite4->setTexturePath("project://assets/atmo.png");
+            // sprite->setPosition({ 1200, 500 });
+            sprite4->setParent(*dynamic_body2);
+            sprite4->setScale(core::types::Vector2(0.25, 0.25));
+
+            auto sprite5 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            sprite5->setTexturePath("project://assets/atmo.png");
+            // sprite->setPosition({ 1200, 500 });
+            sprite5->setParent(*sprite3);
+            sprite5->setScale(core::types::Vector2(0.25, 0.25));
+        }
 
         auto scene_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &scene_editor_container_layout = scene_editor_container->getComponentMutable<core::components::Layout>();
@@ -207,13 +291,6 @@ namespace atmo::editor
         middle_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         middle_panel_layout.height.size = 0.6f;
         middle_panel->setParent(*middle_panel_container);
-
-        // if (m_scene_ctx && m_scene_ctx->isReady()) {
-        //     auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
-        //     auto &viewport_img_comp = viewport_image->getComponentMutable<core::components::UIImage>();
-        //     viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
-        //     viewport_image->setParent(*middle_panel);
-        // }
 
         auto right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &right_panel_container_layout = right_panel_container->getComponentMutable<core::components::Layout>();

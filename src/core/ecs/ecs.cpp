@@ -5,6 +5,7 @@
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
+#include "core/event/event_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
 #include "meta/auto_register.hpp"
@@ -69,4 +70,5 @@ namespace atmo::core::ecs
     }
 } // namespace atmo::core::ecs
 
-ATMO_REGISTER_COMPONENT(atmo::core::components::WorldContext)
+ATMO_REGISTER_COMPONENT(atmo::core::components::WorldContext);
+ATMO_REGISTER_EVENT(atmo::editor::ProgressTickEvent);

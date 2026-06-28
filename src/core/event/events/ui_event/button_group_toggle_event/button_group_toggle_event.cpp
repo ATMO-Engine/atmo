@@ -1,3 +1,3 @@
 #include "button_group_toggle_event.hpp"
 
-REGISTER_EVENT(ButtonGroupToggleEvent);
+ATMO_REGISTER_EVENT(atmo::core::event::events::ButtonGroupToggleEvent);

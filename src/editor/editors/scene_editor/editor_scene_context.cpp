@@ -1,8 +1,10 @@
 #include "editor_scene_context.hpp"
 
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 
+#include "SDL3/SDL_pixels.h"
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/entity.hpp"
@@ -11,6 +13,7 @@
 #include "core/ecs/world_context.hpp"
 #include "glaze/glaze.hpp"
 #include "glaze/json/prettify.hpp"
+#include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
@@ -69,8 +72,11 @@ namespace atmo::editor
         SDL_GetRenderDrawBlendMode(m_renderer, &blend);
 
         SDL_SetRenderTarget(m_renderer, m_render_texture);
-        SDL_SetRenderDrawColor(m_renderer, 30, 30, 30, 255);
+        SDL_Color bg_color = project::ProjectManager::GetSettings().window.background_color.toInt<SDL_Color>();
+        SDL_SetRenderDrawColor(m_renderer, bg_color.r, bg_color.g, bg_color.b, 255);
         SDL_RenderClear(m_renderer);
+
+        // TODO: draw axis lines and grid.
 
         m_world.progress(delta_time);
 

@@ -15,6 +15,8 @@
 #include "core/ecs/entities/script.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/ecs/world_context.hpp"
+#include "core/event/event_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
@@ -208,65 +210,6 @@ namespace atmo::core
         InputManager::AddInput("D", new InputManager::KeyEvent(SDLK_D, false));
         InputManager::AddInput("Q", new InputManager::KeyEvent(SDLK_Q, false));
 
-        auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-        rectangle_shape->setSize({ 800, 100 });
-
-        auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
-        static_body->addShape(rectangle_shape);
-        static_body->setPosition({ 800, 500 });
-        static_body->setParent(*scene);
-
-        auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-        rectangle_shape2->setSize({ 80, 80 });
-
-        auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
-        dynamic_body->addShape(rectangle_shape2);
-        dynamic_body->setPosition({ 410, 300 });
-        dynamic_body->setParent(*scene);
-
-        auto circle_shape = resource::SubResourceRegistry::Create<resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
-        circle_shape->setRadius(40.0f);
-        circle_shape->getShapeDef().density = 2.0f;
-        circle_shape->getShapeDef().material.rollingResistance = 0.02f;
-
-        auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
-        dynamic_body2->addShape(circle_shape);
-        dynamic_body2->setPosition({ 450, 0 });
-        dynamic_body2->setParent(*scene);
-
-
-        // Sprite
-        auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite->setParent(*dynamic_body2);
-        sprite->setScale(types::Vector2(0.25, 0.25));
-
-        auto sprite2 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite2->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite2->setParent(*dynamic_body2);
-        sprite2->setScale(types::Vector2(0.25, 0.25));
-
-        auto sprite3 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite3->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite3->setParent(*sprite2);
-        sprite3->setScale(types::Vector2(0.25, 0.25));
-
-        auto sprite4 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite4->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite4->setParent(*dynamic_body2);
-        sprite4->setScale(types::Vector2(0.25, 0.25));
-
-        auto sprite5 = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite5->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite5->setParent(*sprite3);
-        sprite5->setScale(types::Vector2(0.25, 0.25));
-
-
         // atmo::core::components::Script t = {};
         // atmo::luau::ScriptInstance inst = vm.generateInstance();
         // t.instance = &inst;
@@ -283,14 +226,19 @@ namespace atmo::core
         float title_update_accumulator = 0.0f;
         int frame_count = 0;
 
+#if !defined(ATMO_EXPORT)
+        auto progress_tick = event::EventRegistry::Create<atmo::editor::ProgressTickEvent>("Event::ProgressTickEvent");
+#endif
+
         while (m_ecs.progress(deltaTime)) {
             SignalQueue::Flush();
 
+#if !defined(ATMO_EXPORT)
+            progress_tick->delta_time = deltaTime;
+            event::EventRegistry::Dispatch(progress_tick);
+#endif
+
             ATMO_PROFILE_FRAME();
-
-            if (InputManager::IsPressed("ui_quit"))
-                m_running.store(false);
-
 
             InputManager::Tick();
 
