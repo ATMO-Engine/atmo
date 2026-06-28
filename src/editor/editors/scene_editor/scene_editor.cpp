@@ -1,6 +1,7 @@
 #include "scene_editor.hpp"
 #include <cmath>
 #include <string>
+#include <utility>
 #include "SDL3/SDL_keyboard.h"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
@@ -25,13 +26,15 @@
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_registry.hpp"
+#include "flecs/addons/cpp/mixins/id/decl.hpp"
+#include "meta/widget_registry.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
 {
     void entityComponentFodableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent)
     {
-        std::vector<const meta::TypeInfo *> ti_vector;
+        std::vector<std::pair<flecs::id, const meta::TypeInfo *>> ti_vector;
 
         entity.each([&](flecs::id id) {
             if (id.is_pair())
@@ -45,7 +48,7 @@ namespace atmo::editor
             if (!comp)
                 return;
 
-            ti_vector.emplace_back(ti);
+            ti_vector.emplace_back(std::make_pair(id, ti));
         });
 
         for (auto &entity_ti : ti_vector) {
@@ -65,14 +68,15 @@ namespace atmo::editor
             child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
             child_UI_layout.child_gap = 8;
             child_UI->setParent(parent);
-            title_label.setText(entity_ti->name);
-            spdlog::info(entity_ti->name);
+            title_label.setText(entity_ti.second->name);
 
-            auto inputtest = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
+            for (auto &field_info : entity_ti.second->fields)
+                auto widget = meta::WidgetRegistry::get().create(child_UI->getChildContainer(), entity.try_get_mut(entity_ti.first), field_info);
+
             // auto &input_type = inputtest->getComponentMutable<core::components::UIInput>();
             // input_type.input_type = core::components::UIInput::InputType::Text;
 
-            inputtest->setParent(child_UI->getChildContainer());
+            // inputtest->setParent(child_UI->getChildContainer());
         }
     }
 
@@ -386,6 +390,9 @@ namespace atmo::editor
         //         sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
         //     }
         // }
+        for (auto &entity : container.getScene()->getChildren()) {
+            sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
+        }
     }
 
     void SceneEditor::sceneEntityFodableTreeinit(
