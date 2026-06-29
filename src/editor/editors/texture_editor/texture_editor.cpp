@@ -142,6 +142,18 @@ namespace atmo::editor
         importBtn_layout.height.size = 0.05f;
         importBtn->setParent(*texture_editor_panel);
 
+        auto previewBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        ((core::ecs::entities::UILabel)previewBtn->getChildren()[0]).setText("Preview");
+        auto &previewBtn_rect = previewBtn->getComponentMutable<core::components::UIRect>();
+        previewBtn_rect.border.color = core::types::Color::BLACK;
+        previewBtn_rect.color = core::types::Color::WHITE;
+        auto &previewBtn_layout = previewBtn->getComponentMutable<core::components::Layout>();
+        previewBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        previewBtn_layout.width.size = 0.30f;
+        previewBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        previewBtn_layout.height.size = 0.05f;
+        previewBtn->setParent(*texture_editor_panel);
+
         auto colorPicker = core::ecs::EntityRegistry::Create<core::ecs::entities::UIColorPicker>("Entity::UI::UIRect::UIColorPicker");
         colorPicker->setParent(*texture_editor_panel);
         auto colorPickerHandle = colorPicker->getHandle();

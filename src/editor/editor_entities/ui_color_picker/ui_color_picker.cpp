@@ -85,6 +85,7 @@ namespace atmo::core::ecs::entities
         setComponent<components::UIColorPicker>({});
 
         createSignal<types::Color>("ColorChanged");
+        createSignal<>("Update preview");
 
         auto &rect = getComponentMutable<core::components::UIRect>();
         rect.color = core::types::Color("#acacac");
@@ -98,6 +99,42 @@ namespace atmo::core::ecs::entities
         layout.padding.right = 4;
         layout.padding.top = 4;
         layout.padding.bottom = 4;
+
+        auto color_preview_background = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
+        auto &color_preview_background_layout = color_preview_background->getComponentMutable<core::components::Layout>();
+        color_preview_background_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        color_preview_background_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        color_preview_background_layout.height.size = 0.1f;
+        auto &color_preview_background_rect = color_preview_background->getComponentMutable<core::components::UIRect>();
+        color_preview_background_rect.corner_radius.top_left = 5.0f;
+        color_preview_background_rect.corner_radius.top_right = 5.0f;
+        color_preview_background_rect.corner_radius.bottom_left = 5.0f;
+        color_preview_background_rect.corner_radius.bottom_right = 5.0f;
+        color_preview_background_rect.color = types::Color::WHITE;
+        color_preview_background->setParent(*this);
+
+        auto color_preview = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
+        auto &color_preview_layout = color_preview->getComponentMutable<core::components::Layout>();
+        color_preview_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        color_preview_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        auto &color_preview_rect = color_preview->getComponentMutable<core::components::UIRect>();
+        color_preview_rect.corner_radius.top_left = 5.0f;
+        color_preview_rect.corner_radius.top_right = 5.0f;
+        color_preview_rect.corner_radius.bottom_left = 5.0f;
+        color_preview_rect.corner_radius.bottom_right = 5.0f;
+        color_preview->setParent(*color_preview_background);
+
+        auto colorHandle = color_preview->getHandle();
+        getSignal<types::Color>("Update preview").connect([colorHandle](types::Color color) {
+            if (!colorHandle.is_alive()) {
+                return;
+            }
+
+            UIRect colorEntity(core::ecs::EntityRegistry::GetEntityFromId(colorHandle));
+            auto &color_rect = colorEntity.getComponentMutable<core::components::UIRect>();
+            color_rect.color = color;
+        });
+
 
         auto handle = p_handle;
         { /* Red slider */
@@ -308,7 +345,11 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIColorPicker::draw(ClaySdL3RendererData *data) {}
+    void UIColorPicker::draw(ClaySdL3RendererData *data)
+    {
+        auto &comp = getComponentMutable<core::components::UIColorPicker>();
+        getSignal<types::Color>("Update preview").emit(comp.current_color);
+    }
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIColorPicker);
