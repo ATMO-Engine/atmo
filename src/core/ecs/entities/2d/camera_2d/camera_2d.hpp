@@ -24,8 +24,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::CameraData>
     static constexpr const char *name = "CameraData";
     static constexpr const char *category = "2D";
     static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::CameraData::zoom>("zoom"),
-        atmo::meta::field<&atmo::core::components::CameraData::is_active>("is_active"));
+        atmo::meta::field<&atmo::core::components::CameraData::zoom>("zoom"), atmo::meta::field<&atmo::core::components::CameraData::is_active>("is_active"));
 };
 
 namespace atmo::core::ecs::entities

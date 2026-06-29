@@ -1,11 +1,11 @@
 #pragma once
 
+#include <unordered_set>
 #include "SDL3/SDL.h"
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/types.hpp"
 #include "meta/meta.hpp"
-#include <unordered_set>
 
 namespace atmo::core::components
 {
@@ -86,12 +86,12 @@ namespace atmo::core::ecs::entities
         void initPixelBuffer(int w, int h);
 
         void resizeCanvas(int width, int heigth);
+
     private:
         void rebuildCheckboard();
 
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
-        void
-        paintCapsule(const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brushRadius, const atmo::core::types::Color &color);
+        void paintCapsule(const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brushRadius, const atmo::core::types::Color &color);
 
         float computeFitScale(const components::UIDrawingCanvas &comp) const;
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;

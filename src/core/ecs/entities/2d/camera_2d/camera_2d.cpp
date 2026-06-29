@@ -9,9 +9,9 @@ namespace atmo::core::ecs::entities
     {
         // Reset camera state at the start of each frame so stale state doesn't persist
         // when the camera is deactivated or destroyed.
-        world->system("Camera2d_ResetWorldState")
-            .kind(flecs::OnLoad)
-            .run([](flecs::iter &it) { it.world().set<components::WorldCameraState>({ .has_camera = false }); });
+        world->system("Camera2d_ResetWorldState").kind(flecs::OnLoad).run([](flecs::iter &it) {
+            it.world().set<components::WorldCameraState>({ .has_camera = false });
+        });
 
         // Snapshot the active camera into a world singleton so rendering systems can
         // read it without running a per-entity query inside every render call.
@@ -24,16 +24,14 @@ namespace atmo::core::ecs::entities
             });
 
         // Enforce the "one active camera per world" invariant on mutation.
-        world->observer<components::CameraData>("Camera2d_EnforceUnique")
-            .event(flecs::OnSet)
-            .each([](flecs::entity e, components::CameraData &cam) {
-                if (!cam.is_active)
-                    return;
-                e.world().each<components::CameraData>([&](flecs::entity other, components::CameraData &other_cam) {
-                    if (other != e && other_cam.is_active)
-                        other_cam.is_active = false;
-                });
+        world->observer<components::CameraData>("Camera2d_EnforceUnique").event(flecs::OnSet).each([](flecs::entity e, components::CameraData &cam) {
+            if (!cam.is_active)
+                return;
+            e.world().each<components::CameraData>([&](flecs::entity other, components::CameraData &other_cam) {
+                if (other != e && other_cam.is_active)
+                    other_cam.is_active = false;
             });
+        });
     }
 
     void Camera2d::initialize()

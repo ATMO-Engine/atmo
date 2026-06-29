@@ -35,27 +35,25 @@ namespace atmo::core::ecs::entities
 
             if (atmo::project::ProjectManager::GetSettings().debug.draw_physics_debug) {
                 SetupEditorDebugDraw(&m_editor_debug_draw);
-                world->system<components::Scene>("Body2d_DebugDrawShapes_Editor")
-                    .kind(flecs::OnValidate)
-                    .each([](flecs::entity e, components::Scene &scene) {
-                        const auto *wctx = e.world().try_get<components::WorldContext>();
-                        const auto *cam = e.world().try_get<components::WorldCameraState>();
-                        if (!wctx || !wctx->renderer)
-                            return;
+                world->system<components::Scene>("Body2d_DebugDrawShapes_Editor").kind(flecs::OnValidate).each([](flecs::entity e, components::Scene &scene) {
+                    const auto *wctx = e.world().try_get<components::WorldContext>();
+                    const auto *cam = e.world().try_get<components::WorldCameraState>();
+                    if (!wctx || !wctx->renderer)
+                        return;
 
-                        int vp_w = 0, vp_h = 0;
-                        SDL_GetCurrentRenderOutputSize(wctx->renderer, &vp_w, &vp_h);
+                    int vp_w = 0, vp_h = 0;
+                    SDL_GetCurrentRenderOutputSize(wctx->renderer, &vp_w, &vp_h);
 
-                        const float zoom = (cam && cam->has_camera) ? cam->zoom : 1.0f;
-                        const float px = static_cast<float>(vp_w) * 0.5f - (cam && cam->has_camera ? cam->position.x * zoom : 0.0f);
-                        const float py = static_cast<float>(vp_h) * 0.5f - (cam && cam->has_camera ? cam->position.y * zoom : 0.0f);
+                    const float zoom = (cam && cam->has_camera) ? cam->zoom : 1.0f;
+                    const float px = static_cast<float>(vp_w) * 0.5f - (cam && cam->has_camera ? cam->position.x * zoom : 0.0f);
+                    const float py = static_cast<float>(vp_h) * 0.5f - (cam && cam->has_camera ? cam->position.y * zoom : 0.0f);
 
-                        s_editor_debug_ctx = { wctx->renderer, zoom, { px, py } };
-                        m_editor_debug_draw.context = &s_editor_debug_ctx;
+                    s_editor_debug_ctx = { wctx->renderer, zoom, { px, py } };
+                    m_editor_debug_draw.context = &s_editor_debug_ctx;
 
-                        if (b2World_IsValid(scene.world_id))
-                            b2World_Draw(scene.world_id, &m_editor_debug_draw);
-                    });
+                    if (b2World_IsValid(scene.world_id))
+                        b2World_Draw(scene.world_id, &m_editor_debug_draw);
+                });
             }
             return;
         }

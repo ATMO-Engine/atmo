@@ -69,8 +69,7 @@ namespace atmo::core::ecs::entities
             SDL_DestroyTexture(comp.checkboard_texture);
         }
 
-        comp.checkboard_texture = SDL_CreateTexture(
-            renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
+        comp.checkboard_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
 
         if (!comp.checkboard_texture) {
             spdlog::warn("Check board load failed");
@@ -107,11 +106,10 @@ namespace atmo::core::ecs::entities
         int pixelH = (int)comp.pixels.size();
         int pixelW = pixelH > 0 ? (int)comp.pixels[0].size() : 0;
 
-        const atmo::core::types::Color transparent{0.0f, 0.0f, 0.0f, 0.0f};
+        const atmo::core::types::Color transparent{ 0.0f, 0.0f, 0.0f, 0.0f };
 
         if (pixelH != targetH || pixelW != targetW) {
-            spdlog::warn("canvas sync: FrameBuffer: {}/{} != textureSize: {}/{}, syncing",
-                pixelW, pixelH, targetW, targetH);
+            spdlog::warn("canvas sync: FrameBuffer: {}/{} != textureSize: {}/{}, syncing", pixelW, pixelH, targetW, targetH);
             comp.pixels.resize(targetH, std::vector<atmo::core::types::Color>(targetW, transparent));
 
             for (int y = 0; y < targetH; ++y) {
@@ -126,8 +124,7 @@ namespace atmo::core::ecs::entities
             float tw, th;
             SDL_GetTextureSize(comp.drawing_texture, &tw, &th);
             if ((int)tw != targetW || (int)th != targetH) {
-                spdlog::warn("canvas sync: texture SDL: {}/{} != textureSize: {}/{}, destroy current SDL texture",
-                    (int)tw, (int)th, targetW, targetH);
+                spdlog::warn("canvas sync: texture SDL: {}/{} != textureSize: {}/{}, destroy current SDL texture", (int)tw, (int)th, targetW, targetH);
                 SDL_DestroyTexture(comp.drawing_texture);
                 comp.drawing_texture = nullptr;
                 comp.texture_dirty = true;
@@ -144,17 +141,17 @@ namespace atmo::core::ecs::entities
         int oldW = oldH > 0 ? (int)comp.pixels[0].size() : 0;
 
         if (heigth > oldH) {
-            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, {0.0f, 0.0f, 0.0f, 0.0f}));
+            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, { 0.0f, 0.0f, 0.0f, 0.0f }));
         } else {
-            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, {0.0f, 0.0f, 0.0f, 0.0f}));
+            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, { 0.0f, 0.0f, 0.0f, 0.0f }));
         }
 
         for (int y = 0; y < (int)comp.pixels.size(); ++y) {
             auto &row = comp.pixels[y];
             if (width > (int)row.size()) {
-                row.resize(width, {0.0f, 0.0f, 0.0f, 0.0f});
+                row.resize(width, { 0.0f, 0.0f, 0.0f, 0.0f });
             } else {
-                row.resize(width, {0.0f, 0.0f, 0.0f, 0.0f});
+                row.resize(width, { 0.0f, 0.0f, 0.0f, 0.0f });
             }
         }
 
@@ -173,12 +170,7 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        comp.pixels.assign(h,
-                           std::vector<atmo::core::types::Color>(
-                                w,
-                                atmo::core::types::Color{0.0f, 0.0f, 0.0f, 0.0f}
-                            )
-                           );
+        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
         comp.textureSize = { (float)w, (float)h };
 
         if (comp.drawing_texture) {
@@ -383,12 +375,7 @@ namespace atmo::core::ecs::entities
             return;
 
         if (!comp.drawing_texture) {
-            comp.drawing_texture = SDL_CreateTexture(
-                renderer,
-                SDL_PIXELFORMAT_RGBA32,
-                SDL_TEXTUREACCESS_STREAMING,
-                w, h
-            );
+            comp.drawing_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
             if (!comp.drawing_texture)
                 return;
             SDL_SetTextureScaleMode(comp.drawing_texture, SDL_SCALEMODE_NEAREST);
@@ -482,7 +469,7 @@ namespace atmo::core::ecs::entities
             dst.b = (color.b * srcA + dst.b * dstA * (1.0f - srcA)) / outA;
             dst.a = outA;
         } else {
-            dst = atmo::core::types::Color{0.0f, 0.0f, 0.0f, 0.0f};
+            dst = atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f };
         }
 
         comp.texture_dirty = true;
@@ -504,8 +491,7 @@ namespace atmo::core::ecs::entities
                     atmo::core::types::Vector2 delta = mousePosInCanvas - comp.lastPaintMousePos;
                     float distance = delta.length();
 
-                    while (distance >= spacing)
-                    {
+                    while (distance >= spacing) {
                         atmo::core::types::Vector2 dir = delta / distance;
 
                         atmo::core::types::Vector2 next = comp.lastPaintMousePos + dir * spacing;
@@ -527,20 +513,22 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
         int w = (int)comp.textureSize.x;
         int h = (int)comp.textureSize.y;
-        if (w <= 0 || h <= 0 || comp.pixels.empty()) return;
+        if (w <= 0 || h <= 0 || comp.pixels.empty())
+            return;
 
         SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA32);
-        if (!surface) return;
+        if (!surface)
+            return;
 
         uint8_t *px = (uint8_t *)surface->pixels;
         for (int y = 0; y < h; ++y)
             for (int x = 0; x < w; ++x) {
                 const auto &c = comp.pixels[y][x];
                 int i = y * surface->pitch + x * 4;
-                px[i+0] = (uint8_t)(c.r * 255.0f);
-                px[i+1] = (uint8_t)(c.g * 255.0f);
-                px[i+2] = (uint8_t)(c.b * 255.0f);
-                px[i+3] = (uint8_t)(c.a * 255.0f);
+                px[i + 0] = (uint8_t)(c.r * 255.0f);
+                px[i + 1] = (uint8_t)(c.g * 255.0f);
+                px[i + 2] = (uint8_t)(c.b * 255.0f);
+                px[i + 3] = (uint8_t)(c.a * 255.0f);
             }
 
         switch (comp.format) {
@@ -597,17 +585,12 @@ namespace atmo::core::ecs::entities
         int w = rgba->w;
         int h = rgba->h;
 
-        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{0.0f, 0.0f, 0.0f, 0.0f}));
+        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
         uint8_t *px = (uint8_t *)rgba->pixels;
         for (int y = 0; y < h; ++y)
             for (int x = 0; x < w; ++x) {
                 int i = y * rgba->pitch + x * 4;
-                comp.pixels[y][x] = {
-                    px[i + 0] / 255.0f,
-                    px[i + 1] / 255.0f,
-                    px[i + 2] / 255.0f,
-                    px[i + 3] / 255.0f
-                };
+                comp.pixels[y][x] = { px[i + 0] / 255.0f, px[i + 1] / 255.0f, px[i + 2] / 255.0f, px[i + 3] / 255.0f };
             }
         SDL_DestroySurface(rgba);
 
