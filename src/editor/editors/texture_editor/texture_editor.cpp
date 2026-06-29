@@ -281,7 +281,6 @@ namespace atmo::editor
         });
 
 
-
         auto sizeSliderHandle = sizeSlider->getHandle();
         auto sizeNumberHandle = sizeNumberInput->getHandle();
         sizeSlider->getSignal<int>("IntValueChanged").connect([canvasHandle, sizeNumberHandle](int val) {
@@ -316,7 +315,6 @@ namespace atmo::editor
             canvas_comp.brush_radius = val;
         });
         sizeSlider->getSignal<int>("IntValueChanged").emit(1);
-
 
 
         auto spacingSliderHandle = spacingSlider->getHandle();
@@ -355,7 +353,6 @@ namespace atmo::editor
         spacingSlider->getSignal<float>("FloatValueChanged").emit(0.5f);
 
 
-
         colorPicker->getSignal<core::types::Color>("ColorChanged").connect([canvasHandle](core::types::Color newColor) {
             if (!canvasHandle.is_alive()) {
                 return;
@@ -367,7 +364,6 @@ namespace atmo::editor
         });
         auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
         colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
-
 
 
         exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {
