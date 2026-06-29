@@ -71,4 +71,7 @@ namespace atmo::core::ecs
 } // namespace atmo::core::ecs
 
 ATMO_REGISTER_COMPONENT(atmo::core::components::WorldContext);
+
+#if !defined(ATMO_EXPORT)
 ATMO_REGISTER_EVENT(atmo::editor::ProgressTickEvent);
+#endif

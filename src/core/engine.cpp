@@ -233,14 +233,14 @@ namespace atmo::core
 #endif
 
         while (m_ecs.progress(deltaTime)) {
-            SignalQueue::Flush();
-
             ATMO_PROFILE_FRAME();
 
             if (!m_running.load()) {
                 m_ecs.stop();
                 continue;
             }
+
+            SignalQueue::Flush();
 
 #if !defined(ATMO_EXPORT)
             progress_tick->delta_time = deltaTime;
