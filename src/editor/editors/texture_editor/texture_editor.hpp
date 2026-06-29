@@ -35,5 +35,6 @@ namespace atmo::editor
     private:
         core::types::Color brushColor = core::types::Color::BLACK;
         int brushSize = 1;
+        float brushSpacing = 0.5f;
     };
 } // namespace atmo::editor

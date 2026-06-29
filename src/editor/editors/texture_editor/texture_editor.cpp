@@ -44,68 +44,56 @@ namespace atmo::editor
         texture_editor_panel_layout.child_gap = 16;
         texture_editor_panel->setParent(*texture_editor_container);
 
-        auto color_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &color_comp_panel_rect = color_comp_panel->getComponentMutable<core::components::UIRect>();
-        color_comp_panel_rect.corner_radius.top_left = 5.0f;
-        color_comp_panel_rect.corner_radius.top_right = 5.0f;
-        color_comp_panel_rect.corner_radius.bottom_left = 5.0f;
-        color_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        color_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
-        color_comp_panel_rect.color = core::types::Color("#7d7d7d");
-        auto &color_comp_panel_layout = color_comp_panel->getComponentMutable<core::components::Layout>();
-        color_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
-        color_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        color_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        color_comp_panel_layout.padding.left = 16;
-        color_comp_panel_layout.padding.right = 16;
-        color_comp_panel_layout.padding.top = 16;
-        color_comp_panel_layout.padding.bottom = 16;
-        color_comp_panel_layout.child_gap = 0;
-        color_comp_panel->setParent(*texture_editor_panel);
+        auto size_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &size_comp_panel_rect = size_comp_panel->getComponentMutable<core::components::UIRect>();
+        size_comp_panel_rect.corner_radius.top_left = 5.0f;
+        size_comp_panel_rect.corner_radius.top_right = 5.0f;
+        size_comp_panel_rect.corner_radius.bottom_left = 5.0f;
+        size_comp_panel_rect.corner_radius.bottom_right = 5.0f;
+        size_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
+        size_comp_panel_rect.color = core::types::Color("#7d7d7d");
+        auto &size_comp_panel_layout = size_comp_panel->getComponentMutable<core::components::Layout>();
+        size_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        size_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        size_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        size_comp_panel_layout.padding.left = 16;
+        size_comp_panel_layout.padding.right = 16;
+        size_comp_panel_layout.padding.top = 16;
+        size_comp_panel_layout.padding.bottom = 16;
+        size_comp_panel_layout.child_gap = 0;
+        size_comp_panel->setParent(*texture_editor_panel);
 
         auto sizeLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         sizeLabel->setText("Size");
         sizeLabel->setFontSize(16);
-        sizeLabel->setParent(*color_comp_panel);
+        sizeLabel->setParent(*size_comp_panel);
 
         auto sizeSlider = core::ecs::EntityRegistry::Create<core::ecs::entities::UISlider>("Entity::UI::UIRect::UISlider");
         sizeSlider->setType(core::components::UISlider::SliderType::Int, 1, 10);
-        sizeSlider->setParent(*color_comp_panel);
+        sizeSlider->setParent(*size_comp_panel);
 
-        auto numberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-        auto &input_entity_comp = numberInput->getComponentMutable<core::components::UIInput>();
-        input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
-        numberInput->setParent(*color_comp_panel);
+        auto sizeNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+        auto &size_input_entity_comp = sizeNumberInput->getComponentMutable<core::components::UIInput>();
+        size_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
+        sizeNumberInput->setParent(*size_comp_panel);
 
-
-        auto sliderHandle = sizeSlider->getHandle();
-        auto numberHandle = numberInput->getHandle();
-        sizeSlider->getSignal<int>("IntValueChanged").connect([this, numberHandle](int val) {
-            if (!numberHandle.is_alive()) {
+        auto sizeSliderHandle = sizeSlider->getHandle();
+        auto sizeNumberHandle = sizeNumberInput->getHandle();
+        sizeSlider->getSignal<int>("IntValueChanged").connect([this, sizeNumberHandle](int val) {
+            if (!sizeNumberHandle.is_alive()) {
                 return;
             }
-            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
-            auto button = core::ecs::entities::UIButton(nbInput.getChildren()[0]);
-            if (!button.getHandle().is_alive()) {
-                return;
-            }
-            auto label = core::ecs::entities::UILabel(button.getChildren()[0]);
-            if (!label.getHandle().is_alive()) {
-                return;
-            }
-            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UIInput>();
-            nbInput_comp.input_data = std::format("{}", val);
-            nbInput.validateInput();
-            label.setText(nbInput_comp.input_data);
+            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(sizeNumberHandle));
+            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+            nbInput_comp.value = val;
 
             this->brushSize = val;
         });
-        sizeSlider->getSignal<int>("IntValueChanged").emit(1);
-        numberInput->getSignal<int>("IntValueChanged").connect([this, sliderHandle](int val) {
-            if (!sliderHandle.is_alive()) {
+        sizeNumberInput->getSignal<int>("IntValueChanged").connect([this, sizeSliderHandle](int val) {
+            if (!sizeSliderHandle.is_alive()) {
                 return;
             }
-            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(sliderHandle));
+            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(sizeSliderHandle));
             slider.setValue(val, false);
 
             auto &comp = slider.getComponentMutable<core::components::UISlider>();
@@ -116,6 +104,141 @@ namespace atmo::editor
 
             this->brushSize = val;
         });
+        sizeSlider->getSignal<int>("IntValueChanged").emit(brushSize);
+
+
+        auto spacing_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &spacing_comp_panel_rect = spacing_comp_panel->getComponentMutable<core::components::UIRect>();
+        spacing_comp_panel_rect.corner_radius.top_left = 5.0f;
+        spacing_comp_panel_rect.corner_radius.top_right = 5.0f;
+        spacing_comp_panel_rect.corner_radius.bottom_left = 5.0f;
+        spacing_comp_panel_rect.corner_radius.bottom_right = 5.0f;
+        spacing_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
+        spacing_comp_panel_rect.color = core::types::Color("#7d7d7d");
+        auto &spacing_comp_panel_layout = spacing_comp_panel->getComponentMutable<core::components::Layout>();
+        spacing_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        spacing_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        spacing_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        spacing_comp_panel_layout.padding.left = 16;
+        spacing_comp_panel_layout.padding.right = 16;
+        spacing_comp_panel_layout.padding.top = 16;
+        spacing_comp_panel_layout.padding.bottom = 16;
+        spacing_comp_panel_layout.child_gap = 0;
+        spacing_comp_panel->setParent(*texture_editor_panel);
+
+        auto spacingLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        spacingLabel->setText("Spacing");
+        spacingLabel->setFontSize(16);
+        spacingLabel->setParent(*spacing_comp_panel);
+
+        auto spacingSlider = core::ecs::EntityRegistry::Create<core::ecs::entities::UISlider>("Entity::UI::UIRect::UISlider");
+        spacingSlider->setType(core::components::UISlider::SliderType::Float, 0.1f, 1.0f);
+        spacingSlider->setParent(*spacing_comp_panel);
+
+        auto spacingNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+        auto &spacing_input_entity_comp = spacingNumberInput->getComponentMutable<core::components::UIInput>();
+        spacing_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
+        spacingNumberInput->setParent(*spacing_comp_panel);
+
+
+        auto spacingSliderHandle = spacingSlider->getHandle();
+        auto spacingNumberHandle = spacingNumberInput->getHandle();
+        spacingSlider->getSignal<float>("FloatValueChanged").connect([this, spacingNumberHandle](float val) {
+            if (!spacingNumberHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(spacingNumberHandle));
+            auto button = core::ecs::entities::UIButton(nbInput.getChildren()[0]);
+            if (!button.getHandle().is_alive()) {
+                return;
+            }
+            auto label = core::ecs::entities::UILabel(button.getChildren()[0]);
+            if (!label.getHandle().is_alive()) {
+                return;
+            }
+            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UIInput>();
+            nbInput_comp.input_data = std::format("{}", val);
+            nbInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
+            label.setText(nbInput_comp.input_data);
+
+            this->brushSpacing = val;
+        });
+        spacingSlider->getSignal<float>("FloatValueChanged").emit(brushSpacing);
+        spacingNumberInput->getSignal<float>("FloatValueChanged").connect([this, spacingSliderHandle](float val) {
+            if (!spacingSliderHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(spacingSliderHandle));
+            slider.setValue(val, false);
+
+            auto &comp = slider.getComponentMutable<core::components::UISlider>();
+            float value = std::visit([](auto v) { return static_cast<float>(v); }, comp.max);
+            if (val > value) {
+                return;
+            }
+
+            this->brushSpacing = val;
+        });
+
+
+        auto width_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &width_comp_panel_rect = width_comp_panel->getComponentMutable<core::components::UIRect>();
+        width_comp_panel_rect.corner_radius.top_left = 5.0f;
+        width_comp_panel_rect.corner_radius.top_right = 5.0f;
+        width_comp_panel_rect.corner_radius.bottom_left = 5.0f;
+        width_comp_panel_rect.corner_radius.bottom_right = 5.0f;
+        width_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
+        width_comp_panel_rect.color = core::types::Color("#7d7d7d");
+        auto &width_comp_panel_layout = width_comp_panel->getComponentMutable<core::components::Layout>();
+        width_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        width_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        width_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        width_comp_panel_layout.padding.left = 16;
+        width_comp_panel_layout.padding.right = 16;
+        width_comp_panel_layout.padding.top = 16;
+        width_comp_panel_layout.padding.bottom = 16;
+        width_comp_panel_layout.child_gap = 0;
+        width_comp_panel->setParent(*texture_editor_panel);
+
+        auto widthLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        widthLabel->setText("Width");
+        widthLabel->setFontSize(16);
+        widthLabel->setParent(*width_comp_panel);
+
+        auto widthNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+        auto &width_input_entity_comp = widthNumberInput->getComponentMutable<core::components::UIInput>();
+        width_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
+        widthNumberInput->setParent(*width_comp_panel);
+
+
+        auto height_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &height_comp_panel_rect = height_comp_panel->getComponentMutable<core::components::UIRect>();
+        height_comp_panel_rect.corner_radius.top_left = 5.0f;
+        height_comp_panel_rect.corner_radius.top_right = 5.0f;
+        height_comp_panel_rect.corner_radius.bottom_left = 5.0f;
+        height_comp_panel_rect.corner_radius.bottom_right = 5.0f;
+        height_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
+        height_comp_panel_rect.color = core::types::Color("#7d7d7d");
+        auto &height_comp_panel_layout = height_comp_panel->getComponentMutable<core::components::Layout>();
+        height_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        height_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        height_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        height_comp_panel_layout.padding.left = 16;
+        height_comp_panel_layout.padding.right = 16;
+        height_comp_panel_layout.padding.top = 16;
+        height_comp_panel_layout.padding.bottom = 16;
+        height_comp_panel_layout.child_gap = 0;
+        height_comp_panel->setParent(*texture_editor_panel);
+
+        auto heightLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        heightLabel->setText("Height");
+        heightLabel->setFontSize(16);
+        heightLabel->setParent(*height_comp_panel);
+
+        auto heightNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+        auto &height_input_entity_comp = heightNumberInput->getComponentMutable<core::components::UIInput>();
+        height_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
+        heightNumberInput->setParent(*height_comp_panel);
 
 
         auto exportBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
@@ -175,55 +298,90 @@ namespace atmo::editor
 
             comp.brushColor = this->brushColor;
             comp.brushRadius = this->brushSize;
+            comp.brushSpacing = this->brushSpacing;
         });
 
+        auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
+        canvas_layout.z_index = 0;
+
         auto &canvasInfo = canvas->getComponentMutable<core::components::UIDrawingCanvas>();
-        canvasInfo.textureSize = { 128, 80 };
         canvasInfo.canvasSize = { 1.0f, 1.0f };
         canvasInfo.zoom = 1.0f;
         canvasInfo.offset = { 0.0f, 0.0f };
-
-        auto windowEntity = container.getWindow();
-        auto &windowComp = windowEntity->getComponentMutable<core::components::Window>();
-        if (!windowComp.renderer_data.renderer) {
-            return;
-        }
-
-        { /* Create the texture where the user draw */
-            canvasInfo.drawing_texture = SDL_CreateTexture(
-                windowComp.renderer_data.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, canvasInfo.textureSize.x, canvasInfo.textureSize.y);
-            SDL_SetTextureScaleMode(canvasInfo.drawing_texture, SDL_SCALEMODE_NEAREST);
-
-            SDL_SetRenderTarget(windowComp.renderer_data.renderer, canvasInfo.drawing_texture);
-            SDL_SetRenderDrawColor(windowComp.renderer_data.renderer, 0, 0, 0, 0);
-            SDL_RenderClear(windowComp.renderer_data.renderer);
-            SDL_SetRenderTarget(windowComp.renderer_data.renderer, nullptr);
-        }
-
-        { /* Create a checkboard texture to render behind the drawing texture */
-            canvasInfo.checkerboard_texture = SDL_CreateTexture(
-                windowComp.renderer_data.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, canvasInfo.textureSize.x, canvasInfo.textureSize.y);
-            SDL_SetTextureScaleMode(canvasInfo.checkerboard_texture, SDL_SCALEMODE_NEAREST);
-
-            SDL_SetRenderTarget(windowComp.renderer_data.renderer, canvasInfo.checkerboard_texture);
-            for (int y = 0; y < canvasInfo.textureSize.y; ++y) {
-                for (int x = 0; x < canvasInfo.textureSize.x; ++x) {
-                    bool dark = ((x + y) % 2) == 0;
-
-                    if (dark) {
-                        SDL_SetRenderDrawColor(windowComp.renderer_data.renderer, 180, 180, 180, 255);
-                    } else {
-                        SDL_SetRenderDrawColor(windowComp.renderer_data.renderer, 230, 230, 230, 255);
-                    }
-
-                    SDL_RenderPoint(windowComp.renderer_data.renderer, (float)x, (float)y);
-                }
-            }
-            SDL_SetRenderTarget(windowComp.renderer_data.renderer, nullptr);
-        }
         canvas->setParent(*canvas_container);
 
+        auto widthHandle = widthNumberInput->getHandle();
+        auto heightHandle = heightNumberInput->getHandle();
+        canvas->getSignal<const core::types::Vector2 &>("New Dimensions").connect([widthHandle, heightHandle](const core::types::Vector2 &size) {
+            if (!widthHandle.is_alive() || !heightHandle.is_alive()) {
+                return;
+            }
+            {
+                core::ecs::entities::UINumberInput widthInput(core::ecs::EntityRegistry::GetEntityFromId(widthHandle));
+                auto button = core::ecs::entities::UIButton(widthInput.getChildren()[0]);
+                if (!button.getHandle().is_alive()) {
+                    return;
+                }
+                auto label = core::ecs::entities::UILabel(button.getChildren()[0]);
+                if (!label.getHandle().is_alive()) {
+                    return;
+                }
+                auto &nbInput_comp = widthInput.getComponentMutable<core::components::UIInput>();
+                nbInput_comp.input_data = std::format("{}", size.x);
+                widthInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
+                label.setText(nbInput_comp.input_data);
+            }
+            {
+                core::ecs::entities::UINumberInput heightInput(core::ecs::EntityRegistry::GetEntityFromId(heightHandle));
+                auto button = core::ecs::entities::UIButton(heightInput.getChildren()[0]);
+                if (!button.getHandle().is_alive()) {
+                    return;
+                }
+                auto label = core::ecs::entities::UILabel(button.getChildren()[0]);
+                if (!label.getHandle().is_alive()) {
+                    return;
+                }
+                auto &nbInput_comp = heightInput.getComponentMutable<core::components::UIInput>();
+                nbInput_comp.input_data = std::format("{}", size.y);
+                heightInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
+                label.setText(nbInput_comp.input_data);
+            }
+        });
+        canvas->initPixelBuffer(128, 80);
+
+
         auto canvasHandle = canvas->getHandle();
+
+        widthNumberInput->getSignal<int>("IntValueChanged").connect([canvasHandle](int val) {
+            if (!canvasHandle.is_alive()) {
+                return;
+            }
+            if (val < 1 || val > 10000) {
+                spdlog::warn("Width is not inside 1 - 10000 bounds, clamped");
+                val = common::math::Clamp(val, 1, 10000);
+            }
+
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas.resizeCanvas(val, comp.textureSize.y);
+        });
+
+        heightNumberInput->getSignal<int>("IntValueChanged").connect([canvasHandle](int val) {
+            if (!canvasHandle.is_alive()) {
+                return;
+            }
+            if (val < 1 || val > 10000) {
+                spdlog::warn("Height is not inside 1 - 10000 bounds, clamped");
+                val = common::math::Clamp(val, 1, 10000);
+            }
+
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas.resizeCanvas(comp.textureSize.x, val);
+        });
+
         exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {
             if (!canvasHandle.is_alive()) {
                 return;

@@ -17,9 +17,9 @@ namespace atmo::core::ecs::entities
                 comp.drawing_texture = nullptr;
             }
 
-            if (comp.checkerboard_texture) {
-                SDL_DestroyTexture(comp.checkerboard_texture);
-                comp.checkerboard_texture = nullptr;
+            if (comp.checkboard_texture) {
+                SDL_DestroyTexture(comp.checkboard_texture);
+                comp.checkboard_texture = nullptr;
             }
         });
     }
@@ -29,6 +29,7 @@ namespace atmo::core::ecs::entities
         UI::initialize();
         setComponent<components::UIDrawingCanvas>({});
         createSignal<UIDrawingCanvas &>("FetchBrush");
+        createSignal<const core::types::Vector2 &>("New Dimensions");
     }
 
     Clay_ElementDeclaration UIDrawingCanvas::buildDecl()
@@ -40,6 +41,153 @@ namespace atmo::core::ecs::entities
                                                         .width = CLAY_SIZING_PERCENT(comp.canvasSize.x),
                                                         .height = CLAY_SIZING_PERCENT(comp.canvasSize.y),
                                                     } } };
+    }
+
+    void UIDrawingCanvas::rebuildCheckboard()
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        auto windowEntity = getWindow();
+        if (!windowEntity) {
+            return;
+        }
+
+        auto window = windowEntity->getComponentMutable<core::components::Window>();
+        SDL_Renderer *renderer = window.renderer_data.renderer;
+        if (!renderer) {
+            return;
+        }
+
+        int w = (int)comp.textureSize.x;
+        int h = (int)comp.textureSize.y;
+
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+
+        if (comp.checkboard_texture) {
+            SDL_DestroyTexture(comp.checkboard_texture);
+        }
+
+        comp.checkboard_texture = SDL_CreateTexture(
+            renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
+
+        if (!comp.checkboard_texture) {
+            spdlog::warn("Check board load failed");
+            return;
+        }
+
+        SDL_SetTextureScaleMode(comp.checkboard_texture, SDL_SCALEMODE_NEAREST);
+        SDL_SetRenderTarget(renderer, comp.checkboard_texture);
+
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x < w; ++x) {
+                bool dark = ((x + y) % 2) == 0;
+                if (dark)
+                    SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
+                else
+                    SDL_SetRenderDrawColor(renderer, 230, 230, 230, 255);
+                SDL_RenderPoint(renderer, (float)x, (float)y);
+            }
+        }
+
+        SDL_SetRenderTarget(renderer, nullptr);
+    }
+
+    void UIDrawingCanvas::validateAndSyncDimensions()
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        comp.textureSize.x = std::max(1.0f, comp.textureSize.x);
+        comp.textureSize.y = std::max(1.0f, comp.textureSize.y);
+
+        int targetW = (int)comp.textureSize.x;
+        int targetH = (int)comp.textureSize.y;
+
+        int pixelH = (int)comp.pixels.size();
+        int pixelW = pixelH > 0 ? (int)comp.pixels[0].size() : 0;
+
+        const atmo::core::types::Color transparent{0.0f, 0.0f, 0.0f, 0.0f};
+
+        if (pixelH != targetH || pixelW != targetW) {
+            spdlog::warn("canvas sync: FrameBuffer: {}/{} != textureSize: {}/{}, syncing",
+                pixelW, pixelH, targetW, targetH);
+            comp.pixels.resize(targetH, std::vector<atmo::core::types::Color>(targetW, transparent));
+
+            for (int y = 0; y < targetH; ++y) {
+                auto &row = comp.pixels[y];
+                row.resize(targetW, transparent);
+            }
+            comp.texture_dirty = true;
+            rebuildCheckboard();
+        }
+
+        if (comp.drawing_texture) {
+            float tw, th;
+            SDL_GetTextureSize(comp.drawing_texture, &tw, &th);
+            if ((int)tw != targetW || (int)th != targetH) {
+                spdlog::warn("canvas sync: texture SDL: {}/{} != textureSize: {}/{}, destroy current SDL texture",
+                    (int)tw, (int)th, targetW, targetH);
+                SDL_DestroyTexture(comp.drawing_texture);
+                comp.drawing_texture = nullptr;
+                comp.texture_dirty = true;
+                rebuildCheckboard();
+            }
+        }
+    }
+
+    void UIDrawingCanvas::resizeCanvas(int width, int heigth)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        int oldH = (int)comp.pixels.size();
+        int oldW = oldH > 0 ? (int)comp.pixels[0].size() : 0;
+
+        if (heigth > oldH) {
+            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, {0.0f, 0.0f, 0.0f, 0.0f}));
+        } else {
+            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, {0.0f, 0.0f, 0.0f, 0.0f}));
+        }
+
+        for (int y = 0; y < (int)comp.pixels.size(); ++y) {
+            auto &row = comp.pixels[y];
+            if (width > (int)row.size()) {
+                row.resize(width, {0.0f, 0.0f, 0.0f, 0.0f});
+            } else {
+                row.resize(width, {0.0f, 0.0f, 0.0f, 0.0f});
+            }
+        }
+
+        comp.textureSize = { (float)width, (float)heigth };
+
+        if (comp.drawing_texture) {
+            SDL_DestroyTexture(comp.drawing_texture);
+            comp.drawing_texture = nullptr;
+        }
+
+        comp.texture_dirty = true;
+        rebuildCheckboard();
+    }
+
+    void UIDrawingCanvas::initPixelBuffer(int w, int h)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        comp.pixels.assign(h,
+                           std::vector<atmo::core::types::Color>(
+                                w,
+                                atmo::core::types::Color{0.0f, 0.0f, 0.0f, 0.0f}
+                            )
+                           );
+        comp.textureSize = { (float)w, (float)h };
+
+        if (comp.drawing_texture) {
+            SDL_DestroyTexture(comp.drawing_texture);
+            comp.drawing_texture = nullptr;
+        }
+        comp.texture_dirty = true;
+        rebuildCheckboard();
+        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.textureSize);
     }
 
     atmo::core::types::Vector2 UIDrawingCanvas::screenToCanvas(atmo::core::types::Vector2 screenPos) const
@@ -175,8 +323,9 @@ namespace atmo::core::ecs::entities
             handleZoom(mousePosInScreen);
             handlePan(mousePosInScreen);
             handleDrawing(mousePosInScreen, mousePosInCanvas);
+        } else {
+            comp.lastPaintMousePos = mousePosInCanvas;
         }
-        comp.lastMousePos = mousePosInCanvas;
 
         render();
     }
@@ -185,19 +334,27 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        if (!comp.drawing_texture || !comp.checkerboard_texture) {
-            return;
-        }
 
         auto windowEntity = getWindow();
         if (!windowEntity) {
             return;
         }
         auto window = windowEntity->getComponentMutable<core::components::Window>();
-        if (!window.renderer_data.renderer) {
+        SDL_Renderer *renderer = window.renderer_data.renderer;
+        if (!renderer) {
             return;
         }
-        SDL_Renderer *renderer = window.renderer_data.renderer;
+        if (comp.texture_dirty) {
+            flushPixelsToTexture(renderer);
+        }
+
+        if (!comp.checkboard_texture) {
+            spdlog::warn("CheckBoard texture null rebuild");
+            rebuildCheckboard();
+        }
+        if (!comp.drawing_texture || !comp.checkboard_texture) {
+            return;
+        }
 
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
@@ -206,9 +363,53 @@ namespace atmo::core::ecs::entities
 
         SDL_Rect clipRect = { (int)comp.bounds.x, (int)comp.bounds.y, (int)comp.bounds.width, (int)comp.bounds.height };
         SDL_SetRenderClipRect(renderer, &clipRect);
-        SDL_RenderTexture(renderer, comp.checkerboard_texture, nullptr, &comp.cachedTextureRect);
+        SDL_RenderTexture(renderer, comp.checkboard_texture, nullptr, &comp.cachedTextureRect);
         SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &comp.cachedTextureRect);
         SDL_SetRenderClipRect(renderer, nullptr);
+    }
+
+    void UIDrawingCanvas::flushPixelsToTexture(SDL_Renderer *renderer)
+    {
+        validateAndSyncDimensions();
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        if (!comp.texture_dirty)
+            return;
+
+        int h = (int)comp.pixels.size();
+        int w = h > 0 ? (int)comp.pixels[0].size() : 0;
+
+        if (w <= 0 || h <= 0)
+            return;
+
+        if (!comp.drawing_texture) {
+            comp.drawing_texture = SDL_CreateTexture(
+                renderer,
+                SDL_PIXELFORMAT_RGBA32,
+                SDL_TEXTUREACCESS_STREAMING,
+                w, h
+            );
+            if (!comp.drawing_texture)
+                return;
+            SDL_SetTextureScaleMode(comp.drawing_texture, SDL_SCALEMODE_NEAREST);
+            SDL_SetTextureBlendMode(comp.drawing_texture, SDL_BLENDMODE_BLEND);
+        }
+
+        comp.upload_buffer.resize(w * h * 4);
+        for (int y = 0; y < h; ++y) {
+            const auto &row = comp.pixels[y];
+            for (int x = 0; x < w; ++x) {
+                const auto &c = row[x];
+                int idx = (y * w + x) * 4;
+                comp.upload_buffer[idx + 0] = (uint8_t)(c.r * 255.0f);
+                comp.upload_buffer[idx + 1] = (uint8_t)(c.g * 255.0f);
+                comp.upload_buffer[idx + 2] = (uint8_t)(c.b * 255.0f);
+                comp.upload_buffer[idx + 3] = (uint8_t)(c.a * 255.0f);
+            }
+        }
+
+        SDL_UpdateTexture(comp.drawing_texture, nullptr, comp.upload_buffer.data(), w * 4);
+        comp.texture_dirty = false;
     }
 
     void UIDrawingCanvas::paintCapsule(
@@ -254,29 +455,37 @@ namespace atmo::core::ecs::entities
 
     void UIDrawingCanvas::paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color)
     {
+        validateAndSyncDimensions();
+
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        if (!comp.drawing_texture)
-            return;
-        if (pos.x < 0 || pos.y < 0 || pos.x >= comp.textureSize.x || pos.y >= comp.textureSize.y) {
+        int h = (int)comp.pixels.size();
+        int w = h > 0 ? (int)comp.pixels[0].size() : 0;
+
+        if (pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h) {
             return;
         }
 
-        auto windowEntity = getWindow();
-        if (!windowEntity)
+        uint32_t index = pos.y * w + pos.x;
+        if (!comp.paintedPixels.insert(index).second) {
             return;
+        }
 
-        auto window = windowEntity->getComponentMutable<core::components::Window>();
-        if (!window.renderer_data.renderer)
-            return;
+        auto &dst = comp.pixels[pos.y][pos.x];
 
-        SDL_Renderer *renderer = window.renderer_data.renderer;
+        float srcA = color.a;
+        float dstA = dst.a;
+        float outA = srcA + dstA * (1.0f - srcA);
 
-        SDL_SetRenderTarget(renderer, comp.drawing_texture);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        if (outA > 0.0f) {
+            dst.r = (color.r * srcA + dst.r * dstA * (1.0f - srcA)) / outA;
+            dst.g = (color.g * srcA + dst.g * dstA * (1.0f - srcA)) / outA;
+            dst.b = (color.b * srcA + dst.b * dstA * (1.0f - srcA)) / outA;
+            dst.a = outA;
+        } else {
+            dst = atmo::core::types::Color{0.0f, 0.0f, 0.0f, 0.0f};
+        }
 
-        SDL_SetRenderDrawColor(renderer, color.r * 255, color.g * 255, color.b * 255, color.a * 255);
-        SDL_RenderPoint(renderer, (float)pos.x, (float)pos.y);
-        SDL_SetRenderTarget(renderer, nullptr);
+        comp.texture_dirty = true;
     }
 
     void UIDrawingCanvas::handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2 &mousePosInCanvas)
@@ -286,9 +495,28 @@ namespace atmo::core::ecs::entities
         if (isInsideTextureRect(mousePosInScreen, comp)) {
             if (core::InputManager::IsJustPressed("ui_click")) {
                 paintCapsule(mousePosInCanvas, mousePosInCanvas, comp.brushRadius, comp.brushColor);
+                comp.lastPaintMousePos = mousePosInCanvas;
+                ++comp.currentStrokeId;
+                comp.paintedPixels.clear();
             } else if (core::InputManager::IsPressed("ui_click")) {
-                if (mousePosInCanvas.x != comp.lastMousePos.x || mousePosInCanvas.y != comp.lastMousePos.y) {
-                    paintCapsule(comp.lastMousePos, mousePosInCanvas, comp.brushRadius, comp.brushColor);
+                if (mousePosInCanvas.x != comp.lastPaintMousePos.x || mousePosInCanvas.y != comp.lastPaintMousePos.y) {
+                    float spacing = std::max(1.0f, comp.brushRadius * comp.brushSpacing);
+                    atmo::core::types::Vector2 delta = mousePosInCanvas - comp.lastPaintMousePos;
+                    float distance = delta.length();
+
+                    while (distance >= spacing)
+                    {
+                        atmo::core::types::Vector2 dir = delta / distance;
+
+                        atmo::core::types::Vector2 next = comp.lastPaintMousePos + dir * spacing;
+
+                        paintCapsule(comp.lastPaintMousePos, next, comp.brushRadius, comp.brushColor);
+
+                        comp.lastPaintMousePos = next;
+
+                        delta = mousePosInCanvas - comp.lastPaintMousePos;
+                        distance = delta.length();
+                    }
                 }
             }
         }
@@ -297,30 +525,23 @@ namespace atmo::core::ecs::entities
     void UIDrawingCanvas::exportCanvas(const std::string &path)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        if (!comp.drawing_texture)
-            return;
-
-        auto windowEntity = getWindow();
-        if (!windowEntity)
-            return;
-
-        auto window = windowEntity->getComponentMutable<core::components::Window>();
-        SDL_Renderer *renderer = window.renderer_data.renderer;
-        if (!renderer)
-            return;
-
         int w = (int)comp.textureSize.x;
         int h = (int)comp.textureSize.y;
+        if (w <= 0 || h <= 0 || comp.pixels.empty()) return;
 
-        // Créer une surface pour lire les pixels de la texture
         SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA32);
-        if (!surface)
-            return;
+        if (!surface) return;
 
-        // Lire les pixels depuis la texture en rendant vers elle
-        SDL_SetRenderTarget(renderer, comp.drawing_texture);
-        surface = SDL_RenderReadPixels(renderer, nullptr);
-        SDL_SetRenderTarget(renderer, nullptr);
+        uint8_t *px = (uint8_t *)surface->pixels;
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x) {
+                const auto &c = comp.pixels[y][x];
+                int i = y * surface->pitch + x * 4;
+                px[i+0] = (uint8_t)(c.r * 255.0f);
+                px[i+1] = (uint8_t)(c.g * 255.0f);
+                px[i+2] = (uint8_t)(c.b * 255.0f);
+                px[i+3] = (uint8_t)(c.a * 255.0f);
+            }
 
         switch (comp.format) {
             case core::components::UIDrawingCanvas::ExportFormat::PNG:
@@ -357,56 +578,50 @@ namespace atmo::core::ecs::entities
         if (ext == "bmp") {
             comp.format = core::components::UIDrawingCanvas::ExportFormat::BMP;
             surface = SDL_LoadBMP(path.c_str());
-        }
-
-        if (ext == "png") {
+        } else if (ext == "png") {
             comp.format = core::components::UIDrawingCanvas::ExportFormat::PNG;
             surface = IMG_Load(path.c_str());
-        }
-
-        if (ext == "jpg" || ext == "jpeg") {
+        } else if (ext == "jpg" || ext == "jpeg") {
             comp.format = core::components::UIDrawingCanvas::ExportFormat::JPG;
             surface = IMG_Load(path.c_str());
         }
-        if (!surface) {
+
+        if (!surface)
             return;
-        }
 
-        SDL_Texture *newTexture = SDL_CreateTextureFromSurface(renderer, surface);
-
+        SDL_Surface *rgba = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
         SDL_DestroySurface(surface);
-
-        if (!newTexture)
+        if (!rgba)
             return;
 
-        // Mettre à jour la taille du canvas selon l'image importée
-        float w, h;
-        SDL_GetTextureSize(newTexture, &w, &h);
-        comp.textureSize = { w, h };
+        int w = rgba->w;
+        int h = rgba->h;
 
-        // Remplacer l'ancienne texture
-        if (comp.drawing_texture)
+        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{0.0f, 0.0f, 0.0f, 0.0f}));
+        uint8_t *px = (uint8_t *)rgba->pixels;
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x) {
+                int i = y * rgba->pitch + x * 4;
+                comp.pixels[y][x] = {
+                    px[i + 0] / 255.0f,
+                    px[i + 1] / 255.0f,
+                    px[i + 2] / 255.0f,
+                    px[i + 3] / 255.0f
+                };
+            }
+        SDL_DestroySurface(rgba);
+
+        if (comp.drawing_texture) {
             SDL_DestroyTexture(comp.drawing_texture);
-
-        // Recréer une texture render-target et y copier l'image importée
-        SDL_Texture *renderTarget = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, (int)w, (int)h);
-
-        if (!renderTarget) {
-            SDL_DestroyTexture(newTexture);
-            return;
+            comp.drawing_texture = nullptr;
         }
-        SDL_SetTextureScaleMode(renderTarget, SDL_SCALEMODE_NEAREST);
 
-        SDL_SetRenderTarget(renderer, renderTarget);
-        SDL_RenderTexture(renderer, newTexture, nullptr, nullptr);
-        SDL_SetRenderTarget(renderer, nullptr);
-        SDL_DestroyTexture(newTexture);
-
-        comp.drawing_texture = renderTarget;
-
-        // Reset zoom/offset
+        comp.textureSize = { (float)w, (float)h };
+        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.textureSize);
         comp.zoom = 1.0f;
         comp.offset = { 0.0f, 0.0f };
+        comp.texture_dirty = true;
+        rebuildCheckboard();
     }
 } // namespace atmo::core::ecs::entities
 
