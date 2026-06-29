@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-#include "bindings_vector2.hpp"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/types.hpp"
 #include "lua_bindings.hpp"
@@ -39,18 +37,13 @@ namespace atmo::luau
     private:
         static int New(lua_State *state)
         {
-            void *mem = lua_newuserdata(state, sizeof(std::shared_ptr<Transform2d>));
-            new (mem) std::shared_ptr<Transform2d>(std::make_shared<Transform2d>());
-            luaL_getmetatable(state, name);
-            lua_setmetatable(state, -2);
+            push(state, new Transform2d(), true);
             return 1;
         }
 
         static int GC(lua_State *state)
         {
-            auto *ptr = (std::shared_ptr<Transform2d> *)luaL_checkudata(state, 1, name);
-            ptr->~shared_ptr<Transform2d>();
-            return 0;
+            return LuaBindingsBase<LuaBindings<Transform2d>, Transform2d>::GC(state);
         }
     };
 } // namespace atmo::luau
