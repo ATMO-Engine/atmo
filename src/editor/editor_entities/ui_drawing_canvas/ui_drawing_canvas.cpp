@@ -42,7 +42,7 @@ namespace atmo::core::ecs::entities
                                                     } } };
     }
 
-    atmo::core::types::Vector2i UIDrawingCanvas::screenToCanvas(atmo::core::types::Vector2 screenPos) const
+    atmo::core::types::Vector2 UIDrawingCanvas::screenToCanvas(atmo::core::types::Vector2 screenPos) const
     {
         auto &comp = getComponent<components::UIDrawingCanvas>();
         SDL_FRect textureRect = comp.cachedTextureRect;
@@ -53,8 +53,8 @@ namespace atmo::core::ecs::entities
         float relativeX = (screenPos.x - textureRect.x) / textureRect.w;
         float relativeY = (screenPos.y - textureRect.y) / textureRect.h;
 
-        int textureX = (int)(relativeX * comp.textureSize.x);
-        int textureY = (int)(relativeY * comp.textureSize.y);
+        float textureX = relativeX * comp.textureSize.x;
+        float textureY = relativeY * comp.textureSize.y;
 
         return { textureX, textureY };
     }
@@ -199,7 +199,7 @@ namespace atmo::core::ecs::entities
         }
         SDL_Renderer *renderer = window.renderer_data.renderer;
 
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
         SDL_FRect canvasRect = { comp.bounds.x, comp.bounds.y, comp.bounds.width, comp.bounds.height };
         SDL_RenderFillRect(renderer, &canvasRect);
@@ -212,15 +212,14 @@ namespace atmo::core::ecs::entities
     }
 
     void UIDrawingCanvas::paintCapsule(
-        const atmo::core::types::Vector2i &from, const atmo::core::types::Vector2i &to, int brushRadius, const atmo::core::types::Color &color)
+        const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brushRadius, const atmo::core::types::Color &color)
     {
-        int radius = (brushRadius - 1) * 0.5f;
+        float radius = brushRadius * 0.5f;
 
-        int minX = std::min(from.x, to.x) - radius;
-        int maxX = std::max(from.x, to.x) + radius;
-
-        int minY = std::min(from.y, to.y) - radius;
-        int maxY = std::max(from.y, to.y) + radius;
+        int minX = (int)std::floor(std::min(from.x, to.x) - radius);
+        int maxX = (int)std::ceil(std::max(from.x, to.x) + radius);
+        int minY = (int)std::floor(std::min(from.y, to.y) - radius);
+        int maxY = (int)std::ceil(std::max(from.y, to.y) + radius);
 
         float dx = static_cast<float>(to.x - from.x);
         float dy = static_cast<float>(to.y - from.y);
@@ -273,14 +272,14 @@ namespace atmo::core::ecs::entities
         SDL_Renderer *renderer = window.renderer_data.renderer;
 
         SDL_SetRenderTarget(renderer, comp.drawing_texture);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
         SDL_SetRenderDrawColor(renderer, color.r * 255, color.g * 255, color.b * 255, color.a * 255);
         SDL_RenderPoint(renderer, (float)pos.x, (float)pos.y);
         SDL_SetRenderTarget(renderer, nullptr);
     }
 
-    void UIDrawingCanvas::handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2i &mousePosInCanvas)
+    void UIDrawingCanvas::handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2 &mousePosInCanvas)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 

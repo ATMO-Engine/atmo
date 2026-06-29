@@ -20,7 +20,7 @@ namespace atmo::editor
         texture_editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_container_layout.padding = { 16, 16, 8, 16 };
-        texture_editor_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::End;
+        texture_editor_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         texture_editor_container->setParent(container);
 
         auto texture_editor_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
@@ -158,7 +158,16 @@ namespace atmo::editor
         colorPicker->setParent(*texture_editor_panel);
         auto colorPickerHandle = colorPicker->getHandle();
         colorPicker->getSignal<core::types::Color>("ColorChanged").connect([this](core::types::Color newColor) { this->brushColor = newColor; });
+        auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
+        colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
 
+
+        auto canvas_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &canvas_container_layout = canvas_container->getComponentMutable<core::components::Layout>();
+        canvas_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        canvas_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        canvas_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        canvas_container->setParent(*texture_editor_container);
 
         auto canvas = core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
         canvas->getSignal<core::ecs::entities::UIDrawingCanvas &>("FetchBrush").connect([this](core::ecs::entities::UIDrawingCanvas &canvas) {
@@ -170,7 +179,7 @@ namespace atmo::editor
 
         auto &canvasInfo = canvas->getComponentMutable<core::components::UIDrawingCanvas>();
         canvasInfo.textureSize = { 128, 80 };
-        canvasInfo.canvasSize = { 0.40f, 0.30f };
+        canvasInfo.canvasSize = { 1.0f, 1.0f };
         canvasInfo.zoom = 1.0f;
         canvasInfo.offset = { 0.0f, 0.0f };
 
@@ -212,7 +221,7 @@ namespace atmo::editor
             }
             SDL_SetRenderTarget(windowComp.renderer_data.renderer, nullptr);
         }
-        canvas->setParent(*texture_editor_container);
+        canvas->setParent(*canvas_container);
 
         auto canvasHandle = canvas->getHandle();
         exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {

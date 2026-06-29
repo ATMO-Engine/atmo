@@ -27,7 +27,8 @@ namespace atmo::core::components
         SDL_FRect cachedTextureRect = {};
         float zoom = 1.0f;
         atmo::core::types::Vector2 offset = { 0.0f, 0.0f };
-        atmo::core::types::Vector2i lastMousePos = { 0, 0 };
+        atmo::core::types::Vector2 lastMousePos = { 0.0f, 0.0f };
+        atmo::core::types::Vector2 lastPaintMousePos = { 0.0f, 0.0f };
         atmo::core::types::Vector2 lastPanMousePos = { 0.0f, 0.0f };
         bool panning = false;
 
@@ -65,7 +66,7 @@ namespace atmo::core::ecs::entities
         Clay_ElementDeclaration buildDecl() override;
         void draw(ClaySdL3RendererData *data) override;
 
-        atmo::core::types::Vector2i screenToCanvas(atmo::core::types::Vector2 screenPos) const;
+        atmo::core::types::Vector2 screenToCanvas(atmo::core::types::Vector2 screenPos) const;
         atmo::core::types::Vector2 canvasToScreen(atmo::core::types::Vector2i canvasPos) const;
 
         void exportCanvas(const std::string &path);
@@ -74,7 +75,7 @@ namespace atmo::core::ecs::entities
     private:
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
         void
-        paintCapsule(const atmo::core::types::Vector2i &from, const atmo::core::types::Vector2i &to, int brushRadius, const atmo::core::types::Color &color);
+        paintCapsule(const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brushRadius, const atmo::core::types::Color &color);
 
         float computeFitScale(const components::UIDrawingCanvas &comp) const;
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;
@@ -82,7 +83,7 @@ namespace atmo::core::ecs::entities
 
         void handleZoom(const atmo::core::types::Vector2 &mousePosInScreen);
         void handlePan(const atmo::core::types::Vector2 &mousePosInScreen);
-        void handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2i &mousePosInCanvas);
+        void handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2 &mousePosInCanvas);
         void render();
 
         void clampOffset(components::UIDrawingCanvas &comp);
