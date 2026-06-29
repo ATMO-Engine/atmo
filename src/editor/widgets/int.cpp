@@ -1,6 +1,7 @@
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "meta/widget_registry.hpp"
 
@@ -11,7 +12,8 @@ std::optional<atmo::core::ecs::entities::Entity> createIntWidget(atmo::core::ecs
     auto &int_input_entity_comp = int_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
 
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
-    field.get(value, &int_input_entity_comp.value);
+    if (value)
+        field.get(value, &int_input_entity_comp.value);
 
     return *int_input_entity;
 }

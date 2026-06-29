@@ -2,6 +2,7 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
@@ -23,8 +24,6 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core:
     input_entity_comp_x.input_type = atmo::core::components::UIInput::InputType::Float;
     input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Float;
 
-    // atmo::core::event::EventRegistry::SetCallBack<atmo::editor::ProgressTickEvent>(
-    //     [](atmo::editor::ProgressTickEvent *evt) { updateVector2Widget(evt, value, field, ); });
 
     x_input_entity->setParent(*vector_container);
     y_input_entity->setParent(*vector_container);

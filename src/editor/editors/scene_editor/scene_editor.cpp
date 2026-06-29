@@ -71,15 +71,26 @@ namespace atmo::editor
             title_label.setText(entity_ti.second->name);
 
             for (auto &field_info : entity_ti.second->fields) {
-                auto widget = meta::WidgetRegistry::get().create(child_UI->getChildContainer(), entity.try_get_mut(entity_ti.first), field_info);
-                if (widget) {
-                    update_fns.push_back([entity, comp_id = entity_ti.first, field_info, w = *widget]() {
-                        void *ptr = entity.try_get_mut(comp_id);
-                        if (!ptr)
-                            return;
-                        meta::WidgetRegistry::get().update(w, ptr, field_info);
-                    });
-                }
+                auto input_container = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UI>("Entity::UI");
+                auto field_label = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UILabel>("Entity::UI::UILabel");
+                auto &input_container_layout = input_container->getComponentMutable<atmo::core::components::Layout>();
+
+                // input_container_layout.child_gap = 4;
+                input_container_layout.direction = atmo::core::components::Layout::Direction::Vertical;
+                spdlog::info(field_info.name);
+                field_label->setText(std::format("name: {}", field_info.name));
+                // field_label->setFontBold(true);
+                // field_label->setParent(*input_container);
+                // auto widget = meta::WidgetRegistry::get().create(*input_container, entity.try_get_mut(entity_ti.first), field_info);
+                // if (widget) {
+                //     update_fns.push_back([entity, comp_id = entity_ti.first, field_info, w = *widget]() {
+                //         void *ptr = entity.try_get_mut(comp_id);
+                //         if (!ptr)
+                //             return;
+                //         meta::WidgetRegistry::get().update(w, ptr, field_info);
+                //     });
+                // }
+                input_container->setParent(child_UI->getChildContainer());
             }
 
             // auto &input_type = inputtest->getComponentMutable<core::components::UIInput>();
