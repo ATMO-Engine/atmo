@@ -1,7 +1,7 @@
+#include <string>
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "meta/widget_registry.hpp"
 
@@ -13,6 +13,8 @@ std::optional<atmo::core::ecs::entities::Entity> createStringWidget(atmo::core::
 
     if (value)
         field.get(value, &text_input_entity_comp.value);
+
+    text_input_entity->getSignal<std::string>("StringValueChanged").connect([value, field](std::string val) { field.set(value, &val); });
 
     return *text_input_entity;
 }

@@ -2,13 +2,9 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/ecs/world_context.hpp"
-#include "core/event/event_registry.hpp"
 #include "core/types.hpp"
 #include "meta/widget_registry.hpp"
-#include "spdlog/spdlog.h"
 
 std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {

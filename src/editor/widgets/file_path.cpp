@@ -1,9 +1,6 @@
 #include "core/ecs/entities/entity.hpp"
-#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
-#include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "meta/widget_registry.hpp"
 
@@ -16,6 +13,8 @@ std::optional<atmo::core::ecs::entities::Entity> createFilePathWidget(atmo::core
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Text;
     if (value)
         field.get(value, &string_input_entity_comp.value);
+
+    string_input_entity->getSignal<std::string>("StringValueChanged").connect([value, field](std::string val) { field.set(value, &val); });
 
     return *string_input_entity;
 }

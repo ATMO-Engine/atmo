@@ -1,4 +1,5 @@
 #include "ui_text_input.hpp"
+#include <string>
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 
@@ -27,11 +28,12 @@ namespace atmo::core::ecs::entities
 
         constexpr size_t MAX_LENGTH = 15;
 
-        if (input.input_data.size() > MAX_LENGTH) {
-            input.input_data.resize(MAX_LENGTH);
-        }
+        // if (input.input_data.size() > MAX_LENGTH) {
+        //     input.input_data.resize(MAX_LENGTH);
+        // }
 
         text.value = input.input_data;
+        getSignal<std::string>("StringValueChanged").emit(text.value);
     };
 
     void UITextInput::clear()
@@ -45,6 +47,8 @@ namespace atmo::core::ecs::entities
         UIInput::initialize();
 
         setComponent<core::components::UITextInput>({});
+
+        createSignal<std::string>("StringValueChanged");
 
         auto &input_type = getComponentMutable<core::components::UIInput>();
         input_type.input_type = core::components::UIInput::InputType::Text;
