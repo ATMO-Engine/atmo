@@ -152,19 +152,9 @@ namespace atmo::core::ecs::entities
                 if (!handle.is_alive() || !numberHandle.is_alive()) {
                     return;
                 }
-                UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
-                auto button = UIButton(nbInput.getChildren()[0]);
-                if (!button.getHandle().is_alive()) {
-                    return;
-                }
-                auto label = UILabel(button.getChildren()[0]);
-                if (!label.getHandle().is_alive()) {
-                    return;
-                }
-                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UIInput>();
-                nbInput_comp.input_data = std::format("{:g}", val);
-                nbInput.validateInput();
-                label.setText(nbInput_comp.input_data);
+                core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
+                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+                nbInput_comp.value = val;
 
                 UIColorPicker colorPicker(core::ecs::EntityRegistry::GetEntityFromId(handle));
                 auto &comp = colorPicker.getComponentMutable<core::components::UIColorPicker>();
@@ -199,19 +189,9 @@ namespace atmo::core::ecs::entities
                 if (!handle.is_alive() || !numberHandle.is_alive()) {
                     return;
                 }
-                UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
-                auto button = UIButton(nbInput.getChildren()[0]);
-                if (!button.getHandle().is_alive()) {
-                    return;
-                }
-                auto label = UILabel(button.getChildren()[0]);
-                if (!label.getHandle().is_alive()) {
-                    return;
-                }
-                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UIInput>();
-                nbInput_comp.input_data = std::format("{:g}", val);
-                nbInput.validateInput();
-                label.setText(nbInput_comp.input_data);
+                core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
+                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+                nbInput_comp.value = val;
 
                 UIColorPicker colorPicker(core::ecs::EntityRegistry::GetEntityFromId(handle));
                 auto &comp = colorPicker.getComponentMutable<core::components::UIColorPicker>();
@@ -246,19 +226,9 @@ namespace atmo::core::ecs::entities
                 if (!handle.is_alive() || !numberHandle.is_alive()) {
                     return;
                 }
-                UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
-                auto button = UIButton(nbInput.getChildren()[0]);
-                if (!button.getHandle().is_alive()) {
-                    return;
-                }
-                auto label = UILabel(button.getChildren()[0]);
-                if (!label.getHandle().is_alive()) {
-                    return;
-                }
-                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UIInput>();
-                nbInput_comp.input_data = std::format("{:g}", val);
-                nbInput.validateInput();
-                label.setText(nbInput_comp.input_data);
+                core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
+                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+                nbInput_comp.value = val;
 
                 UIColorPicker colorPicker(core::ecs::EntityRegistry::GetEntityFromId(handle));
                 auto &comp = colorPicker.getComponentMutable<core::components::UIColorPicker>();
@@ -293,19 +263,9 @@ namespace atmo::core::ecs::entities
                 if (!handle.is_alive() || !numberHandle.is_alive()) {
                     return;
                 }
-                UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
-                auto button = UIButton(nbInput.getChildren()[0]);
-                if (!button.getHandle().is_alive()) {
-                    return;
-                }
-                auto label = UILabel(button.getChildren()[0]);
-                if (!label.getHandle().is_alive()) {
-                    return;
-                }
-                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UIInput>();
-                nbInput_comp.input_data = std::format("{:g}", val);
-                nbInput.validateInput();
-                label.setText(nbInput_comp.input_data);
+                core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
+                auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+                nbInput_comp.value = val;
 
                 UIColorPicker colorPicker(core::ecs::EntityRegistry::GetEntityFromId(handle));
                 auto &comp = colorPicker.getComponentMutable<core::components::UIColorPicker>();

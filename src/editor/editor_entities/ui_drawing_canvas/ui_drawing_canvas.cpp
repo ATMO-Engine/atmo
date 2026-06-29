@@ -38,8 +38,8 @@ namespace atmo::core::ecs::entities
 
         return Clay_ElementDeclaration{ .id = CLAY_ID("DrawingCanvas"),
                                         .layout = { .sizing = {
-                                                        .width = CLAY_SIZING_PERCENT(comp.canvasSize.x),
-                                                        .height = CLAY_SIZING_PERCENT(comp.canvasSize.y),
+                                                        .width = CLAY_SIZING_PERCENT(comp.canvas_size.x),
+                                                        .height = CLAY_SIZING_PERCENT(comp.canvas_size.y),
                                                     } } };
     }
 
@@ -58,8 +58,8 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        int w = (int)comp.textureSize.x;
-        int h = (int)comp.textureSize.y;
+        int w = (int)comp.texture_size.x;
+        int h = (int)comp.texture_size.y;
 
         if (w <= 0 || h <= 0) {
             return;
@@ -97,11 +97,11 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        comp.textureSize.x = std::max(1.0f, comp.textureSize.x);
-        comp.textureSize.y = std::max(1.0f, comp.textureSize.y);
+        comp.texture_size.x = std::max(1.0f, comp.texture_size.x);
+        comp.texture_size.y = std::max(1.0f, comp.texture_size.y);
 
-        int targetW = (int)comp.textureSize.x;
-        int targetH = (int)comp.textureSize.y;
+        int targetW = (int)comp.texture_size.x;
+        int targetH = (int)comp.texture_size.y;
 
         int pixelH = (int)comp.pixels.size();
         int pixelW = pixelH > 0 ? (int)comp.pixels[0].size() : 0;
@@ -109,7 +109,7 @@ namespace atmo::core::ecs::entities
         const atmo::core::types::Color transparent{ 0.0f, 0.0f, 0.0f, 0.0f };
 
         if (pixelH != targetH || pixelW != targetW) {
-            spdlog::warn("canvas sync: FrameBuffer: {}/{} != textureSize: {}/{}, syncing", pixelW, pixelH, targetW, targetH);
+            spdlog::warn("canvas sync: FrameBuffer: {}/{} != texture_size: {}/{}, syncing", pixelW, pixelH, targetW, targetH);
             comp.pixels.resize(targetH, std::vector<atmo::core::types::Color>(targetW, transparent));
 
             for (int y = 0; y < targetH; ++y) {
@@ -124,7 +124,7 @@ namespace atmo::core::ecs::entities
             float tw, th;
             SDL_GetTextureSize(comp.drawing_texture, &tw, &th);
             if ((int)tw != targetW || (int)th != targetH) {
-                spdlog::warn("canvas sync: texture SDL: {}/{} != textureSize: {}/{}, destroy current SDL texture", (int)tw, (int)th, targetW, targetH);
+                spdlog::warn("canvas sync: texture SDL: {}/{} != texture_size: {}/{}, destroy current SDL texture", (int)tw, (int)th, targetW, targetH);
                 SDL_DestroyTexture(comp.drawing_texture);
                 comp.drawing_texture = nullptr;
                 comp.texture_dirty = true;
@@ -155,7 +155,7 @@ namespace atmo::core::ecs::entities
             }
         }
 
-        comp.textureSize = { (float)width, (float)heigth };
+        comp.texture_size = { (float)width, (float)heigth };
 
         if (comp.drawing_texture) {
             SDL_DestroyTexture(comp.drawing_texture);
@@ -171,7 +171,7 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
         comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
-        comp.textureSize = { (float)w, (float)h };
+        comp.texture_size = { (float)w, (float)h };
 
         if (comp.drawing_texture) {
             SDL_DestroyTexture(comp.drawing_texture);
@@ -179,13 +179,13 @@ namespace atmo::core::ecs::entities
         }
         comp.texture_dirty = true;
         rebuildCheckboard();
-        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.textureSize);
+        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.texture_size);
     }
 
     atmo::core::types::Vector2 UIDrawingCanvas::screenToCanvas(atmo::core::types::Vector2 screenPos) const
     {
         auto &comp = getComponent<components::UIDrawingCanvas>();
-        SDL_FRect textureRect = comp.cachedTextureRect;
+        SDL_FRect textureRect = comp.cached_texture_rect;
 
         if (textureRect.w == 0 || textureRect.h == 0)
             return { 0, 0 };
@@ -193,8 +193,8 @@ namespace atmo::core::ecs::entities
         float relativeX = (screenPos.x - textureRect.x) / textureRect.w;
         float relativeY = (screenPos.y - textureRect.y) / textureRect.h;
 
-        float textureX = relativeX * comp.textureSize.x;
-        float textureY = relativeY * comp.textureSize.y;
+        float textureX = relativeX * comp.texture_size.x;
+        float textureY = relativeY * comp.texture_size.y;
 
         return { textureX, textureY };
     }
@@ -202,19 +202,19 @@ namespace atmo::core::ecs::entities
     atmo::core::types::Vector2 UIDrawingCanvas::canvasToScreen(atmo::core::types::Vector2i canvasPos) const
     {
         auto &comp = getComponent<components::UIDrawingCanvas>();
-        SDL_FRect textureRect = comp.cachedTextureRect;
+        SDL_FRect textureRect = comp.cached_texture_rect;
 
-        return { textureRect.x + (canvasPos.x / comp.textureSize.x) * textureRect.w, textureRect.y + (canvasPos.y / comp.textureSize.y) * textureRect.h };
+        return { textureRect.x + (canvasPos.x / comp.texture_size.x) * textureRect.w, textureRect.y + (canvasPos.y / comp.texture_size.y) * textureRect.h };
     }
 
     float UIDrawingCanvas::computeFitScale(const components::UIDrawingCanvas &comp) const
     {
-        if (comp.textureSize.x <= 0 || comp.textureSize.y <= 0) {
+        if (comp.texture_size.x <= 0 || comp.texture_size.y <= 0) {
             return 1;
         }
 
-        float scaleX = comp.bounds.width / comp.textureSize.x;
-        float scaleY = comp.bounds.height / comp.textureSize.y;
+        float scaleX = comp.bounds.width / comp.texture_size.x;
+        float scaleY = comp.bounds.height / comp.texture_size.y;
 
         return std::min(scaleX, scaleY);
     }
@@ -223,8 +223,8 @@ namespace atmo::core::ecs::entities
     {
         float scale = computeFitScale(comp) * comp.zoom;
 
-        float drawW = comp.textureSize.x * scale;
-        float drawH = comp.textureSize.y * scale;
+        float drawW = comp.texture_size.x * scale;
+        float drawH = comp.texture_size.y * scale;
 
         float drawX = comp.bounds.x + (comp.bounds.width - drawW) / 2.0f + comp.offset.x;
         float drawY = comp.bounds.y + (comp.bounds.height - drawH) / 2.0f + comp.offset.y;
@@ -234,13 +234,13 @@ namespace atmo::core::ecs::entities
 
     bool UIDrawingCanvas::isInsideTextureRect(atmo::core::types::Vector2 screenPos, const components::UIDrawingCanvas &comp) const
     {
-        SDL_FRect rect = comp.cachedTextureRect;
+        SDL_FRect rect = comp.cached_texture_rect;
         return screenPos.x >= rect.x && screenPos.x < rect.x + rect.w && screenPos.y >= rect.y && screenPos.y < rect.y + rect.h;
     }
 
     void UIDrawingCanvas::clampOffset(components::UIDrawingCanvas &comp)
     {
-        SDL_FRect textureRect = comp.cachedTextureRect;
+        SDL_FRect textureRect = comp.cached_texture_rect;
 
         float marginX = comp.bounds.width * PAN_MARGIN_FACTOR;
         float marginY = comp.bounds.height * PAN_MARGIN_FACTOR;
@@ -261,8 +261,8 @@ namespace atmo::core::ecs::entities
             float oldZoom = comp.zoom;
             comp.zoom = common::math::Clamp(comp.zoom + scrollDelta.y * 0.1f, 0.5f, 10.0f);
 
-            float relativeX = (mousePosInScreen.x - comp.cachedTextureRect.x) / comp.cachedTextureRect.w;
-            float relativeY = (mousePosInScreen.y - comp.cachedTextureRect.y) / comp.cachedTextureRect.h;
+            float relativeX = (mousePosInScreen.x - comp.cached_texture_rect.x) / comp.cached_texture_rect.w;
+            float relativeY = (mousePosInScreen.y - comp.cached_texture_rect.y) / comp.cached_texture_rect.h;
 
             comp.offset.x += (comp.bounds.width / 2.0f - (relativeX - 0.5f) * comp.bounds.width) * (comp.zoom - oldZoom);
             comp.offset.y += (comp.bounds.height / 2.0f - (relativeY - 0.5f) * comp.bounds.height) * (comp.zoom - oldZoom);
@@ -277,19 +277,19 @@ namespace atmo::core::ecs::entities
 
         if (core::InputManager::IsJustPressed("ui_rightClick")) {
             comp.panning = true;
-            comp.lastPanMousePos = mousePosInScreen;
+            comp.last_pan_mouse_pos = mousePosInScreen;
         }
 
         if (core::InputManager::IsPressed("ui_rightClick") && comp.panning) {
-            float deltaX = mousePosInScreen.x - comp.lastPanMousePos.x;
-            float deltaY = mousePosInScreen.y - comp.lastPanMousePos.y;
+            float deltaX = mousePosInScreen.x - comp.last_pan_mouse_pos.x;
+            float deltaY = mousePosInScreen.y - comp.last_pan_mouse_pos.y;
 
             comp.offset.x += deltaX;
             comp.offset.y += deltaY;
 
             clampOffset(comp);
 
-            comp.lastPanMousePos = mousePosInScreen;
+            comp.last_pan_mouse_pos = mousePosInScreen;
         }
 
         if (core::InputManager::IsReleased("ui_rightClick")) {
@@ -308,7 +308,7 @@ namespace atmo::core::ecs::entities
             comp.bounds = elementData.boundingBox;
         }
 
-        comp.cachedTextureRect = computeTextureRect(comp);
+        comp.cached_texture_rect = computeTextureRect(comp);
         auto mousePosInScreen = core::InputManager::GetMousePosition();
         auto mousePosInCanvas = screenToCanvas(mousePosInScreen);
         if (Clay_Hovered()) {
@@ -316,7 +316,7 @@ namespace atmo::core::ecs::entities
             handlePan(mousePosInScreen);
             handleDrawing(mousePosInScreen, mousePosInCanvas);
         } else {
-            comp.lastPaintMousePos = mousePosInCanvas;
+            comp.last_paint_mouse_pos = mousePosInCanvas;
         }
 
         render();
@@ -355,8 +355,8 @@ namespace atmo::core::ecs::entities
 
         SDL_Rect clipRect = { (int)comp.bounds.x, (int)comp.bounds.y, (int)comp.bounds.width, (int)comp.bounds.height };
         SDL_SetRenderClipRect(renderer, &clipRect);
-        SDL_RenderTexture(renderer, comp.checkboard_texture, nullptr, &comp.cachedTextureRect);
-        SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &comp.cachedTextureRect);
+        SDL_RenderTexture(renderer, comp.checkboard_texture, nullptr, &comp.cached_texture_rect);
+        SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &comp.cached_texture_rect);
         SDL_SetRenderClipRect(renderer, nullptr);
     }
 
@@ -400,9 +400,9 @@ namespace atmo::core::ecs::entities
     }
 
     void UIDrawingCanvas::paintCapsule(
-        const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brushRadius, const atmo::core::types::Color &color)
+        const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brush_radius, const atmo::core::types::Color &color)
     {
-        float radius = brushRadius * 0.5f;
+        float radius = brush_radius * 0.5f;
 
         int minX = (int)std::floor(std::min(from.x, to.x) - radius);
         int maxX = (int)std::ceil(std::max(from.x, to.x) + radius);
@@ -453,7 +453,7 @@ namespace atmo::core::ecs::entities
         }
 
         uint32_t index = pos.y * w + pos.x;
-        if (!comp.paintedPixels.insert(index).second) {
+        if (!comp.painted_pixels.insert(index).second) {
             return;
         }
 
@@ -481,26 +481,26 @@ namespace atmo::core::ecs::entities
 
         if (isInsideTextureRect(mousePosInScreen, comp)) {
             if (core::InputManager::IsJustPressed("ui_click")) {
-                paintCapsule(mousePosInCanvas, mousePosInCanvas, comp.brushRadius, comp.brushColor);
-                comp.lastPaintMousePos = mousePosInCanvas;
-                ++comp.currentStrokeId;
-                comp.paintedPixels.clear();
+                paintCapsule(mousePosInCanvas, mousePosInCanvas, comp.brush_radius, comp.brush_color);
+                comp.last_paint_mouse_pos = mousePosInCanvas;
+                ++comp.current_strokeId;
+                comp.painted_pixels.clear();
             } else if (core::InputManager::IsPressed("ui_click")) {
-                if (mousePosInCanvas.x != comp.lastPaintMousePos.x || mousePosInCanvas.y != comp.lastPaintMousePos.y) {
-                    float spacing = std::max(1.0f, comp.brushRadius * comp.brushSpacing);
-                    atmo::core::types::Vector2 delta = mousePosInCanvas - comp.lastPaintMousePos;
+                if (mousePosInCanvas.x != comp.last_paint_mouse_pos.x || mousePosInCanvas.y != comp.last_paint_mouse_pos.y) {
+                    float spacing = std::max(1.0f, comp.brush_radius * comp.brush_spacing);
+                    atmo::core::types::Vector2 delta = mousePosInCanvas - comp.last_paint_mouse_pos;
                     float distance = delta.length();
 
                     while (distance >= spacing) {
                         atmo::core::types::Vector2 dir = delta / distance;
 
-                        atmo::core::types::Vector2 next = comp.lastPaintMousePos + dir * spacing;
+                        atmo::core::types::Vector2 next = comp.last_paint_mouse_pos + dir * spacing;
 
-                        paintCapsule(comp.lastPaintMousePos, next, comp.brushRadius, comp.brushColor);
+                        paintCapsule(comp.last_paint_mouse_pos, next, comp.brush_radius, comp.brush_color);
 
-                        comp.lastPaintMousePos = next;
+                        comp.last_paint_mouse_pos = next;
 
-                        delta = mousePosInCanvas - comp.lastPaintMousePos;
+                        delta = mousePosInCanvas - comp.last_paint_mouse_pos;
                         distance = delta.length();
                     }
                 }
@@ -511,8 +511,8 @@ namespace atmo::core::ecs::entities
     void UIDrawingCanvas::exportCanvas(const std::string &path)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        int w = (int)comp.textureSize.x;
-        int h = (int)comp.textureSize.y;
+        int w = (int)comp.texture_size.x;
+        int h = (int)comp.texture_size.y;
         if (w <= 0 || h <= 0 || comp.pixels.empty())
             return;
 
@@ -599,8 +599,8 @@ namespace atmo::core::ecs::entities
             comp.drawing_texture = nullptr;
         }
 
-        comp.textureSize = { (float)w, (float)h };
-        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.textureSize);
+        comp.texture_size = { (float)w, (float)h };
+        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.texture_size);
         comp.zoom = 1.0f;
         comp.offset = { 0.0f, 0.0f };
         comp.texture_dirty = true;

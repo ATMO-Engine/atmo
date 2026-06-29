@@ -148,18 +148,8 @@ namespace atmo::editor
                 return;
             }
             core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(spacingNumberHandle));
-            auto button = core::ecs::entities::UIButton(nbInput.getChildren()[0]);
-            if (!button.getHandle().is_alive()) {
-                return;
-            }
-            auto label = core::ecs::entities::UILabel(button.getChildren()[0]);
-            if (!label.getHandle().is_alive()) {
-                return;
-            }
-            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UIInput>();
-            nbInput_comp.input_data = std::format("{}", val);
-            nbInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
-            label.setText(nbInput_comp.input_data);
+            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+            nbInput_comp.value = val;
 
             this->m_brushSpacing = val;
         });
@@ -296,16 +286,16 @@ namespace atmo::editor
         canvas->getSignal<core::ecs::entities::UIDrawingCanvas &>("FetchBrush").connect([this](core::ecs::entities::UIDrawingCanvas &canvas) {
             auto &comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
 
-            comp.brushColor = this->m_brushColor;
-            comp.brushRadius = this->m_brushSize;
-            comp.brushSpacing = this->m_brushSpacing;
+            comp.brush_color = this->m_brushColor;
+            comp.brush_radius = this->m_brushSize;
+            comp.brush_spacing = this->m_brushSpacing;
         });
 
         auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
         canvas_layout.z_index = 0;
 
         auto &canvasInfo = canvas->getComponentMutable<core::components::UIDrawingCanvas>();
-        canvasInfo.canvasSize = { 1.0f, 1.0f };
+        canvasInfo.canvas_size = { 1.0f, 1.0f };
         canvasInfo.zoom = 1.0f;
         canvasInfo.offset = { 0.0f, 0.0f };
         canvas->setParent(*canvas_container);
@@ -317,6 +307,10 @@ namespace atmo::editor
                 return;
             }
             {
+                // core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
+                // auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+                // nbInput_comp.value = size.x;
+
                 core::ecs::entities::UINumberInput widthInput(core::ecs::EntityRegistry::GetEntityFromId(widthHandle));
                 auto button = core::ecs::entities::UIButton(widthInput.getChildren()[0]);
                 if (!button.getHandle().is_alive()) {
@@ -326,6 +320,8 @@ namespace atmo::editor
                 if (!label.getHandle().is_alive()) {
                     return;
                 }
+                auto &nbInpezrh = widthInput.getComponentMutable<core::components::UINumberInput>();
+
                 auto &nbInput_comp = widthInput.getComponentMutable<core::components::UIInput>();
                 nbInput_comp.input_data = std::format("{}", size.x);
                 widthInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
@@ -364,7 +360,7 @@ namespace atmo::editor
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
             auto &comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
 
-            canvas.resizeCanvas(val, comp.textureSize.y);
+            canvas.resizeCanvas(val, comp.texture_size.y);
         });
 
         heightNumberInput->getSignal<int>("IntValueChanged").connect([canvasHandle](int val) {
@@ -379,7 +375,7 @@ namespace atmo::editor
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
             auto &comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
 
-            canvas.resizeCanvas(comp.textureSize.x, val);
+            canvas.resizeCanvas(comp.texture_size.x, val);
         });
 
         exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {

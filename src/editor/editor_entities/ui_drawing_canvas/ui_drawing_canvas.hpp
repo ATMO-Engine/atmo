@@ -21,29 +21,27 @@ namespace atmo::core::components
 
         std::vector<std::vector<atmo::core::types::Color>> pixels;
         std::vector<uint8_t> upload_buffer;
-        uint32_t currentStrokeId = 0;
-        std::unordered_set<uint32_t> paintedPixels;
+        uint32_t current_strokeId = 0;
+        std::unordered_set<uint32_t> painted_pixels;
 
         SDL_Texture *drawing_texture = nullptr;
         SDL_Texture *checkboard_texture = nullptr;
         bool texture_dirty = true;
         ExportFormat format = ExportFormat::PNG;
 
-        atmo::core::types::Vector2 canvasSize = { 0.0f, 0.0f };
-        atmo::core::types::Vector2 textureSize = { 1.0f, 1.0f };
+        atmo::core::types::Vector2 canvas_size = { 0.0f, 0.0f };
+        atmo::core::types::Vector2 texture_size = { 1.0f, 1.0f };
 
-        SDL_FRect cachedTextureRect = {};
+        SDL_FRect cached_texture_rect = {};
         float zoom = 1.0f;
         atmo::core::types::Vector2 offset = { 0.0f, 0.0f };
-        atmo::core::types::Vector2 lastPaintMousePos = { 0.0f, 0.0f };
-        atmo::core::types::Vector2 lastPanMousePos = { 0.0f, 0.0f };
+        atmo::core::types::Vector2 last_paint_mouse_pos = { 0.0f, 0.0f };
+        atmo::core::types::Vector2 last_pan_mouse_pos = { 0.0f, 0.0f };
         bool panning = false;
 
-        int brushRadius = 10;
-        atmo::core::types::Color brushColor = atmo::core::types::Color::BLACK;
-        float brushSpacing = 0.5f;
-
-        bool insideDrawZone = false;
+        int brush_radius = 10;
+        atmo::core::types::Color brush_color = atmo::core::types::Color::BLACK;
+        float brush_spacing = 0.5f;
     };
 } // namespace atmo::core::components
 
@@ -91,7 +89,8 @@ namespace atmo::core::ecs::entities
         void rebuildCheckboard();
 
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
-        void paintCapsule(const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brushRadius, const atmo::core::types::Color &color);
+        void
+        paintCapsule(const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brush_radius, const atmo::core::types::Color &color);
 
         float computeFitScale(const components::UIDrawingCanvas &comp) const;
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;
