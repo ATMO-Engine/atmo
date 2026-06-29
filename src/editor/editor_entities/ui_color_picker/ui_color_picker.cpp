@@ -85,7 +85,7 @@ namespace atmo::core::ecs::entities
         setComponent<components::UIColorPicker>({});
 
         createSignal<types::Color>("ColorChanged");
-        createSignal<>("Update preview");
+        createSignal<types::Color>("Update preview");
 
         auto &rect = getComponentMutable<core::components::UIRect>();
         rect.color = core::types::Color("#acacac");
