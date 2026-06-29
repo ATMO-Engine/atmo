@@ -48,16 +48,6 @@ namespace atmo::core::ecs
         return instance.m_world->entity(id);
     }
 
-    std::shared_ptr<entities::Entity> EntityRegistry::CreateIn(flecs::world *world, std::string_view type_name)
-    {
-        auto &instance = Instance();
-        flecs::world *saved = instance.m_world;
-        instance.m_world = world;
-        auto result = Create(type_name);
-        instance.m_world = saved;
-        return result;
-    }
-
     void EntityRegistry::RegisterSystemsForWorld(flecs::world *world)
     {
         for (auto &reg : Instance().m_registers) {

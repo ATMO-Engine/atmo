@@ -29,6 +29,8 @@ namespace atmo::core::ecs::entities
 
         void addShape(std::shared_ptr<resource::resources::Shape2d> shape);
 
+        SDL_FRect computeAABB() const override;
+
         struct Body2dData {
             b2BodyId body_id{ b2_nullBodyId };
             b2BodyDef body_def{ b2DefaultBodyDef() };

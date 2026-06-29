@@ -55,6 +55,11 @@ namespace atmo::core::ecs::entities
 
             d.layout.childGap = layout.child_gap;
             d.layout.layoutDirection = layout.direction == components::Layout::Direction::Horizontal ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM;
+
+            if (layout.floating)
+                d.floating.attachTo = CLAY_ATTACH_TO_ROOT;
+
+            d.floating.zIndex = layout.z_index;
         }
 
         return d;

@@ -49,7 +49,9 @@ namespace atmo::editor
 
     private:
         flecs::entity m_selected_entity;
+        flecs::entity m_viewport_image;
         std::unique_ptr<EditorSceneContext> m_scene_ctx;
         std::string m_scene_file_path;
+        std::vector<std::function<void()>> m_inspector_update_fns;
     };
 } // namespace atmo::editor

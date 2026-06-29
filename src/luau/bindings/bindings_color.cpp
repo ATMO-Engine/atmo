@@ -7,9 +7,9 @@ namespace atmo::luau
 {
     using namespace atmo::core::types;
 
-    Property LuaBindings<Color>::m_properties[] = { makeProperty<Color>("x", &Color::r),
-                                                    makeProperty<Color>("y", &Color::g),
-                                                    makeProperty<Color>("y", &Color::b),
-                                                    makeProperty<Color>("y", &Color::a),
+    Property LuaBindings<Color>::m_properties[] = { makeProperty<Color>("r", &Color::r),
+                                                    makeProperty<Color>("g", &Color::g),
+                                                    makeProperty<Color>("b", &Color::b),
+                                                    makeProperty<Color>("a", &Color::a),
                                                     { nullptr, nullptr, nullptr } };
 } // namespace atmo::luau

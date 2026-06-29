@@ -43,5 +43,7 @@ namespace atmo::core::ecs::entities
         std::string_view getTexturePath() const noexcept;
 
         types::Vector2 getTextureSize() const noexcept;
+
+        SDL_FRect computeAABB() const override;
     };
 } // namespace atmo::core::ecs::entities

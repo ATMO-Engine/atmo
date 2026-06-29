@@ -16,6 +16,10 @@ namespace atmo::core::ecs::entities
             if (tex)
                 SDL_GetTextureSize(tex.get(), &image.natural_width, &image.natural_height);
         });
+
+        world->observer<components::UIImage>("UIImage_remove").event(flecs::OnRemove).each([](flecs::entity /*e*/, components::UIImage &image) {
+            image.res = nullptr;
+        });
     }
 
     void UIImage::Unregister(flecs::world *) {}
@@ -38,6 +42,7 @@ namespace atmo::core::ecs::entities
             d.image = { .imageData = img.raw_texture };
             d.layout.sizing.width = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
             d.layout.sizing.height = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
+            d.userData = &img.rendered_size[0];
             return d;
         }
 

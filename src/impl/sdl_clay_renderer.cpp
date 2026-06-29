@@ -276,6 +276,12 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                         SDL_SetTextureColorModFloat(texture, 1.0f, 1.0f, 1.0f);
                         SDL_SetTextureAlphaModFloat(texture, 1.0f);
                     }
+                    // Write back actual rendered pixel size so owners can resize their texture.
+                    if (rcmd->userData) {
+                        auto *sz = static_cast<float *>(rcmd->userData);
+                        sz[0] = rect.w;
+                        sz[1] = rect.h;
+                    }
                     break;
                 }
             default:

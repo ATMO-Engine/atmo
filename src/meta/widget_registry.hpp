@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <optional>
 #include <string>
@@ -10,6 +11,16 @@
 #include "meta/type_info.hpp"
 #include "spdlog/spdlog.h"
 
+#define ATMO_REGISTER_WIDGET(name, create, destroy, update)                       \
+    namespace                                                                     \
+    {                                                                             \
+        static int _ = [] {                                                       \
+            using namespace atmo::meta;                                           \
+            WidgetRegistry::get().register_widget(name, create, destroy, update); \
+            return 0;                                                             \
+        }();                                                                      \
+    }
+
 namespace atmo::meta
 {
     class WidgetRegistry
@@ -17,10 +28,12 @@ namespace atmo::meta
     public:
         using CreateFn = std::function<std::optional<core::ecs::entities::Entity>(core::ecs::entities::Entity parent, void *value, const FieldInfo &field)>;
         using DestroyFn = std::function<void(core::ecs::entities::Entity widget)>;
+        using UpdateFn = std::function<void(core::ecs::entities::Entity widget, void *value, const FieldInfo &field)>;
 
         struct WidgetHandler {
             CreateFn create;
             DestroyFn destroy;
+            UpdateFn update;
         };
 
         static WidgetRegistry &get()
@@ -32,9 +45,9 @@ namespace atmo::meta
         WidgetRegistry(const WidgetRegistry &) = delete;
         WidgetRegistry &operator=(const WidgetRegistry &) = delete;
 
-        void register_widget(std::string_view name, CreateFn create, DestroyFn destroy)
+        void register_widget(std::string_view name, CreateFn create, DestroyFn destroy, UpdateFn update)
         {
-            m_widgets[std::string(name)] = WidgetHandler{ std::move(create), std::move(destroy) };
+            m_widgets[std::string(name)] = WidgetHandler{ std::move(create), std::move(destroy), std::move(update) };
         }
 
         /**
@@ -59,17 +72,22 @@ namespace atmo::meta
                 spdlog::error(R"(Couldn't create widget for field of type "{}": widget not found in registry for type)", field.widget);
                 return std::nullopt;
             }
+            auto widget = it->second.create(parent, value, field);
 
-            return it->second.create(parent, value, field);
+            if (widget) {
+                widget->setParent(parent);
+                return widget;
+            }
+            return std::nullopt;
         }
 
         /**
-         * @brief Destroy a widget entity that was created for a field. Should be called when the widget is no longer needed (e.g. when the editor UI is closed
-         * or the field's component instance is destroyed) to allow for proper cleanup.
+         * @brief Destroy a widget entity that was created for a field. Should be called when the widget is no longer needed (e.g. when the editor UI is
+         * closed or the field's component instance is destroyed) to allow for proper cleanup.
          *
          * @param widget The widget entity to destroy.
-         * @param field FieldInfo describing the field that the widget was editing. Used to look up the correct destroy handler. If field.widget is nullptr or
-         * has no
+         * @param field FieldInfo describing the field that the widget was editing. Used to look up the correct destroy handler. If field.widget is nullptr
+         * or has no
          */
         void destroy(core::ecs::entities::Entity widget, const FieldInfo &field) const
         {
@@ -83,6 +101,21 @@ namespace atmo::meta
             }
 
             it->second.destroy(widget);
+        }
+
+
+        void update(core::ecs::entities::Entity widget, void *value, const FieldInfo &field) const
+        {
+            if (widget.isAlive() && !field.widget) {
+                return;
+            }
+
+            auto it = m_widgets.find(field.widget);
+            if (it == m_widgets.end()) {
+                return;
+            }
+
+            it->second.update(widget, value, field);
         }
 
         [[nodiscard]] bool hasWidget(std::string_view name) const

@@ -53,6 +53,8 @@ namespace atmo::core::ecs::entities
         world->system<components::Transform2d, Body2dData>("Body2d_UpdateValuesFromPhysicsEngine")
             .kind(flecs::PostUpdate)
             .each([](flecs::entity e, components::Transform2d &transform, Body2dData &body_data) {
+                if (!b2Body_IsValid(body_data.body_id))
+                    return;
                 transform.position = b2Body_GetPosition(body_data.body_id);
                 transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));
             });
@@ -150,6 +152,16 @@ namespace atmo::core::ecs::entities
             return;
 
         shape->create(body_data->body_id);
+    }
+
+    SDL_FRect Body2d::computeAABB() const
+    {
+        auto body_data = p_handle.get_ref<Body2dData>();
+        if (!b2Body_IsValid(body_data->body_id))
+            return Entity2d::computeAABB();
+
+        b2AABB aabb = b2Body_ComputeAABB(body_data->body_id);
+        return { aabb.lowerBound.x, aabb.lowerBound.y, aabb.upperBound.x - aabb.lowerBound.x, aabb.upperBound.y - aabb.lowerBound.y };
     }
 
     void Body2d::DebugRenderRectangleShape(SDL_Renderer *renderer, types::Vector2 center, types::Vector2 size, float angle)

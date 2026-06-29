@@ -13,6 +13,7 @@ namespace atmo::core::components
         float natural_width = 0.0f;
         float natural_height = 0.0f;
         SDL_Texture *raw_texture = nullptr;
+        float rendered_size[2] = { 0.f, 0.f };
     };
 } // namespace atmo::core::components
 

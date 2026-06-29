@@ -2,4 +2,4 @@
 #include "core/event/event_registry.hpp"
 
 
-REGISTER_EVENT(SDLEvent)
+ATMO_REGISTER_EVENT(atmo::core::event::events::SDLEvent);

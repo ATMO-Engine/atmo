@@ -62,6 +62,9 @@ namespace atmo::core::components
 
         ChildAlignmentAxis child_alignment;
         std::uint16_t child_gap = 0;
+
+        bool floating = false;
+        std::uint16_t z_index = 0;
     };
 } // namespace atmo::core::components
 
@@ -91,5 +94,6 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout> {
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::Layout::width>("width"), atmo::meta::field<&atmo::core::components::Layout::height>("height"),
-        atmo::meta::field<&atmo::core::components::Layout::padding>("padding"), atmo::meta::field<&atmo::core::components::Layout::child_gap>("gap"));
+        atmo::meta::field<&atmo::core::components::Layout::padding>("padding"), atmo::meta::field<&atmo::core::components::Layout::child_gap>("gap"),
+        atmo::meta::field<&atmo::core::components::Layout::floating>("floating"));
 };

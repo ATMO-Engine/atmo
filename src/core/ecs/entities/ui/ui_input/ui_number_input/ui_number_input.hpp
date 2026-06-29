@@ -7,6 +7,7 @@ namespace atmo::core::components
 {
     struct UINumberInput {
         std::variant<int, float> value;
+        std::variant<int, float> prev_value;
     };
 } // namespace atmo::core::components
 

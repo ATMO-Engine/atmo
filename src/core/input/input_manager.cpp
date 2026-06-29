@@ -52,6 +52,12 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
             if (Instance().p_textInput)
                 Instance().p_textBuffer += e.text.text;
             break;
+        case SDL_EVENT_PINCH_UPDATE:
+            for (auto evt : Instance().p_events)
+                if (auto pinchEvent = std::dynamic_pointer_cast<PinchEvent>(evt)) {
+                    pinchEvent->scale = e.pinch.scale;
+                }
+            break;
         default:
             break;
     }
@@ -61,15 +67,34 @@ void atmo::core::InputManager::Tick()
 {
     ATMO_PROFILE_SCOPE_COLOR(0xFFFFFF);
     for (auto &evt : Instance().p_events) {
-        if (evt->getType() == Input::Type::Key) {
-            auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
-            keyEvent->just_pressed = false;
-            keyEvent->just_released = false;
-        }
-        if (evt->getType() == Input::Type::MouseButton) {
-            auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
-            mouseEvent->just_pressed = false;
-            mouseEvent->just_released = false;
+        switch (evt->getType()) {
+            case Input::Type::Key:
+                {
+                    auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt);
+                    keyEvent->just_pressed = false;
+                    keyEvent->just_released = false;
+                }
+                break;
+            case Input::Type::MouseButton:
+                {
+                    auto mouseButtonEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt);
+                    mouseButtonEvent->just_pressed = false;
+                    mouseButtonEvent->just_released = false;
+                }
+                break;
+            case Input::Type::MouseScroll:
+                {
+                    auto mouseScrollEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt);
+                    mouseScrollEvent->scroll = { 0.0f, 0.0f };
+                    mouseScrollEvent->delta_time = 0.0f;
+                }
+                break;
+            case Input::Type::FingerPinch:
+                {
+                    auto pinchEvent = std::dynamic_pointer_cast<PinchEvent>(evt);
+                    pinchEvent->scale = 0.0f;
+                }
+                break;
         }
         if (evt->getType() == Input::Type::MouseScroll) {
             auto mouseEvent = std::dynamic_pointer_cast<MouseScrollEvent>(evt);
@@ -232,4 +257,20 @@ std::pair<atmo::core::types::Vector2, float> atmo::core::InputManager::GetScroll
     }
 
     return { { 0, 0 }, 0.0f };
+}
+
+float atmo::core::InputManager::GetPinchScale(const std::string &inputName)
+{
+    auto it = Instance().p_inputs.find(inputName);
+    if (it == Instance().p_inputs.end())
+        throw std::runtime_error("Input not found: " + inputName);
+
+    for (auto evt : it->second) {
+        if (evt->getType() == Input::Type::FingerPinch) {
+            auto pinchEvent = std::dynamic_pointer_cast<PinchEvent>(evt);
+            return pinchEvent->scale;
+        }
+    }
+
+    return 0.0f;
 }
