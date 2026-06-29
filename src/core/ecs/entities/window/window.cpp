@@ -80,16 +80,20 @@ namespace atmo::core::ecs::entities
         });
     }
 
-    static inline Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
+    static Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
     {
         auto *cache = static_cast<components::UILabel::TextRenderCache *>(config->userData);
         if (!cache || !cache->ttf_text)
             return Clay_Dimensions{ 0.0f, 0.0f };
 
+        auto *renderer = static_cast<SDL_Renderer *>(data);
+        SDL_Window *sdl_win = renderer ? SDL_GetRenderWindow(renderer) : nullptr;
+        const float scale = sdl_win ? SDL_GetWindowDisplayScale(sdl_win) : 1.0f;
+
         int width, height;
         TTF_Font *font = TTF_GetTextFont(cache->ttf_text);
+        TTF_SetFontSizeDPI(font, config->fontSize, static_cast<unsigned int>(scale * 96), static_cast<unsigned int>(scale * 96));
 
-        TTF_SetFontSize(font, config->fontSize);
         if (!TTF_GetStringSize(font, text.chars, text.length, &width, &height)) {
             spdlog::error("Failed to measure text: {}", SDL_GetError());
         }
@@ -102,34 +106,34 @@ namespace atmo::core::ecs::entities
         Entity::initialize();
 
         setComponent<components::Window>({ "Atmo Engine", project::ProjectManager::GetSettings().window.size });
-        auto window = p_handle.get_ref<components::Window>();
+        auto &window = getComponentMutable<components::Window>();
 
         static constexpr SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY | RENDERING_PLATFORM;
 
         if (args::ArgManager::Get<bool>("--headless") == false &&
-            SDL_CreateWindowAndRenderer(window->title.c_str(), window->size.x, window->size.y, flags, &window->window, &window->renderer_data.renderer)) {
-            resource::ResourceManager::GetInstance().setRenderer(window->renderer_data.renderer);
-            updateDPI(*window.get());
-            SDL_SetWindowResizable(window->window, true);
+            SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &window.window, &window.renderer_data.renderer)) {
+            resource::ResourceManager::GetInstance().setRenderer(window.renderer_data.renderer);
+            updateDPI(window);
+            SDL_SetWindowResizable(window.window, true);
 
-            window->renderer_data.text_engine = TTF_CreateRendererTextEngine(window->renderer_data.renderer);
-            if (!window->renderer_data.text_engine) {
+            window.renderer_data.text_engine = TTF_CreateRendererTextEngine(window.renderer_data.renderer);
+            if (!window.renderer_data.text_engine) {
                 spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
                 return;
             }
 
             auto totalMemSize = Clay_MinMemorySize();
-            window->clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
+            window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
-            Clay_Initialize(window->clay_arena, { (float)window->size.x, (float)window->size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
+            Clay_Initialize(window.clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
                                 spdlog::error("Clay error: {}", errorData.errorText.chars);
                             } });
 
-            Clay_SetMeasureTextFunction(measureText, nullptr);
+            Clay_SetMeasureTextFunction(measureText, &window.dpi_scale);
         } else if (args::ArgManager::Get<bool>("--headless") == false) {
             spdlog::error("Failed to create window and renderer: {}", SDL_GetError());
         } else {
-            window->headless = true;
+            window.headless = true;
         }
     }
 
@@ -170,6 +174,11 @@ namespace atmo::core::ecs::entities
         } else {
             spdlog::error("Failed to set window size: {}", SDL_GetError());
         }
+    }
+
+    types::Vector2 Window::getDPIScale() const noexcept
+    {
+        return getComponent<components::Window>().dpi_scale;
     }
 
     void Window::focus()

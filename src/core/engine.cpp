@@ -234,11 +234,6 @@ namespace atmo::core
         while (m_ecs.progress(deltaTime)) {
             SignalQueue::Flush();
 
-#if !defined(ATMO_EXPORT)
-            progress_tick->delta_time = deltaTime;
-            event::EventRegistry::Dispatch(progress_tick);
-#endif
-
             ATMO_PROFILE_FRAME();
 
             InputManager::Tick();
@@ -247,6 +242,11 @@ namespace atmo::core
                 m_ecs.stop();
                 continue;
             }
+
+#if !defined(ATMO_EXPORT)
+            progress_tick->delta_time = deltaTime;
+            event::EventRegistry::Dispatch(progress_tick);
+#endif
 
             auto current_time = std::chrono::steady_clock::now();
             std::chrono::duration<float> dt = current_time - last_time;

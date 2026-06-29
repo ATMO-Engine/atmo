@@ -65,7 +65,6 @@ namespace atmo::core::ecs::entities
                 if (!texture || !renderer)
                     return;
 
-                // Apply camera transform if an active Camera2d exists in this world.
                 const auto *cam = world->try_get<components::WorldCameraState>();
                 int vp_w = 0, vp_h = 0;
                 SDL_GetCurrentRenderOutputSize(renderer, &vp_w, &vp_h);

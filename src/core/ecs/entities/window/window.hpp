@@ -64,6 +64,8 @@ namespace atmo::core::ecs::entities
         core::types::Vector2i getSize() const noexcept;
         std::string getTitle() const noexcept;
 
+        types::Vector2 getDPIScale() const noexcept;
+
         SDL_Texture *getTextureFromHandle(const std::string &path);
 
         void onClose(std::function<void()> callback);

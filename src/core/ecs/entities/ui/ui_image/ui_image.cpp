@@ -16,6 +16,10 @@ namespace atmo::core::ecs::entities
             if (tex)
                 SDL_GetTextureSize(tex.get(), &image.natural_width, &image.natural_height);
         });
+
+        world->observer<components::UIImage>("UIImage_remove").event(flecs::OnRemove).each([](flecs::entity /*e*/, components::UIImage &image) {
+            image.res = nullptr;
+        });
     }
 
     void UIImage::Unregister(flecs::world *) {}

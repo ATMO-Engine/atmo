@@ -15,7 +15,7 @@ namespace atmo::core::ecs::entities
 {
     void UILabel::RegisterSystems(flecs::world *world)
     {
-        world->system<components::UILabel>("UILabel_sync").kind(flecs::PreUpdate).each([](flecs::entity /*e*/, components::UILabel &label) {
+        world->system<components::UILabel>("UILabel_sync").kind(flecs::PreUpdate).each([](flecs::entity e, components::UILabel &label) {
             if (!label.m_render_cache) {
                 label.m_render_cache = std::make_unique<components::UILabel::TextRenderCache>();
                 label.m_prev_font_path = "";
@@ -59,8 +59,10 @@ namespace atmo::core::ecs::entities
 
             if (label.font_size != label.m_prev_font_size) {
                 TTF_Font *font = TTF_GetTextFont(label.m_render_cache->ttf_text);
-                if (font)
-                    TTF_SetFontSize(font, label.font_size);
+                if (font) {
+                    auto size = UILabel(e).getWindow()->getDPIScale();
+                    TTF_SetFontSizeDPI(font, label.font_size, size.x * 96.0f, size.y * 96.0f);
+                }
                 label.m_prev_font_size = label.font_size;
                 label.m_render_cache->dirty = true;
             }
