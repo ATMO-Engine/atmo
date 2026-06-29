@@ -30,7 +30,7 @@ namespace atmo::core::components
         ExportFormat format = ExportFormat::PNG;
 
         atmo::core::types::Vector2 canvas_size = { 0.0f, 0.0f };
-        atmo::core::types::Vector2 texture_size = { 1.0f, 1.0f };
+        atmo::core::types::Vector2i texture_size = { 1, 1 };
 
         SDL_FRect cached_texture_rect = {};
         float zoom = 1.0f;
@@ -89,8 +89,7 @@ namespace atmo::core::ecs::entities
         void rebuildCheckboard();
 
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
-        void
-        paintCapsule(const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brush_radius, const atmo::core::types::Color &color);
+        void paintCapsule(const atmo::core::types::Vector2 &from, const atmo::core::types::Vector2 &to, int brush_radius, const atmo::core::types::Color &color);
 
         float computeFitScale(const components::UIDrawingCanvas &comp) const;
         SDL_FRect computeTextureRect(const components::UIDrawingCanvas &comp) const;

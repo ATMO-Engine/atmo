@@ -77,35 +77,6 @@ namespace atmo::editor
         size_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
         sizeNumberInput->setParent(*size_comp_panel);
 
-        auto sizeSliderHandle = sizeSlider->getHandle();
-        auto sizeNumberHandle = sizeNumberInput->getHandle();
-        sizeSlider->getSignal<int>("IntValueChanged").connect([this, sizeNumberHandle](int val) {
-            if (!sizeNumberHandle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(sizeNumberHandle));
-            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
-            nbInput_comp.value = val;
-
-            this->m_brushSize = val;
-        });
-        sizeNumberInput->getSignal<int>("IntValueChanged").connect([this, sizeSliderHandle](int val) {
-            if (!sizeSliderHandle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(sizeSliderHandle));
-            slider.setValue(val, false);
-
-            auto &comp = slider.getComponentMutable<core::components::UISlider>();
-            int value = std::visit([](auto v) { return static_cast<int>(v); }, comp.max);
-            if (val > value) {
-                return;
-            }
-
-            this->m_brushSize = val;
-        });
-        sizeSlider->getSignal<int>("IntValueChanged").emit(m_brushSize);
-
 
         auto spacing_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &spacing_comp_panel_rect = spacing_comp_panel->getComponentMutable<core::components::UIRect>();
@@ -139,36 +110,6 @@ namespace atmo::editor
         auto &spacing_input_entity_comp = spacingNumberInput->getComponentMutable<core::components::UIInput>();
         spacing_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
         spacingNumberInput->setParent(*spacing_comp_panel);
-
-
-        auto spacingSliderHandle = spacingSlider->getHandle();
-        auto spacingNumberHandle = spacingNumberInput->getHandle();
-        spacingSlider->getSignal<float>("FloatValueChanged").connect([this, spacingNumberHandle](float val) {
-            if (!spacingNumberHandle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(spacingNumberHandle));
-            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
-            nbInput_comp.value = val;
-
-            this->m_brushSpacing = val;
-        });
-        spacingSlider->getSignal<float>("FloatValueChanged").emit(m_brushSpacing);
-        spacingNumberInput->getSignal<float>("FloatValueChanged").connect([this, spacingSliderHandle](float val) {
-            if (!spacingSliderHandle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(spacingSliderHandle));
-            slider.setValue(val, false);
-
-            auto &comp = slider.getComponentMutable<core::components::UISlider>();
-            float value = std::visit([](auto v) { return static_cast<float>(v); }, comp.max);
-            if (val > value) {
-                return;
-            }
-
-            this->m_brushSpacing = val;
-        });
 
 
         auto width_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
@@ -270,9 +211,6 @@ namespace atmo::editor
         auto colorPicker = core::ecs::EntityRegistry::Create<core::ecs::entities::UIColorPicker>("Entity::UI::UIRect::UIColorPicker");
         colorPicker->setParent(*texture_editor_panel);
         auto colorPickerHandle = colorPicker->getHandle();
-        colorPicker->getSignal<core::types::Color>("ColorChanged").connect([this](core::types::Color newColor) { this->m_brushColor = newColor; });
-        auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
-        colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
 
 
         auto canvas_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -283,14 +221,6 @@ namespace atmo::editor
         canvas_container->setParent(*texture_editor_container);
 
         auto canvas = core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
-        canvas->getSignal<core::ecs::entities::UIDrawingCanvas &>("FetchBrush").connect([this](core::ecs::entities::UIDrawingCanvas &canvas) {
-            auto &comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-
-            comp.brush_color = this->m_brushColor;
-            comp.brush_radius = this->m_brushSize;
-            comp.brush_spacing = this->m_brushSpacing;
-        });
-
         auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
         canvas_layout.z_index = 0;
 
@@ -302,46 +232,18 @@ namespace atmo::editor
 
         auto widthHandle = widthNumberInput->getHandle();
         auto heightHandle = heightNumberInput->getHandle();
-        canvas->getSignal<const core::types::Vector2 &>("New Dimensions").connect([widthHandle, heightHandle](const core::types::Vector2 &size) {
+        canvas->getSignal<const core::types::Vector2i &>("New Dimensions").connect([widthHandle, heightHandle](const core::types::Vector2i &size) {
             if (!widthHandle.is_alive() || !heightHandle.is_alive()) {
                 return;
             }
-            {
-                // core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(numberHandle));
-                // auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
-                // nbInput_comp.value = size.x;
 
-                core::ecs::entities::UINumberInput widthInput(core::ecs::EntityRegistry::GetEntityFromId(widthHandle));
-                auto button = core::ecs::entities::UIButton(widthInput.getChildren()[0]);
-                if (!button.getHandle().is_alive()) {
-                    return;
-                }
-                auto label = core::ecs::entities::UILabel(button.getChildren()[0]);
-                if (!label.getHandle().is_alive()) {
-                    return;
-                }
-                auto &nbInpezrh = widthInput.getComponentMutable<core::components::UINumberInput>();
+            core::ecs::entities::UINumberInput widthInput(core::ecs::EntityRegistry::GetEntityFromId(widthHandle));
+            auto &widthInput_comp = widthInput.getComponentMutable<core::components::UINumberInput>();
+            widthInput_comp.value = size.x;
 
-                auto &nbInput_comp = widthInput.getComponentMutable<core::components::UIInput>();
-                nbInput_comp.input_data = std::format("{}", size.x);
-                widthInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
-                label.setText(nbInput_comp.input_data);
-            }
-            {
-                core::ecs::entities::UINumberInput heightInput(core::ecs::EntityRegistry::GetEntityFromId(heightHandle));
-                auto button = core::ecs::entities::UIButton(heightInput.getChildren()[0]);
-                if (!button.getHandle().is_alive()) {
-                    return;
-                }
-                auto label = core::ecs::entities::UILabel(button.getChildren()[0]);
-                if (!label.getHandle().is_alive()) {
-                    return;
-                }
-                auto &nbInput_comp = heightInput.getComponentMutable<core::components::UIInput>();
-                nbInput_comp.input_data = std::format("{}", size.y);
-                heightInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
-                label.setText(nbInput_comp.input_data);
-            }
+            core::ecs::entities::UINumberInput heightInput(core::ecs::EntityRegistry::GetEntityFromId(heightHandle));
+            auto &heightInput_comp = heightInput.getComponentMutable<core::components::UINumberInput>();
+            heightInput_comp.value = size.y;
         });
         canvas->initPixelBuffer(128, 80);
 
@@ -377,6 +279,96 @@ namespace atmo::editor
 
             canvas.resizeCanvas(comp.texture_size.x, val);
         });
+
+
+
+        auto sizeSliderHandle = sizeSlider->getHandle();
+        auto sizeNumberHandle = sizeNumberInput->getHandle();
+        sizeSlider->getSignal<int>("IntValueChanged").connect([canvasHandle, sizeNumberHandle](int val) {
+            if (!sizeNumberHandle.is_alive() || !canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(sizeNumberHandle));
+            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+            nbInput_comp.value = val;
+
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.brush_radius = val;
+        });
+        sizeNumberInput->getSignal<int>("IntValueChanged").connect([canvasHandle, sizeSliderHandle](int val) {
+            if (!sizeSliderHandle.is_alive() || !canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(sizeSliderHandle));
+            slider.setValue(val, false);
+
+            auto &comp = slider.getComponentMutable<core::components::UISlider>();
+            int value = std::visit([](auto v) { return static_cast<int>(v); }, comp.max);
+            if (val > value) {
+                return;
+            }
+
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.brush_radius = val;
+        });
+        sizeSlider->getSignal<int>("IntValueChanged").emit(1);
+
+
+
+        auto spacingSliderHandle = spacingSlider->getHandle();
+        auto spacingNumberHandle = spacingNumberInput->getHandle();
+        spacingSlider->getSignal<float>("FloatValueChanged").connect([canvasHandle, spacingNumberHandle](float val) {
+            if (!spacingNumberHandle.is_alive() || !canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(spacingNumberHandle));
+            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
+            nbInput_comp.value = val;
+
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.brush_spacing = val;
+        });
+        spacingNumberInput->getSignal<float>("FloatValueChanged").connect([canvasHandle, spacingSliderHandle](float val) {
+            if (!spacingSliderHandle.is_alive() || !canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(spacingSliderHandle));
+            slider.setValue(val, false);
+
+            auto &comp = slider.getComponentMutable<core::components::UISlider>();
+            float value = std::visit([](auto v) { return static_cast<float>(v); }, comp.max);
+            if (val > value) {
+                return;
+            }
+
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.brush_spacing = val;
+        });
+        spacingSlider->getSignal<float>("FloatValueChanged").emit(0.5f);
+
+
+
+        colorPicker->getSignal<core::types::Color>("ColorChanged").connect([canvasHandle](core::types::Color newColor) {
+            if (!canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.brush_color = newColor;
+        });
+        auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
+        colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
+
+
 
         exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {
             if (!canvasHandle.is_alive()) {

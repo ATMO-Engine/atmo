@@ -28,8 +28,7 @@ namespace atmo::core::ecs::entities
     {
         UI::initialize();
         setComponent<components::UIDrawingCanvas>({});
-        createSignal<UIDrawingCanvas &>("FetchBrush");
-        createSignal<const core::types::Vector2 &>("New Dimensions");
+        createSignal<const core::types::Vector2i &>("New Dimensions");
     }
 
     Clay_ElementDeclaration UIDrawingCanvas::buildDecl()
@@ -58,8 +57,8 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        int w = (int)comp.texture_size.x;
-        int h = (int)comp.texture_size.y;
+        int w = comp.texture_size.x;
+        int h = comp.texture_size.y;
 
         if (w <= 0 || h <= 0) {
             return;
@@ -97,11 +96,11 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        comp.texture_size.x = std::max(1.0f, comp.texture_size.x);
-        comp.texture_size.y = std::max(1.0f, comp.texture_size.y);
+        comp.texture_size.x = std::max(1, comp.texture_size.x);
+        comp.texture_size.y = std::max(1, comp.texture_size.y);
 
-        int targetW = (int)comp.texture_size.x;
-        int targetH = (int)comp.texture_size.y;
+        int targetW = comp.texture_size.x;
+        int targetH = comp.texture_size.y;
 
         int pixelH = (int)comp.pixels.size();
         int pixelW = pixelH > 0 ? (int)comp.pixels[0].size() : 0;
@@ -155,7 +154,7 @@ namespace atmo::core::ecs::entities
             }
         }
 
-        comp.texture_size = { (float)width, (float)heigth };
+        comp.texture_size = { width, heigth };
 
         if (comp.drawing_texture) {
             SDL_DestroyTexture(comp.drawing_texture);
@@ -171,7 +170,7 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
         comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
-        comp.texture_size = { (float)w, (float)h };
+        comp.texture_size = { w, h };
 
         if (comp.drawing_texture) {
             SDL_DestroyTexture(comp.drawing_texture);
@@ -179,7 +178,7 @@ namespace atmo::core::ecs::entities
         }
         comp.texture_dirty = true;
         rebuildCheckboard();
-        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.texture_size);
+        getSignal<const core::types::Vector2i &>("New Dimensions").emit(comp.texture_size);
     }
 
     atmo::core::types::Vector2 UIDrawingCanvas::screenToCanvas(atmo::core::types::Vector2 screenPos) const
@@ -299,8 +298,6 @@ namespace atmo::core::ecs::entities
 
     void UIDrawingCanvas::draw(ClaySdL3RendererData *data)
     {
-        getSignal<UIDrawingCanvas &>("FetchBrush").emit(*this);
-
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
         Clay_ElementData elementData = Clay_GetElementData(CLAY_ID("DrawingCanvas"));
@@ -511,8 +508,8 @@ namespace atmo::core::ecs::entities
     void UIDrawingCanvas::exportCanvas(const std::string &path)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        int w = (int)comp.texture_size.x;
-        int h = (int)comp.texture_size.y;
+        int w = comp.texture_size.x;
+        int h = comp.texture_size.y;
         if (w <= 0 || h <= 0 || comp.pixels.empty())
             return;
 
@@ -599,8 +596,8 @@ namespace atmo::core::ecs::entities
             comp.drawing_texture = nullptr;
         }
 
-        comp.texture_size = { (float)w, (float)h };
-        getSignal<const core::types::Vector2 &>("New Dimensions").emit(comp.texture_size);
+        comp.texture_size = { w, h };
+        getSignal<const core::types::Vector2i &>("New Dimensions").emit(comp.texture_size);
         comp.zoom = 1.0f;
         comp.offset = { 0.0f, 0.0f };
         comp.texture_dirty = true;
