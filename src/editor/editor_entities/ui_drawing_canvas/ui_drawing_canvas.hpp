@@ -41,7 +41,6 @@ namespace atmo::core::components
 
         int brush_radius = 10;
         atmo::core::types::Color brush_color = atmo::core::types::Color::BLACK;
-        float brush_spacing = 0.5f;
     };
 } // namespace atmo::core::components
 

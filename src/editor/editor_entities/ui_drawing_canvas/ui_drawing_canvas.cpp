@@ -478,28 +478,14 @@ namespace atmo::core::ecs::entities
 
         if (isInsideTextureRect(mousePosInScreen, comp)) {
             if (core::InputManager::IsJustPressed("ui_click")) {
-                paintCapsule(mousePosInCanvas, mousePosInCanvas, comp.brush_radius, comp.brush_color);
                 comp.last_paint_mouse_pos = mousePosInCanvas;
                 ++comp.current_strokeId;
                 comp.painted_pixels.clear();
+                paintCapsule(mousePosInCanvas, mousePosInCanvas, comp.brush_radius, comp.brush_color);
             } else if (core::InputManager::IsPressed("ui_click")) {
                 if (mousePosInCanvas.x != comp.last_paint_mouse_pos.x || mousePosInCanvas.y != comp.last_paint_mouse_pos.y) {
-                    float spacing = std::max(1.0f, comp.brush_radius * comp.brush_spacing);
-                    atmo::core::types::Vector2 delta = mousePosInCanvas - comp.last_paint_mouse_pos;
-                    float distance = delta.length();
-
-                    while (distance >= spacing) {
-                        atmo::core::types::Vector2 dir = delta / distance;
-
-                        atmo::core::types::Vector2 next = comp.last_paint_mouse_pos + dir * spacing;
-
-                        paintCapsule(comp.last_paint_mouse_pos, next, comp.brush_radius, comp.brush_color);
-
-                        comp.last_paint_mouse_pos = next;
-
-                        delta = mousePosInCanvas - comp.last_paint_mouse_pos;
-                        distance = delta.length();
-                    }
+                    paintCapsule(comp.last_paint_mouse_pos, mousePosInCanvas, comp.brush_radius, comp.brush_color);
+                    comp.last_paint_mouse_pos = mousePosInCanvas;
                 }
             }
         }

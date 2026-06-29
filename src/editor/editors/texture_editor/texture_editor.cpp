@@ -78,40 +78,6 @@ namespace atmo::editor
         sizeNumberInput->setParent(*size_comp_panel);
 
 
-        auto spacing_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &spacing_comp_panel_rect = spacing_comp_panel->getComponentMutable<core::components::UIRect>();
-        spacing_comp_panel_rect.corner_radius.top_left = 5.0f;
-        spacing_comp_panel_rect.corner_radius.top_right = 5.0f;
-        spacing_comp_panel_rect.corner_radius.bottom_left = 5.0f;
-        spacing_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        spacing_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
-        spacing_comp_panel_rect.color = core::types::Color("#7d7d7d");
-        auto &spacing_comp_panel_layout = spacing_comp_panel->getComponentMutable<core::components::Layout>();
-        spacing_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
-        spacing_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        spacing_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        spacing_comp_panel_layout.padding.left = 16;
-        spacing_comp_panel_layout.padding.right = 16;
-        spacing_comp_panel_layout.padding.top = 16;
-        spacing_comp_panel_layout.padding.bottom = 16;
-        spacing_comp_panel_layout.child_gap = 0;
-        spacing_comp_panel->setParent(*texture_editor_panel);
-
-        auto spacingLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        spacingLabel->setText("Spacing");
-        spacingLabel->setFontSize(16);
-        spacingLabel->setParent(*spacing_comp_panel);
-
-        auto spacingSlider = core::ecs::EntityRegistry::Create<core::ecs::entities::UISlider>("Entity::UI::UIRect::UISlider");
-        spacingSlider->setType(core::components::UISlider::SliderType::Float, 0.1f, 1.0f);
-        spacingSlider->setParent(*spacing_comp_panel);
-
-        auto spacingNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-        auto &spacing_input_entity_comp = spacingNumberInput->getComponentMutable<core::components::UIInput>();
-        spacing_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
-        spacingNumberInput->setParent(*spacing_comp_panel);
-
-
         auto width_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &width_comp_panel_rect = width_comp_panel->getComponentMutable<core::components::UIRect>();
         width_comp_panel_rect.corner_radius.top_left = 5.0f;
@@ -315,42 +281,6 @@ namespace atmo::editor
             canvas_comp.brush_radius = val;
         });
         sizeSlider->getSignal<int>("IntValueChanged").emit(1);
-
-
-        auto spacingSliderHandle = spacingSlider->getHandle();
-        auto spacingNumberHandle = spacingNumberInput->getHandle();
-        spacingSlider->getSignal<float>("FloatValueChanged").connect([canvasHandle, spacingNumberHandle](float val) {
-            if (!spacingNumberHandle.is_alive() || !canvasHandle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UINumberInput nbInput(core::ecs::EntityRegistry::GetEntityFromId(spacingNumberHandle));
-            auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
-            nbInput_comp.value = val;
-
-            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
-            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-
-            canvas_comp.brush_spacing = val;
-        });
-        spacingNumberInput->getSignal<float>("FloatValueChanged").connect([canvasHandle, spacingSliderHandle](float val) {
-            if (!spacingSliderHandle.is_alive() || !canvasHandle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UISlider slider(core::ecs::EntityRegistry::GetEntityFromId(spacingSliderHandle));
-            slider.setValue(val, false);
-
-            auto &comp = slider.getComponentMutable<core::components::UISlider>();
-            float value = std::visit([](auto v) { return static_cast<float>(v); }, comp.max);
-            if (val > value) {
-                return;
-            }
-
-            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
-            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-
-            canvas_comp.brush_spacing = val;
-        });
-        spacingSlider->getSignal<float>("FloatValueChanged").emit(0.5f);
 
 
         colorPicker->getSignal<core::types::Color>("ColorChanged").connect([canvasHandle](core::types::Color newColor) {
