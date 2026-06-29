@@ -13,6 +13,11 @@ namespace atmo
     {
         struct Property;
 
+        struct ComponentHandle {
+            void *component = nullptr;
+            bool owned = false;
+        };
+
         template <typename T> class LuaBindings
         {
         public:
@@ -35,36 +40,71 @@ namespace atmo
         {
         public:
             /**
-             * @brief Push a type T instance inside the luau context is it stored inside
-             * a shared_ptr with a no-op deleter before being pushed to the luau
+             * @brief Push a type T instance inside the luau context the luau doesn't claim ownership
+             *  over the instance
              *
              * @param L the luau instance where the code runs
              * @param t the type T you want to push
              */
             static void push(lua_State *L, T *t)
             {
-                void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<T>));
-                new (mem) std::shared_ptr<T>(t, [](T *) {});
+                auto *ud = static_cast<ComponentHandle *>(lua_newuserdata(L, sizeof(ComponentHandle)));
+                ud->component = t;
+                ud->owned = false;
                 luaL_getmetatable(L, Derived::name);
                 lua_setmetatable(L, -2);
             }
 
-
             /**
-             * @brief Push a type T instance inside the luau context
+             * @brief Push a type T instance inside the luau context, the context can claim ownership
+             * over the object if wanted
              *
              * @param L the luau instance where the code runs
              * @param t the type T you want to push that is already inside a shared_ptr
+             * @param owned tell the luau if it should claim ownership
              */
-            static void push(lua_State *L, std::shared_ptr<T> t)
+            static void push(lua_State *L, T *t, bool owned)
             {
-                void *mem = lua_newuserdata(L, sizeof(std::shared_ptr<T>));
-                new (mem) std::shared_ptr<T>(std::move(t));
+                auto *ud = static_cast<ComponentHandle *>(lua_newuserdata(L, sizeof(ComponentHandle)));
+                ud->component = t;
+                ud->owned = owned;
                 luaL_getmetatable(L, Derived::name);
                 lua_setmetatable(L, -2);
             }
 
+            /**
+             * @brief
+             * Get a T* from the luau
+             *
+             * @param L The vm / execution context in which you perform the action
+             * @param index the index in the stack for the T object
+             * @return T* the object requested, always check the value returned
+             */
+            static T *check_ptr(lua_State *L, int index)
+            {
+                auto *ud = static_cast<ComponentHandle *>(luaL_checkudata(L, index, Derived::name));
+                if (!ud->component)
+                    luaL_error(L, "%s: accessing destroyed component", Derived::name);
+                return static_cast<T *>(ud->component);
+            }
+
         protected:
+            /**
+             * @brief
+             * Delete an oobject from the luau
+             *
+             * @param L The vm / execution context in which you perform the action
+             * @return int Number of value returned in stack
+             */
+            static int GC(lua_State *L)
+            {
+                auto *ud = static_cast<ComponentHandle *>(luaL_checkudata(L, 1, Derived::name));
+                if (ud->owned)
+                    delete static_cast<T *>(ud->component);
+                ud->component = nullptr;
+                return 0;
+            }
+
             /**
              * @brief
              * Push value read to the lua stack in order to get a element
@@ -157,18 +197,16 @@ namespace atmo
         template <typename T, typename Member> Property makeProperty(const char *name, Member T::*member)
         {
             return Property{ name,
-
-                             // getter
                              [member](lua_State *L, void *obj) {
-                                 auto &sp = *(std::shared_ptr<T> *)obj;
-                                 push_value(L, sp.get()->*member);
-                             },
-
-                             // setter
+                                 auto *compHandle = static_cast<ComponentHandle *>(obj);
+                                 auto *component = static_cast<T *>(compHandle->component);
+                                 push_value(L, component->*member);
+                             }, // getter
                              [member](lua_State *L, void *obj) {
-                                 auto &sp = *(std::shared_ptr<T> *)obj;
-                                 sp.get()->*member = read_value<Member>(L, 3);
-                             } };
+                                 auto *compHandle = static_cast<ComponentHandle *>(obj);
+                                 auto *component = static_cast<T *>(compHandle->component);
+                                 component->*member = read_value<Member>(L, 3);
+                             } }; // setter
         }
     } // namespace luau
 } // namespace atmo

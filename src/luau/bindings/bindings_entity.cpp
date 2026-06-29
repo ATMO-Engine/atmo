@@ -1,7 +1,7 @@
 #include "bindings_entity.hpp"
-#include "core/ecs/entities/2d/entity_2d.hpp"
-
+#include <spdlog/spdlog.h>
 #include "bindings_transform2.hpp"
+#include "core/ecs/entities/2d/entity_2d.hpp"
 #include "lua_bindings.hpp"
 
 namespace atmo::luau
@@ -10,14 +10,15 @@ namespace atmo::luau
 
     int LuaBindings<flecs::entity>::GC(lua_State *state)
     {
-        auto *ptr = (std::shared_ptr<flecs::entity> *)luaL_checkudata(state, 1, name);
-        ptr->~shared_ptr<flecs::entity>();
-        return 0;
+        return LuaBindingsBase<LuaBindings<flecs::entity>, flecs::entity>::GC(state);
     }
 
     int LuaBindings<flecs::entity>::GetTransform(lua_State *state)
     {
-        auto &entity = *(std::shared_ptr<flecs::entity> *)luaL_checkudata(state, 1, name);
+        auto *entity = check_ptr(state, 1);
+        if (!entity) {
+            return 0;
+        }
 
         if (!entity->is_alive()) {
             lua_pushnil(state);

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-#include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/types.hpp"
 #include "lua_bindings.hpp"
 #include "lualib.h"
@@ -43,35 +41,26 @@ namespace atmo::luau
         static constexpr const char *name = "Vector2";
 
     private:
-        static std::shared_ptr<Vector2> &Check(lua_State *state, int index)
-        {
-            return *(std::shared_ptr<Vector2> *)luaL_checkudata(state, index, name);
-        }
-
         static int New(lua_State *state)
         {
             float x = (float)luaL_checknumber(state, 1);
             float y = (float)luaL_checknumber(state, 2);
 
-            void *mem = lua_newuserdata(state, sizeof(std::shared_ptr<Vector2>));
-            new (mem) std::shared_ptr<Vector2>(std::make_shared<Vector2>(x, y));
-
-            luaL_getmetatable(state, name);
-            lua_setmetatable(state, -2);
-
+            LuaBindings<Vector2>::push(state, new Vector2(x, y), true);
             return 1;
         }
 
         static int GC(lua_State *state)
         {
-            auto *ptr = (std::shared_ptr<Vector2> *)luaL_checkudata(state, 1, name);
-            ptr->~shared_ptr<Vector2>();
-            return 0;
+            return LuaBindingsBase<LuaBindings<Vector2>, Vector2>::GC(state);
         }
 
         static int Length(lua_State *state)
         {
-            auto &v = Check(state, 1);
+            Vector2 *v = check_ptr(state, 1);
+            if (!v) {
+                return 0;
+            }
             lua_pushnumber(state, v->length());
             return 1;
         }
