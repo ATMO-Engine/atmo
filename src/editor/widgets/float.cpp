@@ -15,6 +15,8 @@ std::optional<atmo::core::ecs::entities::Entity> createFloatWidget(atmo::core::e
     if (value)
         field.get(value, &float_input_entity_comp.value);
 
+    float_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) { field.set(value, &val); });
+
     return *float_input_entity;
 }
 

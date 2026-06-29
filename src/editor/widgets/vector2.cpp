@@ -25,6 +25,21 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core:
     input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Float;
 
 
+    x_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) {
+        atmo::core::types::Vector2 vec;
+        field.get(value, &vec);
+
+        vec.x = val;
+        field.set(value, &vec);
+    });
+    y_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) {
+        atmo::core::types::Vector2 vec;
+        field.get(value, &vec);
+
+        vec.y = val;
+        field.set(value, &vec);
+    });
+
     x_input_entity->setParent(*vector_container);
     y_input_entity->setParent(*vector_container);
 
