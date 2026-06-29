@@ -33,8 +33,8 @@ namespace atmo::editor
         void init(atmo::core::ecs::entities::UI &container) override;
 
     private:
-        core::types::Color brushColor = core::types::Color::BLACK;
-        int brushSize = 1;
-        float brushSpacing = 0.5f;
+        core::types::Color m_brushColor = core::types::Color::BLACK;
+        int m_brushSize = 1;
+        float m_brushSpacing = 0.5f;
     };
 } // namespace atmo::editor

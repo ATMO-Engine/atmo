@@ -87,7 +87,7 @@ namespace atmo::editor
             auto &nbInput_comp = nbInput.getComponentMutable<core::components::UINumberInput>();
             nbInput_comp.value = val;
 
-            this->brushSize = val;
+            this->m_brushSize = val;
         });
         sizeNumberInput->getSignal<int>("IntValueChanged").connect([this, sizeSliderHandle](int val) {
             if (!sizeSliderHandle.is_alive()) {
@@ -102,9 +102,9 @@ namespace atmo::editor
                 return;
             }
 
-            this->brushSize = val;
+            this->m_brushSize = val;
         });
-        sizeSlider->getSignal<int>("IntValueChanged").emit(brushSize);
+        sizeSlider->getSignal<int>("IntValueChanged").emit(m_brushSize);
 
 
         auto spacing_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
@@ -161,9 +161,9 @@ namespace atmo::editor
             nbInput.validateInput(); // this trigger FloatValueChanged from uiInput !!!! can cause infinite loop easily
             label.setText(nbInput_comp.input_data);
 
-            this->brushSpacing = val;
+            this->m_brushSpacing = val;
         });
-        spacingSlider->getSignal<float>("FloatValueChanged").emit(brushSpacing);
+        spacingSlider->getSignal<float>("FloatValueChanged").emit(m_brushSpacing);
         spacingNumberInput->getSignal<float>("FloatValueChanged").connect([this, spacingSliderHandle](float val) {
             if (!spacingSliderHandle.is_alive()) {
                 return;
@@ -177,7 +177,7 @@ namespace atmo::editor
                 return;
             }
 
-            this->brushSpacing = val;
+            this->m_brushSpacing = val;
         });
 
 
@@ -280,7 +280,7 @@ namespace atmo::editor
         auto colorPicker = core::ecs::EntityRegistry::Create<core::ecs::entities::UIColorPicker>("Entity::UI::UIRect::UIColorPicker");
         colorPicker->setParent(*texture_editor_panel);
         auto colorPickerHandle = colorPicker->getHandle();
-        colorPicker->getSignal<core::types::Color>("ColorChanged").connect([this](core::types::Color newColor) { this->brushColor = newColor; });
+        colorPicker->getSignal<core::types::Color>("ColorChanged").connect([this](core::types::Color newColor) { this->m_brushColor = newColor; });
         auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
         colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
 
@@ -296,9 +296,9 @@ namespace atmo::editor
         canvas->getSignal<core::ecs::entities::UIDrawingCanvas &>("FetchBrush").connect([this](core::ecs::entities::UIDrawingCanvas &canvas) {
             auto &comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
 
-            comp.brushColor = this->brushColor;
-            comp.brushRadius = this->brushSize;
-            comp.brushSpacing = this->brushSpacing;
+            comp.brushColor = this->m_brushColor;
+            comp.brushRadius = this->m_brushSize;
+            comp.brushSpacing = this->m_brushSpacing;
         });
 
         auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
