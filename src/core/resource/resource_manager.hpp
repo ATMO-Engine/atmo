@@ -52,18 +52,18 @@ namespace atmo
                 {
                     ResourceTypeStore<T> &store = getPool<T>();
 
-                    if (store.mapHandle.find(path) != store.mapHandle.end()) {
+                    if (store.map_handle.find(path) != store.map_handle.end()) {
                         try {
-                            return store.pool->getRef(store.mapHandle.at(path), m_currentTick);
+                            return store.pool->getRef(store.map_handle.at(path), m_currentTick);
                         } catch (const typename ResourcePool<T>::HandleOutDated &e) {
                             StoreHandle newHandle = store.pool->create(path, m_currentTick);
-                            store.mapHandle.at(path) = newHandle;
+                            store.map_handle.at(path) = newHandle;
 
-                            return store.pool->getRef(store.mapHandle.at(path), m_currentTick);
+                            return store.pool->getRef(store.map_handle.at(path), m_currentTick);
                         }
                     } else {
                         StoreHandle newHandle = store.pool->create(path, m_currentTick);
-                        store.mapHandle.insert(std::pair<std::string, StoreHandle>(path, newHandle));
+                        store.map_handle.insert(std::pair<std::string, StoreHandle>(path, newHandle));
 
                         return store.pool->getRef(newHandle, m_currentTick);
                     }
@@ -90,7 +90,7 @@ namespace atmo
 
                 template <typename T> struct ResourceTypeStore {
                     ResourcePool<T> *pool = nullptr;
-                    std::unordered_map<std::string, StoreHandle> mapHandle;
+                    std::unordered_map<std::string, StoreHandle> map_handle;
                 };
 
                 /**
@@ -102,7 +102,7 @@ namespace atmo
                  */
                 template <typename T> ResourceTypeStore<T> &getPool()
                 {
-                    static ResourceTypeStore<T> store = { .pool = nullptr, .mapHandle = {} };
+                    static ResourceTypeStore<T> store = { .pool = nullptr, .map_handle = {} };
                     if (!store.pool) {
                         store.pool = new ResourcePool<T>(createLoader<T>());
                         registerPool(store.pool);

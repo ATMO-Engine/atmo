@@ -11,14 +11,14 @@
 #include "meta/type_info.hpp"
 #include "spdlog/spdlog.h"
 
-#define ATMO_REGISTER_WIDGET(name, create, destroy, update)                       \
-    namespace                                                                     \
-    {                                                                             \
-        static int _ = [] {                                                       \
-            using namespace atmo::meta;                                           \
-            WidgetRegistry::get().register_widget(name, create, destroy, update); \
-            return 0;                                                             \
-        }();                                                                      \
+#define ATMO_REGISTER_WIDGET(name, create, destroy, update)                           \
+    namespace                                                                         \
+    {                                                                                 \
+        static int _ = [] {                                                           \
+            using namespace atmo::meta;                                               \
+            WidgetRegistry::Instance().registerWidget(name, create, destroy, update); \
+            return 0;                                                                 \
+        }();                                                                          \
     }
 
 namespace atmo::meta
@@ -36,7 +36,7 @@ namespace atmo::meta
             UpdateFn update;
         };
 
-        static WidgetRegistry &get()
+        static WidgetRegistry &Instance()
         {
             static WidgetRegistry instance;
             return instance;
@@ -45,7 +45,7 @@ namespace atmo::meta
         WidgetRegistry(const WidgetRegistry &) = delete;
         WidgetRegistry &operator=(const WidgetRegistry &) = delete;
 
-        void register_widget(std::string_view name, CreateFn create, DestroyFn destroy, UpdateFn update)
+        void registerWidget(std::string_view name, CreateFn create, DestroyFn destroy, UpdateFn update)
         {
             m_widgets[std::string(name)] = WidgetHandler{ std::move(create), std::move(destroy), std::move(update) };
         }

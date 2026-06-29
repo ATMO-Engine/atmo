@@ -71,13 +71,13 @@ namespace atmo::editor
             title_label.setText(entity_ti.second->name);
 
             for (auto &field_info : entity_ti.second->fields) {
-                auto widget = meta::WidgetRegistry::get().create(child_UI->getChildContainer(), entity.try_get_mut(entity_ti.first), field_info);
+                auto widget = meta::WidgetRegistry::Instance().create(child_UI->getChildContainer(), entity.try_get_mut(entity_ti.first), field_info);
                 if (widget) {
                     update_fns.push_back([entity, comp_id = entity_ti.first, field_info, w = *widget]() {
                         void *ptr = entity.try_get_mut(comp_id);
                         if (!ptr)
                             return;
-                        meta::WidgetRegistry::get().update(w, ptr, field_info);
+                        meta::WidgetRegistry::Instance().update(w, ptr, field_info);
                     });
                 }
             }
