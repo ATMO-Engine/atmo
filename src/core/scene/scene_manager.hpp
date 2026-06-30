@@ -15,7 +15,7 @@ namespace atmo
             class SceneManager
             {
             private:
-                flecs::world *m_world;
+                flecs::world *m_world{ nullptr };
                 std::shared_ptr<ecs::entities::Scene> m_current;
                 bool m_initialized{ false };
                 std::vector<std::shared_ptr<ecs::entities::Scene>> m_singletons;

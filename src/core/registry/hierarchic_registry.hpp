@@ -96,7 +96,7 @@ namespace atmo::core::registry
         using Factory = Root *(*)(FactoryArgs...);
 
         struct Entry {
-            bool is_abstract;
+            bool is_abstract = false;
             std::optional<Factory> factory;
         };
 

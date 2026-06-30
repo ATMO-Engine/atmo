@@ -27,8 +27,8 @@ namespace atmo::core::components
         types::Vector2i size;
         types::Vector2 dpi_scale;
         SDL_Window *window = nullptr;
-        ClaySdL3RendererData renderer_data;
-        Clay_Arena clay_arena;
+        ClaySdL3RendererData renderer_data{};
+        Clay_Arena clay_arena{};
         std::map<std::string, SDL_Texture *> texture_cache;
         std::optional<std::function<void()>> close_callback;
         bool headless = false;
