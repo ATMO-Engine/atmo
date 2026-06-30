@@ -1,7 +1,6 @@
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "meta/widget_registry.hpp"
 
@@ -14,6 +13,8 @@ std::optional<atmo::core::ecs::entities::Entity> createFloatWidget(atmo::core::e
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
     if (value)
         field.get(value, &float_input_entity_comp.value);
+
+    float_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) { field.set(value, &val); });
 
     return *float_input_entity;
 }

@@ -53,6 +53,7 @@ namespace atmo::core::ecs::entities
                     } else {
                         clear();
                     }
+                    getSignal<int>("IntValueChanged").emit(std::get<int>(entity_content.value));
                     break;
                 }
 
@@ -67,6 +68,7 @@ namespace atmo::core::ecs::entities
                     } else {
                         clear();
                     }
+                    getSignal<float>("FloatValueChanged").emit(std::get<float>(entity_content.value));
                     break;
                 }
             default:
@@ -111,6 +113,9 @@ namespace atmo::core::ecs::entities
     {
         UIInput::initialize();
         setComponent<core::components::UINumberInput>({});
+
+        createSignal<float>("FloatValueChanged");
+        createSignal<int>("IntValueChanged");
 
         auto button = getChildren()[0];
         auto label = UILabel(button.getChildren()[0]);
