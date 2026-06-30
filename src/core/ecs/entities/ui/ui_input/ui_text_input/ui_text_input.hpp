@@ -6,6 +6,7 @@ namespace atmo::core::components
 {
     struct UITextInput {
         std::string value;
+        std::string prev_value;
     };
 } // namespace atmo::core::components
 

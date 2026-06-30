@@ -11,7 +11,10 @@ std::optional<atmo::core::ecs::entities::Entity> createIntWidget(atmo::core::ecs
     auto &int_input_entity_comp = int_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
 
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
-    field.get(value, &int_input_entity_comp.value);
+    if (value)
+        field.get(value, &int_input_entity_comp.value);
+
+    int_input_entity->getSignal<int>("IntValueChanged").connect([value, field](int val) { field.set(value, &val); });
 
     return *int_input_entity;
 }

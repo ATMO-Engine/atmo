@@ -17,9 +17,10 @@ namespace atmo::core::ecs::entities
     void Sprite2d::RegisterSystems(flecs::world *world)
     {
         world->system<components::Sprite2d>("Sprite2d_Sync").kind(flecs::PreUpdate).each([](flecs::entity /*e*/, components::Sprite2d &sprite) {
-            if (sprite.texture_path.empty() || sprite.m_res)
+            if (sprite.texture_path.empty() || sprite.texture_path == sprite.prev_texture_path)
                 return;
 
+            sprite.prev_texture_path = sprite.texture_path;
             sprite.m_res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.texture_path);
             if (auto surface = sprite.m_res->get())
                 sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };

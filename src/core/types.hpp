@@ -242,3 +242,7 @@ template <> struct atmo::meta::DefaultWidget<atmo::core::types::Vector4> {
 template <> struct atmo::meta::DefaultWidget<atmo::core::types::Vector4i> {
     static constexpr const char *value = "vector4i";
 };
+
+template <> struct atmo::meta::DefaultWidget<std::string> {
+    static constexpr const char *value = "string";
+};

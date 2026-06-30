@@ -60,8 +60,14 @@ namespace atmo::core::ecs::entities
             if (label.font_size != label.m_prev_font_size) {
                 TTF_Font *font = TTF_GetTextFont(label.m_render_cache->ttf_text);
                 if (font) {
-                    auto size = UILabel(e).getWindow()->getDPIScale();
-                    TTF_SetFontSizeDPI(font, label.font_size, size.x * 96.0f, size.y * 96.0f);
+                    auto window = UILabel(e).getWindow();
+                    float dpi_x = 96.0f, dpi_y = 96.0f;
+                    if (window) {
+                        auto size = window->getDPIScale();
+                        dpi_x = size.x * 96.0f;
+                        dpi_y = size.y * 96.0f;
+                    }
+                    TTF_SetFontSizeDPI(font, label.font_size, dpi_x, dpi_y);
                 }
                 label.m_prev_font_size = label.font_size;
                 label.m_render_cache->dirty = true;

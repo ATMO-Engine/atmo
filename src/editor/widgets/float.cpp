@@ -6,15 +6,17 @@
 
 std::optional<atmo::core::ecs::entities::Entity> createFloatWidget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
-    auto int_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-    auto &input_entity_comp = int_input_entity->getComponentMutable<atmo::core::components::UIInput>();
-    auto &int_input_entity_comp = int_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
+    auto float_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+    auto &input_entity_comp = float_input_entity->getComponentMutable<atmo::core::components::UIInput>();
+    auto &float_input_entity_comp = float_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
 
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
     if (value)
-        field.get(value, &int_input_entity_comp.value);
+        field.get(value, &float_input_entity_comp.value);
 
-    return *int_input_entity;
+    float_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) { field.set(value, &val); });
+
+    return *float_input_entity;
 }
 
 void updateFloatWidget(atmo::core::ecs::entities::Entity widget, void *value, const atmo::meta::FieldInfo &field)

@@ -3,11 +3,8 @@
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/ecs/world_context.hpp"
-#include "core/event/event_registry.hpp"
 #include "core/types.hpp"
 #include "meta/widget_registry.hpp"
-#include "spdlog/spdlog.h"
 
 std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
@@ -23,8 +20,21 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2Widget(atmo::core:
     input_entity_comp_x.input_type = atmo::core::components::UIInput::InputType::Float;
     input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Float;
 
-    // atmo::core::event::EventRegistry::SetCallBack<atmo::editor::ProgressTickEvent>(
-    //     [](atmo::editor::ProgressTickEvent *evt) { updateVector2Widget(evt, value, field, ); });
+
+    x_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) {
+        atmo::core::types::Vector2 vec;
+        field.get(value, &vec);
+
+        vec.x = val;
+        field.set(value, &vec);
+    });
+    y_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) {
+        atmo::core::types::Vector2 vec;
+        field.get(value, &vec);
+
+        vec.y = val;
+        field.set(value, &vec);
+    });
 
     x_input_entity->setParent(*vector_container);
     y_input_entity->setParent(*vector_container);
