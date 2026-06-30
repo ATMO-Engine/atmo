@@ -16,7 +16,7 @@ namespace atmo::core::components
     struct UI {
         bool visible{ true };
         types::Color modulate{ types::Color::WHITE };
-        Clay_ElementId element_id;
+        Clay_ElementId element_id{};
     };
 } // namespace atmo::core::components
 

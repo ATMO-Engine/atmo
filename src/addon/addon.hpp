@@ -84,7 +84,7 @@ namespace atmo::addon
         /**
          * @brief Indicates if the addon includes a binary library.
          */
-        bool has_library;
+        bool has_library{ false };
     };
 
     struct AtmoAPI {
