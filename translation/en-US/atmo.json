@@ -26,6 +26,7 @@
         "description": "Create and edit textures by drawing, layering, and animating 2D artwork."
       }
     },
+    "create_new_entity": "Create new entity",
     "entities": {
       "Entity": "Entity",
       "Entity::Entity2d": "Entity2d",

@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "editor/editor_registry.hpp"
 #include "editor/editors/editor.hpp"
 #include "editor/editors/scene_editor/editor_scene_context.hpp"
@@ -39,6 +40,8 @@ namespace atmo::editor
 
         void
         sceneEntityFodableTreeinit(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container);
+        void openNewEditorSelectionPopup(core::ecs::entities::Entity parent);
+        core::ecs::entities::UIButton makeEditorCreationButton(const std::string &editor);
 
         flecs::entity getSelectedEntity();
         void setSelectedEntity(flecs::entity new_slected_entity);
