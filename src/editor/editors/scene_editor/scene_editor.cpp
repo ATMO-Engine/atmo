@@ -321,11 +321,10 @@ namespace atmo::editor
         scene_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         scene_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         scene_viewport_container_layout.direction = core::components::Layout::Direction::Vertical;
-        scene_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
-        scene_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        scene_viewport_container_layout.clip.horizontal = true;
+        scene_viewport_container_layout.clip.vertical = true;
         scene_viewport_container_layout.padding = { 0, 0, 8, 8 };
         scene_viewport_container->setParent(*content_left_panel_container);
-        scene_viewport_container->rename("entity viewport");
 
         auto middle_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &middle_panel_container_layout = middle_panel_container->getComponentMutable<core::components::Layout>();
@@ -527,10 +526,12 @@ namespace atmo::editor
         close_create_entity_btn->getSignal<>("Released").connect([create_entity_popup]() { create_entity_popup->destroy(); });
 
         auto entity_creation_button_list = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
         entity_creation_button_list->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         entity_creation_button_list->getComponentMutable<core::components::Layout>().width.size = 1.0f;
         entity_creation_button_list->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         entity_creation_button_list->getComponentMutable<core::components::Layout>().child_gap = 8;
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().clip.vertical = true;
         entity_creation_button_list->setParent(*create_entity_bg);
 
         for (auto t : core::ecs::EntityRegistry::GetEntries()) {

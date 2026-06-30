@@ -27,6 +27,7 @@
 #include "luau/script_instance.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "spdlog/spdlog-inl.h"
 #include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)

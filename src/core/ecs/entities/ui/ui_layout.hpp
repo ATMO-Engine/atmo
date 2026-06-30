@@ -53,12 +53,18 @@ namespace atmo::core::components
             float height = 0.0f;
         };
 
+        struct Clip {
+            bool horizontal = false;
+            bool vertical = false;
+        };
+
         Direction direction = Direction::Horizontal;
 
         SizingAxis width;
         SizingAxis height;
         AspectRatio aspect_ratio;
         Padding padding;
+        Clip clip;
 
         ChildAlignmentAxis child_alignment;
         std::uint16_t child_gap = 0;
