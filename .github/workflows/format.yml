@@ -102,12 +102,10 @@ jobs:
 
       - name: Generate compile_commands.json
         run: |
-          xmake f -y -m release
-          xmake
+          xmake project -k compile_commands -t atmo -y
 
       - name: Run clang-tidy
         run: |
-          run-clang-tidy-21 -j $(nproc) -p . \
+          run-clang-tidy-21 -j $(nproc) -quiet -p . \
             -clang-tidy-binary clang-tidy-21 \
-            -header-filter='^.*\/src\/.*' \
             $(find src/ -name '*.cpp' | tr '\n' ' ')
