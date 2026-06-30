@@ -23,26 +23,36 @@ namespace atmo::editor
         texture_editor_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         texture_editor_container->setParent(container);
 
+        auto option_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &option_panel_rect = option_panel->getComponentMutable<core::components::UIRect>();
+        option_panel_rect.color.a = 0;
+        auto &option_panel_layout = option_panel->getComponentMutable<core::components::Layout>();
+        option_panel_layout.direction = core::components::Layout::Direction::Vertical;
+        option_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        option_panel_layout.width.size = 0.2f;
+        option_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        option_panel_layout.child_gap = 16;
+        option_panel->setParent(*texture_editor_container);
+
         auto texture_editor_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &texture_editor_panel_rect = texture_editor_panel->getComponentMutable<core::components::UIRect>();
-        texture_editor_panel_rect.corner_radius.top_left = 5.0f;
-        texture_editor_panel_rect.corner_radius.top_right = 5.0f;
-        texture_editor_panel_rect.corner_radius.bottom_left = 5.0f;
-        texture_editor_panel_rect.corner_radius.bottom_right = 5.0f;
+        texture_editor_panel_rect.corner_radius.top_left = 4.0f;
+        texture_editor_panel_rect.corner_radius.top_right = 4.0f;
+        texture_editor_panel_rect.corner_radius.bottom_left = 4.0f;
+        texture_editor_panel_rect.corner_radius.bottom_right = 4.0f;
         texture_editor_panel_rect.border.color = core::types::Color("#dbdbdb");
         texture_editor_panel_rect.color = core::types::Color("#dbdbdb");
         auto &texture_editor_panel_layout = texture_editor_panel->getComponentMutable<core::components::Layout>();
         texture_editor_panel_layout.direction = core::components::Layout::Direction::Vertical;
-        texture_editor_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        texture_editor_panel_layout.width.size = 0.2f;
+        texture_editor_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        texture_editor_panel_layout.height.size = 1.0f;
+        texture_editor_panel_layout.height.size = 0.65f;
         texture_editor_panel_layout.padding.left = 16;
         texture_editor_panel_layout.padding.right = 16;
         texture_editor_panel_layout.padding.top = 16;
         texture_editor_panel_layout.padding.bottom = 16;
         texture_editor_panel_layout.child_gap = 16;
-        texture_editor_panel->setParent(*texture_editor_container);
+        texture_editor_panel->setParent(*option_panel);
 
         auto size_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &size_comp_panel_rect = size_comp_panel->getComponentMutable<core::components::UIRect>();
@@ -174,8 +184,60 @@ namespace atmo::editor
         previewBtn_layout.height.size = 0.05f;
         previewBtn->setParent(*texture_editor_panel);
 
+
+        auto pencilContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &btnContainer_rect = pencilContainer->getComponentMutable<core::components::UIRect>();
+        btnContainer_rect.color.a = 0;
+        auto &pencilContainer_layout = pencilContainer->getComponentMutable<core::components::Layout>();
+        pencilContainer_layout.direction = core::components::Layout::Direction::Horizontal;
+        pencilContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        pencilContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        pencilContainer_layout.height.size = 0.05f;
+        pencilContainer_layout.child_gap = 16;
+        pencilContainer->setParent(*texture_editor_panel);
+
+        auto pencilBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        ((core::ecs::entities::UILabel)pencilBtn->getChildren()[0]).setText("Draw");
+        auto &pencilBtn_rect = pencilBtn->getComponentMutable<core::components::UIRect>();
+        pencilBtn_rect.border.color = core::types::Color::BLACK;
+        pencilBtn_rect.color = core::types::Color::WHITE;
+        auto &pencilBtn_layout = pencilBtn->getComponentMutable<core::components::Layout>();
+        pencilBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        pencilBtn_layout.width.size = 0.30f;
+        pencilBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        pencilBtn->setParent(*pencilContainer);
+
+        auto eraserBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        ((core::ecs::entities::UILabel)eraserBtn->getChildren()[0]).setText("Erase");
+        auto &eraserBtn_rect = eraserBtn->getComponentMutable<core::components::UIRect>();
+        eraserBtn_rect.border.color = core::types::Color::BLACK;
+        eraserBtn_rect.color = core::types::Color::WHITE;
+        auto &eraserBtn_layout = eraserBtn->getComponentMutable<core::components::Layout>();
+        eraserBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        eraserBtn_layout.width.size = 0.30f;
+        eraserBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        eraserBtn->setParent(*pencilContainer);
+
+
+        auto colorPickContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &colorPickContaine_rect = colorPickContainer->getComponentMutable<core::components::UIRect>();
+        colorPickContaine_rect.border.color = core::types::Color("#dbdbdb");
+        colorPickContaine_rect.color = core::types::Color("#dbdbdb");
+        colorPickContaine_rect.corner_radius.top_left = 4.0f;
+        colorPickContaine_rect.corner_radius.top_right = 4.0f;
+        colorPickContaine_rect.corner_radius.bottom_left = 4.0f;
+        colorPickContaine_rect.corner_radius.bottom_right = 4.0f;
+        auto &colorPickContainer_layout = colorPickContainer->getComponentMutable<core::components::Layout>();
+        colorPickContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        colorPickContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        colorPickContainer_layout.padding.left = 16;
+        colorPickContainer_layout.padding.right = 16;
+        colorPickContainer_layout.padding.top = 16;
+        colorPickContainer_layout.padding.bottom = 16;
+        colorPickContainer->setParent(*option_panel);
+
         auto colorPicker = core::ecs::EntityRegistry::Create<core::ecs::entities::UIColorPicker>("Entity::UI::UIRect::UIColorPicker");
-        colorPicker->setParent(*texture_editor_panel);
+        colorPicker->setParent(*colorPickContainer);
         auto colorPickerHandle = colorPicker->getHandle();
 
 
@@ -295,6 +357,26 @@ namespace atmo::editor
         auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
         colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
 
+
+        pencilBtn->getSignal<>("Pressed").connect([canvasHandle]() {
+            if (!canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.pen = core::components::UIDrawingCanvas::DrawType::PENCIL;
+        });
+
+        eraserBtn->getSignal<>("Pressed").connect([canvasHandle]() {
+            if (!canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.pen = core::components::UIDrawingCanvas::DrawType::ERASER;
+        });
 
         exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {
             if (!canvasHandle.is_alive()) {

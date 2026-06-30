@@ -17,6 +17,11 @@ namespace atmo::core::components
             JPG
         };
 
+        enum class DrawType {
+            PENCIL,
+            ERASER
+        };
+
         Clay_BoundingBox bounds = {};
 
         std::vector<std::vector<atmo::core::types::Color>> pixels;
@@ -41,6 +46,7 @@ namespace atmo::core::components
 
         int brush_radius = 10;
         atmo::core::types::Color brush_color = atmo::core::types::Color::BLACK;
+        DrawType pen = DrawType::PENCIL;
     };
 } // namespace atmo::core::components
 
@@ -49,7 +55,8 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIDrawingCa
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::UIDrawingCanvas::zoom>("zoom"),
-        atmo::meta::field<&atmo::core::components::UIDrawingCanvas::offset>("offset"));
+        atmo::meta::field<&atmo::core::components::UIDrawingCanvas::offset>("offset"),
+        atmo::meta::field<&atmo::core::components::UIDrawingCanvas::brush_radius>("brush radius"));
 };
 
 namespace atmo::core::ecs::entities

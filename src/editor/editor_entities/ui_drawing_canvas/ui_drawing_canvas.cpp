@@ -456,17 +456,21 @@ namespace atmo::core::ecs::entities
 
         auto &dst = comp.pixels[pos.y][pos.x];
 
-        float srcA = color.a;
-        float dstA = dst.a;
-        float outA = srcA + dstA * (1.0f - srcA);
-
-        if (outA > 0.0f) {
-            dst.r = (color.r * srcA + dst.r * dstA * (1.0f - srcA)) / outA;
-            dst.g = (color.g * srcA + dst.g * dstA * (1.0f - srcA)) / outA;
-            dst.b = (color.b * srcA + dst.b * dstA * (1.0f - srcA)) / outA;
-            dst.a = outA;
-        } else {
+        if (comp.pen == components::UIDrawingCanvas::DrawType::ERASER) {
             dst = atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f };
+        } else {
+            float srcA = color.a;
+            float dstA = dst.a;
+            float outA = srcA + dstA * (1.0f - srcA);
+
+            if (outA > 0.0f) {
+                dst.r = (color.r * srcA + dst.r * dstA * (1.0f - srcA)) / outA;
+                dst.g = (color.g * srcA + dst.g * dstA * (1.0f - srcA)) / outA;
+                dst.b = (color.b * srcA + dst.b * dstA * (1.0f - srcA)) / outA;
+                dst.a = outA;
+            } else {
+                dst = atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f };
+            }
         }
 
         comp.texture_dirty = true;
