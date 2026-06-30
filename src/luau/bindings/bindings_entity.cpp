@@ -15,7 +15,7 @@ namespace atmo::luau
 
     int LuaBindings<flecs::entity>::GetTransform(lua_State *state)
     {
-        auto *entity = check_ptr(state, 1);
+        auto *entity = Check_ptr(state, 1);
         if (!entity) {
             return 0;
         }
@@ -33,7 +33,7 @@ namespace atmo::luau
 
         atmo::core::components::Transform2d &t = entity->get_mut<atmo::core::components::Transform2d>();
 
-        LuaBindings<atmo::core::components::Transform2d>::push(state, &t);
+        LuaBindings<atmo::core::components::Transform2d>::Push(state, &t);
         return 1;
     }
 } // namespace atmo::luau

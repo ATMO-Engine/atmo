@@ -26,7 +26,7 @@ namespace atmo::core::components
 
         std::vector<std::vector<atmo::core::types::Color>> pixels;
         std::vector<uint8_t> upload_buffer;
-        uint32_t current_strokeId = 0;
+        uint32_t current_stroke_id = 0;
         std::unordered_set<uint32_t> painted_pixels;
 
         SDL_Texture *drawing_texture = nullptr;

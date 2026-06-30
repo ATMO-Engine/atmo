@@ -483,7 +483,7 @@ namespace atmo::core::ecs::entities
         if (isInsideTextureRect(mousePosInScreen, comp)) {
             if (core::InputManager::IsJustPressed("ui_click")) {
                 comp.last_paint_mouse_pos = mousePosInCanvas;
-                ++comp.current_strokeId;
+                ++comp.current_stroke_id;
                 comp.painted_pixels.clear();
                 paintCapsule(mousePosInCanvas, mousePosInCanvas, comp.brush_radius, comp.brush_color);
             } else if (core::InputManager::IsPressed("ui_click")) {

@@ -27,12 +27,12 @@ namespace atmo::luau
                          [member](lua_State *L, void *obj) {
                              auto *compHandle = static_cast<ComponentHandle *>(obj);
                              auto *component = static_cast<Transform2d *>(compHandle->component);
-                             LuaBindings<Vector2>::push(L, &(component->*member));
+                             LuaBindings<Vector2>::Push(L, &(component->*member));
                          },
                          [member](lua_State *L, void *obj) {
                              auto *compHandle = static_cast<ComponentHandle *>(obj);
                              auto *component = static_cast<Transform2d *>(compHandle->component);
-                             auto *vec = LuaBindings<Vector2>::check_ptr(L, 3);
+                             auto *vec = LuaBindings<Vector2>::Check_ptr(L, 3);
                              if (!vec) {
                                  return;
                              }

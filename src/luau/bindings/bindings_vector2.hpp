@@ -46,7 +46,7 @@ namespace atmo::luau
             float x = (float)luaL_checknumber(state, 1);
             float y = (float)luaL_checknumber(state, 2);
 
-            LuaBindings<Vector2>::push(state, new Vector2(x, y), true);
+            LuaBindings<Vector2>::Push(state, new Vector2(x, y), true);
             return 1;
         }
 
@@ -57,7 +57,7 @@ namespace atmo::luau
 
         static int Length(lua_State *state)
         {
-            Vector2 *v = check_ptr(state, 1);
+            Vector2 *v = Check_ptr(state, 1);
             if (!v) {
                 return 0;
             }
