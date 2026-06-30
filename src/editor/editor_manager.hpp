@@ -72,6 +72,7 @@ namespace atmo::editor
         std::unique_ptr<IPlatformMenuBar> m_menu_bar;
         std::vector<std::shared_ptr<Editor>> m_editors;
         std::vector<std::shared_ptr<core::ecs::entities::UI>> m_editor_containers;
+        std::vector<std::shared_ptr<core::ecs::entities::UI>> m_editor_tool_containers;
         std::shared_ptr<core::ecs::entities::UI> m_editor_container;
         std::shared_ptr<core::ecs::entities::UIRect> m_topbar;
     };

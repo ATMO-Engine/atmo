@@ -31,5 +31,6 @@ namespace atmo::editor
         }
 
         void init(atmo::core::ecs::entities::UI &container) override;
+        void createTools() override;
     };
 } // namespace atmo::editor

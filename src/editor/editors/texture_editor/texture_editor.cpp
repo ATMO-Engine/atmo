@@ -7,6 +7,8 @@ namespace atmo::editor
     {
         return;
     }
+
+    void TextureEditor::createTools() {}
 } // namespace atmo::editor
 
 ATMO_REGISTER_EDITOR(atmo::editor::TextureEditor);

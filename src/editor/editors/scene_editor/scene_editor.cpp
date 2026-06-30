@@ -26,6 +26,7 @@
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_registry.hpp"
+#include "editor/editors/editor.hpp"
 #include "flecs/addons/cpp/mixins/id/decl.hpp"
 #include "meta/widget_registry.hpp"
 #include "spdlog/spdlog.h"
@@ -428,6 +429,12 @@ namespace atmo::editor
                 sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
             }
         }
+    }
+
+    void SceneEditor::createTools()
+    {
+        p_tools = { Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "select", .icon_path = "project://assets/icons/x.svg" },
+                    Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "measure", .icon_path = "project://assets/icons/x.svg" } };
     }
 
     void SceneEditor::sceneEntityFodableTreeinit(

@@ -147,9 +147,11 @@ namespace atmo::editor
                 if (new_state) {
                     btn_rect.color = core::types::Color("#b25959");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
+                    m_editor_tool_containers[index]->getComponentMutable<core::components::UI>().visible = true;
                 } else {
                     btn_rect.color = core::types::Color("#868686");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
+                    m_editor_tool_containers[index]->getComponentMutable<core::components::UI>().visible = true;
                 }
             });
             auto editor_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
@@ -265,8 +267,15 @@ namespace atmo::editor
             editor_container->setParent(*m_editor_container);
             m_editor_containers.emplace_back(editor_container);
 
+            auto editor_tool_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+            auto &editor_tool_container_layout = editor_container->getComponentMutable<core::components::Layout>();
+            editor_tool_container_layout.child_gap = 4;
+            // TODO: set parent to tool bar after its made
+            m_editor_tool_containers.emplace_back(editor_tool_container);
+
             new_editor->init(*editor_container);
             updateTopBar();
+            new_editor->createTools();
 
             ((core::ecs::entities::UIButton)m_topbar->getChildren()[index]).press();
         });
