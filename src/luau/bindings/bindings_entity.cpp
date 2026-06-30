@@ -15,7 +15,7 @@ namespace atmo::luau
 
     int LuaBindings<flecs::entity>::GetTransform(lua_State *state)
     {
-        auto *entity = Check_ptr(state, 1);
+        auto *entity = CheckPtr(state, 1);
         if (!entity) {
             return 0;
         }

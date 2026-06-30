@@ -57,7 +57,7 @@ namespace atmo::luau
 
         static int Length(lua_State *state)
         {
-            Vector2 *v = Check_ptr(state, 1);
+            Vector2 *v = CheckPtr(state, 1);
             if (!v) {
                 return 0;
             }

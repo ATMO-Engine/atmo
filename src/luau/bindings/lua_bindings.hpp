@@ -80,7 +80,7 @@ namespace atmo
              * @param index the index in the stack for the T object
              * @return T* the object requested, always check the value returned
              */
-            static T *Check_ptr(lua_State *L, int index)
+            static T *CheckPtr(lua_State *L, int index)
             {
                 auto *ud = static_cast<ComponentHandle *>(luaL_checkudata(L, index, Derived::name));
                 if (!ud->component)
