@@ -70,6 +70,11 @@ namespace atmo::core::ecs::entities
     }
 
     void UIImage::draw(ClaySdL3RendererData *data) {}
+
+    void UIImage::setTexturePath(const std::string &path)
+    {
+        getComponentMutable<components::UIImage>().texture_path = path;
+    }
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIImage);

@@ -80,32 +80,27 @@ namespace atmo::editor
         m_menu_bar = makePlatformMenuBar();
         m_menu_bar->build(*scene, m_commands);
 
-        auto window_ui_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &window_ui_container_rect = window_ui_container->getComponentMutable<core::components::UIRect>();
-        window_ui_container_rect.color.a = 0.0f;
+        auto window_ui_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &window_ui_container_layout = window_ui_container->getComponentMutable<core::components::Layout>();
-        window_ui_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        window_ui_container_layout.width.size = 1.0f;
-        window_ui_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        window_ui_container_layout.height.size = 1.0f;
+        window_ui_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        window_ui_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         window_ui_container_layout.direction = core::components::Layout::Direction::Vertical;
-        window_ui_container->rename("window ui container");
+        window_ui_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         window_ui_container->setParent(*scene);
 
         auto topbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &topbar_container_layout = topbar_container->getComponentMutable<core::components::Layout>();
-        topbar_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        topbar_container_layout.width.size = 1.0f;
+        topbar_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         topbar_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         topbar_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 60.0f, 60.0f };
         topbar_container_layout.direction = core::components::Layout::Direction::Horizontal;
         topbar_container_layout.padding = { 16, 16, 16, 16 };
-        topbar_container->rename("topbar container");
         topbar_container->setParent(*window_ui_container);
 
         m_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &topbar_rect = m_topbar->getComponentMutable<core::components::UIRect>();
         topbar_rect.color = core::types::Color::WHITE;
+        topbar_rect.corner_radius = { 4, 4, 4, 4 };
         auto &topbar_layout = m_topbar->getComponentMutable<core::components::Layout>();
         topbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         topbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -117,12 +112,48 @@ namespace atmo::editor
 
         m_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &editor_container_layout = m_editor_container->getComponentMutable<core::components::Layout>();
-        editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        editor_container_layout.width.size = 1.0f;
+        editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         m_editor_container->rename("scene ui container");
         m_editor_container->setParent(*window_ui_container);
         // spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
+
+        auto toolbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        toolbar_container->getComponentMutable<core::components::Layout>().padding = { 16, 16, 16, 16 };
+        toolbar_container->setParent(*window_ui_container);
+
+        m_toolbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        m_toolbar->getComponentMutable<core::components::UIRect>().color = core::types::Color::WHITE;
+        m_toolbar->getComponentMutable<core::components::UIRect>().corner_radius = { 4.0f, 4.0f, 4.0f, 4.0f };
+        m_toolbar->getComponentMutable<core::components::Layout>().child_gap = 4;
+        m_toolbar->getComponentMutable<core::components::Layout>().padding = { 4, 4, 4, 4 };
+        m_toolbar->setParent(*toolbar_container);
+
+        auto editor_tools_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        editor_tools_container->getComponentMutable<core::components::Layout>().child_gap = 4;
+        editor_tools_container->setParent(*m_toolbar);
+
+        auto editor_tools_spacer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        editor_tools_spacer->getComponentMutable<core::components::UIImage>().texture_path = "project://assets/icons/dot.svg";
+        editor_tools_spacer->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        editor_tools_spacer->setParent(*m_toolbar);
+
+        auto engine_tools_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        engine_tools_container->getComponentMutable<core::components::Layout>().child_gap = 4;
+        engine_tools_container->setParent(*m_toolbar);
+
+        auto play_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        play_btn->setTexturePath("project://assets/icons/play.svg");
+        play_btn->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        play_btn->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        play_btn->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        play_btn->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        play_btn->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        play_btn->setParent(*engine_tools_container);
     }
 
     void EditorManager::updateTopBar()

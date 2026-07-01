@@ -326,25 +326,12 @@ namespace atmo::editor
         scene_viewport_container_layout.padding = { 0, 0, 8, 8 };
         scene_viewport_container->setParent(*content_left_panel_container);
 
-        auto middle_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        auto &middle_panel_container_layout = middle_panel_container->getComponentMutable<core::components::Layout>();
-        middle_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        middle_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        middle_panel_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 36.0f, 36.0f };
-        middle_panel_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
-        middle_panel_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
-        middle_panel_container->setParent(*scene_editor_container);
-
-        auto middle_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPanel>("Entity::UI::UIRect::UIPanel");
-        auto &middle_panel_rect = middle_panel->getComponentMutable<core::components::UIRect>();
-        middle_panel_rect.color = core::types::Color::WHITE;
-        middle_panel_rect.corner_radius = { 4, 4, 4, 4 };
-        auto &middle_panel_layout = middle_panel->getComponentMutable<core::components::Layout>();
-        middle_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        middle_panel_layout.width.size = 0.3f;
-        middle_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        middle_panel_layout.height.size = 0.6f;
-        middle_panel->setParent(*middle_panel_container);
+        auto middle_panel_spacer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &middle_panel_spacer_layout = middle_panel_spacer->getComponentMutable<core::components::Layout>();
+        middle_panel_spacer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        middle_panel_spacer_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        middle_panel_spacer_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        middle_panel_spacer->setParent(*scene_editor_container);
 
         auto right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &right_panel_container_layout = right_panel_container->getComponentMutable<core::components::Layout>();

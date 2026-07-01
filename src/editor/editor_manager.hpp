@@ -75,6 +75,7 @@ namespace atmo::editor
         std::vector<std::shared_ptr<core::ecs::entities::UI>> m_editor_tool_containers;
         std::shared_ptr<core::ecs::entities::UI> m_editor_container;
         std::shared_ptr<core::ecs::entities::UIRect> m_topbar;
+        std::shared_ptr<core::ecs::entities::UIRect> m_toolbar;
     };
 } // namespace atmo::editor
 
