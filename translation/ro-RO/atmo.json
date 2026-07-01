@@ -1,7 +1,47 @@
 {
   "atmo": {
     "create": "Create",
-    "create_new_project": "Create New Project",
-    "open_project": "Open Project"
+    "create_new_project": "Create new project",
+    "open_project": "Open project",
+    "commands": {
+      "file": {
+        "category": "File",
+        "save": "Save",
+        "quit": "Quit"
+      },
+      "edit": {
+        "category": "Edit",
+        "undo": "Undo",
+        "redo": "Redo"
+      }
+    },
+    "open_new_editor": "Open new editor",
+    "editors": {
+      "scene_editor": {
+        "name": "Scene Editor",
+        "description": "Create and edit game scenes by placing, organizing, and configuring entities."
+      },
+      "texture_editor": {
+        "name": "Texture Editor",
+        "description": "Create and edit textures by drawing, layering, and animating 2D artwork."
+      }
+    },
+    "create_new_entity": "Create new entity",
+    "entities": {
+      "Entity": "Entity",
+      "Entity::Entity2d": "Entity2d",
+      "Entity::Entity2d::Camera2d": "Camera2d",
+      "Entity::Entity2d::Body2d": "Body2d",
+      "Entity::Entity2d::Body2d::Dynamic2d": "Dynamic2d",
+      "Entity::Entity2d::Body2d::Kinematic2d": "Kinematic2d",
+      "Entity::Entity2d::Body2d::Static2d": "Static2d",
+      "Entity::Entity2d::Sprite2d": "Sprite2d",
+      "Entity::UI": "UI",
+      "Entity::UI::UIRect": "UIRect",
+      "Entity::UI::UILabel": "UILabel",
+      "Entity::UI::UIRect::UIButton": "UIButton",
+      "Entity::UI::UIRect::UICheckBox": "UICheckBox",
+      "Entity::UI::UIRect::UIButton::UIFoldableTreeItem": "UIFoldableTreeItem"
+    }
   }
 }
