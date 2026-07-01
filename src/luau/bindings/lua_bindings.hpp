@@ -46,7 +46,7 @@ namespace atmo
              * @param L the luau instance where the code runs
              * @param t the type T you want to push
              */
-            static void push(lua_State *L, T *t)
+            static void Push(lua_State *L, T *t)
             {
                 auto *ud = static_cast<ComponentHandle *>(lua_newuserdata(L, sizeof(ComponentHandle)));
                 ud->component = t;
@@ -63,7 +63,7 @@ namespace atmo
              * @param t the type T you want to push that is already inside a shared_ptr
              * @param owned tell the luau if it should claim ownership
              */
-            static void push(lua_State *L, T *t, bool owned)
+            static void Push(lua_State *L, T *t, bool owned)
             {
                 auto *ud = static_cast<ComponentHandle *>(lua_newuserdata(L, sizeof(ComponentHandle)));
                 ud->component = t;
@@ -80,7 +80,7 @@ namespace atmo
              * @param index the index in the stack for the T object
              * @return T* the object requested, always check the value returned
              */
-            static T *check_ptr(lua_State *L, int index)
+            static T *CheckPtr(lua_State *L, int index)
             {
                 auto *ud = static_cast<ComponentHandle *>(luaL_checkudata(L, index, Derived::name));
                 if (!ud->component)

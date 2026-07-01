@@ -36,7 +36,7 @@ namespace atmo::impl
         m_build = build;
     }
 
-    Romver::Romver(const std::string &version)
+    Romver::Romver(const std::string &version) : m_major(0), m_minor(0), m_project(0)
     {
         *this = Parse(version);
     }

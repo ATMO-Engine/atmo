@@ -12,27 +12,27 @@
 #include "locale/locale_manager.hpp"
 
 @interface AtmoMenuItemTarget : NSObject
-- (instancetype)initWithAction:(std::function<void()>)action;
+- (instancetype)initWithAction:(std::function<void()>)act;
 - (void)menuItemClicked:(id)sender;
 @end
 
 @implementation AtmoMenuItemTarget {
-    std::function<void()> _action;
+    std::function<void()> action;
 }
 
-- (instancetype)initWithAction:(std::function<void()>)action
+- (instancetype)initWithAction:(std::function<void()>)act
 {
     self = [super init];
     if (self) {
-        _action = std::move(action);
+        action = std::move(act);
     }
     return self;
 }
 
 - (void)menuItemClicked:(id)sender
 {
-    if (_action) {
-        _action();
+    if (action) {
+        action();
     }
 }
 

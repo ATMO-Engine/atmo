@@ -84,13 +84,13 @@ namespace atmo::editor
                 field_label->setText(field_info.name);
                 field_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
                 field_label->setParent(*input_container);
-                auto widget = meta::WidgetRegistry::get().create(*input_container, entity.try_get_mut(entity_ti.first), field_info);
+                auto widget = meta::WidgetRegistry::Instance().create(*input_container, entity.try_get_mut(entity_ti.first), field_info);
                 if (widget) {
                     update_fns.push_back([entity, comp_id = entity_ti.first, field_info, w = *widget]() {
                         void *ptr = entity.try_get_mut(comp_id);
                         if (!ptr)
                             return;
-                        meta::WidgetRegistry::get().update(w, ptr, field_info);
+                        meta::WidgetRegistry::Instance().update(w, ptr, field_info);
                     });
                 }
                 input_container->setParent(child_UI->getChildContainer());

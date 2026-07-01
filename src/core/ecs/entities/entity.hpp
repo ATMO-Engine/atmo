@@ -367,7 +367,10 @@ namespace atmo::core::ecs::entities
          * @brief Compute an axis-aligned bounding box for this entity in world space.
          *        Returns a zero rect by default; overridden by concrete 2D entity types.
          */
-        virtual SDL_FRect computeAABB() const { return { 0.f, 0.f, 0.f, 0.f }; }
+        virtual SDL_FRect computeAABB() const
+        {
+            return { 0.f, 0.f, 0.f, 0.f };
+        }
 
         /**
          * @brief Swap the current entity with the dest Entity.

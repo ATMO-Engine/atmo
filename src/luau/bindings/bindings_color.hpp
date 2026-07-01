@@ -45,7 +45,7 @@ namespace atmo::luau
             float b = (float)luaL_checknumber(state, 3);
             float a = (float)luaL_checknumber(state, 4);
 
-            push(state, new Color(r, g, b, a), true);
+            Push(state, new Color(r, g, b, a), true);
             return 1;
         }
 

@@ -29,15 +29,15 @@ namespace atmo::core::components
         };
 
         struct TextRenderCache {
-            TTF_Text    *ttf_text       = nullptr;
-            SDL_Texture *texture        = nullptr;
-            bool         dirty          = true;
-            bool         engine_bound   = false;
+            TTF_Text *ttf_text = nullptr;
+            SDL_Texture *texture = nullptr;
+            bool dirty = true;
+            bool engine_bound = false;
 
-            SDL_Color    last_color     = {};
-            uint16_t     last_font_size = 0;
-            float        last_dpi_x     = 0.f;
-            float        last_dpi_y     = 0.f;
+            SDL_Color last_color = {};
+            uint16_t last_font_size = 0;
+            float last_dpi_x = 0.f;
+            float last_dpi_y = 0.f;
         };
 
         std::string text;
@@ -54,10 +54,10 @@ namespace atmo::core::components
         std::unique_ptr<resource::ResourceRef<TTF_Font>> m_res;
         std::unique_ptr<TextRenderCache> m_render_cache;
 
-        std::string   m_prev_text;
-        std::string   m_prev_font_path;
-        uint16_t      m_prev_font_size  = 0;
-        int           m_prev_font_style = -1;
+        std::string m_prev_text;
+        std::string m_prev_font_path;
+        uint16_t m_prev_font_size = 0;
+        int m_prev_font_style = -1;
     };
 } // namespace atmo::core::components
 
@@ -65,8 +65,7 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::UILabel> {
     static constexpr const char *name = "Text";
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::UILabel::text>("text"),
-        atmo::meta::field<&atmo::core::components::UILabel::font_size>("font_size"),
+        atmo::meta::field<&atmo::core::components::UILabel::text>("text"), atmo::meta::field<&atmo::core::components::UILabel::font_size>("font_size"),
         atmo::meta::field<&atmo::core::components::UILabel::font_path>("font_path").withWidget("file_path"),
         atmo::meta::field<&atmo::core::components::UILabel::letter_spacing>("letter_spacing"),
         atmo::meta::field<&atmo::core::components::UILabel::line_height>("line_height"),

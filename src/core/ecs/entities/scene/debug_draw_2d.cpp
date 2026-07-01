@@ -10,8 +10,14 @@
 #include "core/types.hpp"
 
 // Helpers to apply the camera transform to world-space Box2D coordinates.
-static inline float editorX(const EditorDebugContext *ctx, float wx) { return wx * ctx->zoom + ctx->pan.x; }
-static inline float editorY(const EditorDebugContext *ctx, float wy) { return wy * ctx->zoom + ctx->pan.y; }
+static inline float editorX(const EditorDebugContext *ctx, float wx)
+{
+    return wx * ctx->zoom + ctx->pan.x;
+}
+static inline float editorY(const EditorDebugContext *ctx, float wy)
+{
+    return wy * ctx->zoom + ctx->pan.y;
+}
 
 static void DrawTransform(b2Transform transform, void *context)
 {
@@ -283,8 +289,7 @@ static void DrawPolygon_Editor(const b2Vec2 *vertices, int vertexCount, b2HexCol
         return;
 
     std::vector<SDL_FPoint> points(static_cast<size_t>(vertexCount) + 1);
-    for (int i = 0; i < vertexCount; ++i)
-        points[static_cast<size_t>(i)] = { editorX(ctx, vertices[i].x), editorY(ctx, vertices[i].y) };
+    for (int i = 0; i < vertexCount; ++i) points[static_cast<size_t>(i)] = { editorX(ctx, vertices[i].x), editorY(ctx, vertices[i].y) };
     points[static_cast<size_t>(vertexCount)] = points[0];
 
     atmo::core::types::Color rgba = atmo::core::types::Color::FromHex(color);
@@ -309,11 +314,8 @@ static void DrawSolidPolygon_Editor(b2Transform transform, const b2Vec2 *vertice
     std::vector<SDL_Vertex> points(static_cast<size_t>(vertexCount));
     for (int i = 0; i < vertexCount; ++i) {
         b2Vec2 wp = b2TransformPoint(transform, vertices[i]);
-        points[static_cast<size_t>(i)] = SDL_Vertex{
-            .position = { editorX(ctx, wp.x), editorY(ctx, wp.y) },
-            .color = rgba.toFloat<SDL_FColor>(),
-            .tex_coord = { 0, 0 }
-        };
+        points[static_cast<size_t>(i)] =
+            SDL_Vertex{ .position = { editorX(ctx, wp.x), editorY(ctx, wp.y) }, .color = rgba.toFloat<SDL_FColor>(), .tex_coord = { 0, 0 } };
     }
 
     std::vector<int> indices;
@@ -332,8 +334,7 @@ static void DrawSolidPolygon_Editor(b2Transform transform, const b2Vec2 *vertice
     SDL_SetRenderDrawColor(ctx->renderer, oc[0], oc[1], oc[2], oc[3]);
 
     std::vector<SDL_FPoint> outline_pts(static_cast<size_t>(vertexCount) + 1);
-    for (int i = 0; i < vertexCount; ++i)
-        outline_pts[static_cast<size_t>(i)] = points[static_cast<size_t>(i)].position;
+    for (int i = 0; i < vertexCount; ++i) outline_pts[static_cast<size_t>(i)] = points[static_cast<size_t>(i)].position;
     outline_pts[static_cast<size_t>(vertexCount)] = points[0].position;
     SDL_RenderLines(ctx->renderer, outline_pts.data(), vertexCount + 1);
 
@@ -348,11 +349,9 @@ static void DrawSolidPolygon_Editor(b2Transform transform, const b2Vec2 *vertice
             cv[0] = SDL_Vertex{ .position = c, .color = rgba.toFloat<SDL_FColor>(), .tex_coord = { 0, 0 } };
             for (int s = 0; s <= k_segments; ++s) {
                 const float a = 2.0f * atmo::common::math::PI * (static_cast<float>(s) / static_cast<float>(k_segments));
-                cv[static_cast<size_t>(s) + 1] = SDL_Vertex{
-                    .position = { c.x + radius_px * std::cos(a), c.y + radius_px * std::sin(a) },
-                    .color = rgba.toFloat<SDL_FColor>(),
-                    .tex_coord = { 0, 0 }
-                };
+                cv[static_cast<size_t>(s) + 1] = SDL_Vertex{ .position = { c.x + radius_px * std::cos(a), c.y + radius_px * std::sin(a) },
+                                                             .color = rgba.toFloat<SDL_FColor>(),
+                                                             .tex_coord = { 0, 0 } };
             }
             for (int s = 0; s < k_segments; ++s) {
                 const size_t base = static_cast<size_t>(s) * 3;
@@ -387,11 +386,8 @@ static void DrawSolidCircle_Editor(b2Transform transform, float radius, b2HexCol
     verts[0] = SDL_Vertex{ .position = { cx, cy }, .color = rgba.toFloat<SDL_FColor>(), .tex_coord = { 0, 0 } };
     for (int i = 0; i <= k_segments; ++i) {
         const float a = 2.0f * atmo::common::math::PI * (static_cast<float>(i) / static_cast<float>(k_segments));
-        verts[static_cast<size_t>(i) + 1] = SDL_Vertex{
-            .position = { cx + r * std::cos(a), cy + r * std::sin(a) },
-            .color = rgba.toFloat<SDL_FColor>(),
-            .tex_coord = { 0, 0 }
-        };
+        verts[static_cast<size_t>(i) + 1] =
+            SDL_Vertex{ .position = { cx + r * std::cos(a), cy + r * std::sin(a) }, .color = rgba.toFloat<SDL_FColor>(), .tex_coord = { 0, 0 } };
     }
     for (int i = 0; i < k_segments; ++i) {
         const size_t base = static_cast<size_t>(i) * 3;
@@ -408,8 +404,7 @@ static void DrawSolidCircle_Editor(b2Transform transform, float radius, b2HexCol
     SDL_SetRenderDrawColor(ctx->renderer, oc[0], oc[1], oc[2], oc[3]);
 
     std::vector<SDL_FPoint> outline_pts(static_cast<size_t>(k_segments) + 1);
-    for (int i = 0; i <= k_segments; ++i)
-        outline_pts[static_cast<size_t>(i)] = verts[static_cast<size_t>(i) + 1].position;
+    for (int i = 0; i <= k_segments; ++i) outline_pts[static_cast<size_t>(i)] = verts[static_cast<size_t>(i) + 1].position;
     SDL_RenderLines(ctx->renderer, outline_pts.data(), k_segments + 1);
 }
 

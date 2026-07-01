@@ -149,6 +149,7 @@ namespace atmo::core
         using namespace atmo::core;
 
         InputManager::AddInput("ui_click", new InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
+        InputManager::AddInput("ui_rightClick", new InputManager::MouseButtonEvent(SDL_BUTTON_RIGHT), true);
         InputManager::AddInput("ui_scroll", new InputManager::MouseScrollEvent(), true);
         InputManager::AddInput("ui_pinch", new InputManager::PinchEvent(), true);
         InputManager::AddInput("ui_quit", new InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), true);
@@ -233,14 +234,14 @@ namespace atmo::core
 #endif
 
         while (m_ecs.progress(deltaTime)) {
-            SignalQueue::Flush();
-
             ATMO_PROFILE_FRAME();
 
             if (!m_running.load()) {
                 m_ecs.stop();
                 continue;
             }
+
+            SignalQueue::Flush();
 
 #if !defined(ATMO_EXPORT)
             progress_tick->delta_time = deltaTime;

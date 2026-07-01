@@ -37,7 +37,7 @@ namespace atmo::luau
     private:
         static int New(lua_State *state)
         {
-            push(state, new Transform2d(), true);
+            Push(state, new Transform2d(), true);
             return 1;
         }
 

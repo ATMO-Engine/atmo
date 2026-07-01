@@ -17,7 +17,7 @@ namespace atmo::core::components
             Float
         };
 
-        InputType input_type;
+        InputType input_type = InputType::Text;
         bool editing = false;
     };
 } // namespace atmo::core::components

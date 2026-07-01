@@ -1,6 +1,5 @@
 #pragma once
 
-#include <sys/_types/_u_int32_t.h>
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 
 namespace atmo::core::components
