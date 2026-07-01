@@ -6,6 +6,7 @@
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
+#include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -25,7 +26,9 @@
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
+#include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "editor/editor_registry.hpp"
+#include "editor/editors/editor.hpp"
 #include "flecs/addons/cpp/mixins/id/decl.hpp"
 #include "meta/widget_registry.hpp"
 #include "spdlog/spdlog.h"
@@ -292,22 +295,6 @@ namespace atmo::editor
         left_panel_pin_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
         left_panel_pin->setParent(*top_left_panel_container);
 
-        // auto save_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        // auto &save_button_rect = save_button->getComponentMutable<core::components::UIRect>();
-        // save_button_rect.color = core::types::Color::BLACK;
-        // save_button_rect.color.a = 0.5f;
-        // auto &save_button_layout = save_button->getComponentMutable<core::components::Layout>();
-        // save_button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        // save_button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        // save_button_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 60.0f, 60.0f };
-        // save_button->setParent(*top_left_panel_container);
-        // save_button->getSignal<bool>("Toggle").connect([this](bool /*state*/) {
-        //     if (!m_scene_ctx || !m_scene_ctx->isReady())
-        //         return;
-        //     const std::string path = m_scene_file_path.empty() ? "scene.json" : m_scene_file_path;
-        //     m_scene_ctx->saveSceneToFile(path);
-        // });
-
         auto content_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &content_left_panel_container_layout = content_left_panel_container->getComponentMutable<core::components::Layout>();
         content_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -326,13 +313,16 @@ namespace atmo::editor
         add_node_button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 36.0f, 36.0f };
         add_node_button->setParent(*content_left_panel_container);
 
+        auto window = add_node_button->getWindow()->getChildren()[0];
+        add_node_button->getSignal<>("Released").connect([this, window]() { createNewEntitySelectionPopup(window); });
+
         auto scene_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &scene_viewport_container_layout = scene_viewport_container->getComponentMutable<core ::components::Layout>();
         scene_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         scene_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         scene_viewport_container_layout.direction = core::components::Layout::Direction::Vertical;
-        scene_viewport_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
-        scene_viewport_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        scene_viewport_container_layout.clip.horizontal = true;
+        scene_viewport_container_layout.clip.vertical = true;
         scene_viewport_container_layout.padding = { 0, 0, 8, 8 };
         scene_viewport_container->setParent(*content_left_panel_container);
 
@@ -428,6 +418,18 @@ namespace atmo::editor
                 sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
             }
         }
+
+        m_scene_ctx->getScene()
+            ->getSignal<core::ecs::entities::Entity *>("child_added")
+            .connect([this, scene_viewport_container, component_viewport_container](core::ecs::entities::Entity *entity) {
+                sceneEntityFodableTreeinit(*entity, *scene_viewport_container, *component_viewport_container);
+            });
+    }
+
+    void SceneEditor::createTools()
+    {
+        p_tools = { Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "select", .icon_path = "project://assets/icons/x.svg" },
+                    Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "measure", .icon_path = "project://assets/icons/x.svg" } };
     }
 
     void SceneEditor::sceneEntityFodableTreeinit(
@@ -477,6 +479,103 @@ namespace atmo::editor
             //     child_container.visible = false;
             // }
         }
+    }
+
+    void SceneEditor::createNewEntitySelectionPopup(core::ecs::entities::Entity parent)
+    {
+        auto create_entity_popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
+        auto create_entity_bg = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        create_entity_bg->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        create_entity_bg->getComponentMutable<core::components::Layout>().width.size = 0.35f;
+        create_entity_bg->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        create_entity_bg->getComponentMutable<core::components::Layout>().height.size = 0.75f;
+        create_entity_bg->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
+        create_entity_bg->getComponentMutable<core::components::Layout>().padding = { 8, 8, 8, 8 };
+        create_entity_bg->getComponentMutable<core::components::Layout>().child_gap = 8;
+        create_entity_bg->getComponentMutable<core::components::UIRect>().color = core::types::Color("#9f9f9f");
+        create_entity_bg->setParent(*create_entity_popup);
+        create_entity_popup->setParent(parent);
+
+        auto create_entity_top_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        create_entity_top_bar->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Horizontal;
+        create_entity_top_bar->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        create_entity_top_bar->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        create_entity_top_bar->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
+        create_entity_top_bar->setParent(*create_entity_bg);
+
+        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        label->setText("atmo.create_new_entity");
+        label->setFontSize(24);
+        label->setParent(*create_entity_top_bar);
+
+        auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        close_btn_holder->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_btn_holder->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_btn_holder->getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
+        close_btn_holder->setParent(*create_entity_top_bar);
+        auto close_create_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &close_create_entity_btn_rect = close_create_entity_btn->getComponentMutable<core::components::UIRect>();
+        close_create_entity_btn_rect.color = core::types::Color::RED;
+        auto &close_create_entity_btn_layout = close_create_entity_btn->getComponentMutable<core::components::Layout>();
+        close_create_entity_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_create_entity_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_create_entity_btn_layout.aspect_ratio = { 1.0f, 1.0f };
+        close_create_entity_btn->getChildren()[0].destroy();
+        close_create_entity_btn->setParent(*close_btn_holder);
+        close_create_entity_btn->getSignal<>("Released").connect([create_entity_popup]() { create_entity_popup->destroy(); });
+
+        auto entity_creation_button_list = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().width.size = 1.0f;
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().child_gap = 8;
+        entity_creation_button_list->getComponentMutable<core::components::Layout>().clip.vertical = true;
+        entity_creation_button_list->setParent(*create_entity_bg);
+
+        for (auto t : core::ecs::EntityRegistry::GetEntries()) {
+            if (!core::ecs::EntityRegistry::IsAbstract(t)) {
+                auto create_btn = makeEntityCreationButton(t);
+                create_btn.getSignal<>("Released").connect([create_entity_popup]() { create_entity_popup->destroy(); });
+                create_btn.setParent(*entity_creation_button_list);
+            }
+        }
+    }
+
+    core::ecs::entities::UIButton SceneEditor::makeEntityCreationButton(const std::string &entity_id)
+    {
+        auto create_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &open_editor_btn_rect = create_entity_btn->getComponentMutable<core::components::UIRect>();
+        auto &create_entity_btn_layout = create_entity_btn->getComponentMutable<core::components::Layout>();
+        create_entity_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        create_entity_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        create_entity_btn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 0.0f };
+        create_entity_btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 0.0f };
+        create_entity_btn_layout.padding = { 8, 8, 8, 8 };
+        create_entity_btn_layout.child_gap = 8;
+        create_entity_btn_layout.direction = core::components::Layout::Direction::Vertical;
+        create_entity_btn->getChildren()[0].destroy();
+        create_entity_btn->getSignal<>("Released").connect([this, entity_id]() {
+            auto entity = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity_id);
+            entity->setParent(*m_scene_ctx->getScene());
+            m_scene_ctx->getScene()->getSignal<core::ecs::entities::Entity *>("child_added").emit(entity.get());
+        });
+
+        auto create_entity_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        create_entity_topbar->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        create_entity_topbar->getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        create_entity_topbar->getComponentMutable<core::components::Layout>().child_gap = 8;
+        create_entity_topbar->setParent(*create_entity_btn);
+
+        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
+        label->setText(entity_id);
+        label->setFontSize(11);
+        label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        label->setParent(*create_entity_topbar);
+
+        return *create_entity_btn;
     }
 
     flecs::entity SceneEditor::getSelectedEntity()

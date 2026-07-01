@@ -31,8 +31,6 @@ namespace atmo::editor
         }
 
         void init(atmo::core::ecs::entities::UI &container) override;
-
-    private:
-        core::types::Color m_brushColor = core::types::Color::BLACK;
+        void createTools() override;
     };
 } // namespace atmo::editor

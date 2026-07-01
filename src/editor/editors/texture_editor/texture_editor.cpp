@@ -396,6 +396,8 @@ namespace atmo::editor
             canvas.importCanvas("assets/save.png");
         });
     }
+
+    void TextureEditor::createTools() {}
 } // namespace atmo::editor
 
 ATMO_REGISTER_EDITOR(atmo::editor::TextureEditor);

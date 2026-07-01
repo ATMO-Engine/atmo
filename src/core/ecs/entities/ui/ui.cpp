@@ -44,6 +44,10 @@ namespace atmo::core::ecs::entities
             d.layout.padding.right = layout.padding.right;
             d.layout.padding.bottom = layout.padding.bottom;
             d.layout.padding.top = layout.padding.top;
+
+            if (layout.clip.horizontal || layout.clip.vertical)
+                d.clip = { .horizontal = layout.clip.horizontal, .vertical = layout.clip.vertical, .childOffset = Clay_GetScrollOffset() };
+
             d.layout.childAlignment = {
                 layout.child_alignment.horizontal == components::Layout::ChildAlignment::Start        ? CLAY_ALIGN_X_LEFT
                     : layout.child_alignment.horizontal == components::Layout::ChildAlignment::Center ? CLAY_ALIGN_X_CENTER
