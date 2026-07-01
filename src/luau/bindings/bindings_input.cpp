@@ -35,7 +35,7 @@ namespace atmo::luau
     int InputBindings::GetMousePosition(lua_State *state)
     {
         auto pos = atmo::core::InputManager::GetMousePosition();
-        LuaBindings<atmo::core::types::Vector2>::push(state, new atmo::core::types::Vector2(pos), true);
+        LuaBindings<atmo::core::types::Vector2>::Push(state, new atmo::core::types::Vector2(pos), true);
         return 1;
     }
 } // namespace atmo::luau

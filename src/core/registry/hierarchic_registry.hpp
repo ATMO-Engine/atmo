@@ -77,6 +77,13 @@ namespace atmo::core::registry
             return std::shared_ptr<T>(static_cast<T *>(basePtr));
         }
 
+        static bool IsAbstract(std::string_view name)
+        {
+            auto &registry = Instance().p_registry;
+            auto it = registry.find(std::string(name));
+            return it->second.is_abstract;
+        }
+
         template <typename Type> static void OnRegister() {};
         template <typename Type> static Root *Factorize();
 
@@ -96,7 +103,7 @@ namespace atmo::core::registry
         using Factory = Root *(*)(FactoryArgs...);
 
         struct Entry {
-            bool is_abstract;
+            bool is_abstract = false;
             std::optional<Factory> factory;
         };
 

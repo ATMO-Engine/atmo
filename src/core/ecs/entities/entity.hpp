@@ -10,18 +10,46 @@
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
-
+#include "SDL3/SDL_rect.h"
 #include "flecs.h"
+#include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
 
-#include "core/resource/loaders/script_loader.hpp"
-#include "core/resource/resource_manager.hpp"
-#include "core/resource/resource_ref.hpp"
-#include "luau/script_instance.hpp"
 #include "meta/component_meta.hpp"
 
 namespace atmo::core
 {
+    // Buffers signal callbacks emitted during Flecs readonly stages and flushes
+    // them after ecs_progress returns, when the world is writable again.
+    struct SignalQueue {
+        static void SetWorld(flecs::world *w)
+        {
+            s_world = w;
+        }
+
+        static bool IsReadonly()
+        {
+            return s_world && s_world->is_readonly();
+        }
+
+        static void Enqueue(std::function<void()> fn)
+        {
+            s_pending.emplace_back(std::move(fn));
+        }
+
+        static void Flush()
+        {
+            while (!s_pending.empty()) {
+                auto tasks = std::move(s_pending);
+                s_pending.clear();
+                for (auto &t : tasks) t();
+            }
+        }
+
+        static inline flecs::world *s_world = nullptr;
+        static inline std::vector<std::function<void()>> s_pending;
+    };
+
     struct ISignal {
         virtual ~ISignal() = default;
         virtual std::type_index type() const = 0;
@@ -55,8 +83,12 @@ namespace atmo::core
 
         void emit(Args... args)
         {
-            for (auto &cb : m_callbacks) {
-                cb(args...);
+            if (SignalQueue::IsReadonly()) {
+                SignalQueue::Enqueue([this, args...]() mutable {
+                    for (auto &cb : m_callbacks) cb(args...);
+                });
+            } else {
+                for (auto &cb : m_callbacks) cb(args...);
             }
         }
 
@@ -72,18 +104,7 @@ namespace atmo::core::components
         std::unordered_map<std::string, ISignal *> signals;
     };
 
-    struct Script {
-        std::string script_path;
-        std::unique_ptr<resource::ResourceRef<resource::Bytecode>> m_res;
-        atmo::luau::ScriptInstance *instance = nullptr;
-    };
 } // namespace atmo::core::components
-
-template <> struct atmo::meta::ComponentMeta<atmo::core::components::Script> {
-    static constexpr const char *name = "Script";
-    static constexpr const char *category = "Logic";
-    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::Script::script_path>("script_path").withWidget("file_path"));
-};
 
 namespace atmo::core::ecs::entities
 {
@@ -124,6 +145,15 @@ namespace atmo::core::ecs::entities
         EntityData serialize() const;
         void deserializeJson(std::string_view data);
         void deserialize(const EntityData &data);
+
+        /**
+         * @brief Deserialize an EntityData into this entity, creating children inside @p world.
+         *        Use this instead of deserialize() when this entity lives in an isolated (non-main) world.
+         *
+         * @param data Serialized entity data.
+         * @param world The isolated world to create child entities in.
+         */
+        void deserializeInWorld(const EntityData &data, flecs::world *world);
 
         /**
          * @brief Set a component for the entity.
@@ -167,6 +197,13 @@ namespace atmo::core::ecs::entities
         void initialize();
 
         /**
+         * @brief Get the Handle object
+         *
+         * @return flecs::entity
+         */
+        flecs::entity getHandle() const;
+
+        /**
          * @brief Get all of this entity's children.
          *
          * @param bool Should the returned list contain children of children recursively?
@@ -197,7 +234,13 @@ namespace atmo::core::ecs::entities
          *
          * @return Entity parent entity.
          */
-        Entity getParent();
+        template <typename ParentType = Entity> ParentType getParent() const
+        {
+            auto parent_handle = p_handle.parent();
+            if (!parent_handle.is_valid())
+                return ParentType();
+            return ParentType(parent_handle);
+        }
 
         /**
          * @brief Destroy the entity and remove it from scene.
@@ -211,7 +254,7 @@ namespace atmo::core::ecs::entities
          * @return true Entity is valid and alive.
          * @return false Entity is either invalid or destroyed.
          */
-        bool isAlive();
+        bool isAlive() const;
 
         /**
          * @brief Get the entity's name.
@@ -242,7 +285,6 @@ namespace atmo::core::ecs::entities
          * @return std::shared_ptr<entities::Scene> Scene that the entity belongs to.
          */
         std::shared_ptr<entities::Scene> getScene() const;
-
         /**
          * @brief Returns the internal ID of the entity.
          *
@@ -320,6 +362,22 @@ namespace atmo::core::ecs::entities
 
             return *static_cast<Signal<Args...> *>(base);
         }
+
+        /**
+         * @brief Compute an axis-aligned bounding box for this entity in world space.
+         *        Returns a zero rect by default; overridden by concrete 2D entity types.
+         */
+        virtual SDL_FRect computeAABB() const
+        {
+            return { 0.f, 0.f, 0.f, 0.f };
+        }
+
+        /**
+         * @brief Swap the current entity with the dest Entity.
+         *
+         * @param dest dest Entity
+         */
+        void swap(const Entity &dest);
 
     protected:
         flecs::entity p_handle;

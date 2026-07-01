@@ -1,8 +1,9 @@
 #include <memory>
 #include <spdlog/spdlog.h>
 #include "core/resource/loaders/font_loader.hpp"
-#include "core/resource/loaders/image_loader.hpp"
 #include "core/resource/loaders/script_loader.hpp"
+#include "core/resource/loaders/surface_loader.hpp"
+#include "core/resource/loaders/texture_loader.hpp"
 #include "core/resource/resource.hpp"
 
 namespace atmo
@@ -29,7 +30,12 @@ namespace atmo
 
             template <> inline std::unique_ptr<Resource<SDL_Surface>> createLoader()
             {
-                return std::make_unique<ImageLoader>();
+                return std::make_unique<SurfaceLoader>();
+            }
+
+            template <> inline std::unique_ptr<Resource<SDL_Texture>> createLoader()
+            {
+                return std::make_unique<TextureLoader>();
             }
         } // namespace resource
     } // namespace core

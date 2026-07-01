@@ -15,7 +15,6 @@
 #include "core/resource/resource.hpp"
 #include "i_resource_pool.hpp"
 #include "impl/profiler.hpp"
-#include "resource_ref.hpp"
 
 namespace atmo
 {
@@ -23,6 +22,8 @@ namespace atmo
     {
         namespace resource
         {
+            template <typename T> class ResourceRef;
+
             template <typename T> class ResourcePool : public IPoolGarbageCollector
             {
             public:
@@ -79,9 +80,9 @@ namespace atmo
                             ATMO_PROFILE_ZONE_TEXT("Ref:", 14);
                             ATMO_PROFILE_ZONE_VALUE(e.ref);
                             ATMO_PROFILE_ZONE_TEXT("Last Frame Use:", 16);
-                            ATMO_PROFILE_ZONE_VALUE(e.lastUsedFrame);
+                            ATMO_PROFILE_ZONE_VALUE(e.last_used_frame);
                             if (e.ref == 0) {
-                                if (currentFrame - e.lastUsedFrame > GRACE_FRAMES) {
+                                if (currentFrame - e.last_used_frame > GRACE_FRAMES) {
                                     ATMO_PROFILE_ZONE_TEXT("-- Resource delete --", 22);
                                     spdlog::debug("Destroy entry: " + std::to_string(i));
                                     destroyEntry(i);
@@ -103,7 +104,7 @@ namespace atmo
                 void pin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Pinned index: {}", handle.index);
-                    m_entries[handle.index].lastUsedFrame = tick;
+                    m_entries[handle.index].last_used_frame = tick;
                     m_entries[handle.index].ref++;
                 }
 
@@ -117,7 +118,7 @@ namespace atmo
                 void unpin(StoreHandle handle, uint64_t tick)
                 {
                     spdlog::debug("Unpinned index: {}", handle.index);
-                    m_entries[handle.index].lastUsedFrame = tick;
+                    m_entries[handle.index].last_used_frame = tick;
                     m_entries[handle.index].ref--;
                 }
 
@@ -142,16 +143,16 @@ namespace atmo
                         std::uint16_t idx = m_freeList.back();
                         m_freeList.pop_back();
                         m_entries.at(idx).resource = res;
-                        m_entries.at(idx).lastUsedFrame = tick;
+                        m_entries.at(idx).last_used_frame = tick;
                         m_entries.at(idx).ref = 0;
 
                         newHandle.index = idx;
                         newHandle.generation = m_entries.at(idx).generation;
                     } else {
                         ATMO_PROFILE_ZONE_TEXT("Created new entry", 18);
-                        Entry newRes = { .resource = nullptr, .generation = 1, .ref = 0, .lastUsedFrame = 0 };
+                        Entry newRes = { .resource = nullptr, .generation = 1, .ref = 0, .last_used_frame = 0 };
                         newRes.resource = res;
-                        newRes.lastUsedFrame = tick;
+                        newRes.last_used_frame = tick;
 
                         newHandle.index = m_entries.size();
                         newHandle.generation = 1;
@@ -202,7 +203,7 @@ namespace atmo
                     uint32_t generation = 1;
 
                     uint32_t ref = 0;
-                    uint32_t lastUsedFrame = 0;
+                    uint32_t last_used_frame = 0;
                 };
 
                 void destroyEntry(int index)

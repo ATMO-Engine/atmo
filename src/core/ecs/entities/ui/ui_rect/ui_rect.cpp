@@ -1,4 +1,6 @@
 #include "ui_rect.hpp"
+#include "clay.h"
+#include "core/event/events/ui_event/hover_event/hover_event.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 

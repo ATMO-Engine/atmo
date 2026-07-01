@@ -15,4 +15,4 @@ namespace atmo::core::event::events
 } // namespace atmo::core::event::events
 
 
-REGISTER_EVENT(Event);
+ATMO_REGISTER_EVENT(atmo::core::event::events::Event);

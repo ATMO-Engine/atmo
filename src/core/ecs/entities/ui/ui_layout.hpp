@@ -37,13 +37,40 @@ namespace atmo::core::components
             std::uint16_t bottom = 0;
         };
 
+        enum class ChildAlignment {
+            Start,
+            Center,
+            End
+        };
+
+        struct ChildAlignmentAxis {
+            ChildAlignment horizontal = ChildAlignment::Start;
+            ChildAlignment vertical = ChildAlignment::Start;
+        };
+
+        struct AspectRatio {
+            float width = 0.0f;
+            float height = 0.0f;
+        };
+
+        struct Clip {
+            bool horizontal = false;
+            bool vertical = false;
+        };
+
         Direction direction = Direction::Horizontal;
+
         SizingAxis width;
         SizingAxis height;
-
+        AspectRatio aspect_ratio;
         Padding padding;
+        Clip clip;
 
+        ChildAlignmentAxis child_alignment;
         std::uint16_t child_gap = 0;
+
+        bool floating = false;
+        std::uint16_t z_index = 0;
     };
 } // namespace atmo::core::components
 
@@ -73,5 +100,6 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout> {
     static constexpr const char *category = "UI";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::Layout::width>("width"), atmo::meta::field<&atmo::core::components::Layout::height>("height"),
-        atmo::meta::field<&atmo::core::components::Layout::padding>("padding"), atmo::meta::field<&atmo::core::components::Layout::child_gap>("gap"));
+        atmo::meta::field<&atmo::core::components::Layout::padding>("padding"), atmo::meta::field<&atmo::core::components::Layout::child_gap>("gap"),
+        atmo::meta::field<&atmo::core::components::Layout::floating>("floating"));
 };

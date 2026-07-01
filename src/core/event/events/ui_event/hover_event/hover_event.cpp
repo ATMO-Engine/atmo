@@ -1,3 +1,3 @@
 #include "hover_event.hpp"
 
-REGISTER_EVENT(HoverEvent);
+ATMO_REGISTER_EVENT(atmo::core::event::events::HoverEvent);

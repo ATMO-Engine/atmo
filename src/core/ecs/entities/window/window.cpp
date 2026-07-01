@@ -2,12 +2,14 @@
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "core/ecs/world_context.hpp"
 
 #include <cstdint>
 #include "core/args/arg_manager.hpp"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "core/input/input_manager.hpp"
@@ -31,6 +33,10 @@ namespace atmo::core::ecs::entities
 {
     void Window::RegisterSystems(flecs::world *world)
     {
+        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
+        if (ctx && ctx->is_editor_isolated)
+            return;
+
         world->system<components::Window>("PollEvents").kind(flecs::PreUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
             entities::Window entity(it.entity(i));
             entity.pollEvents(it.delta_time());
@@ -43,6 +49,14 @@ namespace atmo::core::ecs::entities
         });
 
         world->observer<components::Window>().event(flecs::OnRemove).each([](flecs::entity e, components::Window &window) {
+            // Destroy all UILabel cached textures before the renderer is destroyed
+            e.world().each<components::UILabel>([](components::UILabel &label) {
+                if (label.m_render_cache && label.m_render_cache->texture) {
+                    SDL_DestroyTexture(label.m_render_cache->texture);
+                    label.m_render_cache->texture = nullptr;
+                }
+            });
+
             if (window.renderer_data.renderer) {
                 SDL_DestroyRenderer(window.renderer_data.renderer);
                 window.renderer_data.renderer = nullptr;
@@ -66,13 +80,20 @@ namespace atmo::core::ecs::entities
         });
     }
 
-    static inline Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
+    static Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
     {
-        auto d = (TTF_Text *)config->userData;
-        int width, height;
-        TTF_Font *font = TTF_GetTextFont(d);
+        auto *cache = static_cast<components::UILabel::TextRenderCache *>(config->userData);
+        if (!cache || !cache->ttf_text)
+            return Clay_Dimensions{ 0.0f, 0.0f };
 
-        TTF_SetFontSize(font, config->fontSize);
+        auto *renderer = static_cast<SDL_Renderer *>(data);
+        SDL_Window *sdl_win = renderer ? SDL_GetRenderWindow(renderer) : nullptr;
+        const float scale = sdl_win ? SDL_GetWindowDisplayScale(sdl_win) : 1.0f;
+
+        int width, height;
+        TTF_Font *font = TTF_GetTextFont(cache->ttf_text);
+        TTF_SetFontSizeDPI(font, config->fontSize, static_cast<unsigned int>(scale * 96), static_cast<unsigned int>(scale * 96));
+
         if (!TTF_GetStringSize(font, text.chars, text.length, &width, &height)) {
             spdlog::error("Failed to measure text: {}", SDL_GetError());
         }
@@ -84,34 +105,35 @@ namespace atmo::core::ecs::entities
     {
         Entity::initialize();
 
-        setComponent<components::Window>({ "Atmo Engine", { 800, 600 } });
-        auto window = p_handle.get_ref<components::Window>();
+        setComponent<components::Window>({ "Atmo Engine", project::ProjectManager::GetSettings().window.size });
+        auto &window = getComponentMutable<components::Window>();
 
         static constexpr SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY | RENDERING_PLATFORM;
 
         if (args::ArgManager::Get<bool>("--headless") == false &&
-            SDL_CreateWindowAndRenderer(window->title.c_str(), window->size.x, window->size.y, flags, &window->window, &window->renderer_data.renderer)) {
-            updateDPI(*window.get());
-            SDL_SetWindowResizable(window->window, true);
+            SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &window.window, &window.renderer_data.renderer)) {
+            resource::ResourceManager::GetInstance().setRenderer(window.renderer_data.renderer);
+            updateDPI(window);
+            SDL_SetWindowResizable(window.window, true);
 
-            window->renderer_data.text_engine = TTF_CreateRendererTextEngine(window->renderer_data.renderer);
-            if (!window->renderer_data.text_engine) {
+            window.renderer_data.text_engine = TTF_CreateRendererTextEngine(window.renderer_data.renderer);
+            if (!window.renderer_data.text_engine) {
                 spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
                 return;
             }
 
             auto totalMemSize = Clay_MinMemorySize();
-            window->clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
+            window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
-            Clay_Initialize(window->clay_arena, { (float)window->size.x, (float)window->size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
+            Clay_Initialize(window.clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
                                 spdlog::error("Clay error: {}", errorData.errorText.chars);
                             } });
 
-            Clay_SetMeasureTextFunction(measureText, nullptr);
+            Clay_SetMeasureTextFunction(measureText, &window.dpi_scale);
         } else if (args::ArgManager::Get<bool>("--headless") == false) {
             spdlog::error("Failed to create window and renderer: {}", SDL_GetError());
         } else {
-            window->headless = true;
+            window.headless = true;
         }
     }
 
@@ -154,6 +176,11 @@ namespace atmo::core::ecs::entities
         }
     }
 
+    types::Vector2 Window::getDPIScale() const noexcept
+    {
+        return getComponent<components::Window>().dpi_scale;
+    }
+
     void Window::focus()
     {
         auto window = p_handle.get_ref<components::Window>();
@@ -174,8 +201,8 @@ namespace atmo::core::ecs::entities
                 case SDL_EVENT_WINDOW_RESIZED:
                     Clay_SetLayoutDimensions({ (float)event.window.data1, (float)event.window.data2 });
                     break;
-                case SDL_EVENT_MOUSE_MOTION:
-                    Clay_SetPointerState({ event.motion.x, event.motion.y }, event.motion.state & SDL_BUTTON_LMASK);
+                case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+                    updateDPI(getComponentMutable<components::Window>());
                     break;
                 default:
                     auto default_event = atmo::core::event::EventRegistry::Create<atmo::core::event::events::InputEvent>("Event::SDLEvent::InputEvent");
@@ -201,15 +228,13 @@ namespace atmo::core::ecs::entities
         if (window.headless)
             return;
 
-        if (core::InputManager::IsJustPressed("ui_click")) {
-            auto pos = core::InputManager::GetMousePosition();
-            Clay_SetPointerState({ pos.x, pos.y }, true);
-        }
+        bool clickState = false;
+        auto pos = core::InputManager::GetMousePosition();
 
-        if (core::InputManager::IsJustReleased("ui_click")) {
-            auto pos = core::InputManager::GetMousePosition();
-            Clay_SetPointerState({ pos.x, pos.y }, false);
+        if (core::InputManager::IsJustPressed("ui_click") || core::InputManager::IsPressed("ui_click")) {
+            clickState = true;
         }
+        Clay_SetPointerState({ pos.x, pos.y }, clickState);
 
         auto scroll = core::InputManager::GetScrollDelta("ui_scroll");
         if (scroll.first.x != 0 || scroll.first.y != 0)

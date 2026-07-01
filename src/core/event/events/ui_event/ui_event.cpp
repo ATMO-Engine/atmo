@@ -1,3 +1,3 @@
 #include "ui_event.hpp"
 
-REGISTER_EVENT(UIEvent);
+ATMO_REGISTER_EVENT(atmo::core::event::events::UIEvent);

@@ -4,6 +4,7 @@
 
 #include "clay.h"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
 #include "impl/clay_types.hpp"
@@ -15,7 +16,7 @@ namespace atmo::core::components
     struct UI {
         bool visible{ true };
         types::Color modulate{ types::Color::WHITE };
-        Clay_ElementId element_id;
+        Clay_ElementId element_id{};
     };
 } // namespace atmo::core::components
 
@@ -46,11 +47,14 @@ namespace atmo::core::ecs::entities
         void internalDraw(ClaySdL3RendererData *data);
         virtual void draw(ClaySdL3RendererData *data);
 
+        std::shared_ptr<entities::Window> getWindow() const;
+
     protected:
         virtual Clay_ElementDeclaration buildDecl();
 
-    private:
         Clay_ElementId getIdForEntity();
+
+    private:
         void configureSizingAxis(Clay_SizingAxis &sizing, const components::Layout::SizingAxis &axis);
     };
 } // namespace atmo::core::ecs::entities

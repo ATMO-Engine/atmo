@@ -1,8 +1,13 @@
 #include "entity.hpp"
+#include <algorithm>
+#include <iterator>
 #include <memory>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
+#include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "flecs/addons/cpp/c_types.hpp"
+#include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
 #include "meta/meta_registry.hpp"
 #include "spdlog/spdlog.h"
@@ -67,6 +72,7 @@ namespace atmo::core::ecs::entities
         createSignal<Entity *>("child_added");
         createSignal<Entity *>("child_removed");
         createSignal<std::string, std::string>("renamed");
+        p_handle.add(flecs::OrderedChildren);
     }
 
     EntityData Entity::serialize() const
@@ -84,7 +90,7 @@ namespace atmo::core::ecs::entities
             if (!ti || !ti->to_json)
                 return;
 
-            const void *comp = p_handle.get(id);
+            const void *comp = p_handle.try_get(id);
             if (!comp)
                 return;
 
@@ -131,6 +137,42 @@ namespace atmo::core::ecs::entities
         }
     }
 
+    void Entity::deserializeInWorld(const EntityData &data, flecs::world *world)
+    {
+        rename(data.name);
+
+        flecs::world entity_world = p_handle.world();
+
+        for (const auto &[comp_name, comp_json] : data.components) {
+            const meta::TypeInfo *ti = meta::MetaRegistry::Instance().find(comp_name);
+            if (!ti || !ti->from_json || !ti->resolve_flecs_id)
+                continue;
+
+            const uint64_t local_id = ti->resolve_flecs_id(entity_world);
+            if (local_id == 0)
+                continue;
+
+            void *comp = p_handle.get_mut(flecs::id(entity_world, local_id));
+            if (!comp)
+                continue;
+
+            ti->from_json(comp, comp_json.dump().value());
+        }
+
+        for (const EntityData &child : data.children) {
+            auto child_entity = ecs::EntityRegistry::CreateIn(world, child.type);
+            if (!child_entity)
+                continue;
+            child_entity->deserializeInWorld(child, world);
+            child_entity->setParent(*this);
+        }
+    }
+
+    flecs::entity Entity::getHandle() const
+    {
+        return p_handle;
+    }
+
     std::vector<Entity> Entity::getChildren(bool recursive) const
     {
         std::vector<Entity> res;
@@ -155,19 +197,14 @@ namespace atmo::core::ecs::entities
         return p_handle.lookup(name.data());
     }
 
-    Entity Entity::getParent()
-    {
-        return p_handle.parent();
-    }
-
     void Entity::destroy()
     {
         p_handle.destruct();
     }
 
-    bool Entity::isAlive()
+    bool Entity::isAlive() const
     {
-        return p_handle.is_valid();
+        return p_handle.is_alive();
     }
 
     std::string_view Entity::name() const
@@ -203,6 +240,24 @@ namespace atmo::core::ecs::entities
     std::uint64_t Entity::getID() const
     {
         return p_handle.id();
+    }
+
+    void Entity::swap(const Entity &dest)
+    {
+        if (getParent() != dest.getParent())
+            return;
+
+        std::vector<flecs::entity_t> children;
+
+        getParent().p_handle.children([&children](flecs::entity_t child) { children.push_back(child); });
+
+        auto this_it = std::find(children.begin(), children.end(), p_handle);
+        auto this_index = std::distance(children.begin(), this_it);
+        auto dest_it = std::find(children.begin(), children.end(), dest.p_handle);
+        auto dest_index = std::distance(children.begin(), dest_it);
+        std::swap(children[this_index], children[dest_index]);
+
+        getParent().p_handle.set_child_order(children.data(), static_cast<int32_t>(children.size()));
     }
 } // namespace atmo::core::ecs::entities
 

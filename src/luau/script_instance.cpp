@@ -40,7 +40,7 @@ namespace atmo
 
             lua_State *newThread = lua_newthread(state);
 
-            int r = lua_ref(state, LUA_REGISTRYINDEX);
+            int r = lua_ref(state, -1);
             ref.set(r);
 
             // not used now, but will be usefull if we ever need the code to get the script instance
@@ -54,7 +54,7 @@ namespace atmo
         {
             lua_pushvalue(thread, LUA_GLOBALSINDEX);
 
-            int ref = lua_ref(thread, LUA_REGISTRYINDEX);
+            int ref = lua_ref(thread, -1);
             m_envRef.set(ref);
         }
 

@@ -12,6 +12,7 @@ namespace atmo::core::components
 {
     struct Sprite2d {
         std::string texture_path;
+        std::string prev_texture_path;
         std::unique_ptr<resource::ResourceRef<SDL_Surface>> m_res;
         types::Vector2 texture_size{ 0.0f, 0.0f };
     };
@@ -43,5 +44,7 @@ namespace atmo::core::ecs::entities
         std::string_view getTexturePath() const noexcept;
 
         types::Vector2 getTextureSize() const noexcept;
+
+        SDL_FRect computeAABB() const override;
     };
 } // namespace atmo::core::ecs::entities

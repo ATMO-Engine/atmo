@@ -6,25 +6,32 @@
 
 #include "SDL3/SDL_error.h"
 #include "SDL3/SDL_hints.h"
+#include "SDL3/SDL_scancode.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "args/arg_manager.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
+#include "core/ecs/entities/script.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/ecs/world_context.hpp"
+#include "core/event/event_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
 #include "impl/profiler.hpp"
+#include "luau/luau.hpp"
+#include "luau/script_instance.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "spdlog/spdlog-inl.h"
 #include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)
-#include "editor/editor.hpp"
+#include "editor/editor_manager.hpp"
 #endif
 
 static atmo::core::args::ArgManager::LaunchResult handleArgHelp(atmo::core::args::ArgManager &argManager)
@@ -142,9 +149,12 @@ namespace atmo::core
         using namespace atmo::core;
 
         InputManager::AddInput("ui_click", new InputManager::MouseButtonEvent(SDL_BUTTON_LEFT), true);
+        InputManager::AddInput("ui_rightClick", new InputManager::MouseButtonEvent(SDL_BUTTON_RIGHT), true);
         InputManager::AddInput("ui_scroll", new InputManager::MouseScrollEvent(), true);
-        InputManager::AddInput("ui_quit", new InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), false);
-        InputManager::AddInput("ui_confirm", new InputManager::KeyEvent(SDL_SCANCODE_RETURN, true), false);
+        InputManager::AddInput("ui_pinch", new InputManager::PinchEvent(), true);
+        InputManager::AddInput("ui_quit", new InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), true);
+        InputManager::AddInput("ui_confirm", new InputManager::KeyEvent(SDL_SCANCODE_RETURN, true), true);
+        InputManager::AddInput("ui_delete", new InputManager::KeyEvent(SDL_SCANCODE_BACKSPACE, true), true);
 
         return 0;
     }
@@ -203,48 +213,14 @@ namespace atmo::core
         InputManager::AddInput("D", new InputManager::KeyEvent(SDLK_D, false));
         InputManager::AddInput("Q", new InputManager::KeyEvent(SDLK_Q, false));
 
-        auto rectangle_shape = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-        rectangle_shape->setSize({ 800, 100 });
-
-        auto static_body = ecs::EntityRegistry::Create<ecs::entities::Static2d>("Entity::Entity2d::Body2d::Static2d");
-        static_body->addShape(rectangle_shape);
-        static_body->setPosition({ 800, 500 });
-        static_body->setParent(*scene);
-
-        auto rectangle_shape2 = resource::SubResourceRegistry::Create<resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-        rectangle_shape2->setSize({ 80, 80 });
-
-        auto dynamic_body = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
-        dynamic_body->addShape(rectangle_shape2);
-        dynamic_body->setPosition({ 410, 300 });
-        dynamic_body->setParent(*scene);
-
-        auto circle_shape = resource::SubResourceRegistry::Create<resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
-        circle_shape->setRadius(40.0f);
-        circle_shape->getShapeDef().density = 2.0f;
-        circle_shape->getShapeDef().material.rollingResistance = 0.02f;
-
-        auto dynamic_body2 = ecs::EntityRegistry::Create<ecs::entities::Dynamic2d>("Entity::Entity2d::Body2d::Dynamic2d");
-        dynamic_body2->addShape(circle_shape);
-        dynamic_body2->setPosition({ 450, 0 });
-        dynamic_body2->setParent(*scene);
-
-
-        // Sprite
-        auto sprite = ecs::EntityRegistry::Create<ecs::entities::Sprite2d>("Entity::Entity2d::Sprite2d");
-        sprite->setTexturePath("project://assets/atmo.png");
-        sprite->setPosition({ 1200, 500 });
-        sprite->setParent(*scene);
-
-
-        atmo::core::components::Script t = {};
-        atmo::luau::ScriptInstance inst = vm.generateInstance();
-        t.instance = &inst;
-        t.script_path = "project://assets/script/luau_bindings_test.luau";
-        sprite->setComponent(t);
+        // atmo::core::components::Script t = {};
+        // atmo::luau::ScriptInstance inst = vm.generateInstance();
+        // t.instance = &inst;
+        // t.script_path = "project://assets/script/luau_bindings_test.luau";
+        // sprite->setComponent(t);
 
 #if !defined(ATMO_EXPORT)
-        editor::Editor editor(*this, "");
+        editor::EditorManager editor(*this, "");
         editor.init();
 #endif
 
@@ -253,17 +229,26 @@ namespace atmo::core
         float title_update_accumulator = 0.0f;
         int frame_count = 0;
 
+#if !defined(ATMO_EXPORT)
+        auto progress_tick = event::EventRegistry::Create<atmo::editor::ProgressTickEvent>("Event::ProgressTickEvent");
+#endif
+
         while (m_ecs.progress(deltaTime)) {
             ATMO_PROFILE_FRAME();
 
-            if (InputManager::IsPressed("ui_quit"))
-                m_running.store(false);
+            if (!m_running.load()) {
+                m_ecs.stop();
+                continue;
+            }
 
+            SignalQueue::Flush();
+
+#if !defined(ATMO_EXPORT)
+            progress_tick->delta_time = deltaTime;
+            event::EventRegistry::Dispatch(progress_tick);
+#endif
 
             InputManager::Tick();
-
-            if (!m_running.load())
-                m_ecs.stop();
 
             auto current_time = std::chrono::steady_clock::now();
             std::chrono::duration<float> dt = current_time - last_time;

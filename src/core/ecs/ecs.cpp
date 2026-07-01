@@ -4,8 +4,11 @@
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/ecs/world_context.hpp"
+#include "core/event/event_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/scene/scene_manager.hpp"
+#include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
@@ -31,6 +34,7 @@ namespace atmo::core::ecs
 #endif
 
         components::register_core_components(m_world);
+        m_world.set<components::WorldContext>({ .is_editor_isolated = false });
     }
 
     std::shared_ptr<entities::Scene> ECS::createScene(const std::string &scene_name, bool singleton)
@@ -65,3 +69,9 @@ namespace atmo::core::ecs
         return m_scene_manager.getCurrentScene();
     }
 } // namespace atmo::core::ecs
+
+ATMO_REGISTER_COMPONENT(atmo::core::components::WorldContext);
+
+#if !defined(ATMO_EXPORT)
+ATMO_REGISTER_EVENT(atmo::editor::ProgressTickEvent);
+#endif

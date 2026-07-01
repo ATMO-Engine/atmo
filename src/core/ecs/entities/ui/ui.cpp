@@ -1,6 +1,7 @@
 #include "ui.hpp"
 #include "common/math.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "meta/auto_register.hpp"
 
 #include "clay.h"
@@ -36,13 +37,33 @@ namespace atmo::core::ecs::entities
             configureSizingAxis(d.layout.sizing.width, layout.width);
             configureSizingAxis(d.layout.sizing.height, layout.height);
 
+            if (layout.aspect_ratio.width > 0.0f && layout.aspect_ratio.height > 0.0f)
+                d.aspectRatio = { .aspectRatio = layout.aspect_ratio.width / layout.aspect_ratio.height };
+
             d.layout.padding.left = layout.padding.left;
             d.layout.padding.right = layout.padding.right;
             d.layout.padding.bottom = layout.padding.bottom;
             d.layout.padding.top = layout.padding.top;
 
+            if (layout.clip.horizontal || layout.clip.vertical)
+                d.clip = { .horizontal = layout.clip.horizontal, .vertical = layout.clip.vertical, .childOffset = Clay_GetScrollOffset() };
+
+            d.layout.childAlignment = {
+                layout.child_alignment.horizontal == components::Layout::ChildAlignment::Start        ? CLAY_ALIGN_X_LEFT
+                    : layout.child_alignment.horizontal == components::Layout::ChildAlignment::Center ? CLAY_ALIGN_X_CENTER
+                                                                                                      : CLAY_ALIGN_X_RIGHT,
+                layout.child_alignment.vertical == components::Layout::ChildAlignment::Start        ? CLAY_ALIGN_Y_TOP
+                    : layout.child_alignment.vertical == components::Layout::ChildAlignment::Center ? CLAY_ALIGN_Y_CENTER
+                                                                                                    : CLAY_ALIGN_Y_BOTTOM,
+            };
+
             d.layout.childGap = layout.child_gap;
             d.layout.layoutDirection = layout.direction == components::Layout::Direction::Horizontal ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM;
+
+            if (layout.floating)
+                d.floating.attachTo = CLAY_ATTACH_TO_ROOT;
+
+            d.floating.zIndex = layout.z_index;
         }
 
         return d;
@@ -64,6 +85,9 @@ namespace atmo::core::ecs::entities
 
         if (has_ui_child) {
             for (auto child : children) {
+                if (child.hasComponent<components::UI>())
+                    if (child.getComponentMutable<components::UI>().visible == false)
+                        continue;
                 auto wrapped = EntityRegistry::Wrap(child);
                 if (auto *ui = dynamic_cast<entities::UI *>(wrapped.get()))
                     ui->internalDraw(data);
@@ -103,6 +127,20 @@ namespace atmo::core::ecs::entities
                 sizing.type = CLAY__SIZING_TYPE_PERCENT;
                 break;
         }
+    }
+
+    std::shared_ptr<entities::Window> UI::getWindow() const
+    {
+        flecs::entity current = p_handle;
+
+        while (current.is_valid()) {
+            if (current.has<components::Window>()) {
+                return std::make_shared<entities::Window>(current);
+            }
+            current = current.parent();
+        }
+
+        return nullptr;
     }
 } // namespace atmo::core::ecs::entities
 

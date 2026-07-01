@@ -96,4 +96,16 @@ namespace atmo::meta
         return FieldDescriptor<Owner, MemberPtr>{ .name = name };
     }
 
+    template <typename T> struct DefaultWidget {
+        static constexpr const char *value = nullptr;
+    };
+
+    template <> struct DefaultWidget<int> {
+        static constexpr const char *value = "int";
+    };
+
+    template <> struct DefaultWidget<float> {
+        static constexpr const char *value = "float";
+    };
+
 } // namespace atmo::meta
