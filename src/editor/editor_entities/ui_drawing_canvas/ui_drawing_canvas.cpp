@@ -256,18 +256,31 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
         auto [scrollDelta, deltaTime] = core::InputManager::GetScrollDelta("ui_scroll");
-        if (scrollDelta.y != 0.0f) {
-            float oldZoom = comp.zoom;
-            comp.zoom = common::math::Clamp(comp.zoom + scrollDelta.y * 0.1f, 0.5f, 10.0f);
+        if (scrollDelta.y == 0.0f)
+            return;
 
-            float relativeX = (mousePosInScreen.x - comp.cached_texture_rect.x) / comp.cached_texture_rect.w;
-            float relativeY = (mousePosInScreen.y - comp.cached_texture_rect.y) / comp.cached_texture_rect.h;
+        float oldZoom = comp.zoom;
+        float newZoom = common::math::Clamp(comp.zoom + scrollDelta.y * 0.1f, 0.5f, 10.0f);
+        if (newZoom == oldZoom)
+            return;
 
-            comp.offset.x += (comp.bounds.width / 2.0f - (relativeX - 0.5f) * comp.bounds.width) * (comp.zoom - oldZoom);
-            comp.offset.y += (comp.bounds.height / 2.0f - (relativeY - 0.5f) * comp.bounds.height) * (comp.zoom - oldZoom);
+        SDL_FRect oldRect = comp.cached_texture_rect;
+        if (oldRect.w <= 0.0f || oldRect.h <= 0.0f)
+            return;
 
-            clampOffset(comp);
-        }
+        float relativeX = (mousePosInScreen.x - oldRect.x) / oldRect.w;
+        float relativeY = (mousePosInScreen.y - oldRect.y) / oldRect.h;
+
+        comp.zoom = newZoom;
+
+        float fitScale = computeFitScale(comp);
+        float baseDrawW = comp.texture_size.x * fitScale;
+        float baseDrawH = comp.texture_size.y * fitScale;
+
+        comp.offset.x = mousePosInScreen.x - comp.bounds.x - (comp.bounds.width - baseDrawW * newZoom) / 2.0f - relativeX * baseDrawW * newZoom;
+        comp.offset.y = mousePosInScreen.y - comp.bounds.y - (comp.bounds.height - baseDrawH * newZoom) / 2.0f - relativeY * baseDrawH * newZoom;
+
+        clampOffset(comp);
     }
 
     void UIDrawingCanvas::handlePan(const atmo::core::types::Vector2 &mousePosInScreen)
@@ -414,19 +427,21 @@ namespace atmo::core::ecs::entities
 
         for (int y = minY; y <= maxY; ++y) {
             for (int x = minX; x <= maxX; ++x) {
+                float pixelCenterX = x + 0.5f;
+                float pixelCenterY = y + 0.5f;
+
                 float t = 0.0f;
 
                 if (segmentLengthSquared > 0.0f) {
-                    t = ((x - from.x) * dx + (y - from.y) * dy) / segmentLengthSquared;
-
+                    t = ((pixelCenterX - from.x) * dx + (pixelCenterY - from.y) * dy) / segmentLengthSquared;
                     t = std::clamp(t, 0.0f, 1.0f);
                 }
 
                 float closestX = from.x + t * dx;
                 float closestY = from.y + t * dy;
 
-                float distX = x - closestX;
-                float distY = y - closestY;
+                float distX = pixelCenterX - closestX;
+                float distY = pixelCenterY - closestY;
 
                 float distanceSquared = distX * distX + distY * distY;
 
@@ -495,9 +510,18 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIDrawingCanvas::exportCanvas(const std::string &path)
+    void UIDrawingCanvas::saveCanvas()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        std::string path = comp.file_path;
+
+        if (path.empty()) {
+            // TODO: pop up filePath
+            spdlog::info("Save Canvas: File path empty, no op");
+            return;
+        }
+
         int w = comp.texture_size.x;
         int h = comp.texture_size.y;
         if (w <= 0 || h <= 0 || comp.pixels.empty())
@@ -526,7 +550,7 @@ namespace atmo::core::ecs::entities
                 SDL_SaveBMP(surface, path.c_str());
                 break;
             case core::components::UIDrawingCanvas::ExportFormat::JPG:
-                IMG_SaveJPG(surface, path.c_str(), 90); // qualité 90
+                IMG_SaveJPG(surface, path.c_str(), 90);
                 break;
         }
         SDL_DestroySurface(surface);
@@ -535,6 +559,18 @@ namespace atmo::core::ecs::entities
     void UIDrawingCanvas::importCanvas(const std::string &path)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        if (path.empty()) {
+            spdlog::info("Import Canvas: File path empty, no op");
+            return;
+        }
+
+        namespace fs = std::filesystem;
+        std::error_code ec;
+        if (!fs::exists(path, ec) || !fs::is_regular_file(path, ec)) {
+            spdlog::info("Import Canvas: the file {} doesn't exist", path);
+            return;
+        }
 
         auto windowEntity = getWindow();
         if (!windowEntity)
@@ -550,6 +586,15 @@ namespace atmo::core::ecs::entities
 
         SDL_Surface *surface = nullptr;
 
+        /* temporary check. Must be reworked */
+        auto fileSize = fs::file_size(path, ec);
+        if ((!ec && fileSize == 0) && (ext == "bmp" || ext == "png" || ext == "jpg" || ext == "jpeg")) {
+            spdlog::info("Import Canvas: file {} exists but is empty, creating blank 16x16 canvas", path);
+            initPixelBuffer(16, 16);
+            comp.file_path = path;
+            return;
+        }
+
         if (ext == "bmp") {
             comp.format = core::components::UIDrawingCanvas::ExportFormat::BMP;
             surface = SDL_LoadBMP(path.c_str());
@@ -559,8 +604,12 @@ namespace atmo::core::ecs::entities
         } else if (ext == "jpg" || ext == "jpeg") {
             comp.format = core::components::UIDrawingCanvas::ExportFormat::JPG;
             surface = IMG_Load(path.c_str());
+        } else {
+            spdlog::warn("File format not valid no op, file format available: .bmp, .png, .jpg");
+            return;
         }
 
+        comp.file_path = path;
         if (!surface)
             return;
 
@@ -571,6 +620,15 @@ namespace atmo::core::ecs::entities
 
         int w = rgba->w;
         int h = rgba->h;
+
+        if (w < 1 || w > 10000) {
+            spdlog::warn("Image width not within 1-10000 px range, clamped");
+            w = common::math::Clamp(w, 1, 10000);
+        }
+        if (h < 1 || h > 10000) {
+            spdlog::warn("Image heigth not within 1-10000 px range; clamped");
+            h = common::math::Clamp(h, 1, 10000);
+        }
 
         comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
         uint8_t *px = (uint8_t *)rgba->pixels;
