@@ -8,6 +8,7 @@
 #include <string_view>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "spdlog/spdlog.h"
@@ -53,6 +54,43 @@ namespace atmo::core::registry
                 entries.push_back(key);
             }
             return entries;
+        }
+
+        struct EntityTree {
+            std::string entity_name;
+            std::vector<EntityTree> entity_child;
+        };
+
+        static void MakeTree(std::vector<std::string> *entries, EntityTree *parent)
+        {
+            while (!entries->empty()) {
+                auto entity_name = entries->front();
+
+                if (!entity_name.starts_with(parent->entity_name))
+                    return;
+
+                EntityTree tree;
+                tree.entity_name = entity_name;
+
+                entries->erase(entries->begin());
+
+                MakeTree(entries, &tree);
+
+                parent->entity_child.emplace_back(tree);
+            }
+        }
+
+        static EntityTree GetEntriesTree()
+        {
+            std::vector<std::string> entries = GetEntries();
+            EntityTree entries_tree;
+
+            auto compare = [](std::string a, std::string b) { return a < b; };
+            std::sort(entries.begin(), entries.end(), compare);
+            entries_tree.entity_name = entries[0];
+            entries.erase(entries.begin());
+            MakeTree(&entries, &entries_tree);
+            return entries_tree;
         }
 
         template <typename T = Root>
