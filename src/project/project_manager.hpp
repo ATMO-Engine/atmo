@@ -15,7 +15,7 @@
 #include "impl/romver.hpp"
 #include "project/project_settings.hpp"
 
-#define ATMO_PROJECT_FILE "project.atmo"
+#define ATMO_PROJECT_SETTINGS_FILE "project_settings.json"
 #define ATMO_PACKED_EXT ".pck"
 
 namespace atmo
@@ -27,33 +27,25 @@ namespace atmo
         public:
 #if !defined(ATMO_EXPORT)
             /**
-             * @brief Opens a project from the path to a project.atmo file.
+             * @brief Opens a project from its root directory.
              *
-             * Initializes the project environment by loading the project settings,
-             * resources, and scenes defined in the project.atmo file.
+             * Initializes the project environment by loading the project settings
+             * defined in the project's project_settings.json file.
              *
-             * @param path The filesystem path to the project.atmo file.
+             * @param project_path The filesystem path to the project's root directory.
              */
-            inline static void OpenProject(const std::filesystem::path &path)
+            inline static void OpenProject(const std::filesystem::path &project_path)
             {
-                if (!std::filesystem::exists(path) || path.filename() != ATMO_PROJECT_FILE)
-                    throw std::runtime_error("Invalid project file path: " + path.string());
+                std::filesystem::path resolved_root = FileSystem::ResolvePath(project_path.string());
+                std::filesystem::path settings_path = resolved_root / ".atmo" / ATMO_PROJECT_SETTINGS_FILE;
 
-                // TODO: Re-implement project opening
+                if (!std::filesystem::exists(settings_path))
+                    throw std::runtime_error("Invalid project path (no " ATMO_PROJECT_SETTINGS_FILE " found): " + settings_path.string());
 
-                // FileSystem::SetRootPath(path);
-                // File project_file = FileSystem::OpenFile(".atmo/" + std::string(ATMO_PROJECT_FILE));
-                // LoadProjectSettings(project_file);
+                File settings_file = FileSystem::OpenFile(settings_path.string());
+                LoadProjectSettings(settings_file);
 
-                // semver::version<VERSION_TYPES> current_engine_version;
-                // semver::parse(ATMO_VERSION_STRING, current_engine_version);
-
-                // if (Instance().m_settings.app.engine_version < current_engine_version) {
-                //     spdlog::warn(
-                //         "Project engine version ({}) is older than the current engine version ({}). It will be overwritten on save.",
-                //         Instance().m_settings.app.engine_version.to_string(),
-                //         current_engine_version.to_string());
-                // }
+                Instance().m_project_root = resolved_root;
             }
 #endif
 
@@ -61,20 +53,21 @@ namespace atmo
             /**
              * @brief Creates a new project at the specified directory path.
              *
-             * Creates a default project.atmo file into the specified directory,
+             * Creates a default project_settings.json file into the specified directory,
              * setting up the necessary structure and default settings for a new project.
              *
-             * @param path The filesystem path where the new project.atmo file will be created. Has to be a directory.
+             * @param path The filesystem path where the new project_settings.json file will be created. Has to be a directory.
              *
-             * @return The path to the created project.atmo file.
+             * @return The path to the created project_settings.json file.
              */
             static std::filesystem::path CreateProject(const std::filesystem::path &path)
             {
+                std::filesystem::path resolved_path = FileSystem::ResolvePath(path.string());
 
-                if (!std::filesystem::exists(path))
-                    std::filesystem::create_directories(path / ".atmo");
+                if (!std::filesystem::exists(resolved_path))
+                    std::filesystem::create_directories(resolved_path / ".atmo");
 
-                std::filesystem::path project_file_path = path / ".atmo" / ATMO_PROJECT_FILE;
+                std::filesystem::path project_file_path = resolved_path / ".atmo" / ATMO_PROJECT_SETTINGS_FILE;
                 if (std::filesystem::exists(project_file_path))
                     throw std::runtime_error("Project file already exists at: " + project_file_path.string());
 
@@ -102,7 +95,7 @@ namespace atmo
              */
             inline static std::filesystem::path GetCurrentProjectPath()
             {
-                return FileSystem::GetRootPath();
+                return Instance().m_project_root;
             }
 
 #if !defined(ATMO_EXPORT)
@@ -228,6 +221,9 @@ namespace atmo
                     if (!settings_search.empty()) {
                         File settings_file = project::FileSystem::OpenFile("project://.atmo/project_settings.json");
                         LoadProjectSettings(settings_file);
+                        FileSystem::UpdateProjectName(m_settings.app.project_name);
+                    } else {
+                        FileSystem::UpdateProjectName("atmo");
                     }
                 } catch (const std::runtime_error &err) {
                     spdlog::warn("Couldn't load project settings: {}", err.what());
@@ -243,6 +239,7 @@ namespace atmo
             }
 
             ProjectSettings m_settings;
+            std::filesystem::path m_project_root;
 
             inline static void LoadProjectSettings(File &file)
             {

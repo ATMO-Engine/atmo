@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <stack>
-#include <string_view>
 #include <vector>
 
 #include "core/ecs/entities/entity.hpp"
@@ -67,7 +66,7 @@ namespace atmo::editor
         void registerDefaultCommands();
 
         atmo::core::Engine &m_engine;
-        std::string_view m_project_path;
+        std::string m_project_path;
         Commands m_commands;
         std::unique_ptr<IPlatformMenuBar> m_menu_bar;
         std::vector<std::shared_ptr<Editor>> m_editors;

@@ -25,6 +25,8 @@ namespace atmo::core::ecs::entities
 
         virtual void clear() override;
 
+        void setValue(const std::string &value);
+
         static constexpr std::string_view LocalName()
         {
             return "UITextInput";

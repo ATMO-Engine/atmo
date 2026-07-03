@@ -42,6 +42,11 @@ namespace atmo::core::ecs::entities
         getComponentMutable<core::components::UITextInput>().value.clear();
     };
 
+    void UITextInput::setValue(const std::string &value)
+    {
+        getComponentMutable<core::components::UITextInput>().value = value;
+    }
+
     void UITextInput::initialize()
     {
         UIInput::initialize();
