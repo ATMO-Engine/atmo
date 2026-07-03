@@ -526,28 +526,33 @@ namespace atmo::editor
 
         std::function<void(core::ecs::EntityRegistry::EntityTree &, core::ecs::entities::Entity &)> buildTreeUI;
         buildTreeUI = [&](core::ecs::EntityRegistry::EntityTree &node, core::ecs::entities::Entity &parentUI) {
-            auto item_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-            item_container->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Vertical;
-            item_container->setParent(parentUI);
+            if (node.entity_child.empty()) {
+                auto button = makeEntityCreationButton(node.entity_name);
+                button.getSignal<>("Released").connect([create_entity_popup]() { create_entity_popup->destroy(); });
+                button.setParent(parentUI);
+                return;
+            }
+
+            auto foldable = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
+
+            foldable->getTitleLabel().setText(node.entity_name);
+            foldable->setParent(parentUI);
 
             if (!core::ecs::EntityRegistry::IsAbstract(node.entity_name)) {
-                auto create_btn = makeEntityCreationButton(node.entity_name);
-                create_btn.getSignal<>("Released").connect([create_entity_popup]() { create_entity_popup->destroy(); });
-                create_btn.setParent(*item_container);
+                foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.entity_name]() {
+                    auto created = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity);
+
+                    created->setParent(*m_scene_ctx->getScene());
+
+                    m_scene_ctx->getScene()->getSignal<core::ecs::entities::Entity *>("child_added").emit(created.get());
+
+                    create_entity_popup->destroy();
+                });
             }
 
-            if (!node.entity_child.empty()) {
-                auto foldable = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
+            auto childContainer = foldable->getChildContainer();
 
-                foldable->getTitleLabel().setText(node.entity_name);
-
-                foldable->setParent(*item_container);
-
-                auto child_container = foldable->getChildContainer();
-                for (auto &child : node.entity_child) {
-                    buildTreeUI(child, child_container);
-                }
-            }
+            for (auto &child : node.entity_child) buildTreeUI(child, childContainer);
         };
 
         buildTreeUI(tree, *entity_creation_button_list);
