@@ -2,6 +2,46 @@
   "atmo": {
     "create": "Erstellen",
     "create_new_project": "Neues Projekt erstellen",
-    "open_project": "Projekt öffnen"
+    "open_project": "Projekt öffnen",
+    "commands": {
+      "file": {
+        "category": "Datei",
+        "save": "Speichern",
+        "quit": "Beenden"
+      },
+      "edit": {
+        "category": "Bearbeiten",
+        "undo": "Rückgängig",
+        "redo": "Wiederholen"
+      }
+    },
+    "open_new_editor": "Neuen Editor öffnen",
+    "editors": {
+      "scene_editor": {
+        "name": "Szenen Editor",
+        "description": "Spielszenen erstellen und bearbeiten durch Platzieren, organisieren und konfigurieren von Objekten."
+      },
+      "texture_editor": {
+        "name": "Texturen Editor",
+        "description": "Texturen erstellen und bearbeiten durch das zeichnen, layering und animieren von 2D sprites."
+      }
+    },
+    "create_new_entity": "Neues Objekt erstellen",
+    "entities": {
+      "Entity": "Objekt",
+      "Entity::Entity2d": "Objekt2d",
+      "Entity::Entity2d::Camera2d": "Kamera2d",
+      "Entity::Entity2d::Body2d": "Körper2d",
+      "Entity::Entity2d::Body2d::Dynamic2d": "Dynamisch2d",
+      "Entity::Entity2d::Body2d::Kinematic2d": "Kinematisch2d",
+      "Entity::Entity2d::Body2d::Static2d": "Statisch2d",
+      "Entity::Entity2d::Sprite2d": "Sprite2d",
+      "Entity::UI": "UI",
+      "Entity::UI::UIRect": "UIRect",
+      "Entity::UI::UILabel": "UIEtikett",
+      "Entity::UI::UIRect::UIButton": "UIKnopf",
+      "Entity::UI::UIRect::UICheckBox": "UIAnkreuzkästchen",
+      "Entity::UI::UIRect::UIButton::UIFoldableTreeItem": "UIFaltbarerBaumGegenstand"
+    }
   }
 }
