@@ -17,7 +17,6 @@ namespace atmo::core::ecs::entities
 
         setComponent<components::UICheckBox>({});
         auto &chBoxComp = getComponentMutable<core::components::UICheckBox>();
-        chBoxComp.trigger = false;
 
         auto &rect = getComponentMutable<core::components::UIRect>();
         rect.border.color = core::types::Color{ static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<uint8_t>(100) };

@@ -13,7 +13,7 @@ namespace atmo::core::components
         };
 
         CheckBoxState state = UICheckBox::CheckBoxState::IDLE;
-        bool trigger = false;
+        bool trigger = true;
     };
 } // namespace atmo::core::components
 
