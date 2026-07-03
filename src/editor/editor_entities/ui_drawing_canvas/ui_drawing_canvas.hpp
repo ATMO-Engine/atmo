@@ -32,6 +32,8 @@ namespace atmo::core::components
         SDL_Texture *drawing_texture = nullptr;
         SDL_Texture *checkboard_texture = nullptr;
         bool texture_dirty = true;
+
+        std::string file_path;
         ExportFormat format = ExportFormat::PNG;
 
         atmo::core::types::Vector2 canvas_size = { 0.0f, 0.0f };
@@ -85,7 +87,7 @@ namespace atmo::core::ecs::entities
 
         void validateAndSyncDimensions();
 
-        void exportCanvas(const std::string &path);
+        void saveCanvas();
         void importCanvas(const std::string &path);
         void initPixelBuffer(int w, int h);
 

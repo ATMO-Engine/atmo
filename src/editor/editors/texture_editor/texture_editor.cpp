@@ -9,6 +9,7 @@
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_color_picker/ui_color_picker.hpp"
 #include "editor/editor_entities/ui_drawing_canvas/ui_drawing_canvas.hpp"
+#include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
 #include "editor/editor_registry.hpp"
 
 namespace atmo::editor
@@ -46,7 +47,7 @@ namespace atmo::editor
         texture_editor_panel_layout.direction = core::components::Layout::Direction::Vertical;
         texture_editor_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        texture_editor_panel_layout.height.size = 0.65f;
+        texture_editor_panel_layout.height.size = 0.33f;
         texture_editor_panel_layout.padding.left = 16;
         texture_editor_panel_layout.padding.right = 16;
         texture_editor_panel_layout.padding.top = 16;
@@ -148,29 +149,17 @@ namespace atmo::editor
         heightNumberInput->setParent(*height_comp_panel);
 
 
-        auto exportBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        ((core::ecs::entities::UILabel)exportBtn->getChildren()[0]).setText("Export");
-        auto &exportBtn_rect = exportBtn->getComponentMutable<core::components::UIRect>();
-        exportBtn_rect.border.color = core::types::Color::BLACK;
-        exportBtn_rect.color = core::types::Color::WHITE;
-        auto &exportBtn_layout = exportBtn->getComponentMutable<core::components::Layout>();
-        exportBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        exportBtn_layout.width.size = 0.30f;
-        exportBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        exportBtn_layout.height.size = 0.05f;
-        exportBtn->setParent(*texture_editor_panel);
-
-        auto importBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        ((core::ecs::entities::UILabel)importBtn->getChildren()[0]).setText("Import");
-        auto &importBtn_rect = importBtn->getComponentMutable<core::components::UIRect>();
-        importBtn_rect.border.color = core::types::Color::BLACK;
-        importBtn_rect.color = core::types::Color::WHITE;
-        auto &importBtn_layout = importBtn->getComponentMutable<core::components::Layout>();
-        importBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        importBtn_layout.width.size = 0.30f;
-        importBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        importBtn_layout.height.size = 0.05f;
-        importBtn->setParent(*texture_editor_panel);
+        auto saveBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        ((core::ecs::entities::UILabel)saveBtn->getChildren()[0]).setText("Save");
+        auto &saveBtn_rect = saveBtn->getComponentMutable<core::components::UIRect>();
+        saveBtn_rect.border.color = core::types::Color::BLACK;
+        saveBtn_rect.color = core::types::Color::WHITE;
+        auto &saveBtn_layout = saveBtn->getComponentMutable<core::components::Layout>();
+        saveBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        saveBtn_layout.width.size = 0.30f;
+        saveBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        saveBtn_layout.height.size = 0.05f;
+        saveBtn->setParent(*texture_editor_panel);
 
         auto previewBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         ((core::ecs::entities::UILabel)previewBtn->getChildren()[0]).setText("Preview");
@@ -217,6 +206,29 @@ namespace atmo::editor
         eraserBtn_layout.width.size = 0.30f;
         eraserBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         eraserBtn->setParent(*pencilContainer);
+
+
+        auto fileExplorerContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &fileExplorerContainer_rect = fileExplorerContainer->getComponentMutable<core::components::UIRect>();
+        fileExplorerContainer_rect.border.color = core::types::Color("#dbdbdb");
+        fileExplorerContainer_rect.color = core::types::Color("#dbdbdb");
+        fileExplorerContainer_rect.corner_radius.top_left = 4.0f;
+        fileExplorerContainer_rect.corner_radius.top_right = 4.0f;
+        fileExplorerContainer_rect.corner_radius.bottom_left = 4.0f;
+        fileExplorerContainer_rect.corner_radius.bottom_right = 4.0f;
+        auto &fileExplorerContainer_layout = fileExplorerContainer->getComponentMutable<core::components::Layout>();
+        fileExplorerContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        fileExplorerContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        fileExplorerContainer_layout.height.size = 0.33f;
+        fileExplorerContainer_layout.padding.left = 16;
+        fileExplorerContainer_layout.padding.right = 16;
+        fileExplorerContainer_layout.padding.top = 16;
+        fileExplorerContainer_layout.padding.bottom = 16;
+        fileExplorerContainer->setParent(*option_panel);
+
+        auto fileExplorer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFileExplorer>("Entity::UI::UIRect::UIFileExplorer");
+        fileExplorer->setRootPath(std::filesystem::current_path().string());
+        fileExplorer->setParent(*fileExplorerContainer);
 
 
         auto colorPickContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
@@ -378,22 +390,24 @@ namespace atmo::editor
             canvas_comp.pen = core::components::UIDrawingCanvas::DrawType::ERASER;
         });
 
-        exportBtn->getSignal<>("Pressed").connect([canvasHandle]() {
+        fileExplorer->getSignal<std::string>("FileFocus").connect([canvasHandle](std::string path) {
             if (!canvasHandle.is_alive()) {
                 return;
             }
 
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
-            canvas.exportCanvas("assets/save.png");
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas.importCanvas(path);
         });
 
-        importBtn->getSignal<>("Pressed").connect([canvasHandle]() {
+        saveBtn->getSignal<>("Pressed").connect([canvasHandle]() {
             if (!canvasHandle.is_alive()) {
                 return;
             }
 
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
-            canvas.importCanvas("assets/save.png");
+            canvas.saveCanvas();
         });
     }
 
