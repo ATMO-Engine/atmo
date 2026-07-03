@@ -27,6 +27,8 @@ namespace atmo::core::ecs::entities
         UIRect::initialize();
 
         setComponent<components::UIFoldableTreeItem>({});
+        auto &tree_comp = getComponentMutable<components::UIFoldableTreeItem>();
+        tree_comp.open = true;
 
         auto title_bar = core::ecs::EntityRegistry::Create("Entity::UI::UIRect");
         auto &title_bar_layout = title_bar->getComponentMutable<core::components::Layout>();
@@ -38,7 +40,7 @@ namespace atmo::core::ecs::entities
         title_bar_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
         title_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         title_bar_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
-        title_bar_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        title_bar_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         title_bar->rename(std::string(TitleBarName));
         title_bar->setParent(*this);
 
@@ -104,7 +106,8 @@ namespace atmo::core::ecs::entities
         auto child_container = getChildContainer();
         auto &chContainer_comp = child_container.getComponentMutable<components::UI>();
 
-        chContainer_comp.visible = is_open;
+        if (!child_container.getChildren().empty())
+            chContainer_comp.visible = is_open;
     }
 } // namespace atmo::core::ecs::entities
 
