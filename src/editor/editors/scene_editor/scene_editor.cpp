@@ -526,6 +526,9 @@ namespace atmo::editor
 
         std::function<void(core::ecs::EntityRegistry::EntityTree &, core::ecs::entities::Entity &)> buildTreeUI;
         buildTreeUI = [&](core::ecs::EntityRegistry::EntityTree &node, core::ecs::entities::Entity &parentUI) {
+            size_t pos = node.entity_name.find_last_of("::");
+            std::string label_name = (pos == std::string::npos) ? node.entity_name : node.entity_name.substr(pos + 1);
+
             if (node.entity_child.empty()) {
                 auto button = makeEntityCreationButton(node.entity_name);
                 button.getSignal<>("Released").connect([create_entity_popup]() { create_entity_popup->destroy(); });
@@ -535,7 +538,7 @@ namespace atmo::editor
 
             auto foldable = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
 
-            foldable->getTitleLabel().setText(node.entity_name);
+            foldable->getTitleLabel().setText(label_name);
             foldable->setParent(parentUI);
 
             if (!core::ecs::EntityRegistry::IsAbstract(node.entity_name)) {
@@ -583,9 +586,12 @@ namespace atmo::editor
         create_entity_topbar->getComponentMutable<core::components::Layout>().child_gap = 8;
         create_entity_topbar->setParent(*create_entity_btn);
 
+        size_t pos = entity_id.find_last_of("::");
+        std::string label_name = (pos == std::string::npos) ? entity_id : entity_id.substr(pos + 1);
+
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-        label->setText(entity_id);
+        label->setText(label_name);
         label->setFontSize(11);
         label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         label->setParent(*create_entity_topbar);
