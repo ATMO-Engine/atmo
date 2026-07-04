@@ -32,6 +32,7 @@
 
 #if !defined(ATMO_EXPORT)
 #include "editor/editor_manager.hpp"
+#include "editor/project_explorer/project_explorer.hpp"
 #endif
 
 static atmo::core::args::ArgManager::LaunchResult handleArgHelp(atmo::core::args::ArgManager &argManager)
@@ -75,6 +76,9 @@ static atmo::core::args::ArgManager::LaunchResult handleArgRead(atmo::core::args
 
 namespace atmo::core
 {
+    Engine::Engine() = default;
+    Engine::~Engine() = default;
+
     int Engine::initLogger()
     {
 #if defined(ATMO_DEBUG)
@@ -105,6 +109,8 @@ namespace atmo::core
                 "contents of a specific file.")
             .metavar("file [path]");
         ArgManager::AddLaunchHandler(9000, "--read", handleArgRead);
+
+        group.addArgument("--project", "-p").nargs(1).help("Open editor for project at path").metavar("project_path");
 #endif
 
         try {
@@ -194,6 +200,22 @@ namespace atmo::core
         return std::format("{} - {:.0f} FPS", project::ProjectManager::GetSettings().app.project_name, avgFps);
     }
 
+#if !defined(ATMO_EXPORT)
+    bool Engine::launchEditor(const std::string &project_path)
+    {
+        try {
+            project::ProjectManager::OpenProject(project_path);
+        } catch (const std::exception &e) {
+            spdlog::error("Failed to open project '{}': {}", project_path, e.what());
+            return false;
+        }
+
+        m_editor = std::make_unique<editor::EditorManager>(*this, project::ProjectManager::GetCurrentProjectPath().string());
+        m_editor->init();
+        return true;
+    }
+#endif
+
     void Engine::start()
     {
         m_running.store(true);
@@ -220,8 +242,13 @@ namespace atmo::core
         // sprite->setComponent(t);
 
 #if !defined(ATMO_EXPORT)
-        editor::EditorManager editor(*this, "");
-        editor.init();
+        if (std::optional<std::string> project_path = args::ArgManager::Present<std::string>("--project")) {
+            if (!launchEditor(*project_path))
+                return;
+        } else {
+            editor::ProjectExplorer explorer(*this);
+            explorer.init();
+        }
 #endif
 
         auto last_time = std::chrono::steady_clock::now();

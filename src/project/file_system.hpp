@@ -67,27 +67,52 @@ static std::filesystem::path GetExecutablePath()
 
 static std::filesystem::path GetUserDataDirectory()
 {
+#if !defined(ATMO_EXPORT)
 #if defined(_WIN32)
     char *appdata = std::getenv("APPDATA");
     if (appdata) {
-        return std::filesystem::path(appdata) / "ATMO" / "userdata";
+        return std::filesystem::path(appdata) / "atmo" / "userdata";
     } else {
         throw std::runtime_error("APPDATA environment variable not set.");
     }
 #elif defined(__APPLE__)
     char *home = std::getenv("HOME");
     if (home) {
-        return std::filesystem::path(home) / "Library" / "Application Support" / "ATMO" / "userdata";
+        return std::filesystem::path(home) / "Library" / "Application Support" / "atmo" / "userdata";
     } else {
         throw std::runtime_error("HOME environment variable not set.");
     }
 #else
     char *home = std::getenv("HOME");
     if (home) {
-        return std::filesystem::path(home) / ".local" / "share" / "ATMO" / "userdata";
+        return std::filesystem::path(home) / ".local" / "share" / "atmo" / "userdata";
     } else {
         throw std::runtime_error("HOME environment variable not set.");
     }
+#endif
+#else
+#if defined(_WIN32)
+    char *appdata = std::getenv("APPDATA");
+    if (appdata) {
+        return std::filesystem::path(appdata) / FileSystem::GetProjectName();
+    } else {
+        throw std::runtime_error("APPDATA environment variable not set.");
+    }
+#elif defined(__APPLE__)
+    char *home = std::getenv("HOME");
+    if (home) {
+        return std::filesystem::path(home) / "Library" / "Application Support" / FileSystem::GetProjectName();
+    } else {
+        throw std::runtime_error("HOME environment variable not set.");
+    }
+#else
+    char *home = std::getenv("HOME");
+    if (home) {
+        return std::filesystem::path(home) / ".local" / "share" / FileSystem::GetProjectName();
+    } else {
+        throw std::runtime_error("HOME environment variable not set.");
+    }
+#endif
 #endif
 }
 
@@ -170,6 +195,32 @@ namespace atmo::project
             return Instance().m_root;
         }
 
+        static void UpdateProjectName(const std::string &project_name)
+        {
+            Instance().m_project_name = project_name;
+        }
+
+        static std::string_view GetProjectName()
+        {
+            return Instance().m_project_name;
+        }
+
+        /**
+         * @brief Resolves a path to a real, absolute filesystem location.
+         *
+         * @param path Can be:
+         *  - An absolute or relative path on disk, returned as-is.
+         *  - "user://relative/path" to resolve to a path relative to the user data directory.
+         * @return The resolved filesystem path.
+         */
+        static std::filesystem::path ResolvePath(std::string_view path)
+        {
+            if (path.starts_with(USER_PROTOCOL))
+                return GetUserDataDirectory() / std::string(path.substr(sizeof(USER_PROTOCOL) - 1));
+
+            return std::filesystem::path(path);
+        }
+
         /**
          * @brief Opens a file from the given path.
          *
@@ -235,23 +286,64 @@ namespace atmo::project
 
             if (path.starts_with(USER_PROTOCOL)) {
                 std::filesystem::path relative_path = std::string(path.substr(sizeof(USER_PROTOCOL) - 1));
-                std::filesystem::path full_path = GetUserDataDirectory() / relative_path;
+                std::filesystem::path user_dir = GetUserDataDirectory();
 
-                for (const auto &entry : std::filesystem::directory_iterator(full_path)) {
-                    results.push_back(entry.path().string());
+                if (ContainsGlob(relative_path.string())) {
+                    std::filesystem::path base_dir = user_dir / GlobBaseDir(relative_path);
+                    if (!std::filesystem::exists(base_dir))
+                        return results;
+                    for (const auto &entry : std::filesystem::recursive_directory_iterator(base_dir)) {
+                        if (!entry.is_regular_file())
+                            continue;
+                        auto rel = std::filesystem::relative(entry.path(), user_dir);
+                        if (common::Utils::GlobMatch(relative_path.string(), rel.string()))
+                            results.push_back(entry.path().string());
+                    }
+                } else {
+                    std::filesystem::path full_path = user_dir / relative_path;
+                    for (const auto &entry : std::filesystem::directory_iterator(full_path))
+                        results.push_back(entry.path().string());
                 }
 
                 return results;
             }
 
             std::filesystem::path full_path = std::string(path);
-            for (const auto &entry : std::filesystem::directory_iterator(full_path)) {
-                results.push_back(entry.path().string());
+            if (ContainsGlob(full_path.string())) {
+                std::filesystem::path base_dir = GlobBaseDir(full_path);
+                if (!std::filesystem::exists(base_dir))
+                    return results;
+                for (const auto &entry : std::filesystem::recursive_directory_iterator(base_dir)) {
+                    if (!entry.is_regular_file())
+                        continue;
+                    if (common::Utils::GlobMatch(full_path.string(), entry.path().string()))
+                        results.push_back(entry.path().string());
+                }
+            } else {
+                for (const auto &entry : std::filesystem::directory_iterator(full_path))
+                    results.push_back(entry.path().string());
             }
             return results;
         }
 
     private:
+        static bool ContainsGlob(std::string_view s)
+        {
+            return s.find_first_of("*?") != std::string_view::npos;
+        }
+
+        static std::filesystem::path GlobBaseDir(const std::filesystem::path &pattern)
+        {
+            std::string s = pattern.string();
+            auto glob_pos = s.find_first_of("*?");
+            if (glob_pos == std::string::npos)
+                return pattern;
+            auto slash_pos = s.rfind('/', glob_pos);
+            if (slash_pos == std::string::npos)
+                return std::filesystem::path(".");
+            return std::filesystem::path(s.substr(0, slash_pos));
+        }
+
         FileSystem() = default;
         ~FileSystem()
         {
@@ -378,11 +470,13 @@ namespace atmo::project
 
             return instance;
         }
+
         std::filesystem::path m_root;
 
         bool m_loaded{ false };
         PackedHeader m_header = { 0 };
         std::unordered_map<std::string, PackedEntry> m_index;
         std::shared_ptr<std::fstream> m_resources;
+        std::string m_project_name;
     };
 } // namespace atmo::project

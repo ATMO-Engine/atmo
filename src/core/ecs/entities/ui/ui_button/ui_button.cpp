@@ -60,6 +60,7 @@ namespace atmo::core::ecs::entities
 
         getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        getComponentMutable<core::components::Layout>().child_gap = 4;
         getComponentMutable<core::components::Layout>().padding = { 4, 4, 4, 4 };
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
