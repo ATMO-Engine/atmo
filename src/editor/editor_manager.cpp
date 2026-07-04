@@ -9,7 +9,10 @@
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/progress_tick_event/progress_tick_event.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
@@ -134,42 +137,17 @@ namespace atmo::editor
         m_editor_container->rename("scene ui container");
         m_editor_container->setParent(*window_ui_container);
 
-        auto toolbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        toolbar_container->getComponentMutable<core::components::Layout>().padding = { 16, 16, 16, 16 };
-        toolbar_container->setParent(*window_ui_container);
+        makeToolbar(*window_ui_container);
 
-        m_toolbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        m_toolbar->getComponentMutable<core::components::UIRect>().color = core::types::Color::WHITE;
-        m_toolbar->getComponentMutable<core::components::UIRect>().corner_radius = { 4.0f, 4.0f, 4.0f, 4.0f };
-        m_toolbar->getComponentMutable<core::components::Layout>().child_gap = 4;
-        m_toolbar->getComponentMutable<core::components::Layout>().padding = { 4, 4, 4, 4 };
-        m_toolbar->setParent(*toolbar_container);
+        core::SignalQueue::Enqueue([scene]() { scene->getParent<core::ecs::entities::Window>().primeScrollContainers(); });
 
-        auto editor_tools_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        editor_tools_container->getComponentMutable<core::components::Layout>().child_gap = 4;
-        editor_tools_container->setParent(*m_toolbar);
-
-        auto editor_tools_spacer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
-        editor_tools_spacer->getComponentMutable<core::components::UIImage>().texture_path = "project://assets/icons/dot.svg";
-        editor_tools_spacer->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        editor_tools_spacer->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        editor_tools_spacer->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
-        editor_tools_spacer->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        editor_tools_spacer->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
-        editor_tools_spacer->setParent(*m_toolbar);
-
-        auto engine_tools_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        engine_tools_container->getComponentMutable<core::components::Layout>().child_gap = 4;
-        engine_tools_container->setParent(*m_toolbar);
-
-        auto play_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
-        play_btn->setTexturePath("project://assets/icons/play.svg");
-        play_btn->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        play_btn->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        play_btn->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
-        play_btn->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        play_btn->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
-        play_btn->setParent(*engine_tools_container);
+        core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>(
+            [this](core::event::events::ProgressTickEvent *) {
+                if (m_play_process && !m_play_process->isRunning()) {
+                    m_play_process.reset();
+                    m_play_btn_icon->setTexturePath("project://assets/icons/play.svg");
+                }
+            });
     }
 
     void EditorManager::updateTopBar()
@@ -229,6 +207,82 @@ namespace atmo::editor
         open_editor_btn_image->getComponentMutable<core::components::UIImage>().texture_path = "project://assets/icons/plus.svg";
         open_editor_btn_image->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         open_editor_btn_image->setParent(*open_editor_btn);
+    }
+
+    void EditorManager::makeToolbar(core::ecs::entities::UI container)
+    {
+        auto toolbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        toolbar_container->getComponentMutable<core::components::Layout>().padding = { 16, 16, 16, 16 };
+        toolbar_container->setParent(container);
+
+        m_toolbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        m_toolbar->getComponentMutable<core::components::UIRect>().color = core::types::Color::WHITE;
+        m_toolbar->getComponentMutable<core::components::UIRect>().corner_radius = { 4.0f, 4.0f, 4.0f, 4.0f };
+        m_toolbar->getComponentMutable<core::components::Layout>().child_gap = 4;
+        m_toolbar->getComponentMutable<core::components::Layout>().padding = { 4, 4, 4, 4 };
+        m_toolbar->getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        m_toolbar->setParent(*toolbar_container);
+
+        auto editor_tools_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        editor_tools_container->getComponentMutable<core::components::Layout>().child_gap = 4;
+        editor_tools_container->setParent(*m_toolbar);
+
+        auto editor_tools_spacer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        editor_tools_spacer->getComponentMutable<core::components::UIImage>().texture_path = "project://assets/icons/dot.svg";
+        editor_tools_spacer->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        editor_tools_spacer->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        editor_tools_spacer->setParent(*m_toolbar);
+
+        auto engine_tools_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        engine_tools_container->getComponentMutable<core::components::Layout>().child_gap = 4;
+        engine_tools_container->setParent(*m_toolbar);
+
+        m_play_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        m_play_btn->getChildren()[0].destroy();
+        m_play_btn->setParent(*engine_tools_container);
+        m_play_btn->getSignal<>("Released").connect([this]() {
+            if (m_play_process && m_play_process->isRunning())
+                stopPlay();
+            else
+                startPlay();
+        });
+
+        m_play_btn_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        m_play_btn_icon->setTexturePath("project://assets/icons/play.svg");
+        m_play_btn_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        m_play_btn_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        m_play_btn_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        m_play_btn_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        m_play_btn_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
+        m_play_btn_icon->setParent(*m_play_btn);
+    }
+
+    void EditorManager::startPlay()
+    {
+        if (m_play_process && m_play_process->isRunning())
+            return;
+
+        m_play_process.emplace();
+        if (!m_play_process->spawn(project::FileSystem::GetRootPath(), { "--project", m_project_path, "--run" })) {
+            spdlog::error("Failed to launch play-mode process");
+            m_play_process.reset();
+            return;
+        }
+
+        m_play_btn_icon->setTexturePath("project://assets/icons/square.svg");
+    }
+
+    void EditorManager::stopPlay()
+    {
+        if (m_play_process) {
+            m_play_process->terminate();
+            m_play_process.reset();
+        }
+
+        m_play_btn_icon->setTexturePath("project://assets/icons/play.svg");
     }
 
     void EditorManager::openNewEditorSelectionPopup()

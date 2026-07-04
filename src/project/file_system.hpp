@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "common/utils.hpp"
@@ -26,95 +27,6 @@
 #else
 #include <unistd.h>
 #endif
-
-static std::filesystem::path GetExecutablePath()
-{
-#if defined(_WIN32)
-    std::vector<char> buffer(MAX_PATH);
-    while (true) {
-        DWORD size = GetModuleFileNameA(NULL, buffer.data(), static_cast<DWORD>(buffer.size()));
-        if (size == 0)
-            return "";
-        if (size < buffer.size()) {
-            buffer.resize(size);
-            break;
-        }
-        buffer.resize(buffer.size() * 2);
-    }
-    return std::filesystem::path(buffer.begin(), buffer.end());
-#elif defined(__APPLE__)
-    uint32_t size = 0;
-    _NSGetExecutablePath(nullptr, &size);
-    std::vector<char> buffer(size);
-    if (_NSGetExecutablePath(buffer.data(), &size) == 0) {
-        return std::filesystem::canonical(buffer.data());
-    }
-    return "";
-#else // Linux / POSIX
-    std::vector<char> buffer(1024);
-    while (true) {
-        ssize_t len = readlink("/proc/self/exe", buffer.data(), buffer.size());
-        if (len == -1)
-            return "";
-        if (static_cast<size_t>(len) < buffer.size()) {
-            buffer[len] = '\0';
-            return std::filesystem::canonical(buffer.data());
-        }
-        buffer.resize(buffer.size() * 2);
-    }
-#endif
-}
-
-static std::filesystem::path GetUserDataDirectory()
-{
-#if !defined(ATMO_EXPORT)
-#if defined(_WIN32)
-    char *appdata = std::getenv("APPDATA");
-    if (appdata) {
-        return std::filesystem::path(appdata) / "atmo" / "userdata";
-    } else {
-        throw std::runtime_error("APPDATA environment variable not set.");
-    }
-#elif defined(__APPLE__)
-    char *home = std::getenv("HOME");
-    if (home) {
-        return std::filesystem::path(home) / "Library" / "Application Support" / "atmo" / "userdata";
-    } else {
-        throw std::runtime_error("HOME environment variable not set.");
-    }
-#else
-    char *home = std::getenv("HOME");
-    if (home) {
-        return std::filesystem::path(home) / ".local" / "share" / "atmo" / "userdata";
-    } else {
-        throw std::runtime_error("HOME environment variable not set.");
-    }
-#endif
-#else
-#if defined(_WIN32)
-    char *appdata = std::getenv("APPDATA");
-    if (appdata) {
-        return std::filesystem::path(appdata) / FileSystem::GetProjectName();
-    } else {
-        throw std::runtime_error("APPDATA environment variable not set.");
-    }
-#elif defined(__APPLE__)
-    char *home = std::getenv("HOME");
-    if (home) {
-        return std::filesystem::path(home) / "Library" / "Application Support" / FileSystem::GetProjectName();
-    } else {
-        throw std::runtime_error("HOME environment variable not set.");
-    }
-#else
-    char *home = std::getenv("HOME");
-    if (home) {
-        return std::filesystem::path(home) / ".local" / "share" / FileSystem::GetProjectName();
-    } else {
-        throw std::runtime_error("HOME environment variable not set.");
-    }
-#endif
-#endif
-}
 
 namespace atmo::project
 {
@@ -195,6 +107,21 @@ namespace atmo::project
             return Instance().m_root;
         }
 
+#if !defined(ATMO_EXPORT)
+        /**
+         * @brief Sets (or clears with an empty path) a real on-disk project root directory to consult
+         *        for "project://" lookups, checked BEFORE the packed engine-asset index. Lets run mode
+         *        (--project X --run) resolve a project's own assets/scenes straight from disk without
+         *        packing them, while code that references the engine's own baked-in "project://assets/..."
+         *        (fonts, icons) still falls through to the packed index unchanged. Not compiled into
+         *        ATMO_EXPORT builds, since real export binaries are fully packed already.
+         */
+        static void SetProjectRootOverride(const std::filesystem::path &root)
+        {
+            Instance().m_project_root_override = root;
+        }
+#endif
+
         static void UpdateProjectName(const std::string &project_name)
         {
             Instance().m_project_name = project_name;
@@ -237,10 +164,19 @@ namespace atmo::project
         static File OpenFile(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out)
         {
             if (path.starts_with(PROJECT_PROTOCOL)) {
+                std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));
+
+#if !defined(ATMO_EXPORT)
+                if (!Instance().m_project_root_override.empty()) {
+                    std::filesystem::path disk_path = Instance().m_project_root_override / relative_path;
+                    if (std::filesystem::exists(disk_path) && std::filesystem::is_regular_file(disk_path))
+                        return File(disk_path.string(), mode);
+                }
+#endif
+
                 if (mode != (std::ios::in | std::ios::out) || (mode & std::ios::in) == 0 && (mode & std::ios::binary) == 0)
                     spdlog::warn("Packed project files can only be opened in binary read mode.");
 
-                std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));
                 auto it = Instance().m_index.find(relative_path.string());
 
                 if (it != Instance().m_index.end()) {
@@ -275,9 +211,39 @@ namespace atmo::project
 
             if (path.starts_with(PROJECT_PROTOCOL)) {
                 std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));
+                std::unordered_set<std::string> seen;
+
+#if !defined(ATMO_EXPORT)
+                const auto &root_override = Instance().m_project_root_override;
+                if (!root_override.empty()) {
+                    if (ContainsGlob(relative_path.string())) {
+                        std::filesystem::path base_dir = root_override / GlobBaseDir(relative_path);
+                        if (std::filesystem::exists(base_dir)) {
+                            for (const auto &entry : std::filesystem::recursive_directory_iterator(base_dir)) {
+                                if (!entry.is_regular_file())
+                                    continue;
+                                auto rel = std::filesystem::relative(entry.path(), root_override).generic_string();
+                                if (common::Utils::GlobMatch(relative_path.string(), rel) && seen.insert(rel).second)
+                                    results.push_back(rel);
+                            }
+                        }
+                    } else {
+                        std::filesystem::path full_path = root_override / relative_path;
+                        if (std::filesystem::is_directory(full_path)) {
+                            for (const auto &entry : std::filesystem::directory_iterator(full_path)) {
+                                auto rel = std::filesystem::relative(entry.path(), root_override).generic_string();
+                                if (seen.insert(rel).second)
+                                    results.push_back(rel);
+                            }
+                        } else if (std::filesystem::exists(full_path) && seen.insert(relative_path.generic_string()).second) {
+                            results.push_back(relative_path.generic_string());
+                        }
+                    }
+                }
+#endif
 
                 for (const auto &pair : Instance().m_index) {
-                    if (common::Utils::GlobMatch(relative_path.string(), pair.first)) {
+                    if (common::Utils::GlobMatch(relative_path.string(), pair.first) && seen.insert(pair.first).second) {
                         results.push_back(pair.first);
                     }
                 }
@@ -341,6 +307,95 @@ namespace atmo::project
             if (slash_pos == std::string::npos)
                 return std::filesystem::path(".");
             return std::filesystem::path(s.substr(0, slash_pos));
+        }
+
+        static std::filesystem::path GetExecutablePath()
+        {
+#if defined(_WIN32)
+            std::vector<char> buffer(MAX_PATH);
+            while (true) {
+                DWORD size = GetModuleFileNameA(NULL, buffer.data(), static_cast<DWORD>(buffer.size()));
+                if (size == 0)
+                    return "";
+                if (size < buffer.size()) {
+                    buffer.resize(size);
+                    break;
+                }
+                buffer.resize(buffer.size() * 2);
+            }
+            return std::filesystem::path(buffer.begin(), buffer.end());
+#elif defined(__APPLE__)
+            uint32_t size = 0;
+            _NSGetExecutablePath(nullptr, &size);
+            std::vector<char> buffer(size);
+            if (_NSGetExecutablePath(buffer.data(), &size) == 0) {
+                return std::filesystem::canonical(buffer.data());
+            }
+            return "";
+#else // Linux / POSIX
+            std::vector<char> buffer(1024);
+            while (true) {
+                ssize_t len = readlink("/proc/self/exe", buffer.data(), buffer.size());
+                if (len == -1)
+                    return "";
+                if (static_cast<size_t>(len) < buffer.size()) {
+                    buffer[len] = '\0';
+                    return std::filesystem::canonical(buffer.data());
+                }
+                buffer.resize(buffer.size() * 2);
+            }
+#endif
+        }
+
+        static std::filesystem::path GetUserDataDirectory()
+        {
+#if !defined(ATMO_EXPORT)
+#if defined(_WIN32)
+            char *appdata = std::getenv("APPDATA");
+            if (appdata) {
+                return std::filesystem::path(appdata) / "atmo" / "userdata";
+            } else {
+                throw std::runtime_error("APPDATA environment variable not set.");
+            }
+#elif defined(__APPLE__)
+            char *home = std::getenv("HOME");
+            if (home) {
+                return std::filesystem::path(home) / "Library" / "Application Support" / "atmo" / "userdata";
+            } else {
+                throw std::runtime_error("HOME environment variable not set.");
+            }
+#else
+            char *home = std::getenv("HOME");
+            if (home) {
+                return std::filesystem::path(home) / ".local" / "share" / "atmo" / "userdata";
+            } else {
+                throw std::runtime_error("HOME environment variable not set.");
+            }
+#endif
+#else
+#if defined(_WIN32)
+            char *appdata = std::getenv("APPDATA");
+            if (appdata) {
+                return std::filesystem::path(appdata) / atmo::project::FileSystem::GetProjectName();
+            } else {
+                throw std::runtime_error("APPDATA environment variable not set.");
+            }
+#elif defined(__APPLE__)
+            char *home = std::getenv("HOME");
+            if (home) {
+                return std::filesystem::path(home) / "Library" / "Application Support" / atmo::project::FileSystem::GetProjectName();
+            } else {
+                throw std::runtime_error("HOME environment variable not set.");
+            }
+#else
+            char *home = std::getenv("HOME");
+            if (home) {
+                return std::filesystem::path(home) / ".local" / "share" / atmo::project::FileSystem::GetProjectName();
+            } else {
+                throw std::runtime_error("HOME environment variable not set.");
+            }
+#endif
+#endif
         }
 
         FileSystem() = default;
@@ -477,5 +532,8 @@ namespace atmo::project
         std::unordered_map<std::string, PackedEntry> m_index;
         std::shared_ptr<std::fstream> m_resources;
         std::string m_project_name;
+#if !defined(ATMO_EXPORT)
+        std::filesystem::path m_project_root_override;
+#endif
     };
 } // namespace atmo::project

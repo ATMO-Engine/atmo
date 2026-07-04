@@ -8,7 +8,9 @@
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/engine.hpp"
+#include "editor/child_process.hpp"
 #include "editor/commands/commands.hpp"
 #include "editor/editors/editor.hpp"
 #include "editor/menu_bar/i_platform_menu_bar.hpp"
@@ -61,16 +63,20 @@ namespace atmo::editor
 
         void openNewEditorSelectionPopup();
         core::ecs::entities::UIButton makeEditorCreationButton(const std::string &editor);
-        void updateTopBar();
 
     private:
         void registerDefaultCommands();
+        void updateTopBar();
+        void makeToolbar(core::ecs::entities::UI container);
 
         std::shared_ptr<Editor> activeEditor() const;
 
         void handleSave();
         void handleSaveAs();
         void handleOpen();
+
+        void startPlay();
+        void stopPlay();
 
         atmo::core::Engine &m_engine;
         std::string m_project_path;
@@ -83,6 +89,9 @@ namespace atmo::editor
         std::shared_ptr<core::ecs::entities::UIRect> m_topbar;
         std::shared_ptr<core::ecs::entities::UIRect> m_toolbar;
         std::optional<std::size_t> m_active_editor_index;
+        std::shared_ptr<core::ecs::entities::UIButton> m_play_btn;
+        std::shared_ptr<core::ecs::entities::UIImage> m_play_btn_icon;
+        std::optional<ChildProcess> m_play_process;
     };
 } // namespace atmo::editor
 

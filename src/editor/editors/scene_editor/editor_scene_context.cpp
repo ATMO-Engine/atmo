@@ -52,15 +52,9 @@ namespace atmo::editor
         }
         m_scene = std::static_pointer_cast<core::ecs::entities::Scene>(scene);
 
-        auto camera = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Camera2d>(&m_world, "Entity::Entity2d::Camera2d");
-        if (!camera) {
-            spdlog::error("EditorSceneContext: failed to create Camera2d entity");
-            return;
-        }
-        camera->setActive(true);
-        camera->setZoom(1.0f);
-        camera->setParent(*m_scene);
-        m_camera = camera;
+        m_world.system("EditorViewportCamera_UpdateWorldState").kind(flecs::PreUpdate).run([this](flecs::iter &it) {
+            it.world().set<core::components::WorldCameraState>({ .has_camera = true, .zoom = m_cam_zoom, .position = m_cam_position });
+        });
 
         m_ready = true;
         spdlog::debug("EditorSceneContext: initialized isolated world ({}x{})", m_width, m_height);
@@ -160,23 +154,8 @@ namespace atmo::editor
         if (!m_scene || !m_scene->isAlive())
             return;
 
-        for (auto &child : m_scene->getChildren()) child.destroy();
-
-        core::ecs::entities::EntityData data;
-        if (auto err = glz::read_json(data, json); err) {
-            spdlog::error("EditorSceneContext: JSON parse error while loading scene");
-            return;
-        }
-
-        // Preserve the Box2D world ID created in initialize() — it must not be
-        // overwritten by JSON-serialized pointer values from a different session.
-        const auto saved_world_id = m_scene->getWorldId();
-
-        m_scene->deserializeInWorld(data, &m_world);
-
-        auto scene_comp = m_scene->getHandle().get_ref<core::components::Scene>();
-        if (scene_comp)
-            scene_comp->world_id = saved_world_id;
+        if (!m_scene->loadFromJson(json, &m_world))
+            spdlog::error("EditorSceneContext: failed to load scene");
     }
 
     void EditorSceneContext::loadSceneFromFile(const std::string &path)
@@ -193,62 +172,49 @@ namespace atmo::editor
 
     void EditorSceneContext::pan(core::types::Vector2 delta_screen)
     {
-        if (!m_camera)
-            return;
-        float inv_zoom = 1.0f / m_camera->getZoom();
-        auto pos = m_camera->getPosition();
-        m_camera->setPosition({ pos.x - delta_screen.x * inv_zoom, pos.y - delta_screen.y * inv_zoom });
+        float inv_zoom = 1.0f / m_cam_zoom;
+        m_cam_position.x -= delta_screen.x * inv_zoom;
+        m_cam_position.y -= delta_screen.y * inv_zoom;
     }
 
     void EditorSceneContext::zoom(float factor, core::types::Vector2 pivot_screen)
     {
-        if (!m_camera)
-            return;
         const core::types::Vector2 world_pivot = screenToWorld(pivot_screen);
-        const float new_zoom = std::clamp(m_camera->getZoom() * factor, 0.05f, 20.0f);
-        m_camera->setZoom(new_zoom);
+        const float new_zoom = std::clamp(m_cam_zoom * factor, 0.05f, 20.0f);
+        m_cam_zoom = new_zoom;
 
         // Keep the world point under the pivot fixed after zoom.
         const float hw = static_cast<float>(m_width) * 0.5f;
         const float hh = static_cast<float>(m_height) * 0.5f;
-        core::types::Vector2 new_cam{
+        m_cam_position = {
             world_pivot.x - (pivot_screen.x - hw) / new_zoom,
             world_pivot.y - (pivot_screen.y - hh) / new_zoom,
         };
-        m_camera->setPosition(new_cam);
     }
 
     core::types::Vector2 EditorSceneContext::screenToWorld(core::types::Vector2 screen) const
     {
-        if (!m_camera)
-            return screen;
-        const float z = m_camera->getZoom();
-        const auto cam_pos = m_camera->getPosition();
         return {
-            (screen.x - static_cast<float>(m_width) * 0.5f) / z + cam_pos.x,
-            (screen.y - static_cast<float>(m_height) * 0.5f) / z + cam_pos.y,
+            (screen.x - static_cast<float>(m_width) * 0.5f) / m_cam_zoom + m_cam_position.x,
+            (screen.y - static_cast<float>(m_height) * 0.5f) / m_cam_zoom + m_cam_position.y,
         };
     }
 
     core::types::Vector2 EditorSceneContext::worldToScreen(core::types::Vector2 world) const
     {
-        if (!m_camera)
-            return world;
-        const float z = m_camera->getZoom();
-        const auto cam_pos = m_camera->getPosition();
         return {
-            (world.x - cam_pos.x) * z + static_cast<float>(m_width) * 0.5f,
-            (world.y - cam_pos.y) * z + static_cast<float>(m_height) * 0.5f,
+            (world.x - m_cam_position.x) * m_cam_zoom + static_cast<float>(m_width) * 0.5f,
+            (world.y - m_cam_position.y) * m_cam_zoom + static_cast<float>(m_height) * 0.5f,
         };
     }
 
     void EditorSceneContext::drawOverlays()
     {
-        if (!m_renderer || !m_camera)
+        if (!m_renderer)
             return;
 
-        const float z = m_camera->getZoom();
-        const auto cam_pos = m_camera->getPosition();
+        const float z = m_cam_zoom;
+        const auto &cam_pos = m_cam_position;
         const float hw = static_cast<float>(m_width) * 0.5f;
         const float hh = static_cast<float>(m_height) * 0.5f;
 

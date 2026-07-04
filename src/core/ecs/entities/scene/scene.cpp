@@ -7,6 +7,8 @@
 #include "core/ecs/world_context.hpp"
 #include "core/types.hpp"
 #include "meta/auto_register.hpp"
+#include "project/file.hpp"
+#include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
@@ -99,7 +101,37 @@ namespace atmo::core::ecs::entities
         scene->world_id = b2CreateWorld(&worldDef);
     }
 
-    void Scene::initFromFile(std::string_view file_path) {}
+    bool Scene::loadFromJson(const std::string &json, flecs::world *world)
+    {
+        for (auto &child : getChildren()) child.destroy();
+
+        EntityData data;
+        if (auto err = glz::read_json(data, json); err) {
+            spdlog::error("Scene::loadFromJson: JSON parse error");
+            return false;
+        }
+
+        const auto saved_world_id = getWorldId();
+        deserializeInWorld(data, world);
+
+        auto scene_comp = p_handle.get_ref<components::Scene>();
+        if (scene_comp)
+            scene_comp->world_id = saved_world_id;
+
+        return true;
+    }
+
+    void Scene::initFromFile(std::string_view file_path)
+    {
+        try {
+            project::File file = project::FileSystem::OpenFile(file_path);
+            flecs::world world = p_handle.world();
+            if (!loadFromJson(file.readAll(), &world))
+                spdlog::error("Scene::initFromFile: failed to load '{}'", file_path);
+        } catch (const std::exception &e) {
+            spdlog::error("Scene::initFromFile: could not open '{}': {}", file_path, e.what());
+        }
+    }
 
     void Scene::setSingleton(bool singleton)
     {

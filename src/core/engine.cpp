@@ -17,6 +17,7 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
+#include "core/event/events/progress_tick_event/progress_tick_event.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
@@ -72,6 +73,29 @@ static atmo::core::args::ArgManager::LaunchResult handleArgRead(atmo::core::args
 
     return atmo::core::args::ArgManager::LaunchResult::ExitSuccess;
 }
+
+static atmo::core::args::ArgManager::LaunchResult handleArgExport(atmo::core::args::ArgManager &argManager)
+{
+    auto args = atmo::core::args::ArgManager::Get<std::vector<std::string>>("--export");
+    auto project_path = atmo::core::args::ArgManager::Present<std::string>("--project");
+
+    if (!project_path) {
+        spdlog::error("--export requires --project <project_path>.");
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+    }
+
+    try {
+        atmo::project::ProjectManager::OpenProject(*project_path);
+    } catch (const std::exception &e) {
+        spdlog::error("Failed to open project '{}': {}", *project_path, e.what());
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+    }
+
+    if (!atmo::project::ProjectManager::ExportProject(args.at(0), args.at(1)))
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+
+    return atmo::core::args::ArgManager::LaunchResult::ExitSuccess;
+}
 #endif
 
 namespace atmo::core
@@ -111,6 +135,20 @@ namespace atmo::core
         ArgManager::AddLaunchHandler(9000, "--read", handleArgRead);
 
         group.addArgument("--project", "-p").nargs(1).help("Open editor for project at path").metavar("project_path");
+
+        ArgManager::AddArgument("--run")
+            .nargs(ArgManager::NargsPattern::Optional)
+            .help("Run the project as a standalone game instead of opening the editor. Loads the "
+                  "project's default scene unless an explicit scene path is given. Combine with --project "
+                  "to select which project to run.")
+            .metavar("scene_path");
+
+        ArgManager::AddArgument("--export")
+            .nargs(2)
+            .help("Export the project given by --project into a standalone executable: copies "
+                  "<atmo_export_binary> to <output_path> and appends the project's packed asset data.")
+            .metavar("atmo_export_binary output_path");
+        ArgManager::AddLaunchHandler(9000, "--export", handleArgExport);
 #endif
 
         try {
@@ -242,12 +280,37 @@ namespace atmo::core
         // sprite->setComponent(t);
 
 #if !defined(ATMO_EXPORT)
-        if (std::optional<std::string> project_path = args::ArgManager::Present<std::string>("--project")) {
+        if (args::ArgManager::IsUsed("--run")) {
+            if (std::optional<std::string> project_path = args::ArgManager::Present<std::string>("--project")) {
+                try {
+                    project::ProjectManager::OpenProject(*project_path);
+                } catch (const std::exception &e) {
+                    spdlog::error("Failed to open project '{}': {}", *project_path, e.what());
+                    return;
+                }
+                project::FileSystem::SetProjectRootOverride(
+                    std::filesystem::absolute(project::ProjectManager::GetCurrentProjectPath()));
+            }
+
+            std::string scene_path =
+                args::ArgManager::Present<std::string>("--run").value_or(project::ProjectManager::GetSettings().app.default_scene);
+
+            if (scene_path.empty())
+                spdlog::warn("Run mode: no scene to load (no --run argument and no app.default_scene configured).");
+            else
+                m_ecs.changeSceneToFile(scene_path);
+        } else if (std::optional<std::string> project_path = args::ArgManager::Present<std::string>("--project")) {
             if (!launchEditor(*project_path))
                 return;
         } else {
             editor::ProjectExplorer explorer(*this);
             explorer.init();
+        }
+#else
+        {
+            const std::string &scene_path = project::ProjectManager::GetSettings().app.default_scene;
+            if (!scene_path.empty())
+                m_ecs.changeSceneToFile(scene_path);
         }
 #endif
 
@@ -256,9 +319,7 @@ namespace atmo::core
         float title_update_accumulator = 0.0f;
         int frame_count = 0;
 
-#if !defined(ATMO_EXPORT)
-        auto progress_tick = event::EventRegistry::Create<atmo::editor::ProgressTickEvent>("Event::ProgressTickEvent");
-#endif
+        auto progress_tick = event::EventRegistry::Create<event::events::ProgressTickEvent>("Event::ProgressTickEvent");
 
         while (m_ecs.progress(deltaTime)) {
             ATMO_PROFILE_FRAME();
@@ -270,10 +331,8 @@ namespace atmo::core
 
             SignalQueue::Flush();
 
-#if !defined(ATMO_EXPORT)
             progress_tick->delta_time = deltaTime;
             event::EventRegistry::Dispatch(progress_tick);
-#endif
 
             InputManager::Tick();
 

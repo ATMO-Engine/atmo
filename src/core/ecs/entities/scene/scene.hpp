@@ -48,6 +48,15 @@ namespace atmo::core::ecs::entities
 
         void initFromFile(std::string_view file_path);
 
+        /**
+         * @brief Parses @p json as an EntityData tree and deserializes it into this scene's children,
+         *        creating them inside @p world. Destroys any existing children first. Preserves this
+         *        scene's existing Box2D world_id (created in initialize()) across the load, since
+         *        deserialized JSON may carry a stale/foreign world_id value.
+         * @return true on success, false on JSON parse error.
+         */
+        bool loadFromJson(const std::string &json, flecs::world *world);
+
         void setSingleton(bool singleton);
 
         b2WorldId getWorldId() const

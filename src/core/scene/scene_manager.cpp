@@ -17,16 +17,8 @@ namespace atmo
 
             std::shared_ptr<ecs::entities::Scene> SceneManager::loadSceneFromFile(std::string_view file_path)
             {
-                project::File file = project::FileSystem::OpenFile(file_path);
-
                 auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
-
-                // scene->loadFromJson(file.readAll().c_str());
-
-                // if (!scene->isAlive()) {
-                //     spdlog::error("Failed to load scene from file: {}", file_path);
-                //     throw std::runtime_error("Failed to load scene from file: " + std::string(file_path));
-                // }
+                scene->initFromFile(file_path);
 
                 return scene;
             }

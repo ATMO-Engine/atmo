@@ -276,6 +276,12 @@ namespace atmo::core::ecs::entities
         auto window = p_handle.get_ref<components::Window>();
         window->close_callback = callback;
     }
+
+    // TODO: remove once Clay is replaced with an in-house UI system.
+    void Window::primeScrollContainers()
+    {
+        Clay_UpdateScrollContainers(true, { 0.0f, 0.0001f }, 0.0f);
+    }
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::Window);

@@ -1,13 +1,16 @@
 #pragma once
 
+#include <chrono>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <glaze/glaze.hpp>
 #include <semver.hpp>
 #include <set>
 #include <spdlog/spdlog.h>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 #include "file_system.hpp"
@@ -43,7 +46,7 @@ namespace atmo
                     throw std::runtime_error("Invalid project path (no " ATMO_PROJECT_SETTINGS_FILE " found): " + settings_path.string());
 
                 File settings_file = FileSystem::OpenFile(settings_path.string());
-                LoadProjectSettings(settings_file);
+                LoadProjectSettings(settings_file, Instance().m_settings);
 
                 Instance().m_project_root = resolved_root;
             }
@@ -207,6 +210,77 @@ namespace atmo
             };
 #endif
 
+#if !defined(ATMO_EXPORT)
+            /**
+             * @brief Bundles the currently open project's files into a .pck (reusing GetFilesToPack /
+             *        GeneratePackedFile) and appends them onto a copy of a prebuilt atmo-export binary,
+             *        producing a standalone distributable executable.
+             *
+             * @param export_binary_path Path to a prebuilt atmo-export binary (built via `xmake build atmo-export`).
+             * @param output_path Path to write the resulting standalone executable to.
+             * @return true on success.
+             */
+            static bool ExportProject(const std::filesystem::path &export_binary_path, const std::filesystem::path &output_path)
+            {
+                if (!std::filesystem::exists(export_binary_path)) {
+                    spdlog::error("atmo-export binary not found at: {}", export_binary_path.string());
+                    return false;
+                }
+
+                std::error_code ec;
+                std::filesystem::copy_file(export_binary_path, output_path, std::filesystem::copy_options::overwrite_existing, ec);
+                if (ec) {
+                    spdlog::error("Failed to copy export binary to '{}': {}", output_path.string(), ec.message());
+                    return false;
+                }
+
+                std::filesystem::path temp_pck = std::filesystem::temp_directory_path() /
+                    std::format("atmo_export_{}{}", std::chrono::steady_clock::now().time_since_epoch().count(), ATMO_PACKED_EXT);
+
+                // Pack from within the project root so entry keys come out project-root-relative
+                // (e.g. "assets/icon.png"), matching the "project://" lookup convention — packing "."
+                // instead would bake "./"-prefixed keys and silently break every lookup at runtime.
+                std::filesystem::path saved_cwd = std::filesystem::current_path();
+                bool ok = true;
+                try {
+                    std::filesystem::current_path(Instance().m_project_root);
+                    std::vector<std::string> entries;
+                    for (const auto &top : std::filesystem::directory_iterator(std::filesystem::current_path()))
+                        entries.push_back(top.path().filename().string());
+                    GeneratePackedFile(temp_pck.string(), entries);
+                } catch (const std::exception &e) {
+                    spdlog::error("Failed to pack project for export: {}", e.what());
+                    ok = false;
+                }
+                std::filesystem::current_path(saved_cwd);
+                if (!ok)
+                    return false;
+
+                {
+                    std::ifstream src(temp_pck, std::ios::binary);
+                    std::ofstream dst(output_path, std::ios::binary | std::ios::app);
+                    if (!src.is_open() || !dst.is_open()) {
+                        spdlog::error("Failed to append packed data to export binary.");
+                        std::filesystem::remove(temp_pck, ec);
+                        return false;
+                    }
+                    dst << src.rdbuf();
+                }
+                std::filesystem::remove(temp_pck, ec);
+
+#if !defined(_WIN32)
+                std::filesystem::permissions(output_path,
+                    std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec,
+                    std::filesystem::perm_options::add, ec);
+                if (ec)
+                    spdlog::warn("Failed to set executable permission on '{}': {}", output_path.string(), ec.message());
+#endif
+
+                spdlog::info("Exported project to '{}'", output_path.string());
+                return true;
+            }
+#endif
+
             static ProjectSettings &GetSettings()
             {
                 return Instance().m_settings;
@@ -220,7 +294,7 @@ namespace atmo
 
                     if (!settings_search.empty()) {
                         File settings_file = project::FileSystem::OpenFile("project://.atmo/project_settings.json");
-                        LoadProjectSettings(settings_file);
+                        LoadProjectSettings(settings_file, m_settings);
                         FileSystem::UpdateProjectName(m_settings.app.project_name);
                     } else {
                         FileSystem::UpdateProjectName("atmo");
@@ -241,17 +315,17 @@ namespace atmo
             ProjectSettings m_settings;
             std::filesystem::path m_project_root;
 
-            inline static void LoadProjectSettings(File &file)
+            inline static void LoadProjectSettings(File &file, ProjectSettings &settings)
             {
                 std::string content = file.readAll();
-                auto err = glz::read_json<ProjectSettings>(Instance().m_settings, content);
+                auto err = glz::read_json<ProjectSettings>(settings, content);
 
                 if (err) {
                     std::string descriptive_error = glz::format_error(err, content);
                     throw std::runtime_error("Failed to parse project settings: " + descriptive_error);
                 }
 
-                spdlog::debug("Loaded project settings for project: {}", Instance().m_settings.app.project_name);
+                spdlog::debug("Loaded project settings for project: {}", settings.app.project_name);
             }
 
             inline static void WriteProjectSettings(std::ofstream &file, std::string &dest)

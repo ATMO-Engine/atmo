@@ -9,7 +9,6 @@
 
 namespace atmo::core::ecs::entities
 {
-    class Camera2d;
     class Scene;
 } // namespace atmo::core::ecs::entities
 
@@ -131,7 +130,8 @@ namespace atmo::editor
         SDL_Texture *m_render_texture = nullptr;
         SDL_Renderer *m_renderer = nullptr;
         std::shared_ptr<core::ecs::entities::Scene> m_scene;
-        std::shared_ptr<core::ecs::entities::Camera2d> m_camera;
+        core::types::Vector2 m_cam_position{ 0.0f, 0.0f };
+        float m_cam_zoom = 1.0f;
         bool m_ready = false;
         int m_width = 0;
         int m_height = 0;

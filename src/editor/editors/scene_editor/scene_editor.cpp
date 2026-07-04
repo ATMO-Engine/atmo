@@ -18,8 +18,8 @@
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
+#include "core/event/events/progress_tick_event/progress_tick_event.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
@@ -133,8 +133,8 @@ namespace atmo::editor
                 spdlog::error("Couldn't create scene viewport");
             }
 
-            core::event::EventRegistry::SetCallBack<editor::ProgressTickEvent>(
-                [this, ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](editor::ProgressTickEvent *evt) {
+            core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>(
+                [this, ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](core::event::events::ProgressTickEvent *evt) {
                     SDL_Renderer *renderer = nullptr;
                     if (handle.is_valid() && handle.has<core::components::Window>()) {
                         auto window = handle.get_ref<core::components::Window>();

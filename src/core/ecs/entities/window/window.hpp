@@ -70,6 +70,8 @@ namespace atmo::core::ecs::entities
 
         void onClose(std::function<void()> callback);
 
+        void primeScrollContainers();
+
     private:
         void pollEvents(float deltaTime);
         void beginDraw(components::Window &window);

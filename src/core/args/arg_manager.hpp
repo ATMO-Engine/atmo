@@ -175,6 +175,11 @@ namespace atmo::core::args
             return Instance().m_args.present<T>(arg_name);
         }
 
+        static bool IsUsed(std::string_view arg_name)
+        {
+            return Instance().m_args.is_used(arg_name);
+        }
+
         template <typename T> static T Get(std::string_view arg_name)
         {
             return Instance().m_args.get<T>(arg_name);

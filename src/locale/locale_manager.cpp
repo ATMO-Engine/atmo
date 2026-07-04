@@ -11,14 +11,12 @@ namespace atmo::locale
 {
     LocaleManager::LocaleManager()
     {
-#if !defined(ATMO_EXPORT)
         std::vector<std::string> locales = atmo::project::FileSystem::SearchFiles("project://translation/*/atmo.json");
         for (const auto &path : locales) {
             std::string locale = path.substr(path.find("translation/") + 12);
             locale = locale.substr(0, locale.find("/"));
             m_available_locales.push_back(locale);
         }
-#endif
 
         loadUserPreference();
 
@@ -151,8 +149,11 @@ namespace atmo::locale
     {
         std::string_view locale = m_user_preference.has_value() ? m_user_preference.value() : m_current_locale;
 
-        if (!hasLanguageAndCountryMatch(locale))
-            throw LocaleNotAvailableException(locale.data());
+        if (!hasLanguageAndCountryMatch(locale)) {
+            spdlog::warn("Locale '{}' not available; falling back to untranslated keys.", locale);
+            m_translations.clear();
+            return;
+        }
 
         project::File file = project::FileSystem::OpenFile(std::format("project://translation/{}/atmo.json", locale));
 
