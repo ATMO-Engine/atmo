@@ -289,6 +289,7 @@ namespace atmo::editor
 
 
         auto canvasHandle = canvas->getHandle();
+        m_canvas_handle = canvasHandle;
 
         widthNumberInput->getSignal<int>("IntValueChanged").connect([canvasHandle](int val) {
             if (!canvasHandle.is_alive()) {
@@ -390,28 +391,31 @@ namespace atmo::editor
             canvas_comp.pen = core::components::UIDrawingCanvas::DrawType::ERASER;
         });
 
-        fileExplorer->getSignal<std::string>("FileFocus").connect([canvasHandle](std::string path) {
-            if (!canvasHandle.is_alive()) {
-                return;
-            }
+        fileExplorer->getSignal<std::string>("FileFocus").connect([this](std::string path) { open(path); });
 
-            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
-            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-
-            canvas.importCanvas(path);
-        });
-
-        saveBtn->getSignal<>("Pressed").connect([canvasHandle]() {
-            if (!canvasHandle.is_alive()) {
-                return;
-            }
-
-            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
-            canvas.saveCanvas();
-        });
+        saveBtn->getSignal<>("Pressed").connect([this]() { save(); });
     }
 
     void TextureEditor::createTools() {}
+
+    void TextureEditor::save()
+    {
+        if (!p_file_path || !m_canvas_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        canvas.getComponentMutable<core::components::UIDrawingCanvas>().file_path = *p_file_path;
+        canvas.saveCanvas();
+    }
+
+    void TextureEditor::load()
+    {
+        if (!p_file_path || !m_canvas_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        canvas.importCanvas(*p_file_path);
+    }
 } // namespace atmo::editor
 
 ATMO_REGISTER_EDITOR(atmo::editor::TextureEditor);

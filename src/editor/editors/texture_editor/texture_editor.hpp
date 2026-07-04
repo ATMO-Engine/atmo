@@ -2,6 +2,7 @@
 
 #include "editor/editor_registry.hpp"
 #include "editor/editors/editor.hpp"
+#include "flecs.h"
 
 namespace atmo::editor
 {
@@ -32,5 +33,11 @@ namespace atmo::editor
 
         void init(atmo::core::ecs::entities::UI &container) override;
         void createTools() override;
+
+        void save() override;
+        void load() override;
+
+    private:
+        flecs::entity m_canvas_handle;
     };
 } // namespace atmo::editor

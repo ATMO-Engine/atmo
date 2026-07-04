@@ -22,6 +22,7 @@
 
 #if !defined(ATMO_EXPORT)
 
+#include "SDL3/SDL_dialog.h"
 #include "SDL3/SDL_keycode.h"
 #include "core/ecs/ecs.hpp"
 #include "core/ecs/entities/entity.hpp"
@@ -43,7 +44,23 @@ namespace atmo::editor
                 .id = "atmo.commands.file.save",
                 .category = "atmo.commands.file.category",
                 .shortcut = Shortcut{ SDLK_S, PRIMARY_MOD },
-                .action = [] {},
+                .action = [this] { handleSave(); },
+            });
+
+        m_commands.registerCommand(
+            {
+                .id = "atmo.commands.file.save_as",
+                .category = "atmo.commands.file.category",
+                .shortcut = Shortcut{ SDLK_S, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
+                .action = [this] { handleSaveAs(); },
+            });
+
+        m_commands.registerCommand(
+            {
+                .id = "atmo.commands.file.open",
+                .category = "atmo.commands.file.category",
+                .shortcut = Shortcut{ SDLK_O, PRIMARY_MOD },
+                .action = [this] { handleOpen(); },
             });
 
         m_commands.registerCommand(
@@ -116,7 +133,6 @@ namespace atmo::editor
         editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         m_editor_container->rename("scene ui container");
         m_editor_container->setParent(*window_ui_container);
-        // spdlog::info(glz::write<glz::opts{ .prettify = true }>(scene->serialize()).value());
 
         auto toolbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         toolbar_container->getComponentMutable<core::components::Layout>().padding = { 16, 16, 16, 16 };
@@ -178,6 +194,7 @@ namespace atmo::editor
                 if (new_state) {
                     btn_rect.color = core::types::Color("#b25959");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
+                    m_active_editor_index = index;
                 } else {
                     btn_rect.color = core::types::Color("#868686");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
@@ -335,6 +352,66 @@ namespace atmo::editor
         description->setParent(*open_editor_btn);
 
         return *open_editor_btn;
+    }
+
+    std::shared_ptr<Editor> EditorManager::activeEditor() const
+    {
+        if (m_active_editor_index && *m_active_editor_index < m_editors.size())
+            return m_editors[*m_active_editor_index];
+        return nullptr;
+    }
+
+    static void HandleFileDialogResult(void *userdata, const char *const *filelist, int /*filter*/)
+    {
+        std::unique_ptr<std::function<void(const std::string &)>> callback(static_cast<std::function<void(const std::string &)> *>(userdata));
+
+        if (!filelist) {
+            spdlog::error("File dialog error: {}", SDL_GetError());
+            return;
+        }
+        if (!filelist[0])
+            return;
+
+        try {
+            (*callback)(filelist[0]);
+        } catch (const std::exception &e) {
+            spdlog::error("File dialog action failed: {}", e.what());
+        }
+    }
+
+    void EditorManager::handleSave()
+    {
+        auto editor = activeEditor();
+        if (!editor) {
+            spdlog::warn("No active editor to save.");
+            return;
+        }
+
+        if (editor->hasFilePath()) {
+            editor->save();
+        } else {
+            handleSaveAs();
+        }
+    }
+
+    void EditorManager::handleSaveAs()
+    {
+        auto editor = activeEditor();
+        if (!editor)
+            return;
+
+        auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->saveAs(path); });
+        SDL_ShowSaveFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, nullptr);
+    }
+
+    void EditorManager::handleOpen()
+    {
+        auto editor = activeEditor();
+        if (!editor)
+            return;
+
+        auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->open(path); });
+        SDL_ShowOpenFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, nullptr, false);
     }
 } // namespace atmo::editor
 

@@ -228,6 +228,7 @@ namespace atmo::project
          *  - An absolute or relative path to a file on disk.
          *  - "project://relative/path/to/file" to open a file from the packed index.
          *  - "user://relative/path/to/file" to open a file relative to the user data directory.
+         * @param mode Mode used to open file as bitmask.
          * @return File object representing the opened file.
          * @exception File::FileOpenException If file could not be opened.
          * @exception std::runtime_error If file was not found.
@@ -301,8 +302,7 @@ namespace atmo::project
                     }
                 } else {
                     std::filesystem::path full_path = user_dir / relative_path;
-                    for (const auto &entry : std::filesystem::directory_iterator(full_path))
-                        results.push_back(entry.path().string());
+                    for (const auto &entry : std::filesystem::directory_iterator(full_path)) results.push_back(entry.path().string());
                 }
 
                 return results;
@@ -320,8 +320,7 @@ namespace atmo::project
                         results.push_back(entry.path().string());
                 }
             } else {
-                for (const auto &entry : std::filesystem::directory_iterator(full_path))
-                    results.push_back(entry.path().string());
+                for (const auto &entry : std::filesystem::directory_iterator(full_path)) results.push_back(entry.path().string());
             }
             return results;
         }

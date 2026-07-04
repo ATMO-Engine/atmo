@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <stack>
 #include <vector>
 
@@ -65,6 +66,12 @@ namespace atmo::editor
     private:
         void registerDefaultCommands();
 
+        std::shared_ptr<Editor> activeEditor() const;
+
+        void handleSave();
+        void handleSaveAs();
+        void handleOpen();
+
         atmo::core::Engine &m_engine;
         std::string m_project_path;
         Commands m_commands;
@@ -75,6 +82,7 @@ namespace atmo::editor
         std::shared_ptr<core::ecs::entities::UI> m_editor_container;
         std::shared_ptr<core::ecs::entities::UIRect> m_topbar;
         std::shared_ptr<core::ecs::entities::UIRect> m_toolbar;
+        std::optional<std::size_t> m_active_editor_index;
     };
 } // namespace atmo::editor
 

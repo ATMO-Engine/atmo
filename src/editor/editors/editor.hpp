@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -25,6 +26,31 @@ namespace atmo::editor
         virtual void init(atmo::core::ecs::entities::UI &container) = 0;
         virtual void createTools() = 0;
 
+        virtual void save() = 0;
+        virtual void load() = 0;
+
+        bool hasFilePath() const
+        {
+            return p_file_path.has_value();
+        }
+
+        const std::optional<std::string> &filePath() const
+        {
+            return p_file_path;
+        }
+
+        void open(const std::string &path)
+        {
+            p_file_path = path;
+            load();
+        }
+
+        void saveAs(const std::string &path)
+        {
+            p_file_path = path;
+            save();
+        }
+
         bool isToggleToolSelected(std::string_view tool_name);
 
         struct EditorTool {
@@ -42,6 +68,7 @@ namespace atmo::editor
         };
 
     protected:
+        std::optional<std::string> p_file_path;
         std::vector<EditorTool> p_tools;
 
     private:

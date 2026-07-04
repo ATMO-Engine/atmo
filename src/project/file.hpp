@@ -24,7 +24,7 @@ namespace atmo
             {
             }
 
-            explicit File(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out) : m_start_offset(0), m_ownership(true)
+            explicit File(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out) : m_start_offset(0), m_ownership(true), m_mode(mode)
             {
                 m_file = std::make_shared<std::fstream>(path.data(), mode);
 
@@ -137,7 +137,7 @@ namespace atmo
              */
             void write(const void *buf, std::uint64_t n)
             {
-                if (!m_ownership || !m_file->good() || !(static_cast<std::ios::openmode>(m_file->flags()) & std::ios::out))
+                if (!m_ownership || !m_file->good() || !(m_mode & std::ios::out))
                     throw std::runtime_error("Cannot write to file.");
 
                 m_file->seekp(m_start_offset + m_pos);
@@ -179,6 +179,7 @@ namespace atmo
         private:
             std::shared_ptr<std::fstream> m_file;
             bool m_ownership = false;
+            std::ios::openmode m_mode{};
             uint64_t m_start_offset, m_end_offset = 0;
             uint64_t m_pos = 0;
         };

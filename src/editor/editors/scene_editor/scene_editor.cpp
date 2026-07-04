@@ -31,6 +31,8 @@
 #include "editor/editors/editor.hpp"
 #include "flecs/addons/cpp/mixins/id/decl.hpp"
 #include "meta/widget_registry.hpp"
+#include "project/file.hpp"
+#include "project/file_system.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
@@ -417,6 +419,22 @@ namespace atmo::editor
     {
         p_tools = { Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "select", .icon_path = "project://assets/icons/x.svg" },
                     Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "measure", .icon_path = "project://assets/icons/x.svg" } };
+    }
+
+    void SceneEditor::save()
+    {
+        project::File scene_file = project::FileSystem::OpenFile(*p_file_path, std::ios::out);
+        auto scene_data = glz::write<glz::opts{ .prettify = true }>(m_scene_ctx->getScene()->serialize()).value();
+        scene_file.write(scene_data.c_str(), scene_data.size());
+    }
+
+    void SceneEditor::load()
+    {
+        if (!p_file_path)
+            return;
+
+        project::File scene_file = project::FileSystem::OpenFile(*p_file_path, std::ios::in);
+        m_scene_ctx->loadSceneFromJson(scene_file.readAll());
     }
 
     void SceneEditor::sceneEntityFodableTreeinit(

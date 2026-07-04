@@ -91,7 +91,7 @@ namespace atmo::editor
         [appMenu addItem:aboutItem];
         [appMenu addItem:[NSMenuItem separatorItem]];
 
-        AtmoMenuItemTarget *quitTarget = [[AtmoMenuItemTarget alloc] initWithAction:[&commands]() { commands.execute("file.quit"); }];
+        AtmoMenuItemTarget *quitTarget = [[AtmoMenuItemTarget alloc] initWithAction:[&commands]() { commands.execute("atmo.commands.file.quit"); }];
         [m_impl->targets addObject:quitTarget];
 
         NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"Quit Atmo"
