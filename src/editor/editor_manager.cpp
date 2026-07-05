@@ -89,6 +89,14 @@ namespace atmo::editor
                 .shortcut = Shortcut{ SDLK_Z, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
                 .action = [] {},
             });
+
+        m_commands.registerCommand(
+            {
+                .id = "atmo.commands.edit.project_settings",
+                .category = "atmo.commands.edit.category",
+                .shortcut = std::nullopt,
+                .action = [this] { core::SignalQueue::Enqueue([this]() { openProjectSettings(); }); },
+            });
     }
 
     void EditorManager::init()
@@ -141,13 +149,12 @@ namespace atmo::editor
 
         core::SignalQueue::Enqueue([scene]() { scene->getParent<core::ecs::entities::Window>().primeScrollContainers(); });
 
-        core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>(
-            [this](core::event::events::ProgressTickEvent *) {
-                if (m_play_process && !m_play_process->isRunning()) {
-                    m_play_process.reset();
-                    m_play_btn_icon->setTexturePath("project://assets/icons/play.svg");
-                }
-            });
+        core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>([this](core::event::events::ProgressTickEvent *) {
+            if (m_play_process && !m_play_process->isRunning()) {
+                m_play_process.reset();
+                m_play_btn_icon->setTexturePath("project://assets/icons/play.svg");
+            }
+        });
     }
 
     void EditorManager::updateTopBar()
@@ -466,6 +473,52 @@ namespace atmo::editor
 
         auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->open(path); });
         SDL_ShowOpenFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, nullptr, false);
+    }
+
+    void EditorManager::openProjectSettings()
+    {
+        auto project_settings_popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
+        project_settings_popup->setParent(*m_engine.getECS().getCurrentScene());
+
+        auto project_settings = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &project_settings_rect = project_settings->getComponentMutable<core::components::UIRect>();
+        project_settings_rect.corner_radius = { 4, 4, 4, 4 };
+        auto &project_settings_layout = project_settings->getComponentMutable<core::components::Layout>();
+        project_settings_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        project_settings_layout.width.size = 0.5f;
+        project_settings_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        project_settings_layout.height.size = 0.7f;
+        project_settings_layout.padding = { 4, 4, 4, 4 };
+        project_settings->setParent(*project_settings_popup);
+
+        auto project_settings_top_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        project_settings_top_bar->getComponentMutable<core::components::Layout>().direction = core::components::Layout::Direction::Horizontal;
+        project_settings_top_bar->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        project_settings_top_bar->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        project_settings_top_bar->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
+        project_settings_top_bar->setParent(*project_settings);
+
+        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        label->setText("atmo.project_settings");
+        label->setFontSize(24);
+        label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        label->setParent(*project_settings_top_bar);
+        auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        close_btn_holder->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_btn_holder->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_btn_holder->getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
+        close_btn_holder->setParent(*project_settings_top_bar);
+        auto close_project_settings_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &close_project_settings_btn_rect = close_project_settings_btn->getComponentMutable<core::components::UIRect>();
+        close_project_settings_btn_rect.color = core::types::Color::RED;
+        close_project_settings_btn_rect.corner_radius = { 4, 4, 4, 4 };
+        auto &close_project_settings_btn_layout = close_project_settings_btn->getComponentMutable<core::components::Layout>();
+        close_project_settings_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_project_settings_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        close_project_settings_btn_layout.aspect_ratio = { 1.0f, 1.0f };
+        close_project_settings_btn->getChildren()[0].destroy();
+        close_project_settings_btn->setParent(*close_btn_holder);
+        close_project_settings_btn->getSignal<>("Released").connect([project_settings_popup]() { project_settings_popup->destroy(); });
     }
 } // namespace atmo::editor
 

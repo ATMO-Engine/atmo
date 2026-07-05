@@ -75,6 +75,8 @@ namespace atmo::editor
         void handleSaveAs();
         void handleOpen();
 
+        void openProjectSettings();
+
         void startPlay();
         void stopPlay();
 

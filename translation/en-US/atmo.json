@@ -3,6 +3,7 @@
     "create": "Create",
     "create_new_project": "Create new project",
     "open_project": "Open project",
+    "project_settings": "Project settings",
     "commands": {
       "file": {
         "category": "File",
