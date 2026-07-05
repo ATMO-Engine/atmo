@@ -54,6 +54,13 @@ namespace atmo
 
             /**
              * @brief
+             * Call the function OnCollisionEnter of the script if defined
+             * @param other The other entity of the colision
+             */
+            void onCollisionEnter(flecs::entity &other);
+
+            /**
+             * @brief
              * Mark the script as destroyed therefore no function can be called anymore.
              * Call clean or lose the class reference to clean everything properly
              */
@@ -76,6 +83,13 @@ namespace atmo
             LuauRef m_threadRef;
 
             bool m_stop = false;
+
+            /**
+             * @brief Push a global function on the stack if it exists
+             * @param name The name of the function to push
+             * @return true if function has been found and push, int other case false
+             */
+            bool pushFunction(const char *name);
 
             /**
              * @brief

@@ -88,11 +88,8 @@ namespace atmo
 
         void ScriptInstance::handleCall(int result)
         {
-            if (result == LUA_OK) {
-                // Succes
-            } else {
-                const char *err = lua_tostring(m_thread, -1);
-                spdlog::warn("Run time error: {}", err);
+            if (result != LUA_OK) {
+                luau::Luau::LogLuauError(m_thread, "runtime");
             }
         }
 
@@ -138,6 +135,37 @@ namespace atmo
 
             lua_getglobal(m_thread, "PhysicsUpdate");
             lua_pushnumber(m_thread, dt);
+            int result = lua_pcall(m_thread, 1, 0, 0);
+            handleCall(result);
+        }
+
+        bool ScriptInstance::pushFunction(const char *name)
+        {
+            lua_getglobal(m_thread, name);
+            if (!lua_isfunction(m_thread, -1)) {
+                lua_pop(m_thread, 1);
+                spdlog::warn("function {} is not defined", name);
+                return false;
+            }
+            return true;
+        }
+
+        void ScriptInstance::onCollisionEnter(flecs::entity &other)
+        {
+            if (m_stop == true) {
+                return;
+            }
+            if (m_thread == nullptr) {
+                spdlog::warn("Thread null, code not running");
+                return;
+            }
+
+            if (!pushFunction("OnCollisionEnter")) {
+                return;
+            }
+
+            LuaBindings<flecs::entity>::Push(m_thread, &other, false);
+
             int result = lua_pcall(m_thread, 1, 0, 0);
             handleCall(result);
         }

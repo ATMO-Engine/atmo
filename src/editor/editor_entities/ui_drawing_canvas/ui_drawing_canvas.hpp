@@ -23,6 +23,8 @@ namespace atmo::core::components
         };
 
         Clay_BoundingBox bounds = {};
+        SDL_Texture *display_texture = nullptr;
+        core::types::Vector2i display_texture_size = { 0, 0 };
 
         std::vector<std::vector<atmo::core::types::Color>> pixels;
         std::vector<uint8_t> upload_buffer;
@@ -49,6 +51,8 @@ namespace atmo::core::components
         int brush_radius = 10;
         atmo::core::types::Color brush_color = atmo::core::types::Color::BLACK;
         DrawType pen = DrawType::PENCIL;
+
+        bool preview = false;
     };
 } // namespace atmo::core::components
 
@@ -107,7 +111,7 @@ namespace atmo::core::ecs::entities
         void handleZoom(const atmo::core::types::Vector2 &mousePosInScreen);
         void handlePan(const atmo::core::types::Vector2 &mousePosInScreen);
         void handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2 &mousePosInCanvas);
-        void render();
+        void render(SDL_Renderer *renderer);
         void flushPixelsToTexture(SDL_Renderer *renderer);
 
         void clampOffset(components::UIDrawingCanvas &comp);

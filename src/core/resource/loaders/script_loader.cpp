@@ -24,16 +24,12 @@ namespace atmo
 
                 Bytecode *newRessource = nullptr;
                 try {
-                    // std::ifstream luaFile(path);
-                    // if (!luaFile) {
-                    //     throw std::runtime_error("Failed to open script file: " + path);
-                    // }
-                    //
-                    // std::string source((std::istreambuf_iterator<char>(luaFile)), std::istreambuf_iterator<char>());
-                    // luaFile.close();
-
                     size_t bytecodeSize = 0;
-                    char *bytecode = atmo::luau::Luau::Compile(file.readAll(), &bytecodeSize);
+                    char *bytecode = atmo::luau::Luau::Compile(file.readAll(), &bytecodeSize, path);
+
+                    if (!bytecode) {
+                        throw LoadException("Failed to load bytecode: " + path);
+                    }
 
                     Bytecode *newRessource = new Bytecode{};
                     if (!newRessource) {

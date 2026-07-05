@@ -27,7 +27,7 @@ namespace atmo
              * @param options Control how the code is compiled example optimization/debug level
              * @return char* The compiled raw bytecode
              */
-            static char *Compile(const std::string &source, size_t *bytecode_size, lua_CompileOptions *options = nullptr);
+            static char *Compile(const std::string &source, size_t *bytecode_size, const std::string &chunkName, lua_CompileOptions *options = nullptr);
 
             /**
              * @brief
@@ -84,6 +84,24 @@ namespace atmo
              * @param loader The function that load the module
              */
             void registerModule(const std::string &name, lua_CFunction loader);
+
+            /**
+             * @brief
+             * Send log error message
+             *
+             * @param L The vm or thread you are working on
+             * @param context The context of the environment (ex: script or entity name)
+             */
+            static void LogLuauError(lua_State *L, const std::string &context);
+
+            /**
+             * @brief
+             * Send log error message
+             *
+             * @param errorMsg The generated error message
+             * @param loader The context of the environment (ex: script or entity name)
+             */
+            static void LogCompileTimeError(const std::string &errorMsg, const std::string &context);
 
         protected:
             lua_State *p_L;

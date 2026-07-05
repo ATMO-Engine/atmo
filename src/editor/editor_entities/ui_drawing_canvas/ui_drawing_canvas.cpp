@@ -31,15 +31,77 @@ namespace atmo::core::ecs::entities
         createSignal<const core::types::Vector2i &>("New Dimensions");
     }
 
+    void UIDrawingCanvas::render(SDL_Renderer *renderer)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+        int w = (int)comp.bounds.width;
+        int h = (int)comp.bounds.height;
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+
+        if (!comp.checkboard_texture) {
+            return;
+        }
+
+        if (!comp.display_texture || comp.display_texture_size.x != w || comp.display_texture_size.y != h) {
+            if (comp.display_texture)
+                SDL_DestroyTexture(comp.display_texture);
+
+            comp.display_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
+            if (!comp.display_texture)
+                return;
+            SDL_SetTextureScaleMode(comp.display_texture, SDL_SCALEMODE_NEAREST);
+            SDL_SetTextureBlendMode(comp.display_texture, SDL_BLENDMODE_BLEND);
+            comp.display_texture_size = { w, h };
+        }
+
+        SDL_FRect localRect = comp.cached_texture_rect;
+        localRect.x -= comp.bounds.x;
+        localRect.y -= comp.bounds.y;
+
+        SDL_SetRenderTarget(renderer, comp.display_texture);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+        SDL_RenderClear(renderer);
+
+        if (!comp.preview) {
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
+            SDL_FRect fillRect = { 0, 0, comp.bounds.width, comp.bounds.height };
+            SDL_RenderFillRect(renderer, &fillRect);
+            SDL_RenderTexture(renderer, comp.checkboard_texture, nullptr, &localRect);
+        }
+        SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &localRect);
+
+        SDL_SetRenderTarget(renderer, nullptr);
+    }
+
     Clay_ElementDeclaration UIDrawingCanvas::buildDecl()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        return Clay_ElementDeclaration{ .id = CLAY_ID("DrawingCanvas"),
-                                        .layout = { .sizing = {
-                                                        .width = CLAY_SIZING_PERCENT(comp.canvas_size.x),
-                                                        .height = CLAY_SIZING_PERCENT(comp.canvas_size.y),
-                                                    } } };
+        auto windowEntity = getWindow();
+        SDL_Renderer *renderer = windowEntity ? windowEntity->getComponentMutable<core::components::Window>().renderer_data.renderer : nullptr;
+
+        if (renderer) {
+            if (comp.texture_dirty)
+                flushPixelsToTexture(renderer);
+            if (!comp.checkboard_texture)
+                rebuildCheckboard();
+            render(renderer);
+        }
+
+        Clay_ElementDeclaration d{ .id = CLAY_ID("DrawingCanvas"),
+                                   .layout = { .sizing = {
+                                                   .width = CLAY_SIZING_PERCENT(comp.canvas_size.x),
+                                                   .height = CLAY_SIZING_PERCENT(comp.canvas_size.y),
+                                               } } };
+
+        if (comp.display_texture)
+            d.image = { .imageData = comp.display_texture };
+
+        return d;
     }
 
     void UIDrawingCanvas::rebuildCheckboard()
@@ -322,52 +384,14 @@ namespace atmo::core::ecs::entities
         auto mousePosInScreen = core::InputManager::GetMousePosition();
         auto mousePosInCanvas = screenToCanvas(mousePosInScreen);
         if (Clay_Hovered()) {
-            handleZoom(mousePosInScreen);
-            handlePan(mousePosInScreen);
+            if (!comp.preview) {
+                handleZoom(mousePosInScreen);
+                handlePan(mousePosInScreen);
+            }
             handleDrawing(mousePosInScreen, mousePosInCanvas);
         } else {
             comp.last_paint_mouse_pos = mousePosInCanvas;
         }
-
-        render();
-    }
-
-    void UIDrawingCanvas::render()
-    {
-        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-
-
-        auto windowEntity = getWindow();
-        if (!windowEntity) {
-            return;
-        }
-        auto window = windowEntity->getComponentMutable<core::components::Window>();
-        SDL_Renderer *renderer = window.renderer_data.renderer;
-        if (!renderer) {
-            return;
-        }
-        if (comp.texture_dirty) {
-            flushPixelsToTexture(renderer);
-        }
-
-        if (!comp.checkboard_texture) {
-            spdlog::warn("CheckBoard texture null rebuild");
-            rebuildCheckboard();
-        }
-        if (!comp.drawing_texture || !comp.checkboard_texture) {
-            return;
-        }
-
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
-        SDL_FRect canvasRect = { comp.bounds.x, comp.bounds.y, comp.bounds.width, comp.bounds.height };
-        SDL_RenderFillRect(renderer, &canvasRect);
-
-        SDL_Rect clipRect = { (int)comp.bounds.x, (int)comp.bounds.y, (int)comp.bounds.width, (int)comp.bounds.height };
-        SDL_SetRenderClipRect(renderer, &clipRect);
-        SDL_RenderTexture(renderer, comp.checkboard_texture, nullptr, &comp.cached_texture_rect);
-        SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &comp.cached_texture_rect);
-        SDL_SetRenderClipRect(renderer, nullptr);
     }
 
     void UIDrawingCanvas::flushPixelsToTexture(SDL_Renderer *renderer)

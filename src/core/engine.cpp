@@ -138,15 +138,17 @@ namespace atmo::core
 
         ArgManager::AddArgument("--run")
             .nargs(ArgManager::NargsPattern::Optional)
-            .help("Run the project as a standalone game instead of opening the editor. Loads the "
-                  "project's default scene unless an explicit scene path is given. Combine with --project "
-                  "to select which project to run.")
+            .help(
+                "Run the project as a standalone game instead of opening the editor. Loads the "
+                "project's default scene unless an explicit scene path is given. Combine with --project "
+                "to select which project to run.")
             .metavar("scene_path");
 
         ArgManager::AddArgument("--export")
             .nargs(2)
-            .help("Export the project given by --project into a standalone executable: copies "
-                  "<atmo_export_binary> to <output_path> and appends the project's packed asset data.")
+            .help(
+                "Export the project given by --project into a standalone executable: copies "
+                "<atmo_export_binary> to <output_path> and appends the project's packed asset data.")
             .metavar("atmo_export_binary output_path");
         ArgManager::AddLaunchHandler(9000, "--export", handleArgExport);
 #endif
@@ -267,9 +269,6 @@ namespace atmo::core
         scene->setSingleton(false);
         m_ecs.changeScene(scene);
 
-
-        atmo::luau::Luau vm;
-
         InputManager::AddInput("D", new InputManager::KeyEvent(SDLK_D, false));
         InputManager::AddInput("Q", new InputManager::KeyEvent(SDLK_Q, false));
 
@@ -288,12 +287,10 @@ namespace atmo::core
                     spdlog::error("Failed to open project '{}': {}", *project_path, e.what());
                     return;
                 }
-                project::FileSystem::SetProjectRootOverride(
-                    std::filesystem::absolute(project::ProjectManager::GetCurrentProjectPath()));
+                project::FileSystem::SetProjectRootOverride(std::filesystem::absolute(project::ProjectManager::GetCurrentProjectPath()));
             }
 
-            std::string scene_path =
-                args::ArgManager::Present<std::string>("--run").value_or(project::ProjectManager::GetSettings().app.default_scene);
+            std::string scene_path = args::ArgManager::Present<std::string>("--run").value_or(project::ProjectManager::GetSettings().app.default_scene);
 
             if (scene_path.empty())
                 spdlog::warn("Run mode: no scene to load (no --run argument and no app.default_scene configured).");
