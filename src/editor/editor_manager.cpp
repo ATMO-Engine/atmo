@@ -538,7 +538,9 @@ namespace atmo::editor
         close_project_settings_btn_layout.aspect_ratio = { 1.0f, 1.0f };
         close_project_settings_btn->getChildren()[0].destroy();
         close_project_settings_btn->setParent(*close_btn_holder);
-        close_project_settings_btn->getSignal<>("Released").connect([project_settings_popup]() { project_settings_popup->destroy(); });
+        close_project_settings_btn->getSignal<>("Released").connect([project_settings_popup]() {
+            core::SignalQueue::Enqueue([project_settings_popup]() { project_settings_popup->destroy(); });
+        });
 
         auto body = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &body_layout = body->getComponentMutable<core::components::Layout>();
