@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <optional>
 #include <type_traits>
+#include <vector>
 
 namespace atmo::meta
 {
@@ -106,6 +107,14 @@ namespace atmo::meta
 
     template <> struct DefaultWidget<float> {
         static constexpr const char *value = "float";
+    };
+
+    /**
+     * @brief A std::vector<T> gets a generic "vector" widget automatically, but only if its element type already
+     * resolves to a widget of its own — vectors of unsupported/composite element types stay unsupported.
+     */
+    template <typename T> struct DefaultWidget<std::vector<T>> {
+        static constexpr const char *value = DefaultWidget<T>::value ? "vector" : nullptr;
     };
 
 } // namespace atmo::meta

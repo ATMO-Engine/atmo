@@ -1,5 +1,6 @@
 #pragma once
 
+#include "meta/meta.hpp"
 #include "shape2d.hpp"
 
 namespace atmo
@@ -15,12 +16,19 @@ namespace atmo
                 public:
                     using SubResourceRegistry::Registrable<CircleShape2d, Shape2d>::Registrable;
 
+                    friend struct atmo::meta::ComponentMeta<CircleShape2d>;
+
                     std::string serialize() const override;
                     void deserialize(const std::string &data) override;
 
                     static constexpr std::string_view LocalName()
                     {
                         return "CircleShape2d";
+                    }
+
+                    std::string_view getTypeName() const override
+                    {
+                        return FullName();
                     }
 
                     void setRadius(float radius);
@@ -35,3 +43,9 @@ namespace atmo
         } // namespace resource
     } // namespace core
 } // namespace atmo
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::resource::resources::CircleShape2d> {
+    static constexpr const char *name = "SubResource::Shape2d::CircleShape2d";
+    static constexpr auto fields =
+        std::make_tuple(atmo::meta::field<&atmo::core::resource::resources::CircleShape2d::m_radius>("radius"));
+};

@@ -1,18 +1,25 @@
-#include <format>
-
 #include "box2d/box2d.h"
 #include "circle_shape2d.hpp"
 #include "common/math.hpp"
 #include "core/resource/subresource_registry.hpp"
+#include "glaze/glaze.hpp"
+#include "meta/auto_register.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::core::resource::resources
 {
     std::string CircleShape2d::serialize() const
     {
-        return std::format(R"({{ "radius": {} }})", m_radius);
+        return glz::write_json(*this).value_or("{}");
     }
 
-    void CircleShape2d::deserialize(const std::string &data) {}
+    void CircleShape2d::deserialize(const std::string &data)
+    {
+        auto err = glz::read_json(*this, data);
+        if (err) {
+            spdlog::error("Failed to deserialize CircleShape2d: {}", glz::format_error(err, data));
+        }
+    }
 
     void CircleShape2d::setRadius(float radius)
     {
@@ -33,3 +40,4 @@ namespace atmo::core::resource::resources
 } // namespace atmo::core::resource::resources
 
 REGISTER_SUBRESOURCE(resources::CircleShape2d);
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::core::resource::resources::CircleShape2d)

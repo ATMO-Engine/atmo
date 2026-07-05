@@ -33,8 +33,12 @@ namespace atmo::meta
          * @brief Register a type T with the MetaRegistry.
          *
          * @tparam T Type to register. Must have a ComponentMeta<T> struct defined.
+         * @param with_flecs Whether to also register T with flecs (via registerAllFlecs). Types that are never
+         * attached to a flecs entity (e.g. subresources) should pass false, since flecs' offset-inference member
+         * registration assumes the type is a flat aggregate and can silently miscompute offsets on polymorphic
+         * types.
          */
-        template <HasComponentMeta T> void registerType()
+        template <HasComponentMeta T> void registerType(bool with_flecs = true)
         {
             const std::string_view type_name = ComponentMeta<T>::name;
             for (const auto &ti : m_types) {
@@ -44,7 +48,9 @@ namespace atmo::meta
             }
 
             TypeInfo ti = make_type_info<T>();
-            ti.register_flecs = &register_flecs_meta<T>;
+            if (with_flecs) {
+                ti.register_flecs = &register_flecs_meta<T>;
+            }
             m_types.push_back(std::move(ti));
         }
 

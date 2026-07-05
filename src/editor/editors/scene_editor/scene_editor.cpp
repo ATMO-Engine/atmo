@@ -29,6 +29,7 @@
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "editor/editor_registry.hpp"
 #include "editor/editors/editor.hpp"
+#include "editor/inspector_utils.hpp"
 #include "flecs/addons/cpp/mixins/id/decl.hpp"
 #include "meta/widget_registry.hpp"
 #include "project/file.hpp"
@@ -75,27 +76,13 @@ namespace atmo::editor
             child_UI->setParent(parent);
             title_label.setText(entity_ti.second->name);
 
-            for (auto &field_info : entity_ti.second->fields) {
-                auto input_container = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UI>("Entity::UI");
-                auto field_label = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UILabel>("Entity::UI::UILabel");
-                auto &input_container_layout = input_container->getComponentMutable<atmo::core::components::Layout>();
-
-                // input_container_layout.child_gap = 4;
-                input_container_layout.direction = atmo::core::components::Layout::Direction::Vertical;
-                field_label->setFontSize(12);
-                field_label->setText(field_info.name);
-                field_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-                field_label->setParent(*input_container);
-                auto widget = meta::WidgetRegistry::Instance().create(*input_container, entity.try_get_mut(entity_ti.first), field_info);
-                if (widget) {
-                    update_fns.push_back([entity, comp_id = entity_ti.first, field_info, w = *widget]() {
-                        void *ptr = entity.try_get_mut(comp_id);
-                        if (!ptr)
-                            return;
-                        meta::WidgetRegistry::Instance().update(w, ptr, field_info);
-                    });
-                }
-                input_container->setParent(child_UI->getChildContainer());
+            for (auto &row : buildFieldWidgetRows(entity_ti.second, entity.try_get_mut(entity_ti.first), child_UI->getChildContainer())) {
+                update_fns.push_back([entity, comp_id = entity_ti.first, field_info = row.field, w = row.widget]() {
+                    void *ptr = entity.try_get_mut(comp_id);
+                    if (!ptr)
+                        return;
+                    meta::WidgetRegistry::Instance().update(w, ptr, field_info);
+                });
             }
 
             // auto &input_type = inputtest->getComponentMutable<core::components::UIInput>();

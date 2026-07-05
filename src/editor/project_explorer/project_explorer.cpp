@@ -108,9 +108,7 @@ namespace atmo::editor
         list->setParent(*list_container);
 
 
-        spdlog::info("Found projects:");
         for (auto project : found_projects) {
-            spdlog::info(" - {}", project);
             std::filesystem::path project_root = std::filesystem::path(project).parent_path().parent_path();
             makeProjectButton(*list, window_ui_container, project_root.string());
         }

@@ -12,9 +12,11 @@
 #include "glaze/glaze.hpp"
 #include "glaze/json/prettify.hpp"
 
+#include "core/resource/subresource_registry.hpp"
 #include "meta/component_meta.hpp"
 #include "meta/field_descriptor.hpp"
 #include "meta/glaze_bridge.hpp"
+#include "meta/vector_traits.hpp"
 
 namespace atmo::meta
 {
@@ -33,6 +35,28 @@ namespace atmo::meta
 
         void (*get)(const void *component, void *out) = nullptr;
         void (*set)(void *component, const void *value) = nullptr;
+
+        // Populated when the field type is std::vector<T> (plain) or std::vector<shared_ptr<SubResource-derived>>.
+        bool is_vector = false;
+        bool is_subresource_vector = false;
+
+        std::size_t (*vector_size)(const void *vec) = nullptr;
+        void (*vector_clear)(void *vec) = nullptr;
+        void (*vector_erase)(void *vec, std::size_t index) = nullptr;
+        void *(*vector_element_ptr)(void *vec, std::size_t index) = nullptr;
+
+        // Plain-vector element access: lets a generic "vector" widget hand each element straight into the
+        // existing, unmodified WidgetRegistry via an ad hoc per-row FieldInfo using these identity get/set pairs.
+        const char *element_widget = nullptr;
+        std::size_t element_size = 0;
+        void (*element_get)(const void *element, void *out) = nullptr;
+        void (*element_set)(void *element, const void *value) = nullptr;
+        void (*vector_push_default)(void *vec) = nullptr;
+
+        // Subresource-vector specifics.
+        const char *subresource_base_full_name = nullptr;
+        void (*vector_push_subresource)(void *vec, std::string_view type_name) = nullptr;
+        std::string_view (*subresource_element_type_name)(void *element) = nullptr;
     };
 
     struct TypeInfo {
@@ -85,6 +109,51 @@ namespace atmo::meta
                     auto *owner = static_cast<Owner *>(component);
                     owner->*MemberPtr = *static_cast<const FieldT *>(value);
                 };
+            }
+
+            if constexpr (IsPlainVector<FieldT>) {
+                using Elem = typename IsStdVector<FieldT>::element_type;
+
+                fi.is_vector = true;
+                fi.element_widget = DefaultWidget<Elem>::value;
+                fi.element_size = sizeof(Elem);
+
+                fi.element_get = [](const void *element, void *out) { *static_cast<Elem *>(out) = *static_cast<const Elem *>(element); };
+                fi.element_set = [](void *element, const void *value) { *static_cast<Elem *>(element) = *static_cast<const Elem *>(value); };
+
+                fi.vector_size = [](const void *vec) -> std::size_t { return static_cast<const FieldT *>(vec)->size(); };
+                fi.vector_clear = [](void *vec) { static_cast<FieldT *>(vec)->clear(); };
+                fi.vector_erase = [](void *vec, std::size_t index) {
+                    auto *v = static_cast<FieldT *>(vec);
+                    if (index < v->size()) {
+                        v->erase(v->begin() + static_cast<std::ptrdiff_t>(index));
+                    }
+                };
+                fi.vector_element_ptr = [](void *vec, std::size_t index) -> void * { return &(*static_cast<FieldT *>(vec))[index]; };
+                fi.vector_push_default = [](void *vec) { static_cast<FieldT *>(vec)->push_back(Elem{}); };
+            } else if constexpr (IsSubResourceVector<FieldT>) {
+                using Base = typename IsSharedPtr<typename IsStdVector<FieldT>::element_type>::pointee;
+
+                fi.is_vector = true;
+                fi.is_subresource_vector = true;
+                fi.subresource_base_full_name = Base::FullName().data();
+
+                fi.vector_size = [](const void *vec) -> std::size_t { return static_cast<const FieldT *>(vec)->size(); };
+                fi.vector_clear = [](void *vec) { static_cast<FieldT *>(vec)->clear(); };
+                fi.vector_erase = [](void *vec, std::size_t index) {
+                    auto *v = static_cast<FieldT *>(vec);
+                    if (index < v->size()) {
+                        v->erase(v->begin() + static_cast<std::ptrdiff_t>(index));
+                    }
+                };
+                fi.vector_element_ptr = [](void *vec, std::size_t index) -> void * { return (*static_cast<FieldT *>(vec))[index].get(); };
+                fi.vector_push_subresource = [](void *vec, std::string_view type_name) {
+                    auto shape = core::resource::SubResourceRegistry::Create<Base>(type_name);
+                    if (shape) {
+                        static_cast<FieldT *>(vec)->push_back(shape);
+                    }
+                };
+                fi.subresource_element_type_name = [](void *element) -> std::string_view { return static_cast<Base *>(element)->getTypeName(); };
             }
 
             return fi;

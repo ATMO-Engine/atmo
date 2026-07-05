@@ -1,16 +1,23 @@
-#include <format>
-
 #include "core/resource/subresource_registry.hpp"
+#include "glaze/glaze.hpp"
+#include "meta/auto_register.hpp"
 #include "rectangle_shape2d.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::core::resource::resources
 {
     std::string RectangleShape2d::serialize() const
     {
-        return std::format(R"({{ "size": {{ "x": {}, "y": {} }} }})", m_size.x, m_size.y);
+        return glz::write_json(*this).value_or("{}");
     }
 
-    void RectangleShape2d::deserialize(const std::string &data) {}
+    void RectangleShape2d::deserialize(const std::string &data)
+    {
+        auto err = glz::read_json(*this, data);
+        if (err) {
+            spdlog::error("Failed to deserialize RectangleShape2d: {}", glz::format_error(err, data));
+        }
+    }
 
     void RectangleShape2d::setSize(const types::Vector2 &size)
     {
@@ -33,3 +40,4 @@ namespace atmo::core::resource::resources
 } // namespace atmo::core::resource::resources
 
 REGISTER_SUBRESOURCE(resources::RectangleShape2d);
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::core::resource::resources::RectangleShape2d)
