@@ -286,6 +286,25 @@ namespace atmo
                 return Instance().m_settings;
             }
 
+#if !defined(ATMO_EXPORT)
+            /**
+             * @brief Writes the current in-memory project settings back to the currently opened project's
+             *        project_settings.json.
+             */
+            static void SaveSettings()
+            {
+                std::filesystem::path settings_path = Instance().m_project_root / ".atmo" / ATMO_PROJECT_SETTINGS_FILE;
+
+                std::ofstream file(settings_path, std::ios::binary);
+                if (!file.is_open())
+                    throw std::runtime_error("Failed to open project settings file for writing: " + settings_path.string());
+
+                std::string dest;
+                WriteProjectSettings(file, dest);
+                file.write(dest.data(), dest.size());
+            }
+#endif
+
         private:
             ProjectManager()
             {

@@ -4,6 +4,7 @@
     "create_new_project": "Create new project",
     "open_project": "Open project",
     "project_settings": "Project settings",
+    "apply": "Apply",
     "commands": {
       "file": {
         "category": "File",
@@ -13,7 +14,8 @@
       "edit": {
         "category": "Edit",
         "undo": "Undo",
-        "redo": "Redo"
+        "redo": "Redo",
+        "project_settings": "Project settings"
       }
     },
     "open_new_editor": "Open new editor",

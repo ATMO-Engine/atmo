@@ -8,6 +8,7 @@
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/engine.hpp"
 #include "editor/child_process.hpp"
@@ -18,6 +19,11 @@
 #include "luau/luau.hpp"
 
 #include "editor_registry.hpp"
+
+namespace atmo::project
+{
+    struct ProjectSettings;
+} // namespace atmo::project
 
 #if !defined(ATMO_EXPORT)
 
@@ -76,6 +82,7 @@ namespace atmo::editor
         void handleOpen();
 
         void openProjectSettings();
+        std::shared_ptr<core::ecs::entities::UIFoldableTreeItem> makeSettingsSection(core::ecs::entities::UI &body, const std::string &title);
 
         void startPlay();
         void stopPlay();
@@ -94,6 +101,7 @@ namespace atmo::editor
         std::shared_ptr<core::ecs::entities::UIButton> m_play_btn;
         std::shared_ptr<core::ecs::entities::UIImage> m_play_btn_icon;
         std::optional<ChildProcess> m_play_process;
+        std::shared_ptr<project::ProjectSettings> m_settings_draft;
     };
 } // namespace atmo::editor
 

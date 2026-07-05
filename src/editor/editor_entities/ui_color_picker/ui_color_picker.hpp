@@ -45,5 +45,6 @@ namespace atmo::core::ecs::entities
 
     private:
         void setupRow(const std::string &label, const std::string &rowName);
+        void syncRow(std::string_view rowName, float value);
     };
 } // namespace atmo::core::ecs::entities

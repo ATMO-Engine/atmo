@@ -109,6 +109,10 @@ namespace atmo::meta
         static constexpr const char *value = "float";
     };
 
+    template <> struct DefaultWidget<bool> {
+        static constexpr const char *value = "bool";
+    };
+
     /**
      * @brief A std::vector<T> gets a generic "vector" widget automatically, but only if its element type already
      * resolves to a widget of its own — vectors of unsupported/composite element types stay unsupported.

@@ -287,10 +287,36 @@ namespace atmo::core::ecs::entities
         }
     }
 
+    void UIColorPicker::syncRow(std::string_view rowName, float value)
+    {
+        std::string panel_name = std::string(rowName) + "panel";
+        Entity color_panel;
+        for (auto &child : getChildren()) {
+            if (child.name() == panel_name) {
+                color_panel = child;
+                break;
+            }
+        }
+        if (!color_panel.getHandle().is_alive())
+            return;
+
+        auto slider_entity = color_panel.getChild(std::string(rowName) + "slider");
+        auto number_input_entity = color_panel.getChild(std::string(rowName) + "input");
+
+        UISlider(slider_entity.getHandle()).setValue(value, false);
+        number_input_entity.getComponentMutable<core::components::UINumberInput>().value = value;
+    }
+
     void UIColorPicker::setColor(const types::Color &color)
     {
         auto &comp = getComponentMutable<components::UIColorPicker>();
         comp.current_color = color;
+
+        syncRow(RowR, color.r);
+        syncRow(RowG, color.g);
+        syncRow(RowB, color.b);
+        syncRow(RowA, color.a);
+
         getSignal<types::Color>("ColorChanged").emit(comp.current_color);
     }
 

@@ -5,6 +5,7 @@
 #include "core/types.hpp"
 #include "glaze/glaze.hpp"
 #include "impl/romver.hpp"
+#include "meta/auto_register.hpp"
 #include "meta/glaze_bridge.hpp"
 
 #define ATMO_VERSION "1.0.0"
@@ -71,3 +72,54 @@ namespace atmo
         };
     } // namespace project
 } // namespace atmo
+
+#if !defined(ATMO_EXPORT)
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::App> {
+    static constexpr const char *name = "ProjectSettings.App";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::App::project_name>("project_name"),
+        atmo::meta::field<&atmo::project::App::icon_path>("icon_path").withWidget("file_path"),
+        atmo::meta::field<&atmo::project::App::default_scene>("default_scene").withWidget("file_path"));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::App);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Boot> {
+    static constexpr const char *name = "ProjectSettings.Boot";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::Boot::background_color>("background_color"),
+        atmo::meta::field<&atmo::project::Boot::show_splash_icon>("show_splash_icon"),
+        atmo::meta::field<&atmo::project::Boot::full_size_splash_icon>("full_size_splash_icon"),
+        atmo::meta::field<&atmo::project::Boot::splash_icon_path>("splash_icon_path").withWidget("file_path"));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Boot);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Window> {
+    static constexpr const char *name = "ProjectSettings.Window";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::Window::background_color>("background_color"), atmo::meta::field<&atmo::project::Window::headless>("headless"),
+        atmo::meta::field<&atmo::project::Window::size>("size"));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Window);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Singletons> {
+    static constexpr const char *name = "ProjectSettings.Singletons";
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::project::Singletons::scenes>("scenes"));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Singletons);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Engine> {
+    static constexpr const char *name = "ProjectSettings.Engine";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::Engine::gravity>("gravity"), atmo::meta::field<&atmo::project::Engine::physics_frame_rate>("physics_frame_rate"),
+        atmo::meta::field<&atmo::project::Engine::pixels_per_meter>("pixels_per_meter"));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Engine);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Debug> {
+    static constexpr const char *name = "ProjectSettings.Debug";
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::project::Debug::draw_physics_debug>("draw_physics_debug"));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Debug);
+
+#endif

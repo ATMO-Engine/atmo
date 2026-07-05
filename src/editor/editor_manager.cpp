@@ -17,10 +17,14 @@
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "editor/editor_registry.hpp"
+#include "editor/inspector_utils.hpp"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/json/prettify.hpp"
 #include "locale/locale_manager.hpp"
+#include "meta/meta_registry.hpp"
 #include "project/file_system.hpp"
+#include "project/project_manager.hpp"
+#include "project/project_settings.hpp"
 #include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)
@@ -462,7 +466,7 @@ namespace atmo::editor
             return;
 
         auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->saveAs(path); });
-        SDL_ShowSaveFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, nullptr);
+        SDL_ShowSaveFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, m_project_path.c_str());
     }
 
     void EditorManager::handleOpen()
@@ -472,11 +476,26 @@ namespace atmo::editor
             return;
 
         auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->open(path); });
-        SDL_ShowOpenFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, nullptr, false);
+        SDL_ShowOpenFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, m_project_path.c_str(), false);
+    }
+
+    std::shared_ptr<core::ecs::entities::UIFoldableTreeItem> EditorManager::makeSettingsSection(core::ecs::entities::UI &body, const std::string &title)
+    {
+        auto section = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
+        section->getTitleLabel().setText(title);
+        auto &section_layout = section->getComponentMutable<core::components::Layout>();
+        section_layout.direction = core::components::Layout::Direction::Vertical;
+        section_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        section_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        section->setParent(body);
+        return section;
     }
 
     void EditorManager::openProjectSettings()
     {
+        m_settings_draft = std::make_shared<project::ProjectSettings>(project::ProjectManager::GetSettings());
+        auto draft = m_settings_draft;
+
         auto project_settings_popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
         project_settings_popup->setParent(*m_engine.getECS().getCurrentScene());
 
@@ -484,6 +503,7 @@ namespace atmo::editor
         auto &project_settings_rect = project_settings->getComponentMutable<core::components::UIRect>();
         project_settings_rect.corner_radius = { 4, 4, 4, 4 };
         auto &project_settings_layout = project_settings->getComponentMutable<core::components::Layout>();
+        project_settings_layout.direction = core::components::Layout::Direction::Vertical;
         project_settings_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         project_settings_layout.width.size = 0.5f;
         project_settings_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -519,6 +539,87 @@ namespace atmo::editor
         close_project_settings_btn->getChildren()[0].destroy();
         close_project_settings_btn->setParent(*close_btn_holder);
         close_project_settings_btn->getSignal<>("Released").connect([project_settings_popup]() { project_settings_popup->destroy(); });
+
+        auto body = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &body_layout = body->getComponentMutable<core::components::Layout>();
+        body_layout.direction = core::components::Layout::Direction::Vertical;
+        body_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        body_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        body_layout.clip.vertical = true;
+        body_layout.child_gap = 8;
+        body_layout.padding = { 0, 0, 8, 8 };
+        body->setParent(*project_settings);
+
+        buildFieldWidgetRows(meta::MetaRegistry::Instance().lookup<project::App>(), &draft->app, makeSettingsSection(*body, "App")->getChildContainer());
+        buildFieldWidgetRows(meta::MetaRegistry::Instance().lookup<project::Boot>(), &draft->boot, makeSettingsSection(*body, "Boot")->getChildContainer());
+        buildFieldWidgetRows(
+            meta::MetaRegistry::Instance().lookup<project::Window>(), &draft->window, makeSettingsSection(*body, "Window")->getChildContainer());
+        buildFieldWidgetRows(
+            meta::MetaRegistry::Instance().lookup<project::Singletons>(), &draft->singletons, makeSettingsSection(*body, "Singletons")->getChildContainer());
+        buildFieldWidgetRows(
+            meta::MetaRegistry::Instance().lookup<project::Engine>(), &draft->engine, makeSettingsSection(*body, "Engine")->getChildContainer());
+        buildFieldWidgetRows(meta::MetaRegistry::Instance().lookup<project::Debug>(), &draft->debug, makeSettingsSection(*body, "Debug")->getChildContainer());
+
+        auto addons_container = makeSettingsSection(*body, "Addons")->getChildContainer();
+        for (auto &[addon_name, enabled] : draft->addons.addons) {
+            auto row = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+            auto &row_layout = row->getComponentMutable<core::components::Layout>();
+            row_layout.direction = core::components::Layout::Direction::Horizontal;
+            row_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            row_layout.child_gap = 8;
+            row_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+            row->setParent(addons_container);
+
+            auto addon_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            addon_label->setText(addon_name);
+            addon_label->setFontSize(12);
+            addon_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            addon_label->setParent(*row);
+
+            auto addon_checkbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
+            auto &checkbox_comp = addon_checkbox->getComponentMutable<core::components::UICheckBox>();
+            checkbox_comp.trigger = enabled;
+            addon_checkbox->getComponentMutable<core::components::UIRect>().color = enabled ? core::types::Color::WHITE : core::types::Color::BLACK;
+            auto &checkbox_layout = addon_checkbox->getComponentMutable<core::components::Layout>();
+            checkbox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            checkbox_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
+            checkbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            checkbox_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
+            addon_checkbox->setParent(*row);
+
+            std::string addon_key = addon_name;
+            addon_checkbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([draft, addon_key](core::ecs::entities::UICheckBox &chbox) {
+                draft->addons.addons[addon_key] = chbox.getComponentMutable<core::components::UICheckBox>().trigger;
+            });
+        }
+
+        // Bottom bar: Apply commits the draft into the live settings and persists them, without closing the
+        // popup (only the "X" button above closes/cancels).
+        auto bottom_bar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &bottom_bar_layout = bottom_bar->getComponentMutable<core::components::Layout>();
+        bottom_bar_layout.direction = core::components::Layout::Direction::Horizontal;
+        bottom_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        bottom_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        bottom_bar_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 40.0f, 40.0f };
+        bottom_bar_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
+        bottom_bar_layout.padding.top = 8;
+        bottom_bar->setParent(*project_settings);
+
+        auto apply_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &apply_btn_rect = apply_btn->getComponentMutable<core::components::UIRect>();
+        apply_btn_rect.color = core::types::Color("#3d8b40");
+        apply_btn_rect.corner_radius = { 4, 4, 4, 4 };
+        auto &apply_btn_layout = apply_btn->getComponentMutable<core::components::Layout>();
+        apply_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        apply_btn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 100.0f, 100.0f };
+        apply_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        core::ecs::entities::UILabel(apply_btn->getChild("Button label")).setText("atmo.apply");
+        apply_btn->setParent(*bottom_bar);
+
+        apply_btn->getSignal<>("Released").connect([draft]() {
+            project::ProjectManager::GetSettings() = *draft;
+            project::ProjectManager::SaveSettings();
+        });
     }
 } // namespace atmo::editor
 
