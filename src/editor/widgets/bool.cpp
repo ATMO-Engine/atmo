@@ -22,7 +22,6 @@ std::optional<atmo::core::ecs::entities::Entity> createBoolWidget(atmo::core::ec
     auto checkbox_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
     auto &checkbox_entity_layout = checkbox_entity->getComponentMutable<atmo::core::components::Layout>();
 
-    // checkbox_entity_layout.width.type = atmo::core::components::Layout::SizingAxis::SizingAxisType::GROW;
     checkbox_entity_layout.height.type = atmo::core::components::Layout::SizingAxis::SizingAxisType::FIXED;
     checkbox_entity_layout.height.size = atmo::core::components::Layout::SizingAxis::MinMax{ 32.0f, 32.0f };
     checkbox_entity_layout.aspect_ratio = { 1.0f, 1.0f };

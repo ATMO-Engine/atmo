@@ -29,7 +29,6 @@ namespace
         return field.vector_size ? field.vector_size(vec_ptr) : 0;
     }
 
-    // See vector.cpp: WidgetRegistry hands widgets the owning component/struct pointer, not the field itself.
     void *resolveVectorPtr(void *owner, const atmo::meta::FieldInfo &field)
     {
         return static_cast<char *>(owner) + field.offset;

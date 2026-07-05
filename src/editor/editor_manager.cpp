@@ -98,9 +98,19 @@ namespace atmo::editor
             {
                 .id = "atmo.commands.edit.project_settings",
                 .category = "atmo.commands.edit.category",
-                .shortcut = std::nullopt,
+                .shortcut = Shortcut{ SDLK_P, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
                 .action = [this] { core::SignalQueue::Enqueue([this]() { openProjectSettings(); }); },
             });
+
+        if (spdlog::default_logger()->level() == spdlog::level::debug) {
+            m_commands.registerCommand(
+                {
+                    .id = "atmo.commands.debug.project_settings",
+                    .category = "atmo.commands.debug.category",
+                    .shortcut = Shortcut{ SDLK_P, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
+                    .action = [this] { core::SignalQueue::Enqueue([this]() { openProjectSettings(); }); },
+                });
+        }
     }
 
     void EditorManager::init()

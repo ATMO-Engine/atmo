@@ -9,7 +9,6 @@
 #include "common/utils.hpp"
 #include "core/types.hpp"
 
-// Helpers to apply the camera transform to world-space Box2D coordinates.
 static inline float editorX(const EditorDebugContext *ctx, float wx)
 {
     return wx * ctx->zoom + ctx->pan.x;
@@ -259,8 +258,9 @@ static void DrawPoint_Editor(b2Vec2 p, float size, b2HexColor color, void *conte
     rgba.a = 1.0f;
     std::array<std::uint8_t, 4> c = rgba.toInt<std::array<std::uint8_t, 4>>();
 
-    float sx = editorX(ctx, p.x);
-    float sy = editorY(ctx, p.y);
+    atmo::core::types::Vector2 vec = p;
+    float sx = editorX(ctx, vec.x);
+    float sy = editorY(ctx, vec.y);
     float s = size * ctx->zoom;
     SDL_FRect rect{ sx - s * 0.5f, sy - s * 0.5f, s, s };
 
@@ -278,8 +278,11 @@ static void DrawSegment_Editor(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void *con
     rgba.a = 1.0f;
     std::array<std::uint8_t, 4> c = rgba.toInt<std::array<std::uint8_t, 4>>();
 
+    atmo::core::types::Vector2 vec1 = p1;
+    atmo::core::types::Vector2 vec2 = p2;
+
     SDL_SetRenderDrawColor(ctx->renderer, c[0], c[1], c[2], c[3]);
-    SDL_RenderLine(ctx->renderer, editorX(ctx, p1.x), editorY(ctx, p1.y), editorX(ctx, p2.x), editorY(ctx, p2.y));
+    SDL_RenderLine(ctx->renderer, editorX(ctx, vec1.x), editorY(ctx, vec1.y), editorX(ctx, vec2.x), editorY(ctx, vec2.y));
 }
 
 static void DrawPolygon_Editor(const b2Vec2 *vertices, int vertexCount, b2HexColor color, void *context)
@@ -289,7 +292,10 @@ static void DrawPolygon_Editor(const b2Vec2 *vertices, int vertexCount, b2HexCol
         return;
 
     std::vector<SDL_FPoint> points(static_cast<size_t>(vertexCount) + 1);
-    for (int i = 0; i < vertexCount; ++i) points[static_cast<size_t>(i)] = { editorX(ctx, vertices[i].x), editorY(ctx, vertices[i].y) };
+    for (int i = 0; i < vertexCount; ++i) {
+        atmo::core::types::Vector2 vec = vertices[i];
+        points[static_cast<size_t>(i)] = { editorX(ctx, vec.x), editorY(ctx, vec.y) };
+    }
     points[static_cast<size_t>(vertexCount)] = points[0];
 
     atmo::core::types::Color rgba = atmo::core::types::Color::FromHex(color);
@@ -313,9 +319,9 @@ static void DrawSolidPolygon_Editor(b2Transform transform, const b2Vec2 *vertice
 
     std::vector<SDL_Vertex> points(static_cast<size_t>(vertexCount));
     for (int i = 0; i < vertexCount; ++i) {
-        b2Vec2 wp = b2TransformPoint(transform, vertices[i]);
+        atmo::core::types::Vector2 vec = b2TransformPoint(transform, vertices[i]);
         points[static_cast<size_t>(i)] =
-            SDL_Vertex{ .position = { editorX(ctx, wp.x), editorY(ctx, wp.y) }, .color = rgba.toFloat<SDL_FColor>(), .tex_coord = { 0, 0 } };
+            SDL_Vertex{ .position = { editorX(ctx, vec.x), editorY(ctx, vec.y) }, .color = rgba.toFloat<SDL_FColor>(), .tex_coord = { 0, 0 } };
     }
 
     std::vector<int> indices;
@@ -375,8 +381,9 @@ static void DrawSolidCircle_Editor(b2Transform transform, float radius, b2HexCol
     atmo::core::types::Color rgba = atmo::core::types::Color::FromHex(color);
     rgba.a = 0.35f;
 
-    const float cx = editorX(ctx, static_cast<float>(transform.p.x));
-    const float cy = editorY(ctx, static_cast<float>(transform.p.y));
+    const atmo::core::types::Vector2 center = transform.p;
+    const float cx = editorX(ctx, center.x);
+    const float cy = editorY(ctx, center.y);
     const float r = atmo::common::math::MeterToPixel(radius) * ctx->zoom;
 
     constexpr int k_segments = 24;
