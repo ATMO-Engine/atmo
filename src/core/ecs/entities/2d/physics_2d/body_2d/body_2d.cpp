@@ -50,12 +50,32 @@ namespace atmo::core::ecs::entities
 
     void Body2d::RegisterSystems(flecs::world *world)
     {
+        world->system<Body2dData>("Body2d_SyncDirtyState").kind(flecs::PreUpdate).each([](flecs::entity e, Body2dData &body_data) {
+            Entity entity(e);
+            auto scene = entity.getScene();
+            flecs::entity_t scene_id = scene ? scene->getHandle().id() : 0;
+
+            if (!body_data.dirty && scene_id == body_data.scene_id && b2Body_IsValid(body_data.body_id))
+                return;
+
+            if (!scene)
+                return;
+
+            body_data.scene_id = scene_id;
+            InitBody(e, body_data);
+            body_data.dirty = false;
+        });
+
         world->system<components::Transform2d, Body2dData>("Body2d_UpdateValuesFromPhysicsEngine")
             .kind(flecs::PostUpdate)
             .each([](flecs::entity e, components::Transform2d &transform, Body2dData &body_data) {
                 if (!b2Body_IsValid(body_data.body_id))
                     return;
+
+                spdlog::info("update for body: {}", body_data.body_id.index1);
+
                 transform.position = b2Body_GetPosition(body_data.body_id);
+                spdlog::info(" - pos: ({}, {})", transform.position.x, transform.position.y);
                 transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));
             });
     }
@@ -68,32 +88,29 @@ namespace atmo::core::ecs::entities
         auto body_data = p_handle.get_ref<Body2dData>();
 
         setBodyType();
-
-        initBody();
     }
 
-    void Body2d::initBody()
+    void Body2d::InitBody(flecs::entity e, Body2dData &body_data)
     {
-        auto scene = getScene();
+        Entity entity(e);
+        auto scene = entity.getScene();
 
         if (!scene)
             return;
 
-        auto body_data = p_handle.get_ref<Body2dData>();
+        if (b2Body_IsValid(body_data.body_id))
+            b2DestroyBody(body_data.body_id);
 
-        if (b2Body_IsValid(body_data->body_id))
-            b2DestroyBody(body_data->body_id);
+        auto transform = e.get_ref<components::Transform2d>();
 
-        auto transform = p_handle.get_ref<components::Transform2d>();
+        body_data.body_def.position = transform->position;
+        body_data.body_def.rotation = b2MakeRot(atmo::common::math::DegreesToRadians(transform->rotation));
 
-        body_data->body_def.position = transform->position;
-        body_data->body_def.rotation = b2MakeRot(atmo::common::math::DegreesToRadians(transform->rotation));
+        body_data.body_id = b2CreateBody(scene->getWorldId(), &body_data.body_def);
 
-        body_data->body_id = b2CreateBody(scene->getWorldId(), &body_data->body_def);
-
-        for (auto &shape : body_data->shapes) {
+        for (auto &shape : body_data.shapes) {
             if (shape) {
-                shape->create(body_data->body_id);
+                shape->create(body_data.body_id);
             }
         }
     }
@@ -135,12 +152,6 @@ namespace atmo::core::ecs::entities
             return;
 
         b2Body_SetTransform(body_data->body_id, transform->position, b2MakeRot(atmo::common::math::DegreesToRadians(rotation)));
-    }
-
-    void Body2d::setParent(Entity parent)
-    {
-        Entity2d::setParent(parent);
-        initBody();
     }
 
     void Body2d::addShape(std::shared_ptr<resource::resources::Shape2d> shape)
