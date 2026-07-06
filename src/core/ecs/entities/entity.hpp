@@ -19,8 +19,6 @@
 
 namespace atmo::core
 {
-    // Buffers signal callbacks emitted during Flecs readonly stages and flushes
-    // them after ecs_progress returns, when the world is writable again.
     struct SignalQueue {
         static void SetWorld(flecs::world *w)
         {

@@ -35,14 +35,21 @@ namespace atmo::editor
             return "project://assets/icons/gamepad.svg";
         }
 
+        std::string_view getTypeName() const override
+        {
+            return FullName();
+        }
+
         void init(atmo::core::ecs::entities::UI &container) override;
         void createTools() override;
+
+        void createDemoEntities();
 
         void save() override;
         void load() override;
 
         void
-        sceneEntityFodableTreeinit(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container);
+        sceneEntityFoldableTreeinit(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container);
         void createNewEntitySelectionPopup(core::ecs::entities::Entity parent);
         core::ecs::entities::UIButton makeEntityCreationButton(const std::string &entity_id);
         void createAddEntityFodableTree(EditorRegistry::EntityTree &tree, core::ecs::entities::Entity parentUI);

@@ -38,7 +38,7 @@
 
 namespace atmo::editor
 {
-    void entityComponentFodableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
+    void entityComponentFoldableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
     {
         std::vector<std::pair<flecs::id, const meta::TypeInfo *>> ti_vector;
 
@@ -163,69 +163,6 @@ namespace atmo::editor
 
                     for (auto &fn : m_inspector_update_fns) fn();
                 });
-
-            auto rectangle_shape =
-                core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-            rectangle_shape->setSize({ 800, 100 });
-
-            auto static_body =
-                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Static2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Static2d");
-            static_body->addShape(rectangle_shape);
-            static_body->setPosition({ 800, 500 });
-            static_body->setParent(*m_scene_ctx->getScene());
-
-            auto rectangle_shape2 =
-                core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
-            rectangle_shape2->setSize({ 80, 80 });
-
-            auto dynamic_body =
-                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
-            dynamic_body->addShape(rectangle_shape2);
-            dynamic_body->setPosition({ 410, 300 });
-            dynamic_body->setParent(*m_scene_ctx->getScene());
-
-            auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
-            circle_shape->setRadius(40.0f);
-            circle_shape->getShapeDef().density = 2.0f;
-            circle_shape->getShapeDef().material.rollingResistance = 0.02f;
-
-            auto dynamic_body2 =
-                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
-            dynamic_body2->addShape(circle_shape);
-            dynamic_body2->setPosition({ 450, 0 });
-            dynamic_body2->setParent(*m_scene_ctx->getScene());
-
-
-            // Sprite
-            auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite->setTexturePath("project://assets/atmo.png");
-            // sprite->setPosition({ 1200, 500 });
-            sprite->setParent(*dynamic_body2);
-            sprite->setScale(core::types::Vector2(0.25, 0.25));
-
-            auto sprite2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite2->setTexturePath("project://assets/atmo.png");
-            // sprite->setPosition({ 1200, 500 });
-            sprite2->setParent(*dynamic_body2);
-            sprite2->setScale(core::types::Vector2(0.25, 0.25));
-
-            auto sprite3 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite3->setTexturePath("project://assets/atmo.png");
-            // sprite->setPosition({ 1200, 500 });
-            sprite3->setParent(*sprite2);
-            sprite3->setScale(core::types::Vector2(0.25, 0.25));
-
-            auto sprite4 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite4->setTexturePath("project://assets/atmo.png");
-            // sprite->setPosition({ 1200, 500 });
-            sprite4->setParent(*dynamic_body2);
-            sprite4->setScale(core::types::Vector2(0.25, 0.25));
-
-            auto sprite5 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite5->setTexturePath("project://assets/atmo.png");
-            // sprite->setPosition({ 1200, 500 });
-            sprite5->setParent(*sprite3);
-            sprite5->setScale(core::types::Vector2(0.25, 0.25));
         }
 
         auto scene_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -391,14 +328,14 @@ namespace atmo::editor
 
         if (m_scene_ctx && m_scene_ctx->isReady() && m_scene_ctx->getScene()) {
             for (auto &entity : m_scene_ctx->getScene()->getChildren()) {
-                sceneEntityFodableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
+                sceneEntityFoldableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
             }
         }
 
         m_scene_ctx->getScene()
             ->getSignal<core::ecs::entities::Entity *>("child_added")
             .connect([this, scene_viewport_container, component_viewport_container](core::ecs::entities::Entity *entity) {
-                sceneEntityFodableTreeinit(*entity, *scene_viewport_container, *component_viewport_container);
+                sceneEntityFoldableTreeinit(*entity, *scene_viewport_container, *component_viewport_container);
             });
     }
 
@@ -406,6 +343,72 @@ namespace atmo::editor
     {
         p_tools = { Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "select", .icon_path = "project://assets/icons/x.svg" },
                     Editor::EditorTool{ .type = Editor::EditorTool::Type::TOGGLE_GROUP, .name = "measure", .icon_path = "project://assets/icons/x.svg" } };
+    }
+
+    void SceneEditor::createDemoEntities()
+    {
+        spdlog::debug("Making demo entities.");
+
+        auto rectangle_shape =
+            core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape->setSize({ 800, 100 });
+
+        auto static_body = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Static2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Static2d");
+        static_body->addShape(rectangle_shape);
+        static_body->setPosition({ 800, 500 });
+        static_body->setParent(*m_scene_ctx->getScene());
+
+        auto rectangle_shape2 =
+            core::resource::SubResourceRegistry::Create<core::resource::resources::RectangleShape2d>("SubResource::Shape2d::RectangleShape2d");
+        rectangle_shape2->setSize({ 80, 80 });
+
+        auto dynamic_body =
+            core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body->addShape(rectangle_shape2);
+        dynamic_body->setPosition({ 410, 300 });
+        dynamic_body->setParent(*m_scene_ctx->getScene());
+
+        auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
+        circle_shape->setRadius(40.0f);
+        circle_shape->getShapeDef().density = 2.0f;
+        circle_shape->getShapeDef().material.rollingResistance = 0.02f;
+
+        auto dynamic_body2 =
+            core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body2->addShape(circle_shape);
+        dynamic_body2->setPosition({ 450, 0 });
+        dynamic_body2->setParent(*m_scene_ctx->getScene());
+
+
+        auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+        sprite->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite->setParent(*dynamic_body2);
+        sprite->setScale(core::types::Vector2(0.25, 0.25));
+
+        auto sprite2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+        sprite2->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite2->setParent(*dynamic_body2);
+        sprite2->setScale(core::types::Vector2(0.25, 0.25));
+
+        auto sprite3 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+        sprite3->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite3->setParent(*sprite2);
+        sprite3->setScale(core::types::Vector2(0.25, 0.25));
+
+        auto sprite4 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+        sprite4->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite4->setParent(*dynamic_body2);
+        sprite4->setScale(core::types::Vector2(0.25, 0.25));
+
+        auto sprite5 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+        sprite5->setTexturePath("project://assets/atmo.png");
+        // sprite->setPosition({ 1200, 500 });
+        sprite5->setParent(*sprite3);
+        sprite5->setScale(core::types::Vector2(0.25, 0.25));
     }
 
     void SceneEditor::save()
@@ -424,7 +427,7 @@ namespace atmo::editor
         m_scene_ctx->loadSceneFromJson(scene_file.readAll());
     }
 
-    void SceneEditor::sceneEntityFodableTreeinit(
+    void SceneEditor::sceneEntityFoldableTreeinit(
         core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container)
     {
 
@@ -458,11 +461,11 @@ namespace atmo::editor
 
                 for (auto &child : children) child.destroy();
                 m_inspector_update_fns.clear();
-                entityComponentFodableTreeinit(m_selected_entity, component_container, m_inspector_update_fns);
+                entityComponentFoldableTreeinit(m_selected_entity, component_container, m_inspector_update_fns);
             }
         });
 
-        for (auto &child : entity.getChildren()) sceneEntityFodableTreeinit(child, child_UI->getChildContainer(), component_container);
+        for (auto &child : entity.getChildren()) sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
 
         // if (entity.getChildren().empty()) {
         //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();

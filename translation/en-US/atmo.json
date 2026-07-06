@@ -16,6 +16,10 @@
         "undo": "Undo",
         "redo": "Redo",
         "project_settings": "Project settings"
+      },
+      "debug": {
+        "category": "Debug",
+        "create_demo_entities": "Create demo entities"
       }
     },
     "open_new_editor": "Open new editor",
