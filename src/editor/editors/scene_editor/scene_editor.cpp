@@ -333,9 +333,9 @@ namespace atmo::editor
         }
 
         m_scene_ctx->getScene()
-            ->getSignal<core::ecs::entities::Entity *>("child_added")
-            .connect([this, scene_viewport_container, component_viewport_container](core::ecs::entities::Entity *entity) {
-                sceneEntityFoldableTreeinit(*entity, *scene_viewport_container, *component_viewport_container);
+            ->getSignal<core::ecs::entities::Entity>("child_added")
+            .connect([this, scene_viewport_container, component_viewport_container](core::ecs::entities::Entity entity) {
+                sceneEntityFoldableTreeinit(entity, *scene_viewport_container, *component_viewport_container);
             });
     }
 
@@ -467,6 +467,11 @@ namespace atmo::editor
 
         for (auto &child : entity.getChildren()) sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
 
+        entity.getSignal<core::ecs::entities::Entity>("child_added")
+            .connect([this, child_UI, component_container](core::ecs::entities::Entity child) {
+                sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
+            });
+
         // if (entity.getChildren().empty()) {
         //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();
 
@@ -553,8 +558,6 @@ namespace atmo::editor
 
                     created->setParent(*m_scene_ctx->getScene());
 
-                    m_scene_ctx->getScene()->getSignal<core::ecs::entities::Entity *>("child_added").emit(created.get());
-
                     create_entity_popup->destroy();
                 });
             }
@@ -583,7 +586,6 @@ namespace atmo::editor
         create_entity_btn->getSignal<>("Released").connect([this, entity_id]() {
             auto entity = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity_id);
             entity->setParent(*m_scene_ctx->getScene());
-            m_scene_ctx->getScene()->getSignal<core::ecs::entities::Entity *>("child_added").emit(entity.get());
         });
 
         auto create_entity_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");

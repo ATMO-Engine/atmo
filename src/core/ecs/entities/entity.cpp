@@ -72,11 +72,17 @@ namespace atmo::core::ecs::entities
 
     void Entity::Unregister(flecs::world *world) {}
 
+    void Entity::setParent(Entity parent)
+    {
+        p_handle.child_of(parent.p_handle);
+        parent.getSignal<Entity>("child_added").emit(*this);
+    }
+
     void Entity::initialize()
     {
         createSignal<>("initialize");
-        createSignal<Entity *>("child_added");
-        createSignal<Entity *>("child_removed");
+        createSignal<Entity>("child_added");
+        createSignal<Entity>("child_removed");
         createSignal<std::string, std::string>("renamed");
         p_handle.add(flecs::OrderedChildren);
     }

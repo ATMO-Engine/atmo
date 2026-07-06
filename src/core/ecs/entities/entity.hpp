@@ -218,14 +218,11 @@ namespace atmo::core::ecs::entities
         Entity getChild(std::string_view name) const;
 
         /**
-         * @brief Set the parent of this entity.
+         * @brief Set the parent of this entity. Emits "child_added" on @p parent.
          *
          * @param parent Parent entity to set for this entity.
          */
-        void setParent(Entity parent)
-        {
-            p_handle.child_of(parent.p_handle);
-        }
+        void setParent(Entity parent);
 
         /**
          * @brief Get the entity's parent entity.
