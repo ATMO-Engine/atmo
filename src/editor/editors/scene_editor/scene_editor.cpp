@@ -522,19 +522,29 @@ namespace atmo::editor
             sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
         });
 
-        close_create_entity_btn->getSignal<>("Released").connect([this, child_container, component_container, entity]() mutable {
-            core::SignalQueue::Enqueue([this, entity, component_container]() mutable {
-                if (!entity.isAlive() || !component_container.isAlive())
+        entity.getParent()
+            .getSignal<core::ecs::entities::Entity>("child_removed")
+            .connect([this, child_UI, entity_handle, component_container](core::ecs::entities::Entity removed_child) {
+                if (removed_child.getHandle() != entity_handle)
                     return;
-                for (auto &child : component_container.getChildren()) child.destroy();
 
-                entity.destroy();
-                m_inspector_update_fns.clear();
+                if (m_selected_entity == entity_handle) {
+                    for (auto &child : component_container.getChildren()) child.destroy();
+                    m_inspector_update_fns.clear();
+                    m_selected_entity = flecs::entity();
+                }
+
+                child_UI->destroy();
             });
 
-            child_container->destroy();
-        });
-    }
+        // if (entity.getChildren().empty()) {
+        //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();
+
+        entity.destroy();
+        m_inspector_update_fns.clear();
+        child_container->destroy();
+    };
+
 
     void SceneEditor::createNewEntitySelectionPopup(core::ecs::entities::Entity parent)
     {

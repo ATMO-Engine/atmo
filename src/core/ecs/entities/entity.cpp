@@ -224,6 +224,7 @@ namespace atmo::core::ecs::entities
 
     void Entity::destroy()
     {
+        getParent().getSignal<Entity>("child_removed").emit(*this);
         p_handle.destruct();
     }
 
