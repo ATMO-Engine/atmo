@@ -467,6 +467,8 @@ namespace atmo::editor
         core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container)
     {
 
+        auto child_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto child_container_layout = child_container->getComponentMutable<core::components::Layout>();
         auto child_UI = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
         auto &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
         auto &child_UI_rect = child_UI->getComponentMutable<core::components::UIRect>();
@@ -477,21 +479,34 @@ namespace atmo::editor
         auto title_button_handle = title_button.getHandle();
 
         child_UI_rect.color.a = 0.0f;
-        child_UI_layout.direction = core::components::Layout::Direction::Vertical;
-        child_UI_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        child_UI_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        child_UI_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 0.0f };
-        child_UI_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
-        child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
-        child_UI_layout.child_gap = 8;
-        child_UI->setParent(parent);
+        child_container_layout.direction = core::components::Layout::Direction::Vertical;
+        child_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        child_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        child_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 0.0f };
+        child_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        child_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        child_container_layout.child_gap = 8;
+        child_UI->setParent(*child_container);
+        child_container->setParent(parent);
         title_label.setText(std::string(entity.name()));
         title_button_comp.toggle = true;
         title_button_comp.group = 1;
-        title_button.getSignal<bool>("Toggle").connect([this, entity_handle, title_button_handle, component_container](bool state) {
-            auto button = core::ecs::entities::Entity(title_button_handle);
 
+        auto close_create_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &close_create_entity_btn_rect = close_create_entity_btn->getComponentMutable<core::components::UIRect>();
+        close_create_entity_btn_rect.color = core::types::Color::RED;
+        auto &close_create_entity_btn_layout = close_create_entity_btn->getComponentMutable<core::components::Layout>();
+        close_create_entity_btn->getComponentMutable<core::components::UI>().visible = false;
+        close_create_entity_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        close_create_entity_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        close_create_entity_btn_layout.aspect_ratio = { 1.0f, 1.0f };
+        close_create_entity_btn->getChildren()[0].destroy();
+        close_create_entity_btn->setParent(*child_container);
+
+        title_button.getSignal<bool>("Toggle").connect([this, entity_handle, title_button_handle, component_container, child_container](bool state) {
             if (state) {
+                child_container->getChildren()[1].getComponentMutable<core::components::UI>().visible = state;
+
                 m_selected_entity = entity_handle;
                 auto children = component_container.getChildren();
 
@@ -507,11 +522,18 @@ namespace atmo::editor
             sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
         });
 
-        // if (entity.getChildren().empty()) {
-        //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();
+        close_create_entity_btn->getSignal<>("Released").connect([this, child_container, component_container, entity]() mutable {
+            core::SignalQueue::Enqueue([this, entity, component_container]() mutable {
+                if (!entity.isAlive() || !component_container.isAlive())
+                    return;
+                for (auto &child : component_container.getChildren()) child.destroy();
 
-        //     child_container.visible = false;
-        // }
+                entity.destroy();
+                m_inspector_update_fns.clear();
+            });
+
+            child_container->destroy();
+        });
     }
 
     void SceneEditor::createNewEntitySelectionPopup(core::ecs::entities::Entity parent)
