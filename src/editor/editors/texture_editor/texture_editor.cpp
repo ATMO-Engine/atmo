@@ -31,7 +31,8 @@ namespace atmo::editor
         m_scene_ctx = std::make_unique<EditorSceneContext>();
         m_scene_ctx->init(renderer);
         spdlog::info("{}", project::ProjectManager::GetSettings().app.default_scene);
-        // m_scene_ctx.loadSceneFromFile("project://");
+//        p_file_path = atmo::project::ProjectManager::GetSettings().app.default_scene;
+//        m_scene_ctx->loadSceneFromFile(atmo::project::ProjectManager::GetSettings().app.default_scene);
 
         if (m_scene_ctx && m_scene_ctx->isReady()) {
             auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
@@ -124,7 +125,7 @@ namespace atmo::editor
         texture_editor_panel_layout.direction = core::components::Layout::Direction::Vertical;
         texture_editor_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        texture_editor_panel_layout.height.size = 0.33f;
+        texture_editor_panel_layout.height.size = 0.45f;
         texture_editor_panel_layout.padding.left = 16;
         texture_editor_panel_layout.padding.right = 16;
         texture_editor_panel_layout.padding.top = 16;
@@ -296,7 +297,7 @@ namespace atmo::editor
         auto &fileExplorerContainer_layout = fileExplorerContainer->getComponentMutable<core::components::Layout>();
         fileExplorerContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         fileExplorerContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        fileExplorerContainer_layout.height.size = 0.33f;
+        fileExplorerContainer_layout.height.size = 0.30f;
         fileExplorerContainer_layout.padding.left = 16;
         fileExplorerContainer_layout.padding.right = 16;
         fileExplorerContainer_layout.padding.top = 16;
