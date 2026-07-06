@@ -502,7 +502,7 @@ namespace atmo::editor
         auto &close_create_entity_btn_rect = close_create_entity_btn->getComponentMutable<core::components::UIRect>();
         close_create_entity_btn_rect.color = core::types::Color::RED;
         auto &close_create_entity_btn_layout = close_create_entity_btn->getComponentMutable<core::components::Layout>();
-        close_create_entity_btn->getComponentMutable<core::components::UI>().visible = false;
+        close_create_entity_btn->getComponentMutable<core::components::UI>().visible = true;
         close_create_entity_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         close_create_entity_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         close_create_entity_btn_layout.aspect_ratio = { 1.0f, 1.0f };
@@ -511,8 +511,6 @@ namespace atmo::editor
 
         title_button.getSignal<bool>("Toggle").connect([this, entity_handle, title_button_handle, component_container, child_container](bool state) {
             if (state) {
-                child_container->getChildren()[1].getComponentMutable<core::components::UI>().visible = state;
-
                 m_selected_entity = entity_handle;
                 auto children = component_container.getChildren();
 
