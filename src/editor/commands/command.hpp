@@ -18,7 +18,7 @@ namespace atmo::editor
     struct Command {
         std::string id;                       // "file.save" — also used as TR() key
         std::string category;                 // "file" — TR() key for the top-level menu label
-        std::optional<Shortcut> shortcut;     // for display in menus only
+        std::optional<Shortcut> shortcut;     // shown in menus and matched against key events by Commands::findByShortcut
         std::optional<std::string> icon_path; // "project://icons/save.png"
         std::function<void()> action;
     };

@@ -9,6 +9,23 @@
 
 namespace atmo::editor
 {
+    namespace
+    {
+        SDL_Keymod NormalizeModifiers(SDL_Keymod modifiers)
+        {
+            Uint16 normalized = 0;
+            if (modifiers & SDL_KMOD_CTRL)
+                normalized |= SDL_KMOD_CTRL;
+            if (modifiers & SDL_KMOD_SHIFT)
+                normalized |= SDL_KMOD_SHIFT;
+            if (modifiers & SDL_KMOD_ALT)
+                normalized |= SDL_KMOD_ALT;
+            if (modifiers & SDL_KMOD_GUI)
+                normalized |= SDL_KMOD_GUI;
+            return static_cast<SDL_Keymod>(normalized);
+        }
+    } // namespace
+
     void Commands::registerCommand(Command command)
     {
         if (m_index.contains(command.id)) {
@@ -30,6 +47,16 @@ namespace atmo::editor
         if (cmd.action)
             cmd.action();
         return true;
+    }
+
+    const Command *Commands::findByShortcut(SDL_Keycode key, SDL_Keymod modifiers) const
+    {
+        SDL_Keymod normalized = NormalizeModifiers(modifiers);
+        for (const Command &cmd : m_commands) {
+            if (cmd.shortcut && cmd.shortcut->key == key && NormalizeModifiers(cmd.shortcut->modifiers) == normalized)
+                return &cmd;
+        }
+        return nullptr;
     }
 
     const std::vector<Command> &Commands::all() const noexcept

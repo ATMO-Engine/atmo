@@ -72,6 +72,7 @@ namespace atmo::editor
 
     private:
         void registerDefaultCommands();
+        void registerShortcutDispatcher();
         void updateTopBar();
         void makeToolbar(core::ecs::entities::UI container);
 
