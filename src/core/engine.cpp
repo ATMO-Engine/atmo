@@ -283,12 +283,6 @@ namespace atmo::core
         InputManager::AddInput("Q", new InputManager::KeyEvent(SDLK_Q, false));
         InputManager::AddInput("Space", new InputManager::KeyEvent(SDLK_SPACE, false));
 
-        // atmo::core::components::Script t = {};
-        // atmo::luau::ScriptInstance inst = vm.generateInstance();
-        // t.instance = &inst;
-        // t.script_path = "project://assets/script/luau_bindings_test.luau";
-        // sprite->setComponent(t);
-
 #if !defined(ATMO_EXPORT)
         if (args::ArgManager::IsUsed("--run")) {
             if (std::optional<std::string> project_path = args::ArgManager::Present<std::string>("--project")) {
