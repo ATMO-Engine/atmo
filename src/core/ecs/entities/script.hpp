@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -16,6 +17,7 @@ namespace atmo::core::components
         std::string prev_script_path;
         std::unique_ptr<resource::ResourceRef<resource::Bytecode>> m_res;
         atmo::luau::ScriptInstance *instance = nullptr;
+        std::uint32_t physics_event_id = 0;
     };
 } // namespace atmo::core::components
 

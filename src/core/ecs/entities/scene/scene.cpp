@@ -5,6 +5,8 @@
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
 #include "core/ecs/world_context.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
 #include "core/types.hpp"
 #include "meta/auto_register.hpp"
 #include "project/file.hpp"
@@ -70,6 +72,9 @@ namespace atmo::core::ecs::entities
             .each([&](flecs::iter &it, size_t i, components::Scene &scene) {
                 if (b2World_IsValid(scene.world_id)) {
                     b2World_Step(scene.world_id, physics_dt, 4);
+                    auto evt = event::EventRegistry::Create<event::events::PhysicsProgressTickEvent>("Event::PhysicsProgressTickEvent");
+                    evt->delta_time = physics_dt;
+                    event::EventRegistry::Dispatch(evt);
                 }
             });
 

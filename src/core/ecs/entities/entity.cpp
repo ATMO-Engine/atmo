@@ -6,10 +6,13 @@
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
 #include "core/resource/resource.hpp"
 #include "flecs/addons/cpp/c_types.hpp"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
+#include "luau/luau.hpp"
 #include "meta/meta_registry.hpp"
 #include "spdlog/spdlog.h"
 
@@ -34,7 +37,19 @@ namespace atmo::core::ecs::entities
             try {
                 script.m_res = resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);
 
+                if (script.instance == nullptr)
+                    script.instance = luau::Luau::Instance().generateInstance();
+
                 spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
+
+                script.physics_event_id =
+                    event::EventRegistry::SetCallBack<event::events::PhysicsProgressTickEvent>([e](event::events::PhysicsProgressTickEvent *evt) {
+                        auto ent = Entity(e);
+                        auto &script = ent.getComponentMutable<components::Script>();
+
+                        if (script.instance)
+                            script.instance->physicsUpdate(evt->delta_time);
+                    });
 
                 script.instance->load(script.script_path, script.m_res->get()->data, script.m_res->get()->size, e);
                 script.instance->create();
@@ -51,7 +66,6 @@ namespace atmo::core::ecs::entities
             float dt = e.world().delta_time();
 
             script.instance->update(dt);
-            script.instance->physicsUpdate(dt);
         });
 
         world->observer<components::Script>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Script &script) {
@@ -61,7 +75,10 @@ namespace atmo::core::ecs::entities
                 return;
             }
 
+            event::EventRegistry::RemoveCallBack<event::events::PhysicsProgressTickEvent>(script.physics_event_id);
+
             script.instance->destroy();
+            delete script.instance;
             script.m_res = nullptr;
         });
     }
@@ -131,7 +148,7 @@ namespace atmo::core::ecs::entities
             if (!ti || !ti->from_json || ti->flecs_id == 0)
                 continue;
 
-            void *comp = p_handle.get_mut(flecs::id(p_handle.world(), ti->flecs_id));
+            void *comp = p_handle.ensure(flecs::id(p_handle.world(), ti->flecs_id));
             if (!comp)
                 continue;
 
@@ -160,7 +177,7 @@ namespace atmo::core::ecs::entities
             if (local_id == 0)
                 continue;
 
-            void *comp = p_handle.get_mut(flecs::id(entity_world, local_id));
+            void *comp = p_handle.ensure(flecs::id(entity_world, local_id));
             if (!comp)
                 continue;
 

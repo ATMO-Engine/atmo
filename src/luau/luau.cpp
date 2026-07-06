@@ -107,9 +107,9 @@ namespace atmo
             return true;
         }
 
-        ScriptInstance Luau::generateInstance()
+        ScriptInstance *Luau::generateInstance()
         {
-            return ScriptInstance(this);
+            return new ScriptInstance(this);
         }
 
         void Luau::registerBindings()

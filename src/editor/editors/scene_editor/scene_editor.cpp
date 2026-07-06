@@ -40,8 +40,6 @@
 
 namespace atmo::editor
 {
-    SceneEditor::SceneEditor() : m_vm(), m_inst(m_vm.generateInstance()) {}
-
     void entityComponentFoldableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
     {
         core::ecs::entities::Entity ent(entity);
@@ -192,21 +190,10 @@ namespace atmo::editor
             auto kinematic_body2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
             kinematic_body2->addShape(circle_shape);
             kinematic_body2->setPosition({ 450, 0 });
-
-            core::components::Script scr = {};
-            scr.instance = &m_inst;
-            scr.script_path = "project://assets/script/luau_bindings_test.luau";
-            kinematic_body2->setComponent(scr);
-
             kinematic_body2->setParent(*m_scene_ctx->getScene());
             // Sprite
             auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
             sprite->setTexturePath("project://assets/atmo.png");
-            //core::components::Script scr = {};
-            //scr.instance = &m_inst;
-            //scr.script_path = "project://assets/script/luau_bindings_test.luau";
-            //sprite->setComponent(scr);
-            // sprite->setPosition({ 1200, 500 });
             sprite->setParent(*kinematic_body2);
             sprite->setScale(core::types::Vector2(0.25, 0.25));
         }
