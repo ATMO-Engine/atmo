@@ -162,4 +162,38 @@ namespace atmo::luau
 
         return 0;
     }
+
+    int LuaBindings<flecs::entity>::GetLinearVelocity(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        if (!entity) {
+            return 0;
+        }
+
+        if (!entity->is_alive() || !entity->has<core::ecs::entities::Kinematic2d::Kinematic2dData>()) {
+            lua_pushnil(state);
+            return 1;
+        }
+
+        core::ecs::entities::Kinematic2d::Kinematic2dData &k = entity->get_mut<core::ecs::entities::Kinematic2d::Kinematic2dData>();
+        LuaBindings<atmo::core::types::Vector2>::Push(state, &k.linear_velocity);
+        return 1;
+    }
+
+    int LuaBindings<flecs::entity>::GetAngularVelocity(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        if (!entity) {
+            return 0;
+        }
+
+        if (!entity->is_alive() || !entity->has<core::ecs::entities::Kinematic2d::Kinematic2dData>()) {
+            lua_pushnil(state);
+            return 1;
+        }
+
+        core::ecs::entities::Kinematic2d::Kinematic2dData &k = entity->get_mut<core::ecs::entities::Kinematic2d::Kinematic2dData>();
+        lua_pushnumber(state, k.angular_velocity);
+        return 1;
+    }
 } // namespace atmo::luau

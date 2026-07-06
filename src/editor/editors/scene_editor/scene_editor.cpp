@@ -401,7 +401,7 @@ namespace atmo::editor
         auto dynamic_body =
             core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
         dynamic_body->addShape(rectangle_shape2);
-        dynamic_body->setPosition({ 410, 300 });
+        dynamic_body->setPosition({ 410, 100 });
         dynamic_body->setParent(*m_scene_ctx->getScene());
 
         auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
@@ -409,42 +409,16 @@ namespace atmo::editor
         circle_shape->getShapeDef().density = 2.0f;
         circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-        auto dynamic_body2 =
-            core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
-        dynamic_body2->addShape(circle_shape);
-        dynamic_body2->setPosition({ 450, 0 });
-        dynamic_body2->setParent(*m_scene_ctx->getScene());
-
+        auto kinematic_body =
+            core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
+        kinematic_body->addShape(circle_shape);
+        kinematic_body->setPosition({ 510, 300 });
+        kinematic_body->setParent(*m_scene_ctx->getScene());
 
         auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-        sprite->setTexturePath("project://assets/atmo.png");
         // sprite->setPosition({ 1200, 500 });
-        sprite->setParent(*dynamic_body2);
-        sprite->setScale(core::types::Vector2(0.25, 0.25));
-
-        auto sprite2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-        sprite2->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite2->setParent(*dynamic_body2);
-        sprite2->setScale(core::types::Vector2(0.25, 0.25));
-
-        auto sprite3 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-        sprite3->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite3->setParent(*sprite2);
-        sprite3->setScale(core::types::Vector2(0.25, 0.25));
-
-        auto sprite4 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-        sprite4->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite4->setParent(*dynamic_body2);
-        sprite4->setScale(core::types::Vector2(0.25, 0.25));
-
-        auto sprite5 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-        sprite5->setTexturePath("project://assets/atmo.png");
-        // sprite->setPosition({ 1200, 500 });
-        sprite5->setParent(*sprite3);
-        sprite5->setScale(core::types::Vector2(0.25, 0.25));
+        sprite->setParent(*kinematic_body);
+        sprite->setScale(core::types::Vector2(1, 1));
     }
 
     void SceneEditor::save()
