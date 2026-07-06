@@ -39,7 +39,7 @@ namespace atmo::core::ecs::entities
     {
         Body2d::initialize();
 
-        addTag<Kinematic2dData>();
+        setComponent<Kinematic2dData>({});
     }
 
     void Kinematic2d::setBodyType()

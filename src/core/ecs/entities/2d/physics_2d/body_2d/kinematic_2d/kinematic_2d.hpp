@@ -28,8 +28,8 @@ namespace atmo::core::ecs::entities
             types::Vector2 linear_velocity;
             types::Vector2 synced_linear_velocity;
 
-            float angular_velocity;
-            float synced_angular_velocity;
+            float angular_velocity = 0.0f;
+            float synced_angular_velocity = 0.0f;
         };
     };
 } // namespace atmo::core::ecs::entities
