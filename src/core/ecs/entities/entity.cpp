@@ -6,12 +6,12 @@
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/resource/resource.hpp"
 #include "flecs/addons/cpp/c_types.hpp"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
 #include "meta/meta_registry.hpp"
 #include "spdlog/spdlog.h"
-#include "core/resource/resource.hpp"
 
 namespace atmo::core::ecs::entities
 {
@@ -25,18 +25,14 @@ namespace atmo::core::ecs::entities
             }
         });
 
-        world->observer<components::Script>().event(flecs::OnSet).each([&](flecs::entity e, components::Script &script) {
-            if (script.script_path.empty())
+        world->system<components::Script>().kind(flecs::OnUpdate).each([&](flecs::entity e, components::Script &script) {
+            if (script.script_path.empty() || script.script_path == script.prev_script_path)
                 return;
-            if (script.instance == nullptr) {
-                return;
-            }
+
+            script.prev_script_path = script.prev_script_path;
 
             try {
-                std::unique_ptr<resource::ResourceRef<resource::Bytecode>> res =
-                    resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);
-
-                script.m_res = std::move(res);
+                script.m_res = resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);
 
                 spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
 

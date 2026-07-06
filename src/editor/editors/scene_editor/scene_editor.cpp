@@ -43,6 +43,7 @@ namespace atmo::editor
 
     void entityComponentFoldableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
     {
+        core::ecs::entities::Entity ent(entity);
         std::vector<std::pair<flecs::id, const meta::TypeInfo *>> ti_vector;
 
         entity.each([&](flecs::id id) {
@@ -87,26 +88,25 @@ namespace atmo::editor
                     meta::WidgetRegistry::Instance().update(w, ptr, field_info);
                 });
             }
-
         }
 
-        if (!entity.has<core::components::Script>()) {
+        if (!ent.hasScript()) {
             auto add_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
             ((core::ecs::entities::UILabel)add_btn->getChildren()[0]).setText("Add Script");
 
-            add_btn->setParent(parent);
-            add_btn->getSignal<>("Pressed").connect([entity, parent, &update_fns]() {
-                if (!entity.is_alive()) {
+            add_btn->getSignal<>("Pressed").connect([&ent, parent, &update_fns]() {
+                if (!ent.isAlive()) {
                     return;
                 }
-                core::components::Script scr = {};
-                entity.set(std::forward<core::components::Script>(scr));
+                ent.addScript();
 
                 auto children = parent.getChildren();
                 for (auto &child : children) child.destroy();
-                    update_fns.clear();
-                entityComponentFoldableTreeinit(entity, parent, update_fns);
+                update_fns.clear();
+                entityComponentFoldableTreeinit(ent.getHandle(), parent, update_fns);
             });
+
+            add_btn->setParent(parent);
         }
     }
 
@@ -506,10 +506,9 @@ namespace atmo::editor
 
         for (auto &child : entity.getChildren()) sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
 
-        entity.getSignal<core::ecs::entities::Entity>("child_added")
-            .connect([this, child_UI, component_container](core::ecs::entities::Entity child) {
-                sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
-            });
+        entity.getSignal<core::ecs::entities::Entity>("child_added").connect([this, child_UI, component_container](core::ecs::entities::Entity child) {
+            sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
+        });
 
         // if (entity.getChildren().empty()) {
         //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();
