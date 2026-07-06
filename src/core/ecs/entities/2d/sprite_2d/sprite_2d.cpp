@@ -10,6 +10,7 @@
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/resource_ref.hpp"
 #include "meta/auto_register.hpp"
+#include "project/file_system.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
@@ -21,9 +22,17 @@ namespace atmo::core::ecs::entities
                 return;
 
             sprite.prev_texture_path = sprite.texture_path;
-            sprite.m_res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.texture_path);
-            if (auto surface = sprite.m_res->get())
-                sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
+
+
+            try {
+                sprite.m_res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.texture_path);
+            } catch (std::exception &e) {
+                spdlog::error("Failed to open texture for sprite: {}", e.what());
+            }
+
+            if (sprite.m_res)
+                if (auto surface = sprite.m_res->get())
+                    sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
         });
 
         world->system<components::Sprite2d, components::Transform2d>("Sprite2D_Render")

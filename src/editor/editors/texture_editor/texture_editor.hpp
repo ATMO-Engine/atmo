@@ -32,6 +32,11 @@ namespace atmo::editor
             return "project://assets/icons/brush.svg";
         }
 
+        std::string_view getTypeName() const override
+        {
+            return FullName();
+        }
+
         void init(atmo::core::ecs::entities::UI &container) override;
         void createTools() override;
 

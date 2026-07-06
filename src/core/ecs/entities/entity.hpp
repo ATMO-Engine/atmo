@@ -19,8 +19,6 @@
 
 namespace atmo::core
 {
-    // Buffers signal callbacks emitted during Flecs readonly stages and flushes
-    // them after ecs_progress returns, when the world is writable again.
     struct SignalQueue {
         static void SetWorld(flecs::world *w)
         {
@@ -220,14 +218,11 @@ namespace atmo::core::ecs::entities
         Entity getChild(std::string_view name) const;
 
         /**
-         * @brief Set the parent of this entity.
+         * @brief Set the parent of this entity. Emits "child_added" on @p parent.
          *
          * @param parent Parent entity to set for this entity.
          */
-        void setParent(Entity parent)
-        {
-            p_handle.child_of(parent.p_handle);
-        }
+        void setParent(Entity parent);
 
         /**
          * @brief Get the entity's parent entity.

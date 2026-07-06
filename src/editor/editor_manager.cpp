@@ -17,6 +17,7 @@
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "editor/editor_registry.hpp"
+#include "editor/editors/scene_editor/scene_editor.hpp"
 #include "editor/inspector_utils.hpp"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/json/prettify.hpp"
@@ -105,10 +106,17 @@ namespace atmo::editor
         if (spdlog::default_logger()->level() == spdlog::level::debug) {
             m_commands.registerCommand(
                 {
-                    .id = "atmo.commands.debug.project_settings",
+                    .id = "atmo.commands.debug.create_demo_entities",
                     .category = "atmo.commands.debug.category",
-                    .shortcut = Shortcut{ SDLK_P, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
-                    .action = [this] { core::SignalQueue::Enqueue([this]() { openProjectSettings(); }); },
+                    .shortcut = Shortcut{ SDLK_D, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
+                    .action =
+                        [this] {
+                            core::SignalQueue::Enqueue([this]() {
+                                if (m_active_editor_index && m_editors[m_active_editor_index.value()]->getTypeName() == "Editor::SceneEditor") {
+                                    std::static_pointer_cast<atmo::editor::SceneEditor>(m_editors[m_active_editor_index.value()])->createDemoEntities();
+                                }
+                            });
+                        },
                 });
         }
     }

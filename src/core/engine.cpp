@@ -24,6 +24,7 @@
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
 #include "impl/profiler.hpp"
+#include "locale/locale_manager.hpp"
 #include "luau/luau.hpp"
 #include "luau/script_instance.hpp"
 #include "project/file_system.hpp"
@@ -98,6 +99,12 @@ static atmo::core::args::ArgManager::LaunchResult handleArgExport(atmo::core::ar
 }
 #endif
 
+static atmo::core::args::ArgManager::LaunchResult handleArgLang(atmo::core::args::ArgManager &argManager)
+{
+    atmo::locale::LocaleManager::SetUserLocale(atmo::core::args::ArgManager::Present<std::string>("--lang").value());
+    return atmo::core::args::ArgManager::LaunchResult::Continue;
+}
+
 namespace atmo::core
 {
     Engine::Engine() = default;
@@ -120,6 +127,9 @@ namespace atmo::core
         ArgManager::AddLaunchHandler(10000, "--help", handleArgHelp);
 
         ArgManager::AddArgument("--headless").defaultValue(false).implicitValue(true).help("Start in headless mode (no graphical interface)");
+
+        ArgManager::AddArgument("--lang").help("Override the user's automatically detected preferred language.");
+        ArgManager::AddLaunchHandler(0, "--lang", handleArgLang);
 
 #if !defined(ATMO_EXPORT)
         auto group = ArgManager::AddMutuallyExclusiveGroup();

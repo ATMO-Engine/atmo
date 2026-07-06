@@ -19,6 +19,12 @@ namespace atmo::editor
             return "Editor";
         }
 
+        /**
+         * @brief Runtime accessor for the concrete type's registry name (its `FullName()`), needed because
+         * `FullName()` itself is `static constexpr` and can't be called polymorphically through a base pointer.
+         */
+        virtual std::string_view getTypeName() const = 0;
+
         virtual std::string_view name() = 0;
         virtual std::string_view description() = 0;
         virtual std::string_view iconPath() = 0;
