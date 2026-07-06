@@ -6,6 +6,8 @@
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
 #include "core/resource/resource.hpp"
 #include "flecs/addons/cpp/c_types.hpp"
 #include "flecs/addons/cpp/entity.hpp"
@@ -36,6 +38,15 @@ namespace atmo::core::ecs::entities
 
                 spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
 
+                script.physics_event_id =
+                    event::EventRegistry::SetCallBack<event::events::PhysicsProgressTickEvent>([e](event::events::PhysicsProgressTickEvent *evt) {
+                        auto ent = Entity(e);
+                        auto &script = ent.getComponentMutable<components::Script>();
+
+                        if (script.instance)
+                            script.instance->physicsUpdate(evt->delta_time);
+                    });
+
                 script.instance->load(script.script_path, script.m_res->get()->data, script.m_res->get()->size, e);
                 script.instance->create();
             } catch (const core::resource::Resource<resource::Bytecode>::LoadException &e) {
@@ -51,7 +62,6 @@ namespace atmo::core::ecs::entities
             float dt = e.world().delta_time();
 
             script.instance->update(dt);
-            script.instance->physicsUpdate(dt);
         });
 
         world->observer<components::Script>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Script &script) {
@@ -60,6 +70,8 @@ namespace atmo::core::ecs::entities
             if (script.instance == nullptr || !script.m_res) {
                 return;
             }
+
+            event::EventRegistry::RemoveCallBack<event::events::PhysicsProgressTickEvent>(e.id());
 
             script.instance->destroy();
             script.m_res = nullptr;
