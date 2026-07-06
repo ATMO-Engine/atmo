@@ -4,6 +4,9 @@
 #include "box2d/box2d.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
+#include "core/ecs/entities/2d/entity_2d.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/body_2d.hpp"
+#include "core/ecs/entities/entity.hpp"
 #include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
@@ -72,6 +75,17 @@ namespace atmo::core::ecs::entities
             .each([&](flecs::iter &it, size_t i, components::Scene &scene) {
                 if (b2World_IsValid(scene.world_id)) {
                     b2World_Step(scene.world_id, physics_dt, 4);
+
+                    b2BodyEvents events = b2World_GetBodyEvents(scene.world_id);
+
+                    for (int i = 0; i < events.moveCount; ++i) {
+                        const b2BodyMoveEvent *event = events.moveEvents + i;
+                        Entity body(flecs::entity(it.world(), (flecs::entity_t)event->userData));
+                        auto &transform = body.getComponentMutable<components::Transform2d>();
+                        transform.position = event->transform.p;
+                        transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(event->transform.q));
+                    }
+
                     auto evt = event::EventRegistry::Create<event::events::PhysicsProgressTickEvent>("Event::PhysicsProgressTickEvent");
                     evt->delta_time = physics_dt;
                     event::EventRegistry::Dispatch(evt);

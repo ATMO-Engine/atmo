@@ -34,17 +34,6 @@ namespace atmo::core::ecs::entities
             body_data.dirty = false;
         });
 
-        world->system<components::Transform2d, Body2dData>("Body2d_UpdateValuesFromPhysicsEngine")
-            .kind(flecs::PostUpdate)
-            .each([](flecs::entity e, components::Transform2d &transform, Body2dData &body_data) {
-                if (!b2Body_IsValid(body_data.body_id))
-                    return;
-
-
-                transform.position = b2Body_GetPosition(body_data.body_id);
-                transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));
-            });
-
         world->system<components::Transform2d, Body2dData>("Body2d_PushTransformToPhysicsEngine")
             .kind(flecs::OnUpdate)
             .each([](flecs::entity e, components::Transform2d &t, Body2dData &bd) {
@@ -85,6 +74,7 @@ namespace atmo::core::ecs::entities
         body_data.body_def.rotation = b2MakeRot(atmo::common::math::DegreesToRadians(transform->rotation));
 
         body_data.body_id = b2CreateBody(scene->getWorldId(), &body_data.body_def);
+        b2Body_SetUserData(body_data.body_id, (void *)e.id());
 
         for (auto &shape : body_data.shapes) {
             if (shape) {
