@@ -1,3 +1,7 @@
+right = false
+left = false
+jump = false
+
 function Create()
 end
 
@@ -6,17 +10,32 @@ function Update(deltaTime)
     if transform == nil then return end
 
     if Input.isPressed("D") then
-        this:applyLinearVelocity(Vector2(100, 0))
+        right = true
+    else
+        right = false
     end
 
     if Input.isPressed("Q") then
-        this:applyLinearVelocity(Vector2(-100, 0))
+        left = true
+    else
+        left = false
     end
 
     if Input.isPressed("Space") then
-        this:applyAngularVelocity(45)
+        jump = true
+    else
+        jump = false;
     end
 end
 
 function PhysicsUpdate(deltaTime)
+    if right then
+        this:applyLinearVelocity(Vector2(100, 0))
+    end
+    if left then
+        this:applyLinearVelocity(Vector2(-100, 0))
+    end
+    if jump then
+        this:applyAngularVelocity(45)
+    end
 end
