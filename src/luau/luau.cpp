@@ -1,3 +1,4 @@
+#include "luau.hpp"
 #include "bindings/bindings_color.hpp"
 #include "bindings/bindings_entity.hpp"
 #include "bindings/bindings_input.hpp"
@@ -5,13 +6,12 @@
 #include "bindings/bindings_vector2.hpp"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/types.hpp"
-#include "script_instance.hpp"
-#include "spdlog/spdlog.h"
-
+#include "ctre.hpp"
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"
-#include "luau.hpp"
+#include "script_instance.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo
 {
@@ -42,16 +42,56 @@ namespace atmo
             p_L = nullptr;
         }
 
-        char *Luau::Compile(const std::string &source, size_t *bytecode_size, lua_CompileOptions *options)
+
+        void Luau::LogCompileTimeError(const std::string &errorMsg, const std::string &context)
         {
-            return luau_compile(source.c_str(), source.size(), options, bytecode_size);
+            if (auto m = ctre::match<"^:(\\d+): (.*)$">(errorMsg)) {
+                spdlog::error("[Luau] Compile error ({}) \n\t line: {} \n\t message: {}", context, m.get<1>().to_string(), m.get<2>().to_string());
+            } else {
+                spdlog::error("[Luau] Compile error ({}): {}", context, errorMsg);
+            }
+        }
+
+        void Luau::LogLuauError(lua_State *L, const std::string &context)
+        {
+            const char *rawError = lua_tostring(L, -1);
+            std::string errorMsg = rawError ? rawError : "unknown error (no message on stack)";
+            lua_pop(L, 1);
+
+            if (auto m = ctre::match<"^(.*):(\\d+): (.*)$">(errorMsg)) {
+                spdlog::error(
+                    "[Luau] Error ({}) \n\t file: '{}' \n\t line: {} \n\t message: {}",
+                    context,
+                    m.get<1>().to_string(),
+                    m.get<2>().to_string(),
+                    m.get<3>().to_string());
+            } else {
+                spdlog::error("[Luau] Error ({}): {}", context, errorMsg);
+            }
+        }
+
+        char *Luau::Compile(const std::string &source, size_t *bytecode_size, const std::string &chunkName, lua_CompileOptions *options)
+        {
+            char *bytecode = luau_compile(source.c_str(), source.size(), options, bytecode_size);
+
+            if (bytecode != nullptr && *bytecode_size > 0 && bytecode[0] == 0) {
+                std::string errorMsg(bytecode + 1, *bytecode_size - 1);
+                free(bytecode);
+
+                LogCompileTimeError(errorMsg, chunkName);
+
+                *bytecode_size = 0;
+                return nullptr;
+            }
+
+            return bytecode;
         }
 
         bool Luau::loadBytecode(const std::string &name, const char *code, size_t size, int env)
         {
             const int result = luau_load(p_L, name.c_str(), code, size, env);
             if (result != 0) {
-                spdlog::error("Failed to load Lua code:" + name);
+                LogLuauError(p_L, name);
                 return false;
             }
             return true;
@@ -61,7 +101,7 @@ namespace atmo
         {
             const int result = luau_load(coroutine, name.c_str(), code, size, env);
             if (result != 0) {
-                spdlog::error("Failed to load Lua code:" + name);
+                LogLuauError(coroutine, name);
                 return false;
             }
             return true;

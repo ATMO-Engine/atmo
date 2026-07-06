@@ -2,6 +2,7 @@
 
 #include "editor/editor_registry.hpp"
 #include "editor/editors/editor.hpp"
+#include "editor/editors/scene_editor/editor_scene_context.hpp"
 #include "flecs.h"
 
 namespace atmo::editor
@@ -44,5 +45,8 @@ namespace atmo::editor
 
     private:
         flecs::entity m_canvas_handle;
+        flecs::entity m_viewport_image;
+        std::unique_ptr<EditorSceneContext> m_scene_ctx;
+        std::vector<std::function<void()>> m_inspector_update_fns;
     };
 } // namespace atmo::editor

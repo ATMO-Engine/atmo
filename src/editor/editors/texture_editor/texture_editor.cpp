@@ -1,25 +1,102 @@
 #include "texture_editor.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entities/ui/ui_slider/ui_slider.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/progress_tick_event/progress_tick_event.hpp"
+#include "core/input/input_manager.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_color_picker/ui_color_picker.hpp"
 #include "editor/editor_entities/ui_drawing_canvas/ui_drawing_canvas.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
 #include "editor/editor_registry.hpp"
+#include "project/project_manager.hpp"
 
 namespace atmo::editor
 {
     void TextureEditor::init(atmo::core::ecs::entities::UI &container)
     {
+        flecs::entity root = container.getHandle().world().lookup("_Root");
+        SDL_Renderer *renderer = nullptr;
+        if (root.is_valid() && root.has<core::components::Window>()) {
+            auto window = root.get_ref<core::components::Window>();
+            if (window)
+                renderer = window->renderer_data.renderer;
+        }
+        m_scene_ctx = std::make_unique<EditorSceneContext>();
+        m_scene_ctx->init(renderer);
+        spdlog::info("{}", project::ProjectManager::GetSettings().app.default_scene);
+        // m_scene_ctx.loadSceneFromFile("project://");
+
+        if (m_scene_ctx && m_scene_ctx->isReady()) {
+            auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+            auto &viewport_img_comp = viewport_image->getComponentMutable<core::components::UIImage>();
+            auto &viewport_image_layout = viewport_image->getComponentMutable<core::components::Layout>();
+            viewport_image_layout.floating = true;
+            viewport_image_layout.z_index = -1;
+            viewport_image_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
+            viewport_image->setParent(container);
+            m_viewport_image = viewport_image->getHandle();
+        } else {
+            spdlog::error("Couldn't create scene viewport");
+        }
+
+        core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>(
+            [this, ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](core::event::events::ProgressTickEvent *evt) {
+                SDL_Renderer *renderer = nullptr;
+                if (handle.is_valid() && handle.has<core::components::Window>()) {
+                    auto window = handle.get_ref<core::components::Window>();
+                    if (window) {
+                        renderer = window->renderer_data.renderer;
+
+                        if (vp_img.is_valid() && vp_img.has<core::components::UIImage>()) {
+                            auto img = vp_img.get_ref<core::components::UIImage>();
+                            const int w = static_cast<int>(img->rendered_size[0]);
+                            const int h = static_cast<int>(img->rendered_size[1]);
+                            if (w > 0 && h > 0) {
+                                ctx->resize(w, h);
+                                img->raw_texture = ctx->getViewportTexture();
+                            }
+                        }
+
+                        ctx->tick(evt->delta_time, renderer);
+                    }
+                }
+
+                auto [scroll, scroll_dt] = core::InputManager::GetScrollDelta("ui_scroll");
+                if (scroll.x != 0.0f || scroll.y != 0.0f) {
+#if defined(__APPLE__)
+                    const bool ctrl_held = SDL_GetModState() & SDL_KMOD_GUI;
+#else
+                    const bool ctrl_held = SDL_GetModState() & SDL_KMOD_CTRL;
+#endif
+                    if (ctrl_held) {
+                        const float factor = std::pow(1.12f, scroll.y);
+                        ctx->zoom(factor, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
+                    } else {
+                        ctx->pan({ -scroll.x * 5.0f, scroll.y * 5.0f });
+                    }
+                }
+
+                float pinch = core::InputManager::GetPinchScale("ui_pinch");
+                if (pinch != 0.0f)
+                    ctx->zoom(pinch, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
+
+                for (auto &fn : m_inspector_update_fns) fn();
+            });
+
         auto texture_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &texture_editor_container_layout = texture_editor_container->getComponentMutable<core::components::Layout>();
         texture_editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        texture_editor_container_layout.z_index = 0;
         texture_editor_container_layout.padding = { 16, 16, 8, 16 };
         texture_editor_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         texture_editor_container->setParent(container);
@@ -370,6 +447,17 @@ namespace atmo::editor
         auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
         colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
 
+        previewBtn->getSignal<>("Pressed").connect([canvasHandle]() {
+            if (!canvasHandle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.preview = !canvas_comp.preview;
+            canvas_comp.zoom = 1.0f;
+            canvas_comp.offset = { 0.0f, 0.0f };
+        });
 
         pencilBtn->getSignal<>("Pressed").connect([canvasHandle]() {
             if (!canvasHandle.is_alive()) {
