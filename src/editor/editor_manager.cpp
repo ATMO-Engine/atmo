@@ -34,6 +34,7 @@
 #include "SDL3/SDL_keycode.h"
 #include "core/ecs/ecs.hpp"
 #include "core/ecs/entities/entity.hpp"
+#include "core/event/events/sdl_event/input_event/input_event.hpp"
 
 #ifdef __APPLE__
 static constexpr SDL_Keymod PRIMARY_MOD = SDL_KMOD_GUI;
@@ -121,9 +122,28 @@ namespace atmo::editor
         }
     }
 
+    void EditorManager::registerShortcutDispatcher()
+    {
+#if !defined(__APPLE__)
+        core::event::EventRegistry::SetCallBack<core::event::events::InputEvent>([this](core::event::events::InputEvent *event) {
+            const SDL_Event &sdl_event = event->sdl_event;
+            if (sdl_event.type != SDL_EVENT_KEY_DOWN || sdl_event.key.repeat)
+                return;
+
+            const Command *cmd = m_commands.findByShortcut(sdl_event.key.key, static_cast<SDL_Keymod>(sdl_event.key.mod));
+            if (!cmd)
+                return;
+
+            m_commands.execute(cmd->id);
+            event->consume();
+        });
+#endif
+    }
+
     void EditorManager::init()
     {
         registerDefaultCommands();
+        registerShortcutDispatcher();
 
         auto scene = m_engine.getECS().getCurrentScene();
 

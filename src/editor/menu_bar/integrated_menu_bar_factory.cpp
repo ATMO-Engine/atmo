@@ -2,7 +2,7 @@
 
 #if !defined(ATMO_EXPORT) && !defined(__APPLE__)
 
-#include "editor/menu_bar/clay_menu_bar.hpp"
+#include "editor/menu_bar/integrated_menu_bar.hpp"
 
 namespace atmo::editor
 {

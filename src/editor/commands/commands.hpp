@@ -19,6 +19,8 @@ namespace atmo::editor
 
         bool execute(const std::string &id) const;
 
+        const Command *findByShortcut(SDL_Keycode key, SDL_Keymod modifiers) const;
+
         const std::vector<Command> &all() const noexcept;
 
         std::vector<const Command *> search(std::string_view query) const;
