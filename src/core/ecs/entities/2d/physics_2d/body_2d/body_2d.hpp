@@ -36,6 +36,8 @@ namespace atmo::core::ecs::entities
             b2BodyDef body_def{ b2DefaultBodyDef() };
             std::vector<std::shared_ptr<resource::resources::Shape2d>> shapes;
 
+            types::Vector2 synced_position;
+            float synced_rotation{ 0.0f };
             bool dirty{ true };
             flecs::entity_t scene_id{ 0 };
         };
@@ -53,6 +55,5 @@ namespace atmo::core::ecs::entities
 template <> struct atmo::meta::ComponentMeta<atmo::core::ecs::entities::Body2d::Body2dData> {
     static constexpr const char *name = "Body2dData";
     static constexpr const char *category = "2D";
-    static constexpr auto fields =
-        std::make_tuple(atmo::meta::field<&atmo::core::ecs::entities::Body2d::Body2dData::shapes>("shapes").skipFlecs());
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::ecs::entities::Body2d::Body2dData::shapes>("shapes").skipFlecs());
 };

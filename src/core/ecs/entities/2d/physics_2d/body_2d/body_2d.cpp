@@ -44,6 +44,18 @@ namespace atmo::core::ecs::entities
                 transform.position = b2Body_GetPosition(body_data.body_id);
                 transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(b2Body_GetRotation(body_data.body_id)));
             });
+
+        world->system<components::Transform2d, Body2dData>("Body2d_PushTransformToPhysicsEngine")
+            .kind(flecs::OnUpdate)
+            .each([](flecs::entity e, components::Transform2d &t, Body2dData &bd) {
+                if (!b2Body_IsValid(bd.body_id))
+                    return;
+                if (t.position.x == bd.synced_position.x && t.position.y == bd.synced_position.y && t.rotation == bd.synced_rotation)
+                    return;
+                b2Body_SetTransform(bd.body_id, t.position, b2MakeRot(common::math::DegreesToRadians(t.rotation)));
+                bd.synced_position = t.position;
+                bd.synced_rotation = t.rotation;
+            });
     }
 
     void Body2d::initialize()

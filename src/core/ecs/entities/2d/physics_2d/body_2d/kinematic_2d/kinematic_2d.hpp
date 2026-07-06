@@ -3,6 +3,7 @@
 #include "core/ecs/entities/2d/physics_2d/body_2d/body_2d.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/subresources/2d/shape/shape2d.hpp"
+#include "core/types.hpp"
 #include "meta/meta.hpp"
 
 namespace atmo::core::ecs::entities
@@ -24,6 +25,11 @@ namespace atmo::core::ecs::entities
         void setBodyType() override;
 
         struct Kinematic2dData {
+            types::Vector2 linear_velocity;
+            types::Vector2 synced_linear_velocity;
+
+            float angular_velocity;
+            float synced_angular_velocity;
         };
     };
 } // namespace atmo::core::ecs::entities

@@ -1,9 +1,39 @@
 #include "kinematic_2d.hpp"
+#include "box2d/box2d.h"
+#include "common/math.hpp"
 #include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
 {
-    void Kinematic2d::RegisterSystems(flecs::world *world) {}
+    void Kinematic2d::RegisterSystems(flecs::world *world)
+    {
+        world->system<components::Transform2d, Body2dData, Kinematic2dData>("Kinematic2d_UpdateValuesFromPhysicsEngine")
+            .kind(flecs::PostUpdate)
+            .each([](flecs::entity e, components::Transform2d &t, Body2dData &bd, Kinematic2dData &kd) {
+                if (!b2Body_IsValid(bd.body_id))
+                    return;
+
+                kd.linear_velocity = b2Body_GetLinearVelocity(bd.body_id);
+                kd.angular_velocity = atmo::common::math::RadiansToDegrees(b2Body_GetAngularVelocity(bd.body_id));
+            });
+
+        world->system<Body2dData, Kinematic2dData>("Kinematic2d_PushVelocityToPhysicsEngine")
+            .kind(flecs::OnUpdate)
+            .each([](flecs::entity e, Body2dData &bd, Kinematic2dData &kd) {
+                if (!b2Body_IsValid(bd.body_id))
+                    return;
+
+                if (kd.linear_velocity != kd.synced_linear_velocity) {
+                    b2Body_SetLinearVelocity(bd.body_id, kd.linear_velocity);
+                    kd.synced_linear_velocity = kd.linear_velocity;
+                }
+
+                if (kd.angular_velocity != kd.synced_angular_velocity) {
+                    b2Body_SetAngularVelocity(bd.body_id, common::math::RadiansToDegrees(kd.angular_velocity));
+                    kd.synced_angular_velocity = kd.angular_velocity;
+                }
+            });
+    }
 
     void Kinematic2d::initialize()
     {
