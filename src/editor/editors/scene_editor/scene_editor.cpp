@@ -94,7 +94,8 @@ namespace atmo::editor
             auto add_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
             ((core::ecs::entities::UILabel)add_btn->getChildren()[0]).setText("Add Script");
 
-            add_btn->getSignal<>("Pressed").connect([&ent, parent, &update_fns]() {
+            add_btn->getSignal<>("Pressed").connect([entity, parent, &update_fns]() {
+                core::ecs::entities::Entity ent(entity);
                 if (!ent.isAlive()) {
                     return;
                 }
