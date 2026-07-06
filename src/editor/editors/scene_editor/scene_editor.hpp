@@ -16,8 +16,6 @@ namespace atmo::editor
     class SceneEditor : public EditorRegistry::Registrable<SceneEditor, Editor>
     {
     public:
-        SceneEditor();
-
         using EditorRegistry::Registrable<SceneEditor, Editor>::Registrable;
 
         static constexpr std::string_view LocalName()
@@ -71,8 +69,5 @@ namespace atmo::editor
         flecs::entity m_viewport_image;
         std::unique_ptr<EditorSceneContext> m_scene_ctx;
         std::vector<std::function<void()>> m_inspector_update_fns;
-
-        luau::Luau m_vm;
-        atmo::luau::ScriptInstance m_inst;
     };
 } // namespace atmo::editor

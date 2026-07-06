@@ -63,7 +63,7 @@ namespace atmo
              *
              * @return ScriptInstance The instance generated
              */
-            ScriptInstance generateInstance();
+            ScriptInstance *generateInstance();
 
             constexpr inline lua_State *getState() const
             {
@@ -102,6 +102,12 @@ namespace atmo
              * @param loader The context of the environment (ex: script or entity name)
              */
             static void LogCompileTimeError(const std::string &errorMsg, const std::string &context);
+
+            static Luau &Instance()
+            {
+                static Luau instance;
+                return instance;
+            };
 
         protected:
             lua_State *p_L;

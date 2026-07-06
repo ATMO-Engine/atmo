@@ -39,8 +39,6 @@
 
 namespace atmo::editor
 {
-    SceneEditor::SceneEditor() : m_vm(), m_inst(m_vm.generateInstance()) {}
-
     void entityComponentFoldableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
     {
         core::ecs::entities::Entity ent(entity);
@@ -183,26 +181,26 @@ namespace atmo::editor
                     for (auto &fn : m_inspector_update_fns) fn();
                 });
 
-            auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
-            circle_shape->setRadius(40.0f);
-            circle_shape->getShapeDef().density = 2.0f;
-            circle_shape->getShapeDef().material.rollingResistance = 0.02f;
+            // auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
+            // circle_shape->setRadius(40.0f);
+            // circle_shape->getShapeDef().density = 2.0f;
+            // circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-            auto dynamic_body2 =
-                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
-            dynamic_body2->addShape(circle_shape);
-            dynamic_body2->setPosition({ 450, 0 });
-            dynamic_body2->setParent(*m_scene_ctx->getScene());
-            // Sprite
-            auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite->setTexturePath("project://assets/atmo.png");
-            core::components::Script scr = {};
-            scr.instance = &m_inst;
-            scr.script_path = "project://assets/script/luau_bindings_test.luau";
-            sprite->setComponent(scr);
-            // sprite->setPosition({ 1200, 500 });
-            sprite->setParent(*dynamic_body2);
-            sprite->setScale(core::types::Vector2(0.25, 0.25));
+            // auto dynamic_body2 =
+            //     core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+            // dynamic_body2->addShape(circle_shape);
+            // dynamic_body2->setPosition({ 450, 0 });
+            // dynamic_body2->setParent(*m_scene_ctx->getScene());
+            // // Sprite
+            // auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            // sprite->setTexturePath("project://assets/atmo.png");
+            // core::components::Script scr = {};
+            // scr.instance = &m_inst;
+            // scr.script_path = "project://assets/script/luau_bindings_test.luau";
+            // sprite->setComponent(scr);
+            // // sprite->setPosition({ 1200, 500 });
+            // sprite->setParent(*dynamic_body2);
+            // sprite->setScale(core::types::Vector2(0.25, 0.25));
         }
 
         auto scene_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
