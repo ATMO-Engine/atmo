@@ -507,6 +507,20 @@ namespace atmo::editor
             sceneEntityFoldableTreeinit(child, child_UI->getChildContainer(), component_container);
         });
 
+        entity.getParent().getSignal<core::ecs::entities::Entity>("child_removed").connect(
+            [this, child_UI, entity_handle, component_container](core::ecs::entities::Entity removed_child) {
+                if (removed_child.getHandle() != entity_handle)
+                    return;
+
+                if (m_selected_entity == entity_handle) {
+                    for (auto &child : component_container.getChildren()) child.destroy();
+                    m_inspector_update_fns.clear();
+                    m_selected_entity = flecs::entity();
+                }
+
+                child_UI->destroy();
+            });
+
         // if (entity.getChildren().empty()) {
         //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();
 
