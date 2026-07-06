@@ -35,6 +35,7 @@
 #include "project/file.hpp"
 #include "project/file_system.hpp"
 #include "spdlog/spdlog.h"
+#include "core/ecs/entities/script.hpp"
 
 namespace atmo::editor
 {
@@ -85,10 +86,74 @@ namespace atmo::editor
                 });
             }
 
-            // auto &input_type = inputtest->getComponentMutable<core::components::UIInput>();
-            // input_type.input_type = core::components::UIInput::InputType::Text;
+        }
 
-            // inputtest->setParent(child_UI->getChildContainer());
+        if (entity.has<core::components::Script>()) {
+            auto child_UI = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
+            auto &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
+            auto &child_UI_rect = child_UI->getComponentMutable<core::components::UIRect>();
+            auto title_button = child_UI->getTitleButton();
+            auto &title_button_comp = title_button.getComponentMutable<core::components::UIButton>();
+            auto title_label = child_UI->getTitleLabel();
+
+            child_UI_rect.color.a = 0.0f;
+            child_UI_layout.direction = core::components::Layout::Direction::Vertical;
+            child_UI_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            child_UI_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            child_UI_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 0.0f };
+            child_UI_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+            child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+            child_UI_layout.child_gap = 8;
+            child_UI->setParent(parent);
+            title_label.setText("Script");
+
+            auto path_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+            auto &path_container_rect = path_container->getComponentMutable<core::components::UIRect>();
+            path_container_rect.color.a = 0.0f;
+
+            auto cont = child_UI->getChildContainer();
+
+            auto &path_container_layout = path_container->getComponentMutable<core::components::Layout>();
+            path_container_layout.direction = core::components::Layout::Direction::Vertical;
+            path_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            path_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            path_container_layout.child_gap = 4;
+            path_container->setParent(cont);
+
+            auto script_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            script_label->setText("Script path");
+            script_label->setFontSize(12);
+            script_label->setParent(*path_container);
+
+            auto script_path = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
+            script_path->setParent(*path_container);
+
+            auto &comp = entity.get_mut<core::components::Script>();
+
+            auto &input_comp = entity.get_mut<core::components::UITextInput>();
+
+            input_comp.value = comp.script_path;
+        } else {
+            spdlog::info("y'a pas");
+            auto add_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            ((core::ecs::entities::UILabel)add_btn->getChildren()[0]).setText("Add Script");
+
+            add_btn->setParent(parent);
+            add_btn->getSignal<>("Pressed").connect([entity]() {
+                if (!entity.is_alive()) {
+                    return;
+                }
+                core::ecs::entities::Entity ent(core::ecs::EntityRegistry::GetEntityFromId(entity));
+
+                core::components::Script scr = {};
+                // create script comp
+                ent.setComponent(scr);
+                if (entity.has<core::components::Script>()) {
+                    spdlog::info("added");
+                } else {
+                    spdlog::info("not added");
+                }
+            });
         }
     }
 
