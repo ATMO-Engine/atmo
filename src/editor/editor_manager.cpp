@@ -128,7 +128,7 @@ namespace atmo::editor
         auto scene = m_engine.getECS().getCurrentScene();
 
         m_menu_bar = makePlatformMenuBar();
-        m_menu_bar->build(*scene, m_commands);
+        m_menu_bar->build(core::ecs::entities::Window(scene->getParent()), m_commands);
 
         auto window_ui_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &window_ui_container_layout = window_ui_container->getComponentMutable<core::components::Layout>();

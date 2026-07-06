@@ -1,4 +1,4 @@
-#include "clay_menu_bar.hpp"
+#include "integrated_menu_bar.hpp"
 #include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)
@@ -7,7 +7,7 @@
 
 namespace atmo::editor
 {
-    void ClayMenuBar::build(core::ecs::entities::Entity window_entity, Commands &commands)
+    void IntegratedMenuBar::build(core::ecs::entities::Window window_entity, Commands &commands)
     {
         spdlog::warn("The command menu bar for this platform has not been implemented yet.");
     }

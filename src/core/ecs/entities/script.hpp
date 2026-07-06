@@ -13,6 +13,7 @@ namespace atmo::core::components
 {
     struct Script {
         std::string script_path;
+        std::string prev_script_path;
         std::unique_ptr<resource::ResourceRef<resource::Bytecode>> m_res;
         atmo::luau::ScriptInstance *instance = nullptr;
     };

@@ -7,17 +7,10 @@
 
 namespace atmo::editor
 {
-    class MacOSMenuBar : public IPlatformMenuBar
+    class IntegratedMenuBar : public IPlatformMenuBar
     {
     public:
-        MacOSMenuBar();
-        ~MacOSMenuBar() override;
-
         void build(core::ecs::entities::Window window_entity, Commands &commands) override;
-
-    private:
-        struct Impl;
-        Impl *m_impl = nullptr;
     };
 } // namespace atmo::editor
 

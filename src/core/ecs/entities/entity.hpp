@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 #include "SDL3/SDL_rect.h"
+#include "core/ecs/entities/script.hpp"
 #include "flecs.h"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/glaze.hpp"
@@ -373,6 +374,27 @@ namespace atmo::core::ecs::entities
          * @param dest dest Entity
          */
         void swap(const Entity &dest);
+
+        /**
+         * @brief Check if the entity has a Script attached to it.
+         *
+         * @return true A script component is attached.
+         * @return false No script component is attached.
+         */
+        bool hasScript() const
+        {
+            return p_handle.has<components::Script>();
+        }
+
+        /**
+         * @brief Adds a script component to the entity, optionally with the path argument provided.
+         *
+         * @param script_path Optional path to the script.
+         */
+        void addScript(const std::string &script_path = "")
+        {
+            setComponent<components::Script>({ .script_path = script_path });
+        }
 
     protected:
         flecs::entity p_handle;
