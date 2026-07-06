@@ -16,6 +16,7 @@
 #include "file_system.hpp"
 #include "glaze/json/write.hpp"
 #include "impl/romver.hpp"
+#include "project/file.hpp"
 #include "project/project_settings.hpp"
 
 #define ATMO_PROJECT_SETTINGS_FILE "project_settings.json"
@@ -86,6 +87,13 @@ namespace atmo
                 WriteProjectSettings(project_file, dest);
                 project_file.write(dest.data(), dest.size());
                 project_file.close();
+
+                if (!std::filesystem::exists(resolved_path / "assets/"))
+                    std::filesystem::create_directories(resolved_path / "assets");
+
+                auto img_src = FileSystem::OpenFile("project://assets/atmo.png");
+                auto img_out = FileSystem::OpenFile((resolved_path / "assets/atmo.png").c_str(), std::ios::out);
+                img_out.write(img_src.readAll().c_str(), img_src.size());
 
                 return project_file_path;
             }
@@ -269,9 +277,11 @@ namespace atmo
                 std::filesystem::remove(temp_pck, ec);
 
 #if !defined(_WIN32)
-                std::filesystem::permissions(output_path,
+                std::filesystem::permissions(
+                    output_path,
                     std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec,
-                    std::filesystem::perm_options::add, ec);
+                    std::filesystem::perm_options::add,
+                    ec);
                 if (ec)
                     spdlog::warn("Failed to set executable permission on '{}': {}", output_path.string(), ec.message());
 #endif

@@ -53,8 +53,8 @@ namespace atmo::core::ecs::entities
 
                 script.instance->load(script.script_path, script.m_res->get()->data, script.m_res->get()->size, e);
                 script.instance->create();
-            } catch (const core::resource::Resource<resource::Bytecode>::LoadException &e) {
-                spdlog::error("Compilation error script not loaded");
+            } catch (std::exception &e) {
+                spdlog::error("Compilation error script not loaded: {}", e.what());
                 return;
             }
         });

@@ -12,11 +12,7 @@
 
 #define ATMO_PACKED_MAGIC_NUMBER 'A', 'T', 'M', 'O', '-', 'P', 'C', 'K'
 
-#if defined(ATMO_EXPORT)
-#define ATMO_PROJECT_SETTING const
-#else
 #define ATMO_PROJECT_SETTING
-#endif
 
 namespace atmo
 {
