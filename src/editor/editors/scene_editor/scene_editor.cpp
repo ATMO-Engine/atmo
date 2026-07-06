@@ -524,7 +524,7 @@ namespace atmo::editor
 
         entity.getParent()
             .getSignal<core::ecs::entities::Entity>("child_removed")
-            .connect([this, child_UI, entity_handle, component_container](core::ecs::entities::Entity removed_child) {
+            .connect([this, child_container, entity_handle, component_container](core::ecs::entities::Entity removed_child) {
                 if (removed_child.getHandle() != entity_handle)
                     return;
 
@@ -534,15 +534,13 @@ namespace atmo::editor
                     m_selected_entity = flecs::entity();
                 }
 
-                child_UI->destroy();
+                child_container->destroy();
             });
 
         // if (entity.getChildren().empty()) {
         //     auto &child_container = child_UI->getChildren()[1].getComponentMutable<core::components::UI>();
 
-        entity.destroy();
-        m_inspector_update_fns.clear();
-        child_container->destroy();
+        close_create_entity_btn->getSignal<>("Released").connect([entity]() mutable { core::SignalQueue::Enqueue([entity]() mutable { entity.destroy(); }); });
     };
 
 
