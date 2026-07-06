@@ -6,6 +6,7 @@
 
 #include "SDL3/SDL_error.h"
 #include "SDL3/SDL_hints.h"
+#include "SDL3/SDL_keycode.h"
 #include "SDL3/SDL_scancode.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "args/arg_manager.hpp"
@@ -281,6 +282,8 @@ namespace atmo::core
 
         InputManager::AddInput("D", new InputManager::KeyEvent(SDLK_D, false));
         InputManager::AddInput("Q", new InputManager::KeyEvent(SDLK_Q, false));
+        InputManager::AddInput("Z", new InputManager::KeyEvent(SDLK_Z, false));
+        InputManager::AddInput("S", new InputManager::KeyEvent(SDLK_S, false));
         InputManager::AddInput("Space", new InputManager::KeyEvent(SDLK_SPACE, false));
 
 #if !defined(ATMO_EXPORT)
