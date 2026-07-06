@@ -2,6 +2,7 @@
 #include "box2d/box2d.h"
 #include "common/math.hpp"
 #include "meta/auto_register.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
@@ -18,7 +19,7 @@ namespace atmo::core::ecs::entities
             });
 
         world->system<Body2dData, Kinematic2dData>("Kinematic2d_PushVelocityToPhysicsEngine")
-            .kind(flecs::OnUpdate)
+            .kind(flecs::OnValidate)
             .each([](flecs::entity e, Body2dData &bd, Kinematic2dData &kd) {
                 if (!b2Body_IsValid(bd.body_id))
                     return;

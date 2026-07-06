@@ -100,10 +100,12 @@ namespace atmo::editor
                 }
                 ent.addScript();
 
-                auto children = parent.getChildren();
-                for (auto &child : children) child.destroy();
-                update_fns.clear();
-                entityComponentFoldableTreeinit(ent.getHandle(), parent, update_fns);
+                core::SignalQueue::Enqueue([entity, parent, &update_fns]() {
+                    auto children = parent.getChildren();
+                    for (auto &child : children) child.destroy();
+                    update_fns.clear();
+                    entityComponentFoldableTreeinit(entity, parent, update_fns);
+                });
             });
 
             add_btn->setParent(parent);
@@ -187,7 +189,8 @@ namespace atmo::editor
             circle_shape->getShapeDef().density = 2.0f;
             circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-            auto kinematic_body2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
+            auto kinematic_body2 =
+                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
             kinematic_body2->addShape(circle_shape);
             kinematic_body2->setPosition({ 450, 0 });
             kinematic_body2->setParent(*m_scene_ctx->getScene());
