@@ -109,7 +109,7 @@ namespace atmo
 
         ScriptInstance Luau::generateInstance()
         {
-            return ScriptInstance(*this);
+            return ScriptInstance(this);
         }
 
         void Luau::registerBindings()

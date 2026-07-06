@@ -36,4 +36,80 @@ namespace atmo::luau
         LuaBindings<atmo::core::components::Transform2d>::Push(state, &t);
         return 1;
     }
+
+    int LuaBindings<flecs::entity>::Name(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        if (!entity) {
+            return 0;
+        }
+
+        if (!entity->is_alive()) {
+            lua_pushnil(state);
+            spdlog::warn("Entity is not alive");
+            return 1;
+        }
+
+        lua_pushstring(state, entity->name().c_str());
+        return 1;
+    }
+
+    int LuaBindings<flecs::entity>::GetChild(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        const char *childName = luaL_checkstring(state, 2);
+
+        if (!entity) {
+            return 0;
+        }
+
+        if (!entity->is_alive()) {
+            lua_pushnil(state);
+            spdlog::warn("Entity is not alive");
+            return 1;
+        }
+
+        flecs::entity child = entity->lookup(childName);
+        if (!child.is_valid() || !child.is_alive()) {
+            lua_pushnil(state);
+            return 1;
+        }
+
+        LuaBindings<flecs::entity>::Push(state, new flecs::entity(child), true);
+        return 1;
+    }
+
+    int LuaBindings<flecs::entity>::GetParent(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        if (!entity) {
+            return 0;
+        }
+
+        if (!entity->is_alive()) {
+            lua_pushnil(state);
+            spdlog::warn("Entity is not alive");
+            return 1;
+        }
+
+        flecs::entity parent = entity->parent();
+        if (!parent.is_valid() || !parent.is_alive()) {
+            lua_pushnil(state);
+            return 1;
+        }
+
+        LuaBindings<flecs::entity>::Push(state, new flecs::entity(parent), true);
+        return 1;
+    }
+
+    int LuaBindings<flecs::entity>::IsAlive(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        if (!entity) {
+            return 0;
+        }
+
+        lua_pushboolean(state, entity->is_alive());
+        return 1;
+    }
 } // namespace atmo::luau

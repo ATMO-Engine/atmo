@@ -4,9 +4,9 @@
 
 namespace atmo::luau
 {
-    LuauRef::LuauRef(Luau &vm) : m_vm(vm) {}
+    LuauRef::LuauRef(Luau *vm) : m_vm(vm) {}
 
-    LuauRef::LuauRef(Luau &vm, int ref) : m_vm(vm)
+    LuauRef::LuauRef(Luau *vm, int ref) : m_vm(vm)
     {
         set(ref);
     }
@@ -23,7 +23,11 @@ namespace atmo::luau
 
     void LuauRef::clear()
     {
-        lua_State *state = m_vm.getState();
+        if (!m_vm) {
+            return;
+        }
+
+        lua_State *state = m_vm->getState();
         if (state && m_ref != LUA_NOREF) {
             lua_pushnil(state);
             lua_rawseti(state, LUA_REGISTRYINDEX, m_ref);

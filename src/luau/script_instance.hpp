@@ -16,7 +16,7 @@ namespace atmo
         class ScriptInstance
         {
         public:
-            ScriptInstance(Luau &vm);
+            ScriptInstance(Luau *vm);
             ~ScriptInstance();
 
             /**
@@ -75,7 +75,7 @@ namespace atmo
             lua_State *getThread() const;
 
         private:
-            Luau &m_vm;
+            Luau *m_vm = nullptr;
 
             LuauRef m_envRef;
 

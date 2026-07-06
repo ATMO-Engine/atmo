@@ -10,8 +10,8 @@ namespace atmo
         {
         public:
             LuauRef() = delete;
-            LuauRef(Luau &vm);
-            LuauRef(Luau &vm, int ref);
+            LuauRef(Luau *vm);
+            LuauRef(Luau *vm, int ref);
             ~LuauRef();
 
             /**
@@ -26,7 +26,7 @@ namespace atmo
             int getRef() const;
 
         private:
-            Luau &m_vm;
+            Luau *m_vm = nullptr;
             int m_ref = LUA_NOREF;
         };
     } // namespace luau

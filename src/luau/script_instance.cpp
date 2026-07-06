@@ -16,7 +16,7 @@ namespace atmo
 {
     namespace luau
     {
-        ScriptInstance::ScriptInstance(Luau &vm) : m_vm(vm), m_envRef(vm), m_threadRef(vm) {}
+        ScriptInstance::ScriptInstance(Luau *vm) : m_vm(vm), m_envRef(vm), m_threadRef(vm) {}
 
         ScriptInstance::~ScriptInstance()
         {
@@ -36,7 +36,12 @@ namespace atmo
 
         lua_State *ScriptInstance::createThread(LuauRef &ref)
         {
-            lua_State *state = m_vm.getState();
+            if (!m_vm) {
+                spdlog::error("ScriptInstance: vm is null, cannot create thread");
+                return nullptr;
+            }
+
+            lua_State *state = m_vm->getState();
 
             lua_State *newThread = lua_newthread(state);
 
@@ -61,6 +66,10 @@ namespace atmo
         bool ScriptInstance::load(const std::string &name, const char *bytecode, size_t size, flecs::entity &entity)
         {
             m_thread = createThread(m_threadRef);
+            if (m_thread == nullptr) {
+                return false;
+            }
+
             luaL_sandboxthread(m_thread);
 
             createEnvironment(m_thread);
@@ -71,8 +80,12 @@ namespace atmo
             lua_setmetatable(m_thread, -2);
             lua_setglobal(m_thread, "this");
 
+            if (!m_vm) {
+                spdlog::error("ScriptInstance: vm is null, cannot load bytecode");
+                return false;
+            }
 
-            if (!m_vm.LoadBytecodeCoroutine(m_thread, name, bytecode, size, 0)) {
+            if (!m_vm->LoadBytecodeCoroutine(m_thread, name, bytecode, size, 0)) {
                 spdlog::warn("Byte code couldn't be loaded inside thread");
                 return false;
             }
@@ -100,6 +113,7 @@ namespace atmo
             }
             if (m_thread == nullptr) {
                 spdlog::warn("Thread null, code not running");
+                return;
             }
 
             lua_getglobal(m_thread, "Create");
@@ -115,6 +129,7 @@ namespace atmo
 
             if (m_thread == nullptr) {
                 spdlog::warn("Thread null, code not running");
+                return;
             }
 
             lua_getglobal(m_thread, "Update");
@@ -131,6 +146,7 @@ namespace atmo
 
             if (m_thread == nullptr) {
                 spdlog::warn("Thread null, code not running");
+                return;
             }
 
             lua_getglobal(m_thread, "PhysicsUpdate");
