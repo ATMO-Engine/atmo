@@ -29,7 +29,7 @@ namespace atmo::core::ecs::entities
             if (script.script_path.empty() || script.script_path == script.prev_script_path)
                 return;
 
-            script.prev_script_path = script.prev_script_path;
+            script.prev_script_path = script.script_path;
 
             try {
                 script.m_res = resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);
