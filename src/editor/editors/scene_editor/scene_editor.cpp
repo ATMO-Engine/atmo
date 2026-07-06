@@ -184,21 +184,21 @@ namespace atmo::editor
                     for (auto &fn : m_inspector_update_fns) fn();
                 });
 
-            auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
-            circle_shape->setRadius(40.0f);
-            circle_shape->getShapeDef().density = 2.0f;
-            circle_shape->getShapeDef().material.rollingResistance = 0.02f;
+            // auto circle_shape = core::resource::SubResourceRegistry::Create<core::resource::resources::CircleShape2d>("SubResource::Shape2d::CircleShape2d");
+            // circle_shape->setRadius(40.0f);
+            // circle_shape->getShapeDef().density = 2.0f;
+            // circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-            auto kinematic_body2 =
-                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
-            kinematic_body2->addShape(circle_shape);
-            kinematic_body2->setPosition({ 450, 0 });
-            kinematic_body2->setParent(*m_scene_ctx->getScene());
-            // Sprite
-            auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite->setTexturePath("project://assets/atmo.png");
-            sprite->setParent(*kinematic_body2);
-            sprite->setScale(core::types::Vector2(0.25, 0.25));
+            // auto kinematic_body2 =
+            //     core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
+            // kinematic_body2->addShape(circle_shape);
+            // kinematic_body2->setPosition({ 450, 0 });
+            // kinematic_body2->setParent(*m_scene_ctx->getScene());
+            // // Sprite
+            // auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            // sprite->setTexturePath("project://assets/atmo.png");
+            // sprite->setParent(*kinematic_body2);
+            // sprite->setScale(core::types::Vector2(0.25, 0.25));
         }
 
         auto scene_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
