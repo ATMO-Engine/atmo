@@ -1,7 +1,9 @@
 #include "bindings_entity.hpp"
 #include <spdlog/spdlog.h>
 #include "bindings_transform2.hpp"
+#include "bindings_vector2.hpp"
 #include "core/ecs/entities/2d/entity_2d.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/kinematic_2d/kinematic_2d.hpp"
 #include "lua_bindings.hpp"
 
 namespace atmo::luau
@@ -111,5 +113,53 @@ namespace atmo::luau
 
         lua_pushboolean(state, entity->is_alive());
         return 1;
+    }
+
+    int LuaBindings<flecs::entity>::ApplyLinearVelocity(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        auto *vec = LuaBindings<atmo::core::types::Vector2>::CheckPtr(state, 2);
+
+        if (!entity || !vec) {
+            return 0;
+        }
+
+        if (!entity->is_alive()) {
+            spdlog::warn("Entity is not alive");
+            return 0;
+        }
+
+        if (!entity->has<core::ecs::entities::Kinematic2d::Kinematic2dData>()) {
+            luaL_error(state, "applyLinearVelocity: entity has no Kinematic2dData component");
+        }
+
+        core::ecs::entities::Kinematic2d::Kinematic2dData &k = entity->get_mut<core::ecs::entities::Kinematic2d::Kinematic2dData>();
+        k.linear_velocity = *vec;
+
+        return 0;
+    }
+
+    int LuaBindings<flecs::entity>::ApplyAngularVelocity(lua_State *state)
+    {
+        auto *entity = CheckPtr(state, 1);
+        float value = (float)luaL_checknumber(state, 2);
+
+        if (!entity) {
+            return 0;
+        }
+
+        if (!entity->is_alive()) {
+            spdlog::warn("Entity is not alive");
+            return 0;
+        }
+
+        if (!entity->has<core::ecs::entities::Kinematic2d::Kinematic2dData>()) {
+            luaL_error(state, "applyAngularVelocity: entity has no Kinematic2dData component");
+        }
+
+        core::ecs::entities::Kinematic2d::Kinematic2dData &k = entity->get_mut<core::ecs::entities::Kinematic2d::Kinematic2dData>();
+        k.angular_velocity = value;
+
+        return 0;
     }
 } // namespace atmo::luau

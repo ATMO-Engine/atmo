@@ -1,6 +1,7 @@
 #pragma once
 #include <flecs.h>
 #include "core/ecs/entities/2d/entity_2d.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/kinematic_2d/kinematic_2d.hpp"
 #include "lua_bindings.hpp"
 #include "lualib.h"
 
@@ -27,6 +28,12 @@ namespace atmo::luau
             lua_pushcfunction(state, GetTransform, "Entity.getTransform");
             lua_setfield(state, -2, "getTransform");
 
+            lua_pushcfunction(state, ApplyLinearVelocity, "Entity.applyLinearVelocity");
+            lua_setfield(state, -2, "applyLinearVelocity");
+
+            lua_pushcfunction(state, ApplyAngularVelocity, "Entity.applyAngularVelocity");
+            lua_setfield(state, -2, "applyAngularVelocity");
+
             lua_pushcfunction(state, Name, "Entity.name");
             lua_setfield(state, -2, "name");
 
@@ -50,6 +57,8 @@ namespace atmo::luau
     private:
         static int GC(lua_State *state);
         static int GetTransform(lua_State *state);
+        static int ApplyLinearVelocity(lua_State *state);
+        static int ApplyAngularVelocity(lua_State *state);
         static int Name(lua_State *state);
         static int GetChild(lua_State *state);
         static int GetParent(lua_State *state);

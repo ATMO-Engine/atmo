@@ -281,6 +281,7 @@ namespace atmo::core
 
         InputManager::AddInput("D", new InputManager::KeyEvent(SDLK_D, false));
         InputManager::AddInput("Q", new InputManager::KeyEvent(SDLK_Q, false));
+        InputManager::AddInput("Space", new InputManager::KeyEvent(SDLK_SPACE, false));
 
         // atmo::core::components::Script t = {};
         // atmo::luau::ScriptInstance inst = vm.generateInstance();

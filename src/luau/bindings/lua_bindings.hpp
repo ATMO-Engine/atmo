@@ -208,5 +208,39 @@ namespace atmo
                                  component->*member = read_value<Member>(L, 3);
                              } }; // setter
         }
+
+        template <typename T> Property makeFloatProperty(const char *name, float T::*member)
+        {
+            return Property{ name,
+                             [member](lua_State *L, void *obj) {
+                                 auto *compHandle = static_cast<ComponentHandle *>(obj);
+                                 auto *component = static_cast<T *>(compHandle->component);
+                                 push_value(L, component->*member);
+                             },
+                             [member](lua_State *L, void *obj) {
+                                 auto *compHandle = static_cast<ComponentHandle *>(obj);
+                                 auto *component = static_cast<T *>(compHandle->component);
+                                 component->*member = read_value<float>(L, 3);
+                             } };
+        }
+
+        template <typename T, typename VecT> Property makeVector2Property(const char *name, VecT T::*member)
+        {
+            return Property{ name,
+                             [member](lua_State *L, void *obj) {
+                                 auto *compHandle = static_cast<ComponentHandle *>(obj);
+                                 auto *component = static_cast<T *>(compHandle->component);
+                                 LuaBindings<VecT>::Push(L, &(component->*member));
+                             },
+                             [member](lua_State *L, void *obj) {
+                                 auto *compHandle = static_cast<ComponentHandle *>(obj);
+                                 auto *component = static_cast<T *>(compHandle->component);
+                                 auto *vec = LuaBindings<VecT>::CheckPtr(L, 3);
+                                 if (!vec) {
+                                     return;
+                                 }
+                                 component->*member = *vec;
+                             } };
+        }
     } // namespace luau
 } // namespace atmo

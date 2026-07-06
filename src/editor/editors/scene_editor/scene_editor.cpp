@@ -4,6 +4,7 @@
 #include <utility>
 #include "SDL3/SDL_keyboard.h"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
+#include "core/ecs/entities/2d/physics_2d/body_2d/kinematic_2d/kinematic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
@@ -187,20 +188,25 @@ namespace atmo::editor
             circle_shape->getShapeDef().density = 2.0f;
             circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-            auto dynamic_body2 =
-                core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
-            dynamic_body2->addShape(circle_shape);
-            dynamic_body2->setPosition({ 450, 0 });
-            dynamic_body2->setParent(*m_scene_ctx->getScene());
-            // Sprite
-            auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
-            sprite->setTexturePath("project://assets/atmo.png");
+            auto kinematic_body2 = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
+            kinematic_body2->addShape(circle_shape);
+            kinematic_body2->setPosition({ 450, 0 });
+
             core::components::Script scr = {};
             scr.instance = &m_inst;
             scr.script_path = "project://assets/script/luau_bindings_test.luau";
-            sprite->setComponent(scr);
+            kinematic_body2->setComponent(scr);
+
+            kinematic_body2->setParent(*m_scene_ctx->getScene());
+            // Sprite
+            auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
+            sprite->setTexturePath("project://assets/atmo.png");
+            //core::components::Script scr = {};
+            //scr.instance = &m_inst;
+            //scr.script_path = "project://assets/script/luau_bindings_test.luau";
+            //sprite->setComponent(scr);
             // sprite->setPosition({ 1200, 500 });
-            sprite->setParent(*dynamic_body2);
+            sprite->setParent(*kinematic_body2);
             sprite->setScale(core::types::Vector2(0.25, 0.25));
         }
 

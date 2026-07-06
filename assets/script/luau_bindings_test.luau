@@ -6,14 +6,17 @@ function Update(deltaTime)
     if transform == nil then return end
 
     if Input.isPressed("D") then
-        transform.position.x = transform.position.x + 100 * deltaTime
+        this:applyLinearVelocity(Vector2(100, 0))
     end
 
     if Input.isPressed("Q") then
-        transform.position.x = transform.position.x - 100 * deltaTime
+        this:applyLinearVelocity(Vector2(-100, 0))
+    end
+
+    if Input.isPressed("Space") then
+        this:applyAngularVelocity(45)
     end
 end
 
 function PhysicsUpdate(deltaTime)
 end
-
