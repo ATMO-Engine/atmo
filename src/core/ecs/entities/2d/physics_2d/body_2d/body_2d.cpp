@@ -42,7 +42,6 @@ namespace atmo::core::ecs::entities
                 if (t.position.x == bd.synced_position.x && t.position.y == bd.synced_position.y && t.rotation == bd.synced_rotation)
                     return;
                 b2Body_SetTransform(bd.body_id, t.position, b2MakeRot(common::math::DegreesToRadians(t.rotation)));
-                b2Body_SetAwake(bd.body_id, true);
                 bd.synced_position = t.position;
                 bd.synced_rotation = t.rotation;
             });
