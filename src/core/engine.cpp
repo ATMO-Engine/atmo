@@ -338,6 +338,7 @@ namespace atmo::core
             spdlog::error("Failed to open project '{}': {}", project_path, e.what());
             return false;
         }
+        project::FileSystem::SetProjectRootOverride(std::filesystem::absolute(project::ProjectManager::GetCurrentProjectPath()));
 
         loadAddons();
 

@@ -119,6 +119,7 @@ namespace atmo::project
         static void SetProjectRootOverride(const std::filesystem::path &root)
         {
             Instance().m_project_root_override = root;
+            Instance().m_overriden_project_root = true;
         }
 #endif
 
@@ -144,6 +145,13 @@ namespace atmo::project
         {
             if (path.starts_with(USER_PROTOCOL))
                 return GetUserDataDirectory() / std::string(path.substr(sizeof(USER_PROTOCOL) - 1));
+
+#if !defined(ATMO_EXPORT)
+            if (path.starts_with(PROJECT_PROTOCOL)) {
+                std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));
+                return (Instance().m_overriden_project_root ? Instance().m_project_root_override : Instance().m_root) / relative_path;
+            }
+#endif
 
             return std::filesystem::path(path);
         }
@@ -533,6 +541,7 @@ namespace atmo::project
         std::shared_ptr<std::fstream> m_resources;
         std::string m_project_name;
 #if !defined(ATMO_EXPORT)
+        bool m_overriden_project_root{ false };
         std::filesystem::path m_project_root_override;
 #endif
     };

@@ -15,6 +15,7 @@
 #include "editor/editor_entities/ui_drawing_canvas/ui_drawing_canvas.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
 #include "editor/editor_registry.hpp"
+#include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 
 namespace atmo::editor
@@ -30,9 +31,6 @@ namespace atmo::editor
         }
         m_scene_ctx = std::make_unique<EditorSceneContext>();
         m_scene_ctx->init(renderer);
-        spdlog::info("{}", project::ProjectManager::GetSettings().app.default_scene);
-//        p_file_path = atmo::project::ProjectManager::GetSettings().app.default_scene;
-//        m_scene_ctx->loadSceneFromFile(atmo::project::ProjectManager::GetSettings().app.default_scene);
 
         if (m_scene_ctx && m_scene_ctx->isReady()) {
             auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
@@ -305,7 +303,7 @@ namespace atmo::editor
         fileExplorerContainer->setParent(*option_panel);
 
         auto fileExplorer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFileExplorer>("Entity::UI::UIRect::UIFileExplorer");
-        fileExplorer->setRootPath(std::filesystem::current_path().string());
+        fileExplorer->setRootPath(project::ProjectManager::GetCurrentProjectPath());
         fileExplorer->setParent(*fileExplorerContainer);
 
 
@@ -448,10 +446,13 @@ namespace atmo::editor
         auto &colorPicker_comp = colorPicker->getComponentMutable<core::components::UIColorPicker>();
         colorPicker->getSignal<core::types::Color>("ColorChanged").emit(colorPicker_comp.current_color);
 
-        previewBtn->getSignal<>("Pressed").connect([canvasHandle]() {
-            if (!canvasHandle.is_alive()) {
+        previewBtn->getSignal<>("Pressed").connect([canvasHandle, this]() {
+            if (!canvasHandle.is_alive() || atmo::project::ProjectManager::GetSettings().app.default_scene.empty()) {
                 return;
             }
+
+            m_scene_ctx->loadSceneFromFile(project::FileSystem::ResolvePath(atmo::project::ProjectManager::GetSettings().app.default_scene));
+
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
             auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
 
