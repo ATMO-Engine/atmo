@@ -33,8 +33,9 @@
 #include "spdlog/spdlog-inl.h"
 #include "spdlog/spdlog.h"
 
-#if !defined(ATMO_EXPORT)
 #include "addon/addon.hpp"
+
+#if !defined(ATMO_EXPORT)
 #include "editor/editor_manager.hpp"
 #include "editor/project_explorer/project_explorer.hpp"
 #endif
@@ -151,10 +152,41 @@ namespace atmo::core
     int Engine::initLogger()
     {
 #if defined(ATMO_DEBUG)
-        spdlog::set_level(spdlog::level::debug);
+        // spdlog::set_level(spdlog::level::debug);
 #endif
 
         return 0;
+    }
+
+    void Engine::loadAddons()
+    {
+        addon::AtmoAPI api{ .engine = this,
+                            .input_manager = InputManager::Instance(),
+                            .arg_manager = args::ArgManager::Instance(),
+                            .entity_registry = ecs::EntityRegistry::Instance(),
+                            .subresource_registry = resource::SubResourceRegistry::Instance(),
+                            .meta_registry = atmo::meta::MetaRegistry::Instance() };
+
+        for (auto &addon_pair : project::ProjectManager::GetSettings().addons.addons) {
+            if (!addon_pair.second)
+                continue;
+
+            std::string addon_path = addon_pair.first;
+
+#if !defined(ATMO_EXPORT)
+            if (addon_path.starts_with(PROJECT_PROTOCOL))
+                addon_path = (project::ProjectManager::GetCurrentProjectPath() / addon_path.substr(sizeof(PROJECT_PROTOCOL) - 1)).string();
+#endif
+
+            try {
+                auto loaded_addon = std::make_unique<addon::Addon>(addon_path, &api);
+                spdlog::debug(
+                    "Loaded addon: {} {} ({})", loaded_addon->header.name, loaded_addon->header.version.toString(), loaded_addon->header.internal_name);
+                m_addons.push_back(std::move(loaded_addon));
+            } catch (const addon::Addon::AddonLoadException &err) {
+                spdlog::warn("Failed to load addon at \"{}\": {}", addon_pair.first, err.what());
+            }
+        }
     }
 
     int Engine::args(int argc, const char *const *argv)
@@ -307,6 +339,8 @@ namespace atmo::core
             return false;
         }
 
+        loadAddons();
+
         m_editor = std::make_unique<editor::EditorManager>(*this, project::ProjectManager::GetCurrentProjectPath().string());
         m_editor->init();
         return true;
@@ -344,6 +378,8 @@ namespace atmo::core
                 project::FileSystem::SetProjectRootOverride(std::filesystem::absolute(project::ProjectManager::GetCurrentProjectPath()));
             }
 
+            loadAddons();
+
             std::string scene_path = args::ArgManager::Present<std::string>("--run").value_or(project::ProjectManager::GetSettings().app.default_scene);
 
             if (scene_path.empty())
@@ -359,6 +395,8 @@ namespace atmo::core
         }
 #else
         {
+            loadAddons();
+
             const std::string &scene_path = project::ProjectManager::GetSettings().app.default_scene;
             if (!scene_path.empty())
                 m_ecs.changeSceneToFile(scene_path);

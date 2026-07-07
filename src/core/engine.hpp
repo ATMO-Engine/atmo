@@ -4,10 +4,16 @@
 #include <flecs.h>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include <vector>
 
 #include "core/ecs/ecs.hpp"
 #include "core/input/input_manager.hpp"
 #include "project/project_manager.hpp"
+
+namespace atmo::addon
+{
+    class Addon;
+} // namespace atmo::addon
 
 #if !defined(ATMO_EXPORT)
 namespace atmo::editor
@@ -25,6 +31,8 @@ namespace atmo::core
         std::atomic<bool> m_running{ false };
         bool m_headless = false;
 
+        std::vector<std::unique_ptr<addon::Addon>> m_addons;
+
 #if !defined(ATMO_EXPORT)
         std::unique_ptr<editor::EditorManager> m_editor;
 #endif
@@ -32,6 +40,14 @@ namespace atmo::core
         int initLogger();
         int initSDL();
         int initDefaultInputs();
+
+        /**
+         * @brief Loads every enabled addon declared in the currently opened project's settings.
+         *
+         * Must run after a project has been opened (ProjectManager::OpenProject), since addon
+         * declarations live in that project's project_settings.json.
+         */
+        void loadAddons();
 
     public:
         Engine();

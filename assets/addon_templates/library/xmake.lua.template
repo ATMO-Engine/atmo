@@ -19,7 +19,6 @@ target("{{internal_name}}")
     packages()
     platform_specifics()
 
-    -- resolve engine symbols against the host process at dlopen() time instead of at link time
     if is_plat("macosx") then
         add_shflags("-undefined", "dynamic_lookup", {force = true})
     end
