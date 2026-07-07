@@ -409,15 +409,15 @@ namespace atmo::editor
         circle_shape->getShapeDef().density = 2.0f;
         circle_shape->getShapeDef().material.rollingResistance = 0.02f;
 
-        auto kinematic_body =
-            core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Kinematic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Kinematic2d");
-        kinematic_body->addShape(circle_shape);
-        kinematic_body->setPosition({ 510, 300 });
-        kinematic_body->setParent(*m_scene_ctx->getScene());
+        auto dynamic_body2 =
+            core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Dynamic2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Body2d::Dynamic2d");
+        dynamic_body2->addShape(circle_shape);
+        dynamic_body2->setPosition({ 450, 0 });
+        dynamic_body2->setParent(*m_scene_ctx->getScene());
 
         auto sprite = core::ecs::EntityRegistry::CreateIn<core::ecs::entities::Sprite2d>(&m_scene_ctx->getWorld(), "Entity::Entity2d::Sprite2d");
         // sprite->setPosition({ 1200, 500 });
-        sprite->setParent(*kinematic_body);
+        sprite->setParent(*dynamic_body2);
         sprite->setScale(core::types::Vector2(1, 1));
     }
 

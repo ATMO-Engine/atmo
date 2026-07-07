@@ -104,22 +104,22 @@ namespace atmo::editor
                 .action = [this] { core::SignalQueue::Enqueue([this]() { openProjectSettings(); }); },
             });
 
-        if (spdlog::default_logger()->level() == spdlog::level::debug) {
-            m_commands.registerCommand(
-                {
-                    .id = "atmo.commands.debug.create_demo_entities",
-                    .category = "atmo.commands.debug.category",
-                    .shortcut = Shortcut{ SDLK_D, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
-                    .action =
-                        [this] {
-                            core::SignalQueue::Enqueue([this]() {
-                                if (m_active_editor_index && m_editors[m_active_editor_index.value()]->getTypeName() == "Editor::SceneEditor") {
-                                    std::static_pointer_cast<atmo::editor::SceneEditor>(m_editors[m_active_editor_index.value()])->createDemoEntities();
-                                }
-                            });
-                        },
-                });
-        }
+        // if (spdlog::default_logger()->level() == spdlog::level::debug) {
+        m_commands.registerCommand(
+            {
+                .id = "atmo.commands.debug.create_demo_entities",
+                .category = "atmo.commands.debug.category",
+                .shortcut = Shortcut{ SDLK_D, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
+                .action =
+                    [this] {
+                        core::SignalQueue::Enqueue([this]() {
+                            if (m_active_editor_index && m_editors[m_active_editor_index.value()]->getTypeName() == "Editor::SceneEditor") {
+                                std::static_pointer_cast<atmo::editor::SceneEditor>(m_editors[m_active_editor_index.value()])->createDemoEntities();
+                            }
+                        });
+                    },
+            });
+        //}
     }
 
     void EditorManager::registerShortcutDispatcher()
