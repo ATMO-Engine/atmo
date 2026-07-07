@@ -22,18 +22,5 @@ namespace atmo::core::ecs::entities
         }
 
         void setBodyType() override;
-
-        struct Dynamic2dData {
-            types::Vector2 linear_velocity;
-            types::Vector2 synced_linear_velocity;
-
-            float angular_velocity = 0.0f;
-            float synced_angular_velocity = 0.0f;
-        };
     };
 } // namespace atmo::core::ecs::entities
-
-template <> struct atmo::meta::ComponentMeta<atmo::core::ecs::entities::Dynamic2d::Dynamic2dData> {
-    static constexpr const char *name = "Dynamic2dData";
-    static constexpr auto fields = std::make_tuple();
-};
