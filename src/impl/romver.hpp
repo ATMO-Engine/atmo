@@ -39,5 +39,7 @@ namespace atmo::impl
 
 template <> struct glz::meta<atmo::impl::Romver> {
     using T = atmo::impl::Romver;
-    static constexpr auto value = object(&T::toString);
+    static constexpr auto read_fn = [](T &self, const std::string &input) { self = T::Parse(input); };
+    static constexpr auto write_fn = [](T &self) -> std::string { return self.toString(); };
+    static constexpr auto value = glz::custom<read_fn, write_fn>;
 };

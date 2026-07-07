@@ -374,6 +374,8 @@ function platform_specifics()
 
     if is_plat("linux") then
         add_syslinks("dl")
+        -- lets dlopen()'d addons resolve engine symbols against this binary
+        add_ldflags("-rdynamic", {force = true})
     end
 
     if is_plat("windows") then

@@ -1,6 +1,7 @@
 #include "addon.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -8,6 +9,10 @@
 #include "glaze/glaze.hpp"
 #include "project/file.hpp"
 #include "project/file_system.hpp"
+
+#if !defined(ATMO_EXPORT)
+#include "project/project_manager.hpp"
+#endif
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -21,7 +26,10 @@ namespace atmo::addon
     {
         std::vector<std::string> files = project::FileSystem::SearchFiles(path);
 
-        if (std::find(files.begin(), files.end(), m_path + "/addon.json") == files.end()) {
+        std::string expected_addon_json =
+            m_path.starts_with(PROJECT_PROTOCOL) ? m_path.substr(sizeof(PROJECT_PROTOCOL) - 1) + "/addon.json" : m_path + "/addon.json";
+
+        if (std::find(files.begin(), files.end(), expected_addon_json) == files.end()) {
             throw AddonLoadException("addon.json not found in addon directory.");
         }
 
@@ -87,7 +95,13 @@ namespace atmo::addon
         std::filesystem::path lib_path;
 
         if (m_path.starts_with("project://")) {
-            lib_path = extractLibraryToTemp();
+            try {
+                lib_path = extractLibraryToTemp();
+            } catch (const AddonLoadException &) {
+                throw;
+            } catch (const std::exception &e) {
+                throw AddonLoadException(std::format("Failed to extract addon library: {}", e.what()));
+            }
         } else {
             lib_path = std::filesystem::path(m_path) / std::format("{}.{}", header.internal_name, _ATMO_LIBRARY_EXTENSION);
         }
@@ -120,4 +134,79 @@ namespace atmo::addon
 
         entrypoint(api);
     }
+
+#if !defined(ATMO_EXPORT)
+    std::filesystem::path Addon::CreateTemplate(const std::string &name, bool with_library)
+    {
+        std::string internal_name;
+        for (char c : name)
+            internal_name += (std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-') ? c : '_';
+
+        if (internal_name.empty())
+            throw AddonLoadException("Addon name must contain at least one alphanumeric character.");
+
+        std::filesystem::path addon_dir = project::ProjectManager::GetCurrentProjectPath() / "addons" / internal_name;
+        if (std::filesystem::exists(addon_dir))
+            throw AddonLoadException(std::format("An addon already exists at: {}", addon_dir.string()));
+
+        std::filesystem::create_directories(addon_dir);
+
+        AddonHeader header;
+        header.name = name;
+        header.internal_name = internal_name;
+        header.has_library = with_library;
+
+        std::string manifest_json;
+        auto err = glz::write_json(header, manifest_json);
+        if (err)
+            throw AddonLoadException(std::format("Failed to serialize addon.json: {}", glz::format_error(err, manifest_json)));
+
+        std::ofstream manifest(addon_dir / "addon.json", std::ios::binary);
+        if (!manifest.is_open())
+            throw AddonLoadException(std::format("Failed to create addon.json at: {}", (addon_dir / "addon.json").string()));
+        manifest << manifest_json;
+        manifest.close();
+
+        if (with_library) {
+            std::filesystem::create_directories(addon_dir / "src");
+
+            std::string escaped_name;
+            for (char c : name) {
+                if (c == '"' || c == '\\')
+                    escaped_name += '\\';
+                escaped_name += c;
+            }
+
+            std::ofstream source(addon_dir / "src" / (internal_name + ".cpp"), std::ios::binary);
+            source << "#include \"addon/addon.hpp\"\n"
+                   << "#include <spdlog/spdlog.h>\n"
+                   << "\n"
+                   << "using namespace atmo::addon;\n"
+                   << "\n"
+                   << "ATMO_REGISTER_ADDON()\n"
+                   << "{\n"
+                   << "    spdlog::info(\"Hello world from " << escaped_name << " addon!\");\n"
+                   << "}\n";
+            source.close();
+
+            project::File template_file = project::FileSystem::OpenFile("project://assets/addon_templates/library/xmake.lua.template");
+            std::string xmake_contents = template_file.readAll();
+
+            const std::string token = "{{internal_name}}";
+            for (std::size_t pos = xmake_contents.find(token); pos != std::string::npos; pos = xmake_contents.find(token, pos + internal_name.size()))
+                xmake_contents.replace(pos, token.size(), internal_name);
+
+            std::ofstream xmake_file(addon_dir / "xmake.lua", std::ios::binary);
+            xmake_file << xmake_contents;
+            xmake_file.close();
+        } else {
+            std::filesystem::create_directories(addon_dir / "assets");
+        }
+
+        project::ProjectManager::GetSettings().addons.addons[std::format("project://addons/{}", internal_name)] = true;
+        project::ProjectManager::SaveSettings();
+
+        return addon_dir;
+    }
+#endif
 } // namespace atmo::addon

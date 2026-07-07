@@ -33,6 +33,7 @@
 #include "spdlog/spdlog.h"
 
 #if !defined(ATMO_EXPORT)
+#include "addon/addon.hpp"
 #include "editor/editor_manager.hpp"
 #include "editor/project_explorer/project_explorer.hpp"
 #endif
@@ -94,6 +95,42 @@ static atmo::core::args::ArgManager::LaunchResult handleArgExport(atmo::core::ar
 
     if (!atmo::project::ProjectManager::ExportProject(args.at(0), args.at(1)))
         return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+
+    return atmo::core::args::ArgManager::LaunchResult::ExitSuccess;
+}
+
+static atmo::core::args::ArgManager::LaunchResult handleArgNewAddon(atmo::core::args::ArgManager &argManager)
+{
+    auto args = atmo::core::args::ArgManager::Get<std::vector<std::string>>("--new-addon");
+    auto project_path = atmo::core::args::ArgManager::Present<std::string>("--project");
+
+    if (!project_path) {
+        spdlog::error("--new-addon requires --project <project_path>.");
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+    }
+
+    const std::string &name = args.at(0);
+    const std::string &addon_template = args.at(1);
+
+    if (addon_template != "assets" && addon_template != "library") {
+        spdlog::error("--new-addon template must be 'assets' or 'library', got '{}'.", addon_template);
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+    }
+
+    try {
+        atmo::project::ProjectManager::OpenProject(*project_path);
+    } catch (const std::exception &e) {
+        spdlog::error("Failed to open project '{}': {}", *project_path, e.what());
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+    }
+
+    try {
+        std::filesystem::path addon_dir = atmo::addon::Addon::CreateTemplate(name, addon_template == "library");
+        spdlog::info("Created addon at '{}'", addon_dir.string());
+    } catch (const std::exception &e) {
+        spdlog::error("Failed to create addon: {}", e.what());
+        return atmo::core::args::ArgManager::LaunchResult::ExitFailure;
+    }
 
     return atmo::core::args::ArgManager::LaunchResult::ExitSuccess;
 }
@@ -161,6 +198,15 @@ namespace atmo::core
                 "<atmo_export_binary> to <output_path> and appends the project's packed asset data.")
             .metavar("atmo_export_binary output_path");
         ArgManager::AddLaunchHandler(9000, "--export", handleArgExport);
+
+        ArgManager::AddArgument("--new-addon")
+            .nargs(2)
+            .help(
+                "Create a new addon in the project given by --project, at addons/<name>: <name> <template>, "
+                "where template is 'assets' for an asset-only addon with no shared library, or 'library' for "
+                "an addon with a default xmake.lua that builds a shared library the engine can load.")
+            .metavar("name assets|library");
+        ArgManager::AddLaunchHandler(9000, "--new-addon", handleArgNewAddon);
 #endif
 
         try {

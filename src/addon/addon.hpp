@@ -114,6 +114,21 @@ namespace atmo::addon
 
         ~Addon();
 
+#if !defined(ATMO_EXPORT)
+        /**
+         * @brief Scaffolds a new addon inside the currently opened project's addons/ directory: writes
+         *        its addon.json manifest and, for library addons, a default xmake.lua and hello-world
+         *        entrypoint source file. Registers the addon in project_settings.json, enabled by default.
+         *
+         * @param name Pretty display name for the addon; also used to derive its filesystem-safe internal name.
+         * @param with_library If true, scaffolds a shared-library addon (xmake.lua + entrypoint source
+         *                     printing a hello-world message via spdlog::info). If false, scaffolds an
+         *                     assets-only addon with no shared library.
+         * @return The path to the created addon directory.
+         */
+        static std::filesystem::path CreateTemplate(const std::string &name, bool with_library);
+#endif
+
         class AddonLoadException : public std::runtime_error
         {
         public:

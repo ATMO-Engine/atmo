@@ -1,0 +1,26 @@
+-- Point at your Atmo engine checkout, e.g.: ATMO_DIR=/path/to/atmo xmake build {{internal_name}}
+local atmo_dir = os.getenv("ATMO_DIR") or path.join(os.scriptdir(), "../../../atmo")
+
+includes(path.join(atmo_dir, "xmake.lua"))
+
+target("atmo")
+    set_default(false)
+target_end()
+
+target("{{internal_name}}")
+    set_kind("shared")
+    set_default(true)
+    set_languages("c++23")
+    set_prefixname("")
+    set_extension(is_plat("windows") and ".dll" or (is_plat("macosx") and ".dylib" or ".so"))
+    set_targetdir(os.scriptdir())
+    add_includedirs(path.join(atmo_dir, "src"))
+    add_files("src/*.cpp")
+    packages()
+    platform_specifics()
+
+    -- resolve engine symbols against the host process at dlopen() time instead of at link time
+    if is_plat("macosx") then
+        add_shflags("-undefined", "dynamic_lookup", {force = true})
+    end
+target_end()
