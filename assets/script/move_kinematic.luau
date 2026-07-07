@@ -1,6 +1,8 @@
 right = false
 left = false
 jump = false
+local GRAVITY = -784
+local velocityY = 0
 
 function Create()
 end
@@ -21,21 +23,31 @@ function Update(deltaTime)
         left = false
     end
 
-    if Input.isPressed("Space") then
+    if Input.isJustPressed("Space") then
         jump = true
-    else
-        jump = false;
     end
 end
 
 function PhysicsUpdate(deltaTime)
+    velocityY = velocityY + GRAVITY * deltaTime
+    if velocityY < -784 then
+        velocityY = -784
+    end
+
+    local vel = this:getLinearVelocity()
+    if vel == nil then return end
+
+    local newX = 0
     if right then
-        this:applyLinearVelocity(Vector2(100, 0))
+        newX = 100
     end
     if left then
-        this:applyLinearVelocity(Vector2(-100, 0))
+        newX = -100
     end
     if jump then
-        this:applyAngularVelocity(45)
+        velocityY = 1000
+        jump = false;
     end
+
+    this:applyLinearVelocity(Vector2(newX, velocityY))
 end

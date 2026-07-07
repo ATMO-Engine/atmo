@@ -34,6 +34,12 @@ namespace atmo::luau
             lua_pushcfunction(state, ApplyAngularVelocity, "Entity.applyAngularVelocity");
             lua_setfield(state, -2, "applyAngularVelocity");
 
+            lua_pushcfunction(state, GetLinearVelocity, "Entity.getLinearVelocity");
+            lua_setfield(state, -2, "getLinearVelocity");
+
+            lua_pushcfunction(state, GetAngularVelocity, "Entity.getAngularVelocity");
+            lua_setfield(state, -2, "getAngularVelocity");
+
             lua_pushcfunction(state, Name, "Entity.name");
             lua_setfield(state, -2, "name");
 
@@ -59,6 +65,8 @@ namespace atmo::luau
         static int GetTransform(lua_State *state);
         static int ApplyLinearVelocity(lua_State *state);
         static int ApplyAngularVelocity(lua_State *state);
+        static int GetLinearVelocity(lua_State *state);
+        static int GetAngularVelocity(lua_State *state);
         static int Name(lua_State *state);
         static int GetChild(lua_State *state);
         static int GetParent(lua_State *state);
