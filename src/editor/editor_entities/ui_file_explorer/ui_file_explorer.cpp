@@ -21,8 +21,10 @@ namespace atmo::core::ecs::entities
     {
         constexpr std::string_view ToolbarName = "FileExplorer toolbar";
         constexpr std::string_view AddButtonContainer = "Add Button Container";
+        constexpr std::string_view AddFolderButtonContainer = "Add Folder Button Container";
         constexpr std::string_view AddButtonName = "FileExplorer add button";
         constexpr std::string_view AddInputName = "FileExplorer add input";
+        constexpr std::string_view AddFolderInputName = "FileExplorer add folder input";
         constexpr std::string_view DeleteButtonName = "FileExplorer delete button";
         constexpr std::string_view RenameButtonContainer = "Rename Button Container";
         constexpr std::string_view RenameButtonName = "FileExplorer rename button";
@@ -56,6 +58,7 @@ namespace atmo::core::ecs::entities
         toolbar->rename(std::string(ToolbarName));
         toolbar->setParent(*this);
 
+
         auto add_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
         auto &add_container_layout = add_container->getComponentMutable<core::components::Layout>();
         add_container_layout.direction = core::components::Layout::Direction::Horizontal;
@@ -68,11 +71,31 @@ namespace atmo::core::ecs::entities
         auto add_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         add_btn->rename(std::string(AddButtonName));
         add_btn->setParent(*add_container);
-        UILabel(add_btn->getChild("Button label")).setText("Add");
+        UILabel(add_btn->getChild("Button label")).setText("Add File");
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
         add_input->rename(std::string(AddInputName));
         add_input->setParent(*add_container);
+
+
+        auto add_folder_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
+        auto &add_folder_container_layout = add_folder_container->getComponentMutable<core::components::Layout>();
+        add_folder_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        add_folder_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        add_folder_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        add_folder_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
+        add_folder_container->rename(std::string(AddFolderButtonContainer));
+        add_folder_container->setParent(*toolbar);
+
+        auto add_folder_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        add_folder_btn->rename(std::string(AddButtonName));
+        add_folder_btn->setParent(*add_folder_container);
+        UILabel(add_folder_btn->getChild("Button label")).setText("Add Folder");
+
+        auto add_folder_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
+        add_folder_input->rename(std::string(AddFolderInputName));
+        add_folder_input->setParent(*add_folder_container);
+
 
         auto rename_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
         auto &rename_container_layout = rename_container->getComponentMutable<core::components::Layout>();
@@ -92,10 +115,12 @@ namespace atmo::core::ecs::entities
         rename_input->rename(std::string(RenameInputName));
         rename_input->setParent(*rename_container);
 
+
         auto delete_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         delete_btn->rename(std::string(DeleteButtonName));
         delete_btn->setParent(*toolbar);
         UILabel(delete_btn->getChild("Button label")).setText("Delete");
+
 
         auto refresh_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         refresh_btn->rename(std::string(RefreshButtonName));
@@ -148,6 +173,41 @@ namespace atmo::core::ecs::entities
             explorer.rebuild();
         });
 
+        add_folder_btn->getSignal<>("Pressed").connect([handle]() {
+            if (!handle.is_alive())
+                return;
+
+            UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            auto &comp = explorer.getComponentMutable<components::UIFileExplorer>();
+
+            if (comp.focused_node == flecs::entity{})
+                return;
+
+            UITextInput input = explorer.getAddFolderInput();
+            std::string new_name = input.getComponentMutable<core::components::UITextInput>().value;
+            if (new_name.empty())
+                return;
+
+            std::string target_dir = comp.focused_is_directory
+                ? comp.focused_path
+                : fs::path(comp.focused_path).parent_path().string();
+
+            fs::path new_path = fs::path(target_dir) / new_name;
+
+            if (fs::exists(new_path)) {
+                spdlog::warn("UIFileExplorer: '{}' existe déjà, création annulée", new_path.string());
+                return;
+            }
+
+            std::error_code ec;
+            fs::create_directory(new_path, ec);
+            if (ec) {
+                spdlog::warn("UIFileExplorer: échec de création du dossier '{}': {}", new_path.string(), ec.message());
+                return;
+            }
+
+            explorer.rebuild();
+        });
 
         delete_btn->getSignal<>("Pressed").connect([handle]() {
             if (!handle.is_alive()) {
@@ -436,26 +496,37 @@ namespace atmo::core::ecs::entities
     {
         return UIButton(getChild(ToolbarName).getChild(AddButtonName));
     }
+
     UIButton UIFileExplorer::getDeleteButton() const
     {
         return UIButton(getChild(ToolbarName).getChild(DeleteButtonName));
     }
+
     UIButton UIFileExplorer::getRenameButton() const
     {
         return UIButton(getChild(ToolbarName).getChild(RenameButtonName));
     }
+
     UIButton UIFileExplorer::getRefreshButton() const
     {
         return UIButton(getChild(ToolbarName).getChild(RefreshButtonName));
     }
+
     UITextInput UIFileExplorer::getAddInput() const
     {
         return UITextInput(getChild(ToolbarName).getChild(AddButtonContainer).getChild(AddInputName));
     }
+
+    UITextInput UIFileExplorer::getAddFolderInput() const
+    {
+        return UITextInput(getChild(ToolbarName).getChild(AddFolderButtonContainer).getChild(AddFolderInputName));
+    }
+
     UITextInput UIFileExplorer::getRenameInput() const
     {
         return UITextInput(getChild(ToolbarName).getChild(RenameButtonContainer).getChild(RenameInputName));
     }
+
     UIRect UIFileExplorer::getTreeContainer() const
     {
         return UIRect(getChild(TreeContainerName));

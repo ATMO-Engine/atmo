@@ -65,6 +65,7 @@ namespace atmo::core::ecs::entities
         UIButton getRenameButton() const;
         UIButton getRefreshButton() const;
         UITextInput getAddInput() const;
+        UITextInput getAddFolderInput() const;
         UITextInput getRenameInput() const;
         UIRect getTreeContainer() const;
     };
