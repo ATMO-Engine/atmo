@@ -46,6 +46,5 @@ namespace atmo
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::resource::resources::CircleShape2d> {
     static constexpr const char *name = "SubResource::Shape2d::CircleShape2d";
-    static constexpr auto fields =
-        std::make_tuple(atmo::meta::field<&atmo::core::resource::resources::CircleShape2d::m_radius>("radius"));
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::resource::resources::CircleShape2d::m_radius>("radius"));
 };

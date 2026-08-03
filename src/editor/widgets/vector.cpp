@@ -18,10 +18,6 @@ namespace
         return field.vector_size ? field.vector_size(vec_ptr) : 0;
     }
 
-    // WidgetRegistry always hands widgets the owning component/struct pointer (matching every other widget's
-    // field.get/field.set-based convention) rather than a direct pointer to the field itself. The vector_* function
-    // pointers on FieldInfo operate directly on the vector's own memory, so resolve that address once via the
-    // field's byte offset before touching them.
     void *resolveVectorPtr(void *owner, const atmo::meta::FieldInfo &field)
     {
         return static_cast<char *>(owner) + field.offset;
@@ -131,8 +127,7 @@ namespace
     }
 } // namespace
 
-std::optional<atmo::core::ecs::entities::Entity>
-createVectorWidget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
+std::optional<atmo::core::ecs::entities::Entity> createVectorWidget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
     auto widget_root = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UI>("Entity::UI");
     auto &layout = widget_root->getComponentMutable<atmo::core::components::Layout>();

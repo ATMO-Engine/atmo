@@ -46,6 +46,5 @@ namespace atmo
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::resource::resources::RectangleShape2d> {
     static constexpr const char *name = "SubResource::Shape2d::RectangleShape2d";
-    static constexpr auto fields =
-        std::make_tuple(atmo::meta::field<&atmo::core::resource::resources::RectangleShape2d::m_size>("size"));
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::resource::resources::RectangleShape2d::m_size>("size"));
 };

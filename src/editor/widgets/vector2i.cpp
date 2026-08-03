@@ -6,8 +6,7 @@
 #include "core/types.hpp"
 #include "meta/widget_registry.hpp"
 
-std::optional<atmo::core::ecs::entities::Entity> createVector2iWidget(
-    atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
+std::optional<atmo::core::ecs::entities::Entity> createVector2iWidget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
     auto vector_container = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UI>("Entity::UI");
     auto x_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
