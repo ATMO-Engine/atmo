@@ -16,6 +16,12 @@ namespace atmo::core
         return m_state->cancelled.load(std::memory_order_relaxed);
     }
 
+    void TaskHandle::wait()
+    {
+        std::unique_lock lock(m_state->mutex);
+        m_state->cv.wait(lock, [state = m_state] { return state->done; });
+    }
+
     void ThreadPool::WorkQueue::push(TaskItem item)
     {
         std::lock_guard lock(m_mutex);
@@ -59,9 +65,11 @@ namespace atmo::core
         return pool;
     }
 
-    void ThreadPool::submit(std::function<void()> fn)
+    TaskHandle ThreadPool::submit(std::function<void()> fn)
     {
-        enqueue({ .fn = std::move(fn), .control = nullptr, .remaining = 1, .delay = {} });
+        auto state = std::make_shared<TaskHandle::State>();
+        enqueue({ .fn = std::move(fn), .control = state, .remaining = 1, .delay = {} });
+        return TaskHandle(std::move(state));
     }
 
     TaskHandle ThreadPool::repeat(std::function<void()> fn, int count, std::chrono::milliseconds delay)
@@ -69,6 +77,11 @@ namespace atmo::core
         auto state = std::make_shared<TaskHandle::State>();
         enqueue({ .fn = std::move(fn), .control = state, .remaining = count, .delay = delay });
         return TaskHandle(std::move(state));
+    }
+
+    std::size_t ThreadPool::getWorkerCount() const
+    {
+        return m_worker_count;
     }
 
     void ThreadPool::enqueue(TaskItem item)
@@ -87,6 +100,18 @@ namespace atmo::core
             std::push_heap(m_timer_heap.begin(), m_timer_heap.end(), std::greater<TimerEntry>{});
         }
         m_sched_cv.notify_one();
+    }
+
+    void ThreadPool::FinishTask(const std::shared_ptr<TaskHandle::State> &control)
+    {
+        if (!control)
+            return;
+
+        {
+            std::lock_guard lock(control->mutex);
+            control->done = true;
+        }
+        control->cv.notify_all();
     }
 
     bool ThreadPool::hasWork() const
@@ -123,19 +148,25 @@ namespace atmo::core
                 continue;
             }
 
-            if (task->control && task->control->cancelled.load(std::memory_order_relaxed))
+            if (task->control && task->control->cancelled.load(std::memory_order_relaxed)) {
+                FinishTask(task->control);
                 continue;
+            }
 
             task->fn();
 
             bool infinite = task->remaining == -1;
             bool has_more = infinite || task->remaining > 1;
 
-            if (!has_more)
+            if (!has_more) {
+                FinishTask(task->control);
                 continue;
+            }
 
-            if (task->control && task->control->cancelled.load(std::memory_order_relaxed))
+            if (task->control && task->control->cancelled.load(std::memory_order_relaxed)) {
+                FinishTask(task->control);
                 continue;
+            }
 
             TaskItem next{
                 .fn = task->fn,

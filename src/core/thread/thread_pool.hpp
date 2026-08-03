@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <deque>
 #include <functional>
 #include <memory>
@@ -19,16 +20,24 @@ namespace atmo::core
     public:
         void cancel() noexcept;
         bool isCancelled() const noexcept;
+        void wait();
 
     private:
         friend class ThreadPool;
 
         struct State {
             std::atomic<bool> cancelled{ false };
+            std::mutex mutex;
+            std::condition_variable cv;
+            bool done = false;
         };
 
         explicit TaskHandle(std::shared_ptr<State> state) noexcept;
         std::shared_ptr<State> m_state;
+    };
+
+    struct TaskHandleGroup {
+        std::vector<TaskHandle> tasks;
     };
 
     class ThreadPool
@@ -36,8 +45,10 @@ namespace atmo::core
     public:
         static ThreadPool &Instance();
 
-        void submit(std::function<void()> fn);
-        [[nodiscard]] TaskHandle repeat(std::function<void()> fn, int count, std::chrono::milliseconds delay = std::chrono::milliseconds{ 0 });
+        TaskHandle submit(std::function<void()> fn);
+        TaskHandle repeat(std::function<void()> fn, int count, std::chrono::milliseconds delay = std::chrono::milliseconds{ 0 });
+
+        std::size_t getWorkerCount() const;
 
     private:
         ThreadPool();
@@ -75,6 +86,7 @@ namespace atmo::core
         void enqueue(TaskItem item);
         void reschedule(TaskItem item);
         bool hasWork() const;
+        static void FinishTask(const std::shared_ptr<TaskHandle::State> &control);
 
         std::size_t m_worker_count;
         std::vector<std::unique_ptr<WorkQueue>> m_queues;

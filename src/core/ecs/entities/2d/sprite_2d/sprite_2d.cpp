@@ -64,7 +64,7 @@ namespace atmo::core::ecs::entities
                         return;
 
                     auto window = root.get_ref<components::Window>();
-                    if (!window || !window->renderer_data.renderer)
+                    if (!window || !window->renderer_data.renderer || sprite.texture_path.empty())
                         return;
 
                     renderer = window->renderer_data.renderer;
