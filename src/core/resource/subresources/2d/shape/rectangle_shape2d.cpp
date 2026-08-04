@@ -1,7 +1,7 @@
+#include "rectangle_shape2d.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "glaze/glaze.hpp"
 #include "meta/auto_register.hpp"
-#include "rectangle_shape2d.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::resource::resources

@@ -92,7 +92,7 @@ namespace atmo
                     std::filesystem::create_directories(resolved_path / "assets");
 
                 auto img_src = FileSystem::OpenFile("project://assets/atmo.png");
-                auto img_out = FileSystem::OpenFile((resolved_path / "assets/atmo.png").c_str(), std::ios::out);
+                auto img_out = FileSystem::OpenFile((resolved_path / "assets/atmo.png").string(), std::ios::out);
                 img_out.write(img_src.readAll().c_str(), img_src.size());
 
                 return project_file_path;

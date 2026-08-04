@@ -10,6 +10,7 @@
 #include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
+#include "core/thread/thread_pool.hpp"
 #include "core/types.hpp"
 #include "meta/auto_register.hpp"
 #include "project/file.hpp"
@@ -105,6 +106,33 @@ namespace atmo::core::ecs::entities
         }
     }
 
+    void *enqueueTask(b2TaskCallback *task, int itemCount, int minRange, void *taskContext, void *userContext)
+    {
+        atmo::core::TaskHandleGroup *group = new atmo::core::TaskHandleGroup();
+
+        int maxTasks = atmo::core::ThreadPool::Instance().getWorkerCount() * 2;
+
+        int taskCount = std::min(maxTasks, (itemCount + minRange - 1) / minRange);
+
+        int chunkSize = (itemCount + taskCount - 1) / taskCount;
+
+        for (int i = 0; i < taskCount; i++) {
+            int start = i * chunkSize;
+            int end = std::min(start + chunkSize, itemCount);
+
+            if (start < end)
+                group->tasks.emplace_back(atmo::core::ThreadPool::Instance().submit([=] { task(start, end, i, taskContext); }));
+        }
+
+        return group;
+    }
+
+    void finishTask(void *userTask, void *userContext)
+    {
+        for (auto task : ((atmo::core::TaskHandleGroup *)userTask)->tasks) task.wait();
+        delete (atmo::core::TaskHandleGroup *)userTask;
+    }
+
     void Scene::initialize()
     {
         Entity::initialize();
@@ -116,6 +144,9 @@ namespace atmo::core::ecs::entities
 
         auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
         worldDef.gravity = { .x = gravity.x, .y = gravity.y };
+        worldDef.workerCount = atmo::core::ThreadPool::Instance().getWorkerCount();
+        worldDef.enqueueTask = enqueueTask;
+        worldDef.finishTask = finishTask;
 
         scene->world_id = b2CreateWorld(&worldDef);
     }
