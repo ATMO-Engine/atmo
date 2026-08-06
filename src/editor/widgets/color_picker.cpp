@@ -4,8 +4,8 @@
 #include "editor/editor_entities/ui_color_picker/ui_color_picker.hpp"
 #include "meta/widget_registry.hpp"
 
-std::optional<atmo::core::ecs::entities::Entity> createColorPickerWidget(
-    atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
+std::optional<atmo::core::ecs::entities::Entity>
+createColorPickerWidget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
     auto picker_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UIColorPicker>("Entity::UI::UIRect::UIColorPicker");
 

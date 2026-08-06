@@ -48,7 +48,9 @@ namespace atmo
             {
             public:
                 explicit FileOpenException(const std::string &filename) :
-                    m_reason(std::strerror(errno)), std::runtime_error(std::format("Failed to open file ({}): {}", m_reason, filename)), m_filename(filename)
+                    std::runtime_error(std::format(R"(Failed to open file ({}): "{}")", std::strerror(errno), filename)),
+                    m_filename(filename),
+                    m_reason(std::strerror(errno))
                 {
                 }
 

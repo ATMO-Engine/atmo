@@ -139,8 +139,7 @@ namespace atmo::addon
     std::filesystem::path Addon::CreateTemplate(const std::string &name, bool with_library)
     {
         std::string internal_name;
-        for (char c : name)
-            internal_name += (std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-') ? c : '_';
+        for (char c : name) internal_name += (std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-') ? c : '_';
 
         if (internal_name.empty())
             throw AddonLoadException("Addon name must contain at least one alphanumeric character.");

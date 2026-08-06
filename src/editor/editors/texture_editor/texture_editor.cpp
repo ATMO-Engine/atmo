@@ -303,7 +303,7 @@ namespace atmo::editor
         fileExplorerContainer->setParent(*option_panel);
 
         auto fileExplorer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFileExplorer>("Entity::UI::UIRect::UIFileExplorer");
-        fileExplorer->setRootPath(project::ProjectManager::GetCurrentProjectPath());
+        fileExplorer->setRootPath(project::ProjectManager::GetCurrentProjectPath().string());
         fileExplorer->setParent(*fileExplorerContainer);
 
 
@@ -451,7 +451,7 @@ namespace atmo::editor
                 return;
             }
 
-            m_scene_ctx->loadSceneFromFile(project::FileSystem::ResolvePath(atmo::project::ProjectManager::GetSettings().app.default_scene));
+            m_scene_ctx->loadSceneFromFile(project::FileSystem::ResolvePath(atmo::project::ProjectManager::GetSettings().app.default_scene).string());
 
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
             auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
