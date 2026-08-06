@@ -219,6 +219,14 @@ namespace atmo::core::ecs::entities
         Entity getChild(std::string_view name) const;
 
         /**
+         * @brief Search an entity child by his name
+         *
+         * @param name Name of the child entity.
+         * @return Entity Child entity.
+         */
+        Entity findChildRecursive(std::string_view name) const;
+
+        /**
          * @brief Set the parent of this entity. Emits "child_added" on @p parent.
          *
          * @param parent Parent entity to set for this entity.
