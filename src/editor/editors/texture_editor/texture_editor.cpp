@@ -36,11 +36,12 @@ namespace atmo::editor
             auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
             auto &viewport_img_comp = viewport_image->getComponentMutable<core::components::UIImage>();
             auto &viewport_image_layout = viewport_image->getComponentMutable<core::components::Layout>();
+
+            viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
             viewport_image_layout.floating = true;
             viewport_image_layout.z_index = -1;
             viewport_image_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-            viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
             viewport_image->setParent(container);
             m_viewport_image = viewport_image->getHandle();
         } else {
@@ -93,6 +94,7 @@ namespace atmo::editor
 
         auto texture_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &texture_editor_container_layout = texture_editor_container->getComponentMutable<core::components::Layout>();
+
         texture_editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_container_layout.z_index = 0;
@@ -102,8 +104,9 @@ namespace atmo::editor
 
         auto option_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &option_panel_rect = option_panel->getComponentMutable<core::components::UIRect>();
-        option_panel_rect.color.a = 0;
         auto &option_panel_layout = option_panel->getComponentMutable<core::components::Layout>();
+
+        option_panel_rect.color.a = 0;
         option_panel_layout.direction = core::components::Layout::Direction::Vertical;
         option_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         option_panel_layout.width.size = 0.2f;
@@ -113,13 +116,14 @@ namespace atmo::editor
 
         auto texture_editor_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &texture_editor_panel_rect = texture_editor_panel->getComponentMutable<core::components::UIRect>();
+        auto &texture_editor_panel_layout = texture_editor_panel->getComponentMutable<core::components::Layout>();
+
         texture_editor_panel_rect.corner_radius.top_left = 4.0f;
         texture_editor_panel_rect.corner_radius.top_right = 4.0f;
         texture_editor_panel_rect.corner_radius.bottom_left = 4.0f;
         texture_editor_panel_rect.corner_radius.bottom_right = 4.0f;
         texture_editor_panel_rect.border.color = core::types::Color("#dbdbdb");
         texture_editor_panel_rect.color = core::types::Color("#dbdbdb");
-        auto &texture_editor_panel_layout = texture_editor_panel->getComponentMutable<core::components::Layout>();
         texture_editor_panel_layout.direction = core::components::Layout::Direction::Vertical;
         texture_editor_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -133,13 +137,14 @@ namespace atmo::editor
 
         auto size_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &size_comp_panel_rect = size_comp_panel->getComponentMutable<core::components::UIRect>();
+        auto &size_comp_panel_layout = size_comp_panel->getComponentMutable<core::components::Layout>();
+
         size_comp_panel_rect.corner_radius.top_left = 5.0f;
         size_comp_panel_rect.corner_radius.top_right = 5.0f;
         size_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         size_comp_panel_rect.corner_radius.bottom_right = 5.0f;
         size_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
         size_comp_panel_rect.color = core::types::Color("#7d7d7d");
-        auto &size_comp_panel_layout = size_comp_panel->getComponentMutable<core::components::Layout>();
         size_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
         size_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         size_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
@@ -164,16 +169,16 @@ namespace atmo::editor
         size_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
         sizeNumberInput->setParent(*size_comp_panel);
 
-
         auto width_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &width_comp_panel_rect = width_comp_panel->getComponentMutable<core::components::UIRect>();
+        auto &width_comp_panel_layout = width_comp_panel->getComponentMutable<core::components::Layout>();
+
         width_comp_panel_rect.corner_radius.top_left = 5.0f;
         width_comp_panel_rect.corner_radius.top_right = 5.0f;
         width_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         width_comp_panel_rect.corner_radius.bottom_right = 5.0f;
         width_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
         width_comp_panel_rect.color = core::types::Color("#7d7d7d");
-        auto &width_comp_panel_layout = width_comp_panel->getComponentMutable<core::components::Layout>();
         width_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
         width_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         width_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
@@ -194,16 +199,16 @@ namespace atmo::editor
         width_input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
         widthNumberInput->setParent(*width_comp_panel);
 
-
         auto height_comp_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &height_comp_panel_rect = height_comp_panel->getComponentMutable<core::components::UIRect>();
+        auto &height_comp_panel_layout = height_comp_panel->getComponentMutable<core::components::Layout>();
+
         height_comp_panel_rect.corner_radius.top_left = 5.0f;
         height_comp_panel_rect.corner_radius.top_right = 5.0f;
         height_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         height_comp_panel_rect.corner_radius.bottom_right = 5.0f;
         height_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
         height_comp_panel_rect.color = core::types::Color("#7d7d7d");
-        auto &height_comp_panel_layout = height_comp_panel->getComponentMutable<core::components::Layout>();
         height_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
         height_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         height_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
@@ -226,11 +231,12 @@ namespace atmo::editor
 
 
         auto saveBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        ((core::ecs::entities::UILabel)saveBtn->getChildren()[0]).setText("Save");
         auto &saveBtn_rect = saveBtn->getComponentMutable<core::components::UIRect>();
+        auto &saveBtn_layout = saveBtn->getComponentMutable<core::components::Layout>();
+
+        ((core::ecs::entities::UILabel)saveBtn->getChildren()[0]).setText("Save");
         saveBtn_rect.border.color = core::types::Color::BLACK;
         saveBtn_rect.color = core::types::Color::WHITE;
-        auto &saveBtn_layout = saveBtn->getComponentMutable<core::components::Layout>();
         saveBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         saveBtn_layout.width.size = 0.30f;
         saveBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -238,22 +244,23 @@ namespace atmo::editor
         saveBtn->setParent(*texture_editor_panel);
 
         auto previewBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        ((core::ecs::entities::UILabel)previewBtn->getChildren()[0]).setText("Preview");
         auto &previewBtn_rect = previewBtn->getComponentMutable<core::components::UIRect>();
+        auto &previewBtn_layout = previewBtn->getComponentMutable<core::components::Layout>();
+
+        ((core::ecs::entities::UILabel)previewBtn->getChildren()[0]).setText("Preview");
         previewBtn_rect.border.color = core::types::Color::BLACK;
         previewBtn_rect.color = core::types::Color::WHITE;
-        auto &previewBtn_layout = previewBtn->getComponentMutable<core::components::Layout>();
         previewBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         previewBtn_layout.width.size = 0.30f;
         previewBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         previewBtn_layout.height.size = 0.05f;
         previewBtn->setParent(*texture_editor_panel);
 
-
         auto pencilContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &btnContainer_rect = pencilContainer->getComponentMutable<core::components::UIRect>();
-        btnContainer_rect.color.a = 0;
         auto &pencilContainer_layout = pencilContainer->getComponentMutable<core::components::Layout>();
+
+        btnContainer_rect.color.a = 0;
         pencilContainer_layout.direction = core::components::Layout::Direction::Horizontal;
         pencilContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         pencilContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -262,22 +269,24 @@ namespace atmo::editor
         pencilContainer->setParent(*texture_editor_panel);
 
         auto pencilBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        ((core::ecs::entities::UILabel)pencilBtn->getChildren()[0]).setText("Draw");
         auto &pencilBtn_rect = pencilBtn->getComponentMutable<core::components::UIRect>();
+        auto &pencilBtn_layout = pencilBtn->getComponentMutable<core::components::Layout>();
+
+        ((core::ecs::entities::UILabel)pencilBtn->getChildren()[0]).setText("Draw");
         pencilBtn_rect.border.color = core::types::Color::BLACK;
         pencilBtn_rect.color = core::types::Color::WHITE;
-        auto &pencilBtn_layout = pencilBtn->getComponentMutable<core::components::Layout>();
         pencilBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         pencilBtn_layout.width.size = 0.30f;
         pencilBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         pencilBtn->setParent(*pencilContainer);
 
         auto eraserBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        ((core::ecs::entities::UILabel)eraserBtn->getChildren()[0]).setText("Erase");
         auto &eraserBtn_rect = eraserBtn->getComponentMutable<core::components::UIRect>();
+        auto &eraserBtn_layout = eraserBtn->getComponentMutable<core::components::Layout>();
+
+        ((core::ecs::entities::UILabel)eraserBtn->getChildren()[0]).setText("Erase");
         eraserBtn_rect.border.color = core::types::Color::BLACK;
         eraserBtn_rect.color = core::types::Color::WHITE;
-        auto &eraserBtn_layout = eraserBtn->getComponentMutable<core::components::Layout>();
         eraserBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         eraserBtn_layout.width.size = 0.30f;
         eraserBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -286,13 +295,14 @@ namespace atmo::editor
 
         auto fileExplorerContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &fileExplorerContainer_rect = fileExplorerContainer->getComponentMutable<core::components::UIRect>();
+        auto &fileExplorerContainer_layout = fileExplorerContainer->getComponentMutable<core::components::Layout>();
+
         fileExplorerContainer_rect.border.color = core::types::Color("#dbdbdb");
         fileExplorerContainer_rect.color = core::types::Color("#dbdbdb");
         fileExplorerContainer_rect.corner_radius.top_left = 4.0f;
         fileExplorerContainer_rect.corner_radius.top_right = 4.0f;
         fileExplorerContainer_rect.corner_radius.bottom_left = 4.0f;
         fileExplorerContainer_rect.corner_radius.bottom_right = 4.0f;
-        auto &fileExplorerContainer_layout = fileExplorerContainer->getComponentMutable<core::components::Layout>();
         fileExplorerContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         fileExplorerContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         fileExplorerContainer_layout.height.size = 0.30f;
@@ -309,13 +319,14 @@ namespace atmo::editor
 
         auto colorPickContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &colorPickContaine_rect = colorPickContainer->getComponentMutable<core::components::UIRect>();
+        auto &colorPickContainer_layout = colorPickContainer->getComponentMutable<core::components::Layout>();
+
         colorPickContaine_rect.border.color = core::types::Color("#dbdbdb");
         colorPickContaine_rect.color = core::types::Color("#dbdbdb");
         colorPickContaine_rect.corner_radius.top_left = 4.0f;
         colorPickContaine_rect.corner_radius.top_right = 4.0f;
         colorPickContaine_rect.corner_radius.bottom_left = 4.0f;
         colorPickContaine_rect.corner_radius.bottom_right = 4.0f;
-        auto &colorPickContainer_layout = colorPickContainer->getComponentMutable<core::components::Layout>();
         colorPickContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         colorPickContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         colorPickContainer_layout.padding.left = 16;
@@ -326,8 +337,6 @@ namespace atmo::editor
 
         auto colorPicker = core::ecs::EntityRegistry::Create<core::ecs::entities::UIColorPicker>("Entity::UI::UIRect::UIColorPicker");
         colorPicker->setParent(*colorPickContainer);
-        auto colorPickerHandle = colorPicker->getHandle();
-
 
         auto canvas_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &canvas_container_layout = canvas_container->getComponentMutable<core::components::Layout>();
