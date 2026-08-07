@@ -5,7 +5,6 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/resource/resource_manager.hpp"
-#include "core/resource/resource_ref.hpp"
 #include "core/types.hpp"
 #include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
@@ -34,9 +33,8 @@ namespace atmo::core::ecs::entities
 
                 if (!label.font_path.empty()) {
                     label.m_res = resource::ResourceManager::GetInstance().getResource<TTF_Font>(label.font_path);
-                    auto font_ptr = label.m_res->get();
-                    if (font_ptr) {
-                        label.m_render_cache->ttf_text = TTF_CreateText(nullptr, font_ptr.get(), label.text.c_str(), label.text.size());
+                    if (label.m_res) {
+                        label.m_render_cache->ttf_text = TTF_CreateText(nullptr, label.m_res.get(), label.text.c_str(), label.text.size());
                         label.m_render_cache->dirty = true;
                     }
                 }

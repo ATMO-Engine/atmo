@@ -9,10 +9,13 @@
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
+#include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
+#include "core/resource/resource_manager.hpp"
 #include "glaze/glaze.hpp"
 #include "glaze/json/prettify.hpp"
 #include "project/project_manager.hpp"
@@ -22,7 +25,20 @@ namespace atmo::editor
 {
     EditorSceneContext::~EditorSceneContext()
     {
+        releaseGpuTextures();
         destroyRenderTexture();
+    }
+
+    void EditorSceneContext::releaseGpuTextures()
+    {
+        m_world.each<core::components::Sprite2d>([](core::components::Sprite2d &sprite) {
+            sprite.m_texture = nullptr;
+            sprite.m_texture_renderer = nullptr;
+        });
+        m_world.each<core::components::UIImage>([](core::components::UIImage &image) { image.texture = nullptr; });
+
+        if (m_renderer)
+            core::resource::ResourceManager::GetInstance().releaseRenderer(m_renderer);
     }
 
     void EditorSceneContext::init(SDL_Renderer *renderer)
@@ -66,6 +82,7 @@ namespace atmo::editor
             return;
 
         if (renderer != m_renderer) {
+            releaseGpuTextures();
             m_renderer = renderer;
             auto *ctx = m_world.try_get_mut<core::components::WorldContext>();
             if (ctx)

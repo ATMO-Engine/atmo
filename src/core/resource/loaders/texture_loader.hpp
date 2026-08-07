@@ -6,14 +6,12 @@
 
 namespace atmo::core::resource
 {
-    class TextureLoader : public Resource<SDL_Texture>
+    class TextureLoader : public ContextualResource<SDL_Texture, SDL_Renderer *>
     {
     public:
         TextureLoader();
         ~TextureLoader() override;
 
-        std::shared_ptr<SDL_Texture> load(const std::string &path) override;
-
-        const std::string resourceTypeName() override;
+        std::shared_ptr<SDL_Texture> loadWithContext(const std::string &path, SDL_Renderer *renderer) override;
     };
 } // namespace atmo::core::resource
