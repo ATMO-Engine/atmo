@@ -486,6 +486,7 @@ target("atmo-test")
     end
     platform_specifics()
     add_tests("atmo-test", {
+        rundir = os.projectdir(),
         runargs = {
             "--reporter=JUnit::out=test_results.xml",
             "--reporter=console::out=-::colour-mode=ansi"
