@@ -6,7 +6,7 @@
 #define ATMO_REGISTER_RESOURCE_LOADER_IMPL(Type, LoaderClass, uniqueName, ...)                                             \
     namespace                                                                                                              \
     {                                                                                                                      \
-        static const bool uniqueName = [] {                                                                               \
+        static const bool uniqueName = [] {                                                                                \
             ::atmo::core::resource::ResourceLoaderRegistry::Instance().registerLoader<Type, LoaderClass>({ __VA_ARGS__ }); \
             return true;                                                                                                   \
         }();                                                                                                               \

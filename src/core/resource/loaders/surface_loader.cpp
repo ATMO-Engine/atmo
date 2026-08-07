@@ -34,5 +34,5 @@ namespace atmo
     } // namespace core
 } // namespace atmo
 
-ATMO_REGISTER_RESOURCE_LOADER(SDL_Surface, atmo::core::resource::SurfaceLoader, .display_name = "Image (CPU & RAM)",
-                               .extensions = { ".png", ".jpg", ".jpeg", ".bmp" });
+ATMO_REGISTER_RESOURCE_LOADER(
+    SDL_Surface, atmo::core::resource::SurfaceLoader, .display_name = "Image (CPU & RAM)", .extensions = { ".png", ".jpg", ".jpeg", ".bmp" });

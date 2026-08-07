@@ -39,5 +39,5 @@ namespace atmo::core::resource
     }
 } // namespace atmo::core::resource
 
-ATMO_REGISTER_RESOURCE_LOADER(SDL_Texture, atmo::core::resource::TextureLoader, .display_name = "Image (GPU & VRAM)",
-                               .extensions = { ".png", ".jpg", ".jpeg", ".bmp" });
+ATMO_REGISTER_RESOURCE_LOADER(
+    SDL_Texture, atmo::core::resource::TextureLoader, .display_name = "Image (GPU & VRAM)", .extensions = { ".png", ".jpg", ".jpeg", ".bmp" });

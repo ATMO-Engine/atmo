@@ -58,5 +58,4 @@ namespace atmo
     } // namespace core
 } // namespace atmo
 
-ATMO_REGISTER_RESOURCE_LOADER(atmo::core::resource::Bytecode, atmo::core::resource::ScriptLoader, .display_name = "Script",
-                               .extensions = { ".luau", ".lua" });
+ATMO_REGISTER_RESOURCE_LOADER(atmo::core::resource::Bytecode, atmo::core::resource::ScriptLoader, .display_name = "Script", .extensions = { ".luau", ".lua" });
