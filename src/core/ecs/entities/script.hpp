@@ -6,7 +6,6 @@
 
 #include "core/resource/loaders/script_loader.hpp"
 #include "core/resource/resource_manager.hpp"
-#include "core/resource/resource_ref.hpp"
 #include "luau/script_instance.hpp"
 #include "meta/component_meta.hpp"
 
@@ -15,7 +14,7 @@ namespace atmo::core::components
     struct Script {
         std::string script_path;
         std::string prev_script_path;
-        std::unique_ptr<resource::ResourceRef<resource::Bytecode>> m_res;
+        std::shared_ptr<resource::Bytecode> m_res;
         atmo::luau::ScriptInstance *instance = nullptr;
         std::uint32_t physics_event_id = 0;
     };

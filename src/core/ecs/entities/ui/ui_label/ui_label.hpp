@@ -8,7 +8,6 @@
 #include "SDL3/SDL_render.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "core/ecs/entities/ui/ui.hpp"
-#include "core/resource/resource_ref.hpp"
 #include "core/types.hpp"
 #include "meta/field_descriptor.hpp"
 #include "meta/meta.hpp"
@@ -51,7 +50,7 @@ namespace atmo::core::components
         WrapMode wrap_mode = WrapMode::WRAP_WORDS;
         TextAlignment text_alignment = TextAlignment::ALIGN_LEFT;
 
-        std::unique_ptr<resource::ResourceRef<TTF_Font>> m_res;
+        std::shared_ptr<TTF_Font> m_res;
         std::unique_ptr<TextRenderCache> m_render_cache;
 
         std::string m_prev_text;

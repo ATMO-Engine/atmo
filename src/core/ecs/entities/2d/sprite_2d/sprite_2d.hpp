@@ -2,10 +2,10 @@
 
 #include <memory>
 #include <string>
+#include "SDL3/SDL_render.h"
 #include "SDL3/SDL_surface.h"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/resource/resource_ref.hpp"
 #include "meta/meta.hpp"
 
 namespace atmo::core::components
@@ -13,7 +13,10 @@ namespace atmo::core::components
     struct Sprite2d {
         std::string texture_path;
         std::string prev_texture_path;
-        std::unique_ptr<resource::ResourceRef<SDL_Surface>> m_res;
+        std::shared_ptr<SDL_Surface> m_res;
+        std::shared_ptr<SDL_Texture> m_texture;
+        SDL_Renderer *m_texture_renderer = nullptr;
+        std::string prev_texture_path_gpu;
         types::Vector2 texture_size{ 0.0f, 0.0f };
     };
 } // namespace atmo::core::components

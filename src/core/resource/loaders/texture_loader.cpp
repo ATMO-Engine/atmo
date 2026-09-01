@@ -1,7 +1,7 @@
 #include "texture_loader.hpp"
 #include <memory>
 #include "SDL3_image/SDL_image.h"
-#include "core/resource/resource_manager.hpp"
+#include "core/resource/auto_register_loader.hpp"
 #include "project/file_system.hpp"
 
 namespace atmo::core::resource
@@ -11,11 +11,10 @@ namespace atmo::core::resource
 
     TextureLoader::~TextureLoader() {}
 
-    std::shared_ptr<SDL_Texture> TextureLoader::load(const std::string &path)
+    std::shared_ptr<SDL_Texture> TextureLoader::loadWithContext(const std::string &path, SDL_Renderer *renderer)
     {
-        SDL_Renderer *renderer = ResourceManager::GetInstance().getRenderer();
         if (!renderer) {
-            throw LoadException("No renderer available — call ResourceManager::setRenderer before loading textures");
+            throw LoadException("No renderer provided to load this texture against");
         }
 
         auto file = project::FileSystem::OpenFile(path);
@@ -38,9 +37,7 @@ namespace atmo::core::resource
             }
         });
     }
-
-    const std::string TextureLoader::resourceTypeName()
-    {
-        return "Image (GPU & VRAM)";
-    }
 } // namespace atmo::core::resource
+
+ATMO_REGISTER_RESOURCE_LOADER(
+    SDL_Texture, atmo::core::resource::TextureLoader, .display_name = "Image (GPU & VRAM)", .extensions = { ".png", ".jpg", ".jpeg", ".bmp" });

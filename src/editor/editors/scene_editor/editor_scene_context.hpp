@@ -125,6 +125,7 @@ namespace atmo::editor
         void createRenderTexture(int width, int height);
         void destroyRenderTexture();
         void drawOverlays();
+        void releaseGpuTextures();
 
         flecs::world m_world;
         SDL_Texture *m_render_texture = nullptr;
