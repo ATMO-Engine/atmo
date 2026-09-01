@@ -24,7 +24,8 @@ namespace atmo
             {
             }
 
-            explicit File(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out | std::ios::binary) : m_start_offset(0), m_ownership(true), m_mode(mode)
+            explicit File(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out | std::ios::binary) :
+                m_start_offset(0), m_ownership(true), m_mode(mode)
             {
                 m_file = std::make_shared<std::fstream>(path.data(), mode);
 
