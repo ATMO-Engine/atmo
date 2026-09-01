@@ -517,7 +517,7 @@ namespace atmo::editor
         }
 
         auto wrapped = core::ecs::EntityRegistry::Wrap(child_UI);
-        auto *ui = dynamic_cast<core::ecs::entities::UIFoldableTreeItem *>(wrapped.get());
+        auto ui = dynamic_cast<core::ecs::entities::UIFoldableTreeItem *>(wrapped.get());
 
         auto title_button = ui->getTitleButton();
         auto &title_button_comp = title_button.getComponentMutable<core::components::UIButton>();
@@ -631,10 +631,10 @@ namespace atmo::editor
     void SceneEditor::createNewEntitySelectionPopup(core::ecs::entities::Entity parent)
     {
         auto tree = atmo::core::ecs::EntityRegistry::GetEntriesTree();
-
-        auto create_entity_popup = parent.findChildRecursive("Create Entity Popup");
-        auto entity_creation_button_list = parent.findChildRecursive("Entity Creation List");
         createEntitySelectionPopup(parent);
+
+        core::ecs::entities::Entity create_entity_popup = parent.findChildRecursive("Create Entity Popup");
+        auto entity_creation_button_list = parent.findChildRecursive("Entity Creation List");
 
         if (!create_entity_popup.isAlive() || !entity_creation_button_list.isAlive()) {
             return;
@@ -647,7 +647,7 @@ namespace atmo::editor
 
             if (node.entity_child.empty()) {
                 auto button = makeEntityCreationButton(node.entity_name);
-                button.getSignal<>("Released").connect([&create_entity_popup]() { create_entity_popup.destroy(); });
+                button.getSignal<>("Released").connect([create_entity_popup]() mutable { create_entity_popup.destroy(); });
                 button.setParent(parentUI);
                 return;
             }
@@ -658,11 +658,10 @@ namespace atmo::editor
             foldable->setParent(parentUI);
 
             if (!core::ecs::EntityRegistry::IsAbstract(node.entity_name)) {
-                foldable->getTitleButton().getSignal<>("Released").connect([this, &create_entity_popup, entity = node.entity_name]() {
+                foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.entity_name]() mutable {
                     auto created = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity);
 
                     created->setParent(*m_scene_ctx->getScene());
-
                     create_entity_popup.destroy();
                 });
             }
