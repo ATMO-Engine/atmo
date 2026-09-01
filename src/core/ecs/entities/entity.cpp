@@ -51,7 +51,7 @@ namespace atmo::core::ecs::entities
                             script.instance->physicsUpdate(evt->delta_time);
                     });
 
-                script.instance->load(script.script_path, script.m_res->get()->data, script.m_res->get()->size, e);
+                script.instance->load(script.script_path, script.m_res->data, script.m_res->size, e);
                 script.instance->create();
             } catch (std::exception &e) {
                 spdlog::error("Compilation error script not loaded: {}", e.what());

@@ -2,14 +2,13 @@
 
 #include "SDL3/SDL_render.h"
 #include "core/ecs/entities/ui/ui.hpp"
-#include "core/resource/resource_ref.hpp"
 
 namespace atmo::core::components
 {
     struct UIImage {
         std::string texture_path;
         std::string old_texture_path;
-        std::unique_ptr<resource::ResourceRef<SDL_Texture>> res;
+        std::shared_ptr<SDL_Texture> texture;
         float natural_width = 0.0f;
         float natural_height = 0.0f;
         SDL_Texture *raw_texture = nullptr;

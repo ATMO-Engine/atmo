@@ -1,122 +1,93 @@
 #pragma once
 
-#include <cstdint>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
+#include <utility>
+
 #include "SDL3/SDL_render.h"
 
-#include "core/resource/handle.hpp"
-#include "core/resource/loader_dispatcher.hpp"
-#include "i_resource_pool.hpp"
-#include "resource_pool.hpp"
-#include "resource_ref.hpp"
+#include "core/resource/resource_key.hpp"
+#include "core/resource/resource_loader_registry.hpp"
 
-#define CLEAN_FRAME 60
-
-namespace atmo
+namespace atmo::core::resource
 {
-    namespace core
+    class ResourceManager
     {
-        namespace resource
+    public:
+        static ResourceManager &GetInstance();
+
+        ResourceManager(const ResourceManager &) = delete;
+        ResourceManager &operator=(const ResourceManager &) = delete;
+
+        template <typename T>
+            requires(!GpuResource<T>::value)
+        std::shared_ptr<T> getResource(const std::string &path)
         {
+            return getOrLoad<T>(path, path);
+        }
 
-            class ResourceManager
-            {
-            public:
-                static ResourceManager &GetInstance();
+        template <typename T>
+            requires GpuResource<T>::value
+        std::shared_ptr<T> getResource(const std::string &path, SDL_Renderer *renderer)
+        {
+            return getOrLoad<T>(std::make_pair(path, renderer), path, renderer);
+        }
 
-                void setRenderer(SDL_Renderer *renderer)
-                {
-                    m_renderer = renderer;
+        void releaseRenderer(SDL_Renderer *renderer);
+
+    private:
+        ResourceManager() = default;
+
+        template <typename T> struct Store {
+            std::mutex mutex;
+            std::unordered_map<typename ResourceKey<T>::type, std::weak_ptr<T>, ResourceKeyHash<typename ResourceKey<T>::type>> entries;
+        };
+
+        template <typename T> static Store<T> &GetStore()
+        {
+            static Store<T> store;
+            return store;
+        }
+
+        template <typename T> static std::shared_ptr<T> TryGet(Store<T> &store, const typename ResourceKey<T>::type &key)
+        {
+            std::lock_guard<std::mutex> lock(store.mutex);
+            auto it = store.entries.find(key);
+            return it != store.entries.end() ? it->second.lock() : nullptr;
+        }
+
+        template <typename T> static std::shared_ptr<T> LoadWithLoader(const std::string &path)
+        {
+            return ResourceLoaderRegistry::Instance().getOrCreateLoader<T>()->load(path);
+        }
+
+        template <typename T> static std::shared_ptr<T> LoadWithLoader(const std::string &path, SDL_Renderer *renderer)
+        {
+            auto *loader = static_cast<ContextualResource<T, SDL_Renderer *> *>(ResourceLoaderRegistry::Instance().getOrCreateLoader<T>());
+            return loader->loadWithContext(path, renderer);
+        }
+
+        template <typename T, typename... LoadArgs> std::shared_ptr<T> getOrLoad(const typename ResourceKey<T>::type &key, LoadArgs &&...loadArgs)
+        {
+            Store<T> &store = GetStore<T>();
+
+            if (std::shared_ptr<T> existing = TryGet<T>(store, key)) {
+                return existing;
+            }
+
+            std::shared_ptr<T> loaded = LoadWithLoader<T>(std::forward<LoadArgs>(loadArgs)...);
+
+            std::lock_guard<std::mutex> lock(store.mutex);
+            auto [it, inserted] = store.entries.try_emplace(key, loaded);
+            if (!inserted) {
+                if (std::shared_ptr<T> existing = it->second.lock()) {
+                    return existing;
                 }
-                SDL_Renderer *getRenderer() const
-                {
-                    return m_renderer;
-                }
-
-                ~ResourceManager()
-                {
-                    for (auto pool : m_gcPools) {
-                        delete pool;
-                    }
-                }
-
-                /**
-                 * @brief get the resource associated to the handle if possible,
-                 *        throw an exception if the handle is outdated
-                 *
-                 * @param path The path (project or absolute) of associated to the ressource you want to get
-                 * @return std::unique_ptr<ResourceRef<T>> A unique ptr to the ResourceRef of the resource
-                 */
-                template <typename T> std::unique_ptr<ResourceRef<T>> getResource(const std::string &path) // TODO: créer l'exception pour les handle périmé
-                {
-                    ResourceTypeStore<T> &store = getPool<T>();
-
-                    if (store.map_handle.find(path) != store.map_handle.end()) {
-                        try {
-                            return store.pool->getRef(store.map_handle.at(path), m_currentTick);
-                        } catch (const typename ResourcePool<T>::HandleOutDated &e) {
-                            StoreHandle newHandle = store.pool->create(path, m_currentTick);
-                            store.map_handle.at(path) = newHandle;
-
-                            return store.pool->getRef(store.map_handle.at(path), m_currentTick);
-                        }
-                    } else {
-                        StoreHandle newHandle = store.pool->create(path, m_currentTick);
-                        store.map_handle.insert(std::pair<std::string, StoreHandle>(path, newHandle));
-
-                        return store.pool->getRef(newHandle, m_currentTick);
-                    }
-                }
-
-                /**
-                 * @brief Clear unused handles
-                 */
-                void clear();
-
-                void increaseTick()
-                {
-                    m_currentTick++;
-                }
-
-                uint64_t getTick()
-                {
-                    return m_currentTick;
-                }
-
-            private:
-                ResourceManager();
-                ResourceManager &operator=(const ResourceManager &) = delete;
-
-                template <typename T> struct ResourceTypeStore {
-                    ResourcePool<T> *pool = nullptr;
-                    std::unordered_map<std::string, StoreHandle> map_handle;
-                };
-
-                /**
-                 * @brief
-                 * Get the Pool instance associated with the data type
-                 *
-                 * @tparam T The datatype
-                 * @return ResourceTypeStore<T>& The pool
-                 */
-                template <typename T> ResourceTypeStore<T> &getPool()
-                {
-                    static ResourceTypeStore<T> store = { .pool = nullptr, .map_handle = {} };
-                    if (!store.pool) {
-                        store.pool = new ResourcePool<T>(createLoader<T>());
-                        registerPool(store.pool);
-                    }
-                    return store;
-                }
-
-                void registerPool(IPoolGarbageCollector *pool);
-
-                std::vector<IPoolGarbageCollector *> m_gcPools;
-
-                uint64_t m_currentTick = 0;
-                SDL_Renderer *m_renderer = nullptr;
-            };
-        } // namespace resource
-    } // namespace core
-} // namespace atmo
+                it->second = loaded;
+            }
+            return loaded;
+        }
+    };
+} // namespace atmo::core::resource
