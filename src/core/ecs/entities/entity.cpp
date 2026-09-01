@@ -222,6 +222,19 @@ namespace atmo::core::ecs::entities
         return p_handle.lookup(name.data());
     }
 
+    Entity Entity::findChildRecursive(std::string_view name) const
+    {
+        for (auto child : getChildren()) {
+            if (child.name() == name)
+                return child;
+            auto result = child.findChildRecursive(name);
+            if (result.isAlive())
+                return result;
+        }
+
+        return {};
+    }
+
     void Entity::destroy()
     {
         getParent().getSignal<Entity>("child_removed").emit(*this);

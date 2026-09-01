@@ -58,6 +58,7 @@ namespace atmo::editor
         void createAddEntityFodableTree(EditorRegistry::EntityTree &tree, core::ecs::entities::Entity parentUI);
         flecs::entity getSelectedEntity();
         void setSelectedEntity(flecs::entity new_slected_entity);
+        void initEditorEntity(atmo::core::ecs::entities::UI &container);
 
         EditorSceneContext *getSceneContext() const
         {
