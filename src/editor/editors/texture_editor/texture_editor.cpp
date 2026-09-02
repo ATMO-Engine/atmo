@@ -38,7 +38,7 @@ namespace atmo::editor
             auto &viewport_image_layout = viewport_image->getComponentMutable<core::components::Layout>();
 
             viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
-            viewport_image_layout.floating = true;
+            viewport_image_layout.floating.enabled = true;
             viewport_image_layout.z_index = -1;
             viewport_image_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
