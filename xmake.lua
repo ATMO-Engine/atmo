@@ -481,8 +481,12 @@ target("atmo-test")
     add_files("tests/**.cpp")
     add_files("src/*/**.cpp")
     add_includedirs("src")
+    if is_plat("macosx") then
+        add_files("src/editor/menu_bar/macos_menu_bar.mm")
+    end
     platform_specifics()
     add_tests("atmo-test", {
+        rundir = os.projectdir(),
         runargs = {
             "--reporter=JUnit::out=test_results.xml",
             "--reporter=console::out=-::colour-mode=ansi"

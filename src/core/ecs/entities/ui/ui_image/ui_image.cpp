@@ -1,24 +1,34 @@
 #include "ui_image.hpp"
 #include "SDL3/SDL_render.h"
+#include "core/ecs/entities/window/window.hpp"
 #include "core/resource/resource_manager.hpp"
 
 namespace atmo::core::ecs::entities
 {
     void UIImage::RegisterSystems(flecs::world *world)
     {
-        world->system<components::UIImage>("UIImage_sync").kind(flecs::PreUpdate).each([](flecs::entity /*e*/, components::UIImage &image) {
+        world->system<components::UIImage>("UIImage_sync").kind(flecs::PreUpdate).each([](flecs::entity e, components::UIImage &image) {
             if (image.texture_path == image.old_texture_path)
                 return;
 
-            image.res = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Texture>(image.texture_path);
             image.old_texture_path = image.texture_path;
-            auto tex = image.res->get();
-            if (tex)
-                SDL_GetTextureSize(tex.get(), &image.natural_width, &image.natural_height);
+            image.texture = nullptr;
+
+            if (image.texture_path.empty())
+                return;
+
+            auto window = UIImage(e).getWindow();
+            SDL_Renderer *renderer = window ? window->getRenderer() : nullptr;
+            if (!renderer)
+                return;
+
+            image.texture = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Texture>(image.texture_path, renderer);
+            if (image.texture)
+                SDL_GetTextureSize(image.texture.get(), &image.natural_width, &image.natural_height);
         });
 
         world->observer<components::UIImage>("UIImage_remove").event(flecs::OnRemove).each([](flecs::entity /*e*/, components::UIImage &image) {
-            image.res = nullptr;
+            image.texture = nullptr;
         });
     }
 
@@ -46,15 +56,11 @@ namespace atmo::core::ecs::entities
             return d;
         }
 
-        if (!img.res)
-            return d;
-
-        auto tex = img.res->get();
-        if (!tex)
+        if (!img.texture)
             return d;
 
         d.backgroundColor = getComponent<components::UI>().modulate.toFloat<Clay_Color>(255);
-        d.image = { .imageData = tex.get() };
+        d.image = { .imageData = img.texture.get() };
 
         auto &w = d.layout.sizing.width;
         auto &h = d.layout.sizing.height;

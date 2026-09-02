@@ -7,8 +7,10 @@
 #include <cstdint>
 #include "core/args/arg_manager.hpp"
 #include "core/ecs/components.hpp"
+#include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
@@ -49,15 +51,21 @@ namespace atmo::core::ecs::entities
         });
 
         world->observer<components::Window>().event(flecs::OnRemove).each([](flecs::entity e, components::Window &window) {
-            // Destroy all UILabel cached textures before the renderer is destroyed
+            // Release every strong GPU-texture owner in this world before the renderer that created them is destroyed.
             e.world().each<components::UILabel>([](components::UILabel &label) {
                 if (label.m_render_cache && label.m_render_cache->texture) {
                     SDL_DestroyTexture(label.m_render_cache->texture);
                     label.m_render_cache->texture = nullptr;
                 }
             });
+            e.world().each<components::Sprite2d>([](components::Sprite2d &sprite) {
+                sprite.m_texture = nullptr;
+                sprite.m_texture_renderer = nullptr;
+            });
+            e.world().each<components::UIImage>([](components::UIImage &image) { image.texture = nullptr; });
 
             if (window.renderer_data.renderer) {
+                resource::ResourceManager::GetInstance().releaseRenderer(window.renderer_data.renderer);
                 SDL_DestroyRenderer(window.renderer_data.renderer);
                 window.renderer_data.renderer = nullptr;
             }
@@ -112,7 +120,6 @@ namespace atmo::core::ecs::entities
 
         if (args::ArgManager::Get<bool>("--headless") == false &&
             SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &window.window, &window.renderer_data.renderer)) {
-            resource::ResourceManager::GetInstance().setRenderer(window.renderer_data.renderer);
             updateDPI(window);
             SDL_SetWindowResizable(window.window, true);
 
@@ -254,21 +261,9 @@ namespace atmo::core::ecs::entities
         SDL_RenderPresent(window.renderer_data.renderer);
     }
 
-    SDL_Texture *Window::getTextureFromHandle(const std::string &path)
+    SDL_Renderer *Window::getRenderer() const noexcept
     {
-        auto window = p_handle.get_ref<components::Window>();
-
-        if (window->texture_cache.find(path) != window->texture_cache.end()) {
-            return window->texture_cache[path];
-        }
-
-        std::unique_ptr<atmo::core::resource::ResourceRef<SDL_Surface>> res =
-            atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Surface>(path);
-        std::shared_ptr<SDL_Surface> surface = res->get();
-
-        SDL_Texture *texture = SDL_CreateTextureFromSurface(window->renderer_data.renderer, surface.get());
-        window->texture_cache[path] = texture;
-        return texture;
+        return getComponent<components::Window>().renderer_data.renderer;
     }
 
     void Window::onClose(std::function<void()> callback)

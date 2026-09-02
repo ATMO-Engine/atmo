@@ -1,5 +1,4 @@
 #include "sprite_2d.hpp"
-#include <unordered_map>
 #include "SDL3/SDL_rect.h"
 #include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
@@ -8,7 +7,6 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
 #include "core/resource/resource_manager.hpp"
-#include "core/resource/resource_ref.hpp"
 #include "meta/auto_register.hpp"
 #include "project/file_system.hpp"
 #include "spdlog/spdlog.h"
@@ -31,8 +29,7 @@ namespace atmo::core::ecs::entities
             }
 
             if (sprite.m_res)
-                if (auto surface = sprite.m_res->get())
-                    sprite.texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
+                sprite.texture_size = { static_cast<float>(sprite.m_res->w), static_cast<float>(sprite.m_res->h) };
         });
 
         world->system<components::Sprite2d, components::Transform2d>("Sprite2D_Render")
@@ -46,18 +43,6 @@ namespace atmo::core::ecs::entities
                     renderer = ctx->renderer;
                     if (!renderer || sprite.texture_path.empty() || !sprite.m_res)
                         return;
-
-                    static std::unordered_map<SDL_Renderer *, std::unordered_map<std::string, SDL_Texture *>> s_iso_cache;
-                    auto &cache = s_iso_cache[renderer];
-                    auto it = cache.find(sprite.texture_path);
-                    if (it == cache.end()) {
-                        auto surface = sprite.m_res->get();
-                        if (!surface)
-                            return;
-                        cache[sprite.texture_path] = SDL_CreateTextureFromSurface(renderer, surface.get());
-                        it = cache.find(sprite.texture_path);
-                    }
-                    texture = it->second;
                 } else {
                     flecs::entity root = world->lookup("_Root");
                     if (!root.is_valid() || !root.has<components::Window>())
@@ -68,9 +53,14 @@ namespace atmo::core::ecs::entities
                         return;
 
                     renderer = window->renderer_data.renderer;
-                    Window window_entity(root);
-                    texture = window_entity.getTextureFromHandle(sprite.texture_path);
                 }
+
+                if (sprite.texture_path != sprite.prev_texture_path_gpu || renderer != sprite.m_texture_renderer) {
+                    sprite.m_texture = resource::ResourceManager::GetInstance().getResource<SDL_Texture>(sprite.texture_path, renderer);
+                    sprite.m_texture_renderer = renderer;
+                    sprite.prev_texture_path_gpu = sprite.texture_path;
+                }
+                texture = sprite.m_texture.get();
 
                 if (!texture || !renderer)
                     return;
@@ -101,6 +91,8 @@ namespace atmo::core::ecs::entities
 
         world->observer<components::Sprite2d>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2d &sprite) {
             sprite.m_res = nullptr;
+            sprite.m_texture = nullptr;
+            sprite.m_texture_renderer = nullptr;
         });
     }
 
@@ -119,19 +111,12 @@ namespace atmo::core::ecs::entities
         if (sprite->texture_path.empty())
             return;
 
-        {
-            std::unique_ptr<resource::ResourceRef<SDL_Surface>> res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->texture_path);
-
-            sprite->m_res = std::move(res);
-        }
+        sprite->m_res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->texture_path);
 
         spdlog::debug("Loaded Sprite2D texture for entity {}: {}", p_handle.name().c_str(), sprite->texture_path);
+        spdlog::debug("Sprite2D texture size: {}x{}", sprite->m_res->w, sprite->m_res->h);
 
-        std::shared_ptr<SDL_Surface> surface = sprite->m_res->get();
-
-        spdlog::debug("Sprite2D texture size: {}x{}", surface->w, surface->h);
-
-        sprite->texture_size = { static_cast<float>(surface->w), static_cast<float>(surface->h) };
+        sprite->texture_size = { static_cast<float>(sprite->m_res->w), static_cast<float>(sprite->m_res->h) };
     }
 
     std::string_view Sprite2d::getTexturePath() const noexcept

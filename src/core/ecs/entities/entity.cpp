@@ -51,7 +51,7 @@ namespace atmo::core::ecs::entities
                             script.instance->physicsUpdate(evt->delta_time);
                     });
 
-                script.instance->load(script.script_path, script.m_res->get()->data, script.m_res->get()->size, e);
+                script.instance->load(script.script_path, script.m_res->data, script.m_res->size, e);
                 script.instance->create();
             } catch (std::exception &e) {
                 spdlog::error("Compilation error script not loaded: {}", e.what());
@@ -220,6 +220,19 @@ namespace atmo::core::ecs::entities
     Entity Entity::getChild(std::string_view name) const
     {
         return p_handle.lookup(name.data());
+    }
+
+    Entity Entity::findChildRecursive(std::string_view name) const
+    {
+        for (auto child : getChildren()) {
+            if (child.name() == name)
+                return child;
+            auto result = child.findChildRecursive(name);
+            if (result.isAlive())
+                return result;
+        }
+
+        return {};
     }
 
     void Entity::destroy()

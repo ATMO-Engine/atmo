@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <map>
 #include <optional>
 #include <string>
 
@@ -9,7 +8,6 @@
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/resource/handle.hpp"
 #include "core/types.hpp"
 #include "impl/clay_types.hpp"
 #include "meta/meta.hpp"
@@ -29,7 +27,6 @@ namespace atmo::core::components
         SDL_Window *window = nullptr;
         ClaySdL3RendererData renderer_data{};
         Clay_Arena clay_arena{};
-        std::map<std::string, SDL_Texture *> texture_cache;
         std::optional<std::function<void()>> close_callback;
         bool headless = false;
     };
@@ -66,7 +63,7 @@ namespace atmo::core::ecs::entities
 
         types::Vector2 getDPIScale() const noexcept;
 
-        SDL_Texture *getTextureFromHandle(const std::string &path);
+        SDL_Renderer *getRenderer() const noexcept;
 
         void onClose(std::function<void()> callback);
 
