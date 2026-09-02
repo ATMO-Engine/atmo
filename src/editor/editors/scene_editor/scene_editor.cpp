@@ -16,6 +16,7 @@
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entities/window/window.hpp"
@@ -203,7 +204,7 @@ namespace atmo::editor
             auto &child_UI_rect = child_UI->getComponentMutable<core::components::UIRect>();
             auto title_button = child_UI->getTitleButton();
             auto &title_button_comp = title_button.getComponentMutable<core::components::UIButton>();
-            auto title_label = child_UI->getTitleLabel();
+            auto title_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 
             child_UI_rect.color.a = 0.0f;
             child_UI_layout.direction = core::components::Layout::Direction::Vertical;
@@ -214,7 +215,8 @@ namespace atmo::editor
             child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
             child_UI_layout.child_gap = 8;
             child_UI->setParent(parent);
-            title_label.setText(entity_ti.second->name);
+            title_label->setText(entity_ti.second->name);
+            title_label->setParent(title_button);
 
             for (auto &row : buildFieldWidgetRows(entity_ti.second, entity.try_get_mut(entity_ti.first), child_UI->getChildContainer())) {
                 update_fns.push_back([entity, comp_id = entity_ti.first, field_info = row.field, w = row.widget]() {
@@ -228,7 +230,10 @@ namespace atmo::editor
 
         if (!ent.hasScript()) {
             auto add_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-            ((core::ecs::entities::UILabel)add_btn->getChildren()[0]).setText("Add Script");
+            auto add_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+
+            add_label->setText("Add Script");
+            add_label->setParent(*add_btn);
 
             add_btn->getSignal<>("Pressed").connect([entity, parent, &update_fns]() {
                 core::ecs::entities::Entity ent(entity);
@@ -265,7 +270,7 @@ namespace atmo::editor
         auto &left_panel_rect = left_panel->getComponentMutable<core::components::UIRect>();
         auto &left_panel_layout = left_panel->getComponentMutable<core::components::Layout>();
 
-        left_panel_rect.color = core::types::Color::WHITE;
+        left_panel_rect.color = core::types::Color("F8F9FC");
         left_panel_rect.corner_radius = { 4, 4, 4, 4 };
         left_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -275,8 +280,10 @@ namespace atmo::editor
         left_panel->setParent(*left_panel_container);
 
         auto top_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &top_left_panel_container_ui = top_left_panel_container->getComponentMutable<core::components::UI>();
         auto &top_left_panel_container_layout = top_left_panel_container->getComponentMutable<core::components::Layout>();
 
+        top_left_panel_container_ui.modulate.a = 0;
         top_left_panel_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW,
         top_left_panel_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         top_left_panel_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
@@ -288,20 +295,25 @@ namespace atmo::editor
         auto &left_panel_search_bar_layout = left_panel_search_bar->getComponentMutable<core::components::Layout>();
 
         left_panel_search_bar_rect.color = core::types::Color::BLACK;
-        left_panel_search_bar_rect.color.a = 0.30f;
+        left_panel_search_bar_rect.color.a = 0.0f;
         left_panel_search_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         left_panel_search_bar->setParent(*top_left_panel_container);
 
-        auto left_panel_pin = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &left_panel_pin_rect = left_panel_pin->getComponentMutable<core::components::UIRect>();
-        left_panel_pin_rect.color = core::types::Color::BLACK;
-        auto &left_panel_pin_layout = left_panel_pin->getComponentMutable<core::components::Layout>();
-        left_panel_pin_layout.aspect_ratio = { 1, 1 };
-        left_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        left_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        left_panel_pin_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
-        left_panel_pin->setParent(*top_left_panel_container);
+        auto pin_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &pin_btn_rect = pin_btn->getComponentMutable<core::components::UIRect>();
+        pin_btn_rect.color.a = 0;
+        pin_btn->getSignal<>("Released").connect([]() { spdlog::info("pin"); });
+        pin_btn->setParent(*top_left_panel_container);
+
+        auto pin_btn_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        pin_btn_icon->setTexturePath("project://assets/icons/pin.svg");
+        pin_btn_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        pin_btn_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        pin_btn_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        pin_btn_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        pin_btn_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        pin_btn_icon->setParent(*pin_btn);
 
         auto content_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &content_left_panel_container_layout = content_left_panel_container->getComponentMutable<core::components::Layout>();
@@ -315,9 +327,26 @@ namespace atmo::editor
         auto add_node_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &add_node_button_rect = add_node_button->getComponentMutable<core::components::UIRect>();
         auto &add_node_button_layout = add_node_button->getComponentMutable<core::components::Layout>();
+        auto text = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &text_ui = text->getComponentMutable<core::components::UI>();
 
-        add_node_button_rect.color = core::types::Color::BLACK;
-        add_node_button_rect.color.a = 0.3f;
+        auto add_node_btn_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        add_node_btn_icon->setTexturePath("project://assets/icons/plus.svg");
+        add_node_btn_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        add_node_btn_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        add_node_btn_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        add_node_btn_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        add_node_btn_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        add_node_btn_icon->setParent(*add_node_button);
+
+        text->setText("Node");
+        text->setFontSize(12);
+        text->setFontBold(true);
+        text->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        text->setParent(*add_node_button);
+        add_node_button_rect.color = core::types::Color("CBD5E1");
+        add_node_button_rect.color.a = 1.0f;
+        add_node_button_rect.corner_radius = { 4, 4, 4, 4 };
         add_node_button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         add_node_button_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         add_node_button_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 36.0f, 36.0f };
@@ -325,7 +354,7 @@ namespace atmo::editor
         add_node_button->setParent(*content_left_panel_container);
 
         auto scene_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        auto &scene_viewport_container_layout = scene_viewport_container->getComponentMutable<core ::components::Layout>();
+        auto &scene_viewport_container_layout = scene_viewport_container->getComponentMutable<core::components::Layout>();
 
         scene_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         scene_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -401,7 +430,7 @@ namespace atmo::editor
         content_right_panel_container->setParent(*right_panel);
 
         auto component_viewport_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        auto &component_viewport_container_layout = component_viewport_container->getComponentMutable<core ::components::Layout>();
+        auto &component_viewport_container_layout = component_viewport_container->getComponentMutable<core::components::Layout>();
 
         component_viewport_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         component_viewport_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -467,7 +496,8 @@ namespace atmo::editor
         auto child_UI = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
         auto &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
         auto &child_UI_rect = child_UI->getComponentMutable<core::components::UIRect>();
-        auto title_label = child_UI->getTitleLabel();
+        auto child_ui_btn = child_UI->getTitleButton();
+        auto title_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 
         child_UI_rect.color.a = 0.0f;
         child_container_layout.direction = core::components::Layout::Direction::Vertical;
@@ -487,7 +517,8 @@ namespace atmo::editor
         child_UI->setParent(*child_container);
         child_UI->rename("FoldableTree Container UI");
         child_container->setParent(parent);
-        title_label.setText(std::string(entity.name()));
+        title_label->setText(std::string(entity.name()));
+        title_label->setParent(child_ui_btn);
 
         auto close_create_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &close_create_entity_btn_rect = close_create_entity_btn->getComponentMutable<core::components::UIRect>();
@@ -497,7 +528,6 @@ namespace atmo::editor
         close_create_entity_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         close_create_entity_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         close_create_entity_btn_layout.aspect_ratio = { 1.0f, 1.0f };
-        close_create_entity_btn->getChildren()[0].destroy();
         close_create_entity_btn->setParent(*child_container);
         close_create_entity_btn->rename("Create Entity Close Button");
     }
@@ -610,7 +640,6 @@ namespace atmo::editor
         close_create_entity_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         close_create_entity_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         close_create_entity_btn_layout.aspect_ratio = { 1.0f, 1.0f };
-        close_create_entity_btn->getChildren()[0].destroy();
         close_create_entity_btn->setParent(*close_btn_holder);
         close_create_entity_btn->getSignal<>("Released").connect([create_entity_popup]() { create_entity_popup->destroy(); });
 
@@ -653,8 +682,10 @@ namespace atmo::editor
             }
 
             auto foldable = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFoldableTreeItem>("Entity::UI::UIRect::UIFoldableTreeItem");
+            auto title_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 
-            foldable->getTitleLabel().setText(label_name);
+            title_label->setText(label_name);
+            title_label->setParent(foldable->getTitleButton());
             foldable->setParent(parentUI);
 
             if (!core::ecs::EntityRegistry::IsAbstract(node.entity_name)) {
@@ -686,7 +717,6 @@ namespace atmo::editor
         create_entity_btn_layout.padding = { 8, 8, 8, 8 };
         create_entity_btn_layout.child_gap = 8;
         create_entity_btn_layout.direction = core::components::Layout::Direction::Vertical;
-        create_entity_btn->getChildren()[0].destroy();
         create_entity_btn->getSignal<>("Released").connect([this, entity_id]() {
             auto entity = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity_id);
             entity->setParent(*m_scene_ctx->getScene());

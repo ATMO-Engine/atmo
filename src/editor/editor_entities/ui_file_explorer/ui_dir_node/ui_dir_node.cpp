@@ -2,6 +2,7 @@
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
@@ -60,7 +61,9 @@ namespace atmo::core::ecs::entities
             dirname = path;
         rename(dirname);
 
-        UILabel(getTitleLabel()).setText(dirname);
+        auto dirname_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        dirname_label->setText(dirname);
+        dirname_label->setParent(getTitleButton());
 
         auto handle = p_handle;
         getTitleButton().getSignal<>("Pressed").connect([handle, show_hidden]() {

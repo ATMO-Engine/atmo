@@ -2,6 +2,7 @@
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
@@ -46,13 +47,15 @@ namespace atmo::core::ecs::entities
     void UIFileExplorerFileNode::setPath(const std::string &path)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
+        auto file_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         node.full_path = path;
         node.is_directory = false;
 
         std::string filename = fs::path(path).filename().string();
         rename(filename);
 
-        UILabel(getChild("Button label")).setText(filename);
+        file_label->setText(filename);
+        file_label->setParent(*this);
     }
 
     void UIFileExplorerFileNode::setHighlight(bool highlighted)

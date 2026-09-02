@@ -83,11 +83,6 @@ namespace atmo::core::ecs::entities
         return UIButton(title_bar.getChild(TitleButtonName));
     }
 
-    UILabel UIFoldableTreeItem::getTitleLabel() const
-    {
-        return UILabel(getTitleButton().getChild("Button label"));
-    }
-
     UIRect UIFoldableTreeItem::getChildContainer() const
     {
         return UIRect(getChild(ChildContainerName));

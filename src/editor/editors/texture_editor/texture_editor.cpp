@@ -231,29 +231,33 @@ namespace atmo::editor
 
 
         auto saveBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto saveBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &saveBtn_rect = saveBtn->getComponentMutable<core::components::UIRect>();
         auto &saveBtn_layout = saveBtn->getComponentMutable<core::components::Layout>();
 
-        ((core::ecs::entities::UILabel)saveBtn->getChildren()[0]).setText("Save");
+        saveBtn_label->setText("Save");
         saveBtn_rect.border.color = core::types::Color::BLACK;
         saveBtn_rect.color = core::types::Color::WHITE;
         saveBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         saveBtn_layout.width.size = 0.30f;
         saveBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         saveBtn_layout.height.size = 0.05f;
+        saveBtn_label->setParent(*saveBtn);
         saveBtn->setParent(*texture_editor_panel);
 
         auto previewBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto previewBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &previewBtn_rect = previewBtn->getComponentMutable<core::components::UIRect>();
         auto &previewBtn_layout = previewBtn->getComponentMutable<core::components::Layout>();
 
-        ((core::ecs::entities::UILabel)previewBtn->getChildren()[0]).setText("Preview");
+        previewBtn_label->setText("Preview");
         previewBtn_rect.border.color = core::types::Color::BLACK;
         previewBtn_rect.color = core::types::Color::WHITE;
         previewBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         previewBtn_layout.width.size = 0.30f;
         previewBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         previewBtn_layout.height.size = 0.05f;
+        previewBtn_label->setParent(*previewBtn);
         previewBtn->setParent(*texture_editor_panel);
 
         auto pencilContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
@@ -269,27 +273,31 @@ namespace atmo::editor
         pencilContainer->setParent(*texture_editor_panel);
 
         auto pencilBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto pencilBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &pencilBtn_rect = pencilBtn->getComponentMutable<core::components::UIRect>();
         auto &pencilBtn_layout = pencilBtn->getComponentMutable<core::components::Layout>();
 
-        ((core::ecs::entities::UILabel)pencilBtn->getChildren()[0]).setText("Draw");
+        pencilBtn_label->setText("Draw");
         pencilBtn_rect.border.color = core::types::Color::BLACK;
         pencilBtn_rect.color = core::types::Color::WHITE;
         pencilBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         pencilBtn_layout.width.size = 0.30f;
         pencilBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        pencilBtn_label->setParent(*pencilBtn);
         pencilBtn->setParent(*pencilContainer);
 
         auto eraserBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto eraserBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &eraserBtn_rect = eraserBtn->getComponentMutable<core::components::UIRect>();
         auto &eraserBtn_layout = eraserBtn->getComponentMutable<core::components::Layout>();
 
-        ((core::ecs::entities::UILabel)eraserBtn->getChildren()[0]).setText("Erase");
+        eraserBtn_label->setText("Erase");
         eraserBtn_rect.border.color = core::types::Color::BLACK;
         eraserBtn_rect.color = core::types::Color::WHITE;
         eraserBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         eraserBtn_layout.width.size = 0.30f;
         eraserBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        eraserBtn_label->setParent(*eraserBtn);
         eraserBtn->setParent(*pencilContainer);
 
 

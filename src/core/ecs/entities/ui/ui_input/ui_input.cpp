@@ -49,6 +49,7 @@ namespace atmo::core::ecs::entities
 
         auto &input_comp = getComponentMutable<core::components::UIInput>();
         auto input_rect = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto input_rect_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &input_rect_comp = input_rect->getComponentMutable<core::components::UIRect>();
         auto &input_rect_layout = input_rect->getComponentMutable<core::components::Layout>();
 
@@ -57,6 +58,7 @@ namespace atmo::core::ecs::entities
         input_rect_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         input_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         input_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        input_rect_label->setParent(*input_rect);
         input_rect->setParent(*this);
 
         flecs::entity handle = p_handle;

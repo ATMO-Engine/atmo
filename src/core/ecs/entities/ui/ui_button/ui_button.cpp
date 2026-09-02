@@ -62,24 +62,6 @@ namespace atmo::core::ecs::entities
         getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         getComponentMutable<core::components::Layout>().child_gap = 4;
         getComponentMutable<core::components::Layout>().padding = { 4, 4, 4, 4 };
-
-        auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-        label->setText("Button text");
-        label->setFontSize(12);
-        label->rename("Button label");
-        label->setParent(*this);
-
-        auto &label_comp = label->getComponentMutable<core::components::UILabel>();
-        label_comp.text_alignment = core::components::UILabel::TextAlignment::ALIGN_CENTER;
-        auto label_layout = label->getComponentMutable<core::components::Layout>();
-        label_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        label_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 90.0f, 100.0f };
-        label_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        label_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 90.0f, 100.0f };
-
-        auto &label_UI_comp = label->getComponentMutable<core::components::UI>();
-        label_UI_comp.modulate = types::Color::BLACK;
     }
 
     void UIButton::press()
