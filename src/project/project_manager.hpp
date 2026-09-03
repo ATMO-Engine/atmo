@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "file_system.hpp"
+#include "file_watcher/file_watcher.hpp"
 #include "glaze/json/write.hpp"
 #include "impl/romver.hpp"
 #include "project/file.hpp"
@@ -50,6 +51,8 @@ namespace atmo
                 LoadProjectSettings(settings_file, Instance().m_settings);
 
                 Instance().m_project_root = resolved_root;
+
+                FileWatcher::InitFileSystem(project_path);
             }
 #endif
 

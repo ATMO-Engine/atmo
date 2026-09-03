@@ -4,12 +4,11 @@
 #include <string>
 #include <vector>
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
-#include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
+#include "core/ecs/entity_registry.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_dir_node/ui_dir_node.hpp"
-#include "editor/editor_entities/ui_file_explorer/ui_file_node/ui_file_node.hpp"
+#include "file_watcher/file_watcher.hpp"
 
 namespace atmo::core::components
 {
@@ -47,8 +46,6 @@ namespace atmo::core::ecs::entities
             return "UIFileExplorer";
         }
 
-        void setRootPath(const std::string &path);
-
         void setFocus(flecs::entity node, const std::string &path, bool is_directory);
         bool hasFocus() const;
 
@@ -57,13 +54,11 @@ namespace atmo::core::ecs::entities
 
     private:
         void rebuild();
-        void reopenPaths(UIFileExplorerDirNode &node, const std::vector<std::string> &open_paths, bool show_hidden);
         flecs::entity findNodeByPath(UIFileExplorerDirNode &node, const std::string &target_path);
 
         UIButton getAddButton() const;
         UIButton getDeleteButton() const;
         UIButton getRenameButton() const;
-        UIButton getRefreshButton() const;
         UITextInput getAddInput() const;
         UITextInput getAddFolderInput() const;
         UITextInput getRenameInput() const;
