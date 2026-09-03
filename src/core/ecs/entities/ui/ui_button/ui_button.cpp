@@ -45,10 +45,11 @@ namespace atmo::core::ecs::entities
             if (btn.group == 0 || btn.group != evt->group_id)
                 return;
 
+            rect.corner_radius = { 4, 4, 4, 4 };
             if (static_cast<flecs::entity_t>(self.getID()) == evt->sender_id) {
                 btn.is_pressed = true;
-                rect.color = types::Color::BLACK;
-                rect.color.a = 0.4f;
+                rect.color = types::Color("DBEAFE");
+                rect.color.a = 1.0f;
             } else {
                 btn.is_pressed = false;
                 rect.color = types::Color::WHITE;

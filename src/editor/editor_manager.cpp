@@ -174,6 +174,7 @@ namespace atmo::editor
         auto &topbar_layout = m_topbar->getComponentMutable<core::components::Layout>();
         topbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         topbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        topbar_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::End;
         topbar_layout.padding = { 8, 8, 8, 8 };
         topbar_layout.child_gap = 8;
         m_topbar->setParent(*topbar_container);
@@ -223,11 +224,14 @@ namespace atmo::editor
             editor_select->getSignal<bool>("Toggle").connect([this, editor_select, index, editor_name = std::string(editor->name())](bool new_state) {
                 auto &btn_rect = editor_select->getComponentMutable<core::components::UIRect>();
                 if (new_state) {
-                    btn_rect.color = core::types::Color("#b25959");
+                    btn_rect.color = core::types::Color("#E3ECF8");
+                    for (auto &child : editor_select->getChildren()) child.getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
                     m_active_editor_index = index;
                 } else {
-                    btn_rect.color = core::types::Color("#868686");
+                    btn_rect.color = core::types::Color::TRANSPARENT;
+                    auto childs = editor_select->getChildren();
+                    for (auto &child : editor_select->getChildren()) child.getComponentMutable<core::components::UI>().modulate = core::types::Color("94A3B8");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
                 }
             });
