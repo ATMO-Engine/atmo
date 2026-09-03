@@ -52,7 +52,6 @@ namespace atmo::editor
         topbar->setParent(*topbar_container);
 
         auto create_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        core::ecs::entities::UILabel(create_btn->getChildren()[0]).setText("atmo.create_new_project");
         create_btn->getComponentMutable<core::components::UIRect>().corner_radius = { 4, 4, 4, 4 };
         create_btn->setParent(*topbar);
 
@@ -64,7 +63,10 @@ namespace atmo::editor
         create_btn_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         create_btn_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 24.0f, 24.0f };
         create_btn_icon->setParent(*create_btn);
-        create_btn_icon->swap(create_btn->getChildren()[0]);
+
+        auto create_btn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        create_btn_label->setText("atmo.create_new_project");
+        create_btn_label->setParent(*create_btn);
 
         auto new_project_name_input = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
         new_project_name_input->setValue("New Project Name");
@@ -118,13 +120,15 @@ namespace atmo::editor
     ProjectExplorer::makeProjectButton(core::ecs::entities::UI parent, std::shared_ptr<core::ecs::entities::UI> window_ui_container, std::string project_path)
     {
         auto btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto btn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 
         auto btn_layout = btn->getComponentMutable<core::components::Layout>();
         btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 64.0f, 64.0f };
         btn->getComponentMutable<core::components::UIRect>().corner_radius = { 4, 4, 4, 4 };
-        core::ecs::entities::UILabel(btn->getChildren()[0]).setText(project_path);
+        btn_label->setText(project_path);
+        btn_label->setParent(*btn);
 
         btn->getSignal<>("Released").connect([&engine = m_engine, window_ui_container, project_path]() {
             core::SignalQueue::Enqueue([&engine, window_ui_container, project_path]() {

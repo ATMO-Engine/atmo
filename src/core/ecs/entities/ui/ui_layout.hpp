@@ -69,7 +69,12 @@ namespace atmo::core::components
         ChildAlignmentAxis child_alignment;
         std::uint16_t child_gap = 0;
 
-        bool floating = false;
+        struct Floating {
+            bool enabled = false;
+            types::Vector2 offest = { 0, 0 };
+        };
+
+        Floating floating;
         std::uint16_t z_index = 0;
     };
 } // namespace atmo::core::components
@@ -93,6 +98,13 @@ template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout::Pad
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::core::components::Layout::Padding::left>("left"), atmo::meta::field<&atmo::core::components::Layout::Padding::right>("right"),
         atmo::meta::field<&atmo::core::components::Layout::Padding::top>("top"), atmo::meta::field<&atmo::core::components::Layout::Padding::bottom>("bottom"));
+};
+
+template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout::Floating> {
+    static constexpr const char *name = "Floating";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::Layout::Floating::enabled>("enabled"),
+        atmo::meta::field<&atmo::core::components::Layout::Floating::offest>("offset"));
 };
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::Layout> {
