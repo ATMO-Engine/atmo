@@ -313,6 +313,7 @@ namespace atmo::editor
         pin_btn_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
         pin_btn_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         pin_btn_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        pin_btn_icon->getComponentMutable<core::components::UIImage>().rotation = 45.0f;
         pin_btn_icon->setParent(*pin_btn);
 
         auto content_left_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");

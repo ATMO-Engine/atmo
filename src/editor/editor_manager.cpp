@@ -272,6 +272,7 @@ namespace atmo::editor
         toolbar_container->getComponentMutable<core::components::Layout>().height.size = 1.0f;
         toolbar_container->getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::End;
         toolbar_container->getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
+        toolbar_container->getComponentMutable<core::components::Layout>().z_index = -1;
         toolbar_container->setParent(container);
 
         m_toolbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");

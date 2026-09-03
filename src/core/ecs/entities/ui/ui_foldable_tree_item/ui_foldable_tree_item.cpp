@@ -3,10 +3,12 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "meta/auto_register.hpp"
 
 
@@ -46,18 +48,37 @@ namespace atmo::core::ecs::entities
 
         auto openbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
         auto &openbox_layout = openbox->getComponentMutable<core::components::Layout>();
+        auto &openbox_rect = openbox->getComponentMutable<core::components::UIRect>();
+        auto &openbox_ui = openbox->getComponentMutable<core::components::UI>();
         openbox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         openbox_layout.width.size = core::components::Layout::SizingAxis::MinMax(18.0f, 18.0f);
         openbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         openbox_layout.height.size = core::components::Layout::SizingAxis::MinMax(18.0f, 18.0f);
+        openbox_rect.border = { 0, 0, 0, 0 };
+        openbox_ui.modulate = types::Color::TRANSPARENT;
+
+        auto openbox_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        openbox_icon->setTexturePath("project://assets/icons/chevron-right.svg");
+        openbox_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        openbox_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        openbox_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        openbox_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        openbox_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        openbox_icon->getComponentMutable<core::components::UIImage>().rotation = 90.0f;
+        openbox_icon->setParent(*openbox);
 
         openbox->rename(std::string(OpenBoxName));
         openbox->setParent(*title_bar);
         openbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([](core::ecs::entities::UICheckBox &chBox) {
             auto &fodableTreeComp = chBox.getParent().getParent().getComponentMutable<core::components::UIFoldableTreeItem>();
             auto &chBoxComp = chBox.getComponentMutable<core::components::UICheckBox>();
+            auto &chBoxIcon = chBox.getChildren()[0].getComponentMutable<core::components::UIImage>();
 
             fodableTreeComp.open = chBoxComp.trigger;
+            if (fodableTreeComp.open)
+                chBoxIcon.rotation = 90.0f;
+            else
+                chBoxIcon.rotation = 0.0f;
         });
 
         auto title_bar_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");

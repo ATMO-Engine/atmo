@@ -130,4 +130,5 @@ namespace atmo::core::types
     const Color Color::RED{ 1.0f, 0.0f, 0.0f, 1.0f };
     const Color Color::GREEN{ 0.0f, 1.0f, 0.0f, 1.0f };
     const Color Color::BLUE{ 0.0f, 0.0f, 1.0f, 1.0f };
+    const Color Color::TRANSPARENT{ 1.0f, 1.0f, 1.0f, 0.0f };
 } // namespace atmo::core::types

@@ -114,6 +114,7 @@ namespace atmo::core::types
         static const Color RED;
         static const Color GREEN;
         static const Color BLUE;
+        static const Color TRANSPARENT;
 
     private:
         static float HexElementToFloat(std::string_view elem);
