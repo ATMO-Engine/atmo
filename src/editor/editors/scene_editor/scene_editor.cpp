@@ -637,13 +637,13 @@ namespace atmo::editor
             return;
         }
 
-        std::function<void(core::ecs::EntityRegistry::EntityTree &, core::ecs::entities::Entity &)> buildTreeUI;
-        buildTreeUI = [&](core::ecs::EntityRegistry::EntityTree &node, core::ecs::entities::Entity &parentUI) {
-            size_t pos = node.entity_name.find_last_of("::");
-            std::string label_name = (pos == std::string::npos) ? node.entity_name : node.entity_name.substr(pos + 1);
+        std::function<void(core::ecs::EntityRegistry::EntryTree &, core::ecs::entities::Entity &)> buildTreeUI;
+        buildTreeUI = [&](core::ecs::EntityRegistry::EntryTree &node, core::ecs::entities::Entity &parentUI) {
+            size_t pos = node.name.find_last_of("::");
+            std::string label_name = (pos == std::string::npos) ? node.name : node.name.substr(pos + 1);
 
-            if (node.entity_child.empty()) {
-                auto button = makeEntityCreationButton(node.entity_name);
+            if (node.children.empty()) {
+                auto button = makeEntityCreationButton(node.name);
                 button.getSignal<>("Released").connect([create_entity_popup]() mutable { create_entity_popup.destroy(); });
                 button.setParent(parentUI);
                 return;
@@ -654,8 +654,8 @@ namespace atmo::editor
             foldable->getTitleLabel().setText(label_name);
             foldable->setParent(parentUI);
 
-            if (!core::ecs::EntityRegistry::IsAbstract(node.entity_name)) {
-                foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.entity_name]() mutable {
+            if (!core::ecs::EntityRegistry::IsAbstract(node.name)) {
+                foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.name]() mutable {
                     auto created = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity);
 
                     created->setParent(*m_scene_ctx->getScene());
@@ -665,7 +665,7 @@ namespace atmo::editor
 
             auto childContainer = foldable->getChildContainer();
 
-            for (auto &child : node.entity_child) buildTreeUI(child, childContainer);
+            for (auto &child : node.children) buildTreeUI(child, childContainer);
         };
 
         buildTreeUI(tree, entity_creation_button_list);

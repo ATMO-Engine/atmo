@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "core/types.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::registry
@@ -18,18 +19,36 @@ namespace atmo::core::registry
     template <typename Registry, typename Root, typename... FactoryArgs> class HierarchicRegistry
     {
     public:
-        template <typename Type> static void RegisterType()
+        template <typename Type> static void RegisterType(std::string_view icon_path = "", std::optional<types::Color> icon_color = std::nullopt)
         {
             if (Instance().p_registry.contains(Type::FullName().data())) {
                 spdlog::error(R"("{}" is already registered in registry)", Type::FullName());
                 return;
             }
 
+            Entry entry{ .icon = icon_path, .icon_color = icon_color };
+
+            // if (icon_path.empty()) {
+            //     entry.icon = Instance().p_registry[std::string(Type::BaseFullName())].icon;
+            // } else {
+            //     entry.icon = icon_path;
+            // }
+
+            // if (!icon_color.has_value()) {
+            //     entry.icon_color = Instance().p_registry[std::string(Type::BaseFullName())].icon_color;
+            // } else {
+            //     entry.icon_color = icon_color;
+            // }
+
             if constexpr (std::is_abstract_v<Type>) {
-                Instance().p_registry[std::string(Type::FullName())] = Entry{ .is_abstract = true, .factory = std::nullopt };
+                entry.is_abstract = true;
+                entry.factory = std::nullopt;
+                Instance().p_registry[std::string(Type::FullName())] = entry;
                 spdlog::debug(R"(Registered abstract type "{}")", Type::FullName());
             } else {
-                Instance().p_registry[std::string(Type::FullName())] = Entry{ .is_abstract = false, .factory = Registry::template Factorize<Type> };
+                entry.is_abstract = false;
+                entry.factory = Registry::template Factorize<Type>;
+                Instance().p_registry[std::string(Type::FullName())] = entry;
                 spdlog::debug(R"(Registered type "{}")", Type::FullName());
             }
 
@@ -38,6 +57,11 @@ namespace atmo::core::registry
 
         template <class Derived, class Base> struct Registrable : Base {
             using Base::Base;
+
+            static constexpr std::string_view BaseFullName()
+            {
+                return Base::FullName();
+            }
 
             static constexpr std::string_view FullName()
             {
@@ -56,38 +80,38 @@ namespace atmo::core::registry
             return entries;
         }
 
-        struct EntityTree {
-            std::string entity_name;
-            std::vector<EntityTree> entity_child;
+        struct EntryTree {
+            std::string name = "";
+            std::vector<EntryTree> children = {};
         };
 
-        static void MakeTree(std::vector<std::string> *entries, EntityTree *parent)
+        static void MakeTree(std::vector<std::string> *entries, EntryTree *parent)
         {
             while (!entries->empty()) {
                 auto entity_name = entries->front();
 
-                if (!entity_name.starts_with(parent->entity_name))
+                if (!entity_name.starts_with(parent->name))
                     return;
 
-                EntityTree tree;
-                tree.entity_name = entity_name;
+                EntryTree tree;
+                tree.name = entity_name;
 
                 entries->erase(entries->begin());
 
                 MakeTree(entries, &tree);
 
-                parent->entity_child.emplace_back(tree);
+                parent->children.emplace_back(tree);
             }
         }
 
-        static EntityTree GetEntriesTree()
+        static EntryTree GetEntriesTree()
         {
             std::vector<std::string> entries = GetEntries();
-            EntityTree entries_tree;
+            EntryTree entries_tree;
 
             auto compare = [](std::string a, std::string b) { return a < b; };
             std::sort(entries.begin(), entries.end(), compare);
-            entries_tree.entity_name = entries[0];
+            entries_tree.name = entries[0];
             entries.erase(entries.begin());
             MakeTree(&entries, &entries_tree);
             return entries_tree;
@@ -122,6 +146,26 @@ namespace atmo::core::registry
             return it->second.is_abstract;
         }
 
+        static std::string GetIconPath(std::string_view name)
+        {
+            std::string icon_path = Instance().p_registry[name].icon;
+
+            if (icon_path.empty())
+                icon_path = GetIconPath(name.substr(0, name.find_last_of("::")));
+
+            return icon_path;
+        }
+
+        static types::Color GetIconColor(std::string_view name)
+        {
+            std::optional<types::Color> icon_color = Instance().p_registry[name].icon_color;
+
+            if (!icon_color.has_value())
+                icon_color = GetIconColor(name.substr(0, name.find_last_of("::")));
+
+            return icon_color.value();
+        }
+
         template <typename Type> static void OnRegister() {};
         template <typename Type> static Root *Factorize();
 
@@ -143,6 +187,9 @@ namespace atmo::core::registry
         struct Entry {
             bool is_abstract = false;
             std::optional<Factory> factory;
+
+            std::string_view icon = "";
+            std::optional<types::Color> icon_color = std::nullopt;
         };
 
         std::unordered_map<std::string, Entry> p_registry;

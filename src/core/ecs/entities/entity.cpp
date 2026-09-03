@@ -300,5 +300,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-ATMO_REGISTER_ENTITY(entities::Entity);
+ATMO_REGISTER_ENTITY_ICON_COLOR(entities::Entity, "project://assets/entities/entity.svg", atmo::core::types::Color("#9c9c9c"));
 ATMO_REGISTER_COMPONENT(atmo::core::components::Script);
