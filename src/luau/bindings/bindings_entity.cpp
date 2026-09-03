@@ -183,7 +183,7 @@ namespace atmo::luau
         }
 
         if (!entity->has<core::ecs::entities::Body2d::Body2dData>()) {
-            luaL_error(state, "applyLinearImpulse: entity has no Body2dData component");
+            luaL_error(state, "applyLinearImpulse: entity '%s' has no Body2dData component", entity->name().c_str());
         }
 
         core::ecs::entities::Body2d::Body2dData &bd = entity->get_mut<core::ecs::entities::Body2d::Body2dData>();

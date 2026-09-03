@@ -28,10 +28,8 @@ function Update(deltaTime)
 end
 
 function PhysicsUpdate(deltaTime)
-    print("test")
     if jump then
         jump = false;
-        print("jumping")
-        this:applyLinearImpulse(Vector2(0, -100))
+        this:applyLinearImpulse(Vector2(0, -1000))
     end
 end
