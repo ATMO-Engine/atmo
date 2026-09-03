@@ -345,7 +345,7 @@ namespace atmo::editor
         text->setFontBold(true);
         text->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         text->setParent(*add_node_button);
-        add_node_button_rect.color = core::types::Color("E3ECF8");
+        add_node_button_rect.color = core::types::Color("#E3ECF8");
         add_node_button_rect.color.a = 1.0f;
         add_node_button_rect.corner_radius = { 4, 4, 4, 4 };
         add_node_button_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -712,6 +712,15 @@ namespace atmo::editor
             auto &title_btn_rect = title_btn.getComponentMutable<core::components::UIRect>();
             auto title_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 
+            auto entity_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+            entity_icon->getComponentMutable<core::components::UIImage>().texture_path = core::ecs::EntityRegistry::GetIconPath(node.name);
+            entity_icon->getComponentMutable<core::components::UI>().modulate = core::ecs::EntityRegistry::GetIconColor(node.name);
+            entity_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            entity_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+            entity_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            entity_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+            entity_icon->setParent(title_btn);
+
             foldable_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             foldable_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             foldable_rect.color = core::types::Color::TRANSPARENT;
@@ -769,6 +778,15 @@ namespace atmo::editor
 
         size_t pos = entity_id.find_last_of("::");
         std::string label_name = (pos == std::string::npos) ? entity_id : entity_id.substr(pos + 1);
+
+        auto entity_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        entity_icon->getComponentMutable<core::components::UIImage>().texture_path = core::ecs::EntityRegistry::GetIconPath(entity_id);
+        entity_icon->getComponentMutable<core::components::UI>().modulate = core::ecs::EntityRegistry::GetIconColor(entity_id);
+        entity_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        entity_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        entity_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        entity_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        entity_icon->setParent(*create_entity_topbar);
 
         auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 

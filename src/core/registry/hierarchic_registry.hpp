@@ -148,7 +148,7 @@ namespace atmo::core::registry
 
         static std::string GetIconPath(std::string_view name)
         {
-            std::string icon_path = Instance().p_registry[name].icon;
+            std::string icon_path = std::string(Instance().p_registry[std::string(name)].icon);
 
             if (icon_path.empty())
                 icon_path = GetIconPath(name.substr(0, name.find_last_of("::")));
@@ -158,7 +158,7 @@ namespace atmo::core::registry
 
         static types::Color GetIconColor(std::string_view name)
         {
-            std::optional<types::Color> icon_color = Instance().p_registry[name].icon_color;
+            std::optional<types::Color> icon_color = Instance().p_registry[std::string(name)].icon_color;
 
             if (!icon_color.has_value())
                 icon_color = GetIconColor(name.substr(0, name.find_last_of("::")));
