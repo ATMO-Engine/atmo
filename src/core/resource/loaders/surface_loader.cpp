@@ -2,6 +2,7 @@
 #include <exception>
 #include <memory>
 #include "SDL3_image/SDL_image.h"
+#include "core/resource/auto_register_loader.hpp"
 #include "project/file_system.hpp"
 
 namespace atmo
@@ -29,10 +30,9 @@ namespace atmo
                 });
             }
 
-            const std::string SurfaceLoader::resourceTypeName()
-            {
-                return "Image (CPU & RAM)";
-            }
         } // namespace resource
     } // namespace core
 } // namespace atmo
+
+ATMO_REGISTER_RESOURCE_LOADER(
+    SDL_Surface, atmo::core::resource::SurfaceLoader, .display_name = "Image (CPU & RAM)", .extensions = { ".png", ".jpg", ".jpeg", ".bmp" });

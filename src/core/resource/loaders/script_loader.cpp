@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "core/resource/auto_register_loader.hpp"
 #include "core/resource/loaders/script_loader.hpp"
 #include "luau/luau.hpp"
 #include "project/file_system.hpp"
@@ -53,11 +54,8 @@ namespace atmo
                 }
             }
 
-            const std::string ScriptLoader::resourceTypeName()
-            {
-                return "Script";
-            }
         } // namespace resource
     } // namespace core
 } // namespace atmo
-// namespace atmo
+
+ATMO_REGISTER_RESOURCE_LOADER(atmo::core::resource::Bytecode, atmo::core::resource::ScriptLoader, .display_name = "Script", .extensions = { ".luau", ".lua" });

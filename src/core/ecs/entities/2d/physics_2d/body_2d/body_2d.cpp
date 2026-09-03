@@ -7,7 +7,6 @@
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/resource_manager.hpp"
-#include "core/resource/resource_ref.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
 #include "meta/auto_register.hpp"

@@ -169,7 +169,7 @@ namespace atmo::project
          * @exception std::runtime_error If file was not found.
          * @todo replace std::runtime_error when file is not found by FileSystem::FileNotFound exception.
          */
-        static File OpenFile(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out)
+        static File OpenFile(std::string_view path, std::ios::openmode mode = std::ios::in | std::ios::out | std::ios::binary)
         {
             if (path.starts_with(PROJECT_PROTOCOL)) {
                 std::filesystem::path relative_path = std::string(path.substr(sizeof(PROJECT_PROTOCOL) - 1));
@@ -182,7 +182,7 @@ namespace atmo::project
                 }
 #endif
 
-                if (mode != (std::ios::in | std::ios::out) || (mode & std::ios::in) == 0 && (mode & std::ios::binary) == 0)
+                if (mode != (std::ios::in | std::ios::out | std::ios::binary) || (mode & std::ios::in) == 0 && (mode & std::ios::binary) == 0)
                     spdlog::warn("Packed project files can only be opened in binary read mode.");
 
                 auto it = Instance().m_index.find(relative_path.string());
