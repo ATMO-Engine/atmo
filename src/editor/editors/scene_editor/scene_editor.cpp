@@ -460,7 +460,13 @@ namespace atmo::editor
         }
     }
 
-    void createTreeEntity(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent)
+    struct TreeRowEntities {
+        core::ecs::entities::Entity container;
+        core::ecs::entities::Entity ui;
+        core::ecs::entities::Entity close_button;
+    };
+
+    TreeRowEntities createTreeEntity(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent)
     {
         auto child_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto child_container_layout = child_container->getComponentMutable<core::components::Layout>();
@@ -476,7 +482,6 @@ namespace atmo::editor
         child_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 26.0f, 0.0f };
         child_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         child_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
-        child_container->rename("FoldableTree Container");
         child_UI_layout.direction = core::components::Layout::Direction::Vertical;
         child_UI_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         child_UI_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
@@ -485,7 +490,6 @@ namespace atmo::editor
         child_UI_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         child_UI_layout.child_gap = 8;
         child_UI->setParent(*child_container);
-        child_UI->rename("FoldableTree Container UI");
         child_container->setParent(parent);
         title_label.setText(std::string(entity.name()));
 
@@ -499,22 +503,15 @@ namespace atmo::editor
         close_create_entity_btn_layout.aspect_ratio = { 1.0f, 1.0f };
         close_create_entity_btn->getChildren()[0].destroy();
         close_create_entity_btn->setParent(*child_container);
-        close_create_entity_btn->rename("Create Entity Close Button");
+
+        return { *child_container, *child_UI, *close_create_entity_btn };
     }
 
     void SceneEditor::sceneEntityFoldableTreeinit(
         core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container)
     {
         auto entity_handle = entity.getHandle();
-        createTreeEntity(entity, parent);
-
-        auto child_container = parent.findChildRecursive("FoldableTree Container");
-        auto child_UI = parent.findChildRecursive("FoldableTree Container UI");
-        auto close_create_entity_btn = parent.findChildRecursive("Create Entity Close Button");
-
-        if (!child_container.isAlive() || !child_UI.isAlive()) {
-            return;
-        }
+        auto [child_container, child_UI, close_create_entity_btn] = createTreeEntity(entity, parent);
 
         auto wrapped = core::ecs::EntityRegistry::Wrap(child_UI);
         auto ui = dynamic_cast<core::ecs::entities::UIFoldableTreeItem *>(wrapped.get());
@@ -538,13 +535,13 @@ namespace atmo::editor
 
         for (auto &child : entity.getChildren()) sceneEntityFoldableTreeinit(child, ui->getChildContainer(), component_container);
 
-        entity.getSignal<core::ecs::entities::Entity>("child_added").connect([this, ui, component_container](core::ecs::entities::Entity child) {
-            sceneEntityFoldableTreeinit(child, ui->getChildContainer(), component_container);
+        entity.getSignal<core::ecs::entities::Entity>("child_added").connect([this, child_UI, component_container](core::ecs::entities::Entity child) {
+            sceneEntityFoldableTreeinit(child, core::ecs::entities::UIFoldableTreeItem(child_UI).getChildContainer(), component_container);
         });
 
         entity.getParent()
             .getSignal<core::ecs::entities::Entity>("child_removed")
-            .connect([this, &child_container, entity_handle, component_container](core::ecs::entities::Entity removed_child) {
+            .connect([this, child_container, entity_handle, component_container](core::ecs::entities::Entity removed_child) mutable {
                 if (removed_child.getHandle() != entity_handle)
                     return;
 

@@ -30,7 +30,7 @@ namespace atmo::core::ecs::entities
                 }
 
                 if (kd.angular_velocity != kd.synced_angular_velocity) {
-                    b2Body_SetAngularVelocity(bd.body_id, common::math::RadiansToDegrees(kd.angular_velocity));
+                    b2Body_SetAngularVelocity(bd.body_id, common::math::DegreesToRadians(kd.angular_velocity));
                     kd.synced_angular_velocity = kd.angular_velocity;
                 }
             });
