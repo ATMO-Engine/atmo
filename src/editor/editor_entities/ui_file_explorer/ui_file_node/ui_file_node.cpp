@@ -1,17 +1,10 @@
 #include "ui_file_node.hpp"
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
-#include "core/ecs/entities/ui/ui.hpp"
-#include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
-#include "meta/auto_register.hpp"
-#include "spdlog/spdlog.h"
 
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
-#include <functional>
 
 namespace fs = std::filesystem;
 
@@ -34,10 +27,6 @@ namespace atmo::core::ecs::entities
             UIFileExplorerFileNode fileNode(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &node = fileNode.getComponentMutable<components::UIFileExplorerNode>();
 
-            if (node.explorer_root != 0) {
-                UIFileExplorer root(core::ecs::EntityRegistry::GetEntityFromId(node.explorer_root));
-                root.setFocus(handle, node.full_path, false);
-            }
 
             fileNode.getSignal<const std::string &>("FileSelected").emit(node.full_path);
         });

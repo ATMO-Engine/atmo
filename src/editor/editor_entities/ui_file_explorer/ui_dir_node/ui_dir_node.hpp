@@ -9,7 +9,7 @@ namespace atmo::core::components
     struct UIFileExplorerNode {
         std::string full_path;
         bool is_directory = false;
-        bool scanned = false;
+        bool open = false;
         flecs::entity explorer_root = {};
     };
 } // namespace atmo::core::components
@@ -40,12 +40,8 @@ namespace atmo::core::ecs::entities
 
         void setPath(const std::string &path, bool show_hidden, bool force_scan = false);
 
-        void openAndScan(bool show_hidden);
-
         bool isOpen() const;
         const std::string &path() const;
-
-        void scanChildren(bool show_hidden);
 
         void setHighlight(bool highlighted);
     };
