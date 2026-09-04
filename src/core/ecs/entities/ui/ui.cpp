@@ -2,6 +2,7 @@
 #include "common/math.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/window/window.hpp"
+#include "core/types.hpp"
 #include "meta/auto_register.hpp"
 
 #include "clay.h"
@@ -147,5 +148,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-ATMO_REGISTER_ENTITY(entities::UI);
+ATMO_REGISTER_ENTITY_COLOR(entities::UI, atmo::core::types::Color("#DC8ADC"));
 ATMO_REGISTER_COMPONENT(atmo::core::components::UI)
