@@ -335,7 +335,7 @@ namespace atmo::editor
             return;
         }
 
-        m_play_btn_icon->setTexturePath("project://assets/icons/square.svg");
+        m_play_btn_icon->setTexturePath("project://assets/icons/square-full.svg");
     }
 
     void EditorManager::stopPlay()
