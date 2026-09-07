@@ -1,5 +1,6 @@
 #include "ui_input.hpp"
 #include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
@@ -53,11 +54,14 @@ namespace atmo::core::ecs::entities
         auto &input_rect_comp = input_rect->getComponentMutable<core::components::UIRect>();
         auto &input_rect_layout = input_rect->getComponentMutable<core::components::Layout>();
 
-        input_rect_comp.color.a = 0.0f;
+        input_rect_comp.color = types::Color::TRANSPARENT;
+        input_rect_comp.corner_radius = { 4, 4, 4, 4 };
         input_rect_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         input_rect_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         input_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         input_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        input_rect_label->getComponentMutable<core::components::UI>().modulate = types::Color::BLACK;
+        input_rect_label->setFontSize(11);
         input_rect_label->setParent(*input_rect);
         input_rect->setParent(*this);
 
@@ -85,12 +89,10 @@ namespace atmo::core::ecs::entities
         auto window = getWindow()->getComponent<core::components::Window>().window;
 
         if (!input_comp.editing) {
-            button_comp.color = core::types::Color::WHITE;
-            button_comp.color.a = 0.0f;
+            button_comp.color = core::types::Color::TRANSPARENT;
             return;
         } else {
-            button_comp.color = core::types::Color::BLACK;
-            button_comp.color.a = 0.3f;
+            button_comp.color = core::types::Color("#DBEAFE");
         }
 
         if (InputManager::IsJustPressed("ui_confirm")) {

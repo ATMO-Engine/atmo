@@ -203,10 +203,12 @@ namespace atmo::editor
             auto &child_UI_layout = child_UI->getComponentMutable<core::components::Layout>();
             auto &child_UI_rect = child_UI->getComponentMutable<core::components::UIRect>();
             auto title_button = child_UI->getTitleButton();
+            auto &title_button_rect = title_button.getComponentMutable<core::components::UIRect>();
             auto &title_button_comp = title_button.getComponentMutable<core::components::UIButton>();
             auto title_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 
-            child_UI_rect.color.a = 0.0f;
+            title_button_rect.color = core::types::Color::TRANSPARENT;
+            child_UI_rect.color = core::types::Color::TRANSPARENT;
             child_UI_layout.direction = core::components::Layout::Direction::Vertical;
             child_UI_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             child_UI_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
@@ -216,6 +218,8 @@ namespace atmo::editor
             child_UI_layout.child_gap = 8;
             child_UI->setParent(parent);
             title_label->setText(entity_ti.second->name);
+            title_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            title_label->setFontSize(16);
             title_label->setParent(title_button);
 
             for (auto &row : buildFieldWidgetRows(entity_ti.second, entity.try_get_mut(entity_ti.first), child_UI->getChildContainer())) {
@@ -233,6 +237,8 @@ namespace atmo::editor
             auto add_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
 
             add_label->setText("Add Script");
+            add_label->setFontSize(18);
+            add_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             add_label->setParent(*add_btn);
 
             add_btn->getSignal<>("Pressed").connect([entity, parent, &update_fns]() {

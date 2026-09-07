@@ -6,18 +6,6 @@
 #include "core/types.hpp"
 #include "meta/widget_registry.hpp"
 
-namespace
-{
-    void syncCheckBoxDisplay(atmo::core::ecs::entities::Entity widget, bool checked)
-    {
-        auto &comp = widget.getComponentMutable<atmo::core::components::UIButton>();
-        comp.is_pressed = checked;
-
-        auto &rect = widget.getComponentMutable<atmo::core::components::UIRect>();
-        rect.color = checked ? atmo::core::types::Color::WHITE : atmo::core::types::Color::BLACK;
-    }
-} // namespace
-
 std::optional<atmo::core::ecs::entities::Entity> createBoolWidget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
     auto checkbox_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UIButton::UICheckBox");
@@ -30,7 +18,6 @@ std::optional<atmo::core::ecs::entities::Entity> createBoolWidget(atmo::core::ec
     bool checked = false;
     if (value)
         field.get(value, &checked);
-    syncCheckBoxDisplay(*checkbox_entity, checked);
 
     checkbox_entity->getSignal<bool>("Toggle").connect([value, field](bool new_value) { field.set(value, &new_value); });
 
@@ -41,7 +28,6 @@ void updateBoolWidget(atmo::core::ecs::entities::Entity widget, void *value, con
 {
     bool checked = false;
     field.get(value, &checked);
-    syncCheckBoxDisplay(widget, checked);
 }
 
 ATMO_REGISTER_WIDGET("bool", createBoolWidget, {}, updateBoolWidget);
