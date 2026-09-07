@@ -629,9 +629,9 @@ namespace atmo::editor
             addon_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             addon_label->setParent(*row);
 
-            auto addon_checkbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
-            auto &checkbox_comp = addon_checkbox->getComponentMutable<core::components::UICheckBox>();
-            checkbox_comp.trigger = enabled;
+            auto addon_checkbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UIButton::UICheckBox");
+            auto &checkbox_comp = addon_checkbox->getComponentMutable<core::components::UIButton>();
+            checkbox_comp.is_pressed = enabled;
             addon_checkbox->getComponentMutable<core::components::UIRect>().color = enabled ? core::types::Color::WHITE : core::types::Color::BLACK;
             auto &checkbox_layout = addon_checkbox->getComponentMutable<core::components::Layout>();
             checkbox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
@@ -641,8 +641,13 @@ namespace atmo::editor
             addon_checkbox->setParent(*row);
 
             std::string addon_key = addon_name;
-            addon_checkbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([draft, addon_key](core::ecs::entities::UICheckBox &chbox) {
-                draft->addons.addons[addon_key] = chbox.getComponentMutable<core::components::UICheckBox>().trigger;
+            auto addon_checkbox_handle = addon_checkbox->getHandle();
+            addon_checkbox->getSignal<bool>("Toggle").connect([draft, addon_key, addon_checkbox_handle](bool new_state) {
+                if (!addon_checkbox_handle.is_alive()) {
+                    return;
+                }
+                atmo::core::ecs::entities::UICheckBox chBox(addon_checkbox_handle);
+                draft->addons.addons[addon_key] = new_state;
             });
         }
 

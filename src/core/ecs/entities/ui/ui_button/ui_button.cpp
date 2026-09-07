@@ -52,8 +52,7 @@ namespace atmo::core::ecs::entities
                 rect.color.a = 1.0f;
             } else {
                 btn.is_pressed = false;
-                rect.color = types::Color::WHITE;
-                rect.color.a = 0.0f;
+                rect.color = types::Color::TRANSPARENT;
             }
             self.getSignal<bool>("Toggle").emit(btn.is_pressed);
         });

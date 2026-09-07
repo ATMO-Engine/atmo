@@ -46,10 +46,12 @@ namespace atmo::core::ecs::entities
         title_bar->rename(std::string(TitleBarName));
         title_bar->setParent(*this);
 
-        auto openbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UICheckBox");
+        auto openbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UIButton::UICheckBox");
+        auto &openbox_chbox = openbox->getComponentMutable<core::components::UICheckBox>();
         auto &openbox_layout = openbox->getComponentMutable<core::components::Layout>();
         auto &openbox_rect = openbox->getComponentMutable<core::components::UIRect>();
         auto &openbox_ui = openbox->getComponentMutable<core::components::UI>();
+        openbox->removeTexture();
         openbox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         openbox_layout.width.size = core::components::Layout::SizingAxis::MinMax(18.0f, 18.0f);
         openbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
@@ -69,12 +71,16 @@ namespace atmo::core::ecs::entities
 
         openbox->rename(std::string(OpenBoxName));
         openbox->setParent(*title_bar);
-        openbox->getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([](core::ecs::entities::UICheckBox &chBox) {
+        auto openbox_handle = openbox->getHandle();
+        openbox->getSignal<bool>("Toggle").connect([openbox_handle](bool new_state) {
+            if (!openbox_handle.is_alive()) {
+                return;
+            }
+            UICheckBox chBox(openbox_handle);
             auto &fodableTreeComp = chBox.getParent().getParent().getComponentMutable<core::components::UIFoldableTreeItem>();
-            auto &chBoxComp = chBox.getComponentMutable<core::components::UICheckBox>();
-            auto &chBoxIcon = chBox.getChildren()[0].getComponentMutable<core::components::UIImage>();
+            auto &chBoxIcon = chBox.getChildren()[1].getComponentMutable<core::components::UIImage>();
 
-            fodableTreeComp.open = chBoxComp.trigger;
+            fodableTreeComp.open = new_state;
             if (fodableTreeComp.open)
                 chBoxIcon.rotation = 90.0f;
             else

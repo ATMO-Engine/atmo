@@ -732,7 +732,7 @@ namespace atmo::editor
             title_label->setParent(title_btn);
             foldable->setParent(parentUI);
 
-            if (!core::ecs::EntityRegistry::IsAbstract(node.name)) {
+            if (!core::ecs::EntityRegistry::IsAbstract(node.name) || !label_name.starts_with("UI")) {
                 foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.name]() mutable {
                     auto created = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity);
 
