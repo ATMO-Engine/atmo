@@ -8,6 +8,7 @@
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
@@ -66,10 +67,13 @@ namespace atmo::editor
 
         auto create_btn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         create_btn_label->setText("atmo.create_new_project");
+        create_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        create_btn_label->setFontSize(18);
         create_btn_label->setParent(*create_btn);
 
         auto new_project_name_input = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
         new_project_name_input->setValue("New Project Name");
+        new_project_name_input->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         new_project_name_input->setParent(*topbar);
 
         create_btn->getSignal<>("Released").connect([&engine = m_engine, window_ui_container, input_handle = new_project_name_input->getHandle()]() {
@@ -128,6 +132,8 @@ namespace atmo::editor
         btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 64.0f, 64.0f };
         btn->getComponentMutable<core::components::UIRect>().corner_radius = { 4, 4, 4, 4 };
         btn_label->setText(project_path);
+        btn_label->setFontSize(12);
+        btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         btn_label->setParent(*btn);
 
         btn->getSignal<>("Released").connect([&engine = m_engine, window_ui_container, project_path]() {
