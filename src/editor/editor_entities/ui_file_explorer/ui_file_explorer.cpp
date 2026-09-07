@@ -5,18 +5,18 @@
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_registry.hpp"
+#include "core/event/events/file_system_event/file_selected_event.hpp"
 #include "core/event/events/file_system_event/reload_explorer_event.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_dir_node/ui_dir_node.hpp"
-#include "editor/editor_entities/ui_file_explorer/ui_file_node/ui_file_node.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "file_watcher/file_watcher.hpp"
-#include "flecs/addons/cpp/mixins/pipeline/decl.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -151,7 +151,7 @@ namespace atmo::core::ecs::entities
 
 
             auto &comp = explorer.getComponentMutable<components::UIFileExplorer>();
-            if (comp.focused_node == flecs::entity{})
+            if (comp.focused_path.empty())
                 return;
 
             UITextInput input = explorer.getAddInput();
@@ -159,7 +159,9 @@ namespace atmo::core::ecs::entities
             if (new_name.empty())
                 return;
 
-            std::string target_dir = comp.focused_is_directory ? comp.focused_path : fs::path(comp.focused_path).parent_path().string();
+            bool isDir = std::filesystem::is_directory(comp.focused_path);
+
+            std::string target_dir = isDir ? comp.focused_path.string() : comp.focused_path.parent_path().string();
 
             fs::path new_path = fs::path(target_dir) / new_name;
 
@@ -177,8 +179,7 @@ namespace atmo::core::ecs::entities
 
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &comp = explorer.getComponentMutable<components::UIFileExplorer>();
-
-            if (comp.focused_node == flecs::entity{})
+            if (comp.focused_path.empty())
                 return;
 
             UITextInput input = explorer.getAddFolderInput();
@@ -186,7 +187,9 @@ namespace atmo::core::ecs::entities
             if (new_name.empty())
                 return;
 
-            std::string target_dir = comp.focused_is_directory ? comp.focused_path : fs::path(comp.focused_path).parent_path().string();
+            bool isDir = std::filesystem::is_directory(comp.focused_path);
+
+            std::string target_dir = isDir ? comp.focused_path.string() : comp.focused_path.parent_path().string();
 
             fs::path new_path = fs::path(target_dir) / new_name;
 
@@ -209,9 +212,8 @@ namespace atmo::core::ecs::entities
             }
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &comp = explorer.getComponentMutable<core::components::UIFileExplorer>();
-            if (comp.focused_node == flecs::entity{}) {
+            if (comp.focused_path.empty())
                 return;
-            }
 
             auto delete_popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
             delete_popup->setParent(explorer);
@@ -236,7 +238,7 @@ namespace atmo::core::ecs::entities
 
             auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
             label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-            label->setText(std::format("Delete {}", comp.focused_path));
+            label->setText(std::format("Delete {}", comp.focused_path.string()));
             label->setFontBold(false);
             label->setFontSize(24);
             label->setParent(*delete_editor_top_bar);
@@ -266,16 +268,17 @@ namespace atmo::core::ecs::entities
                 }
                 UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
                 auto &comp = explorer.getComponentMutable<core::components::UIFileExplorer>();
+                bool isDir = std::filesystem::is_directory(comp.focused_path);
 
                 std::error_code ec;
-                if (comp.focused_is_directory) {
+                if (isDir) {
                     fs::remove_all(comp.focused_path, ec);
                 } else {
                     fs::remove(comp.focused_path, ec);
                 }
 
                 if (ec) {
-                    spdlog::warn("UIFileExplorer: deletion failed '{}': {}", comp.focused_path, ec.message());
+                    spdlog::warn("UIFileExplorer: deletion failed '{}': {}", comp.focused_path.string(), ec.message());
                     return;
                 }
 
@@ -291,7 +294,7 @@ namespace atmo::core::ecs::entities
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
 
             auto &comp = explorer.getComponentMutable<components::UIFileExplorer>();
-            if (comp.focused_node == flecs::entity{})
+            if (comp.focused_path.empty())
                 return;
 
             UITextInput input = explorer.getRenameInput();
@@ -312,54 +315,39 @@ namespace atmo::core::ecs::entities
             comp.focused_path = new_path.string();
         });
 
+
+        createSignal<>("Reload");
+        getSignal<>("Reload").connect([handle]() {
+            if (!handle.is_alive()) {
+                return;
+            }
+            UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            explorer.rebuild();
+        });
         atmo::core::event::EventRegistry::SetCallBack<atmo::core::event::events::ReloadExplorerEvent>([handle](event::events::ReloadExplorerEvent *evt) {
             if (!handle.is_alive()) {
                 return;
             }
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            explorer.getSignal<>("Reload").emit();
+        });
 
-            explorer.rebuild();
+        atmo::core::event::EventRegistry::SetCallBack<atmo::core::event::events::FileSelectedEvent>([handle](event::events::FileSelectedEvent *evt) {
+            if (!handle.is_alive()) {
+                return;
+            }
+            UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            auto &comp = explorer.getComponentMutable<atmo::core::components::UIFileExplorer>();
+            comp.focused_path = evt->path;
         });
 
         rebuild();
     }
 
-    void UIFileExplorer::setFocus(flecs::entity node, const std::string &path, bool is_directory)
-    {
-        auto &comp = getComponentMutable<components::UIFileExplorer>();
-
-        if (comp.focused_node != flecs::entity{} && comp.focused_node.is_alive()) {
-            auto &old_node = comp.focused_node.get_mut<components::UIFileExplorerNode>();
-            if (old_node.is_directory) {
-                UIFileExplorerDirNode old_dir(comp.focused_node);
-                old_dir.setHighlight(false);
-            } else {
-                UIFileExplorerFileNode old_file(comp.focused_node);
-                old_file.setHighlight(false);
-            }
-        }
-
-        if (node != flecs::entity{} && node.is_alive()) {
-            auto &new_node = node.get_mut<components::UIFileExplorerNode>();
-            if (new_node.is_directory) {
-                UIFileExplorerDirNode new_dir(node);
-                new_dir.setHighlight(true);
-            } else {
-                UIFileExplorerFileNode new_file(node);
-                new_file.setHighlight(true);
-            }
-        }
-
-        comp.focused_node = node;
-        comp.focused_path = path;
-        comp.focused_is_directory = is_directory;
-
-        getSignal<std::string>("FileFocus").emit(path);
-    }
-
     bool UIFileExplorer::hasFocus() const
     {
-        return (getComponent<components::UIFileExplorer>().focused_node != flecs::entity{});
+        return false;
+        // return (getComponent<components::UIFileExplorer>().focused_node != flecs::entity{});
     }
 
     void UIFileExplorer::rebuild()
@@ -368,6 +356,7 @@ namespace atmo::core::ecs::entities
         auto tree_container = getChildren()[1];
 
         std::vector<std::string> open_paths;
+        std::filesystem::path focused_node = comp.focused_path;
         std::function<void(UIFileExplorerDirNode)> collect = [&](UIFileExplorerDirNode dir) {
             if (!dir.isOpen())
                 return;
@@ -390,25 +379,10 @@ namespace atmo::core::ecs::entities
                 collect(UIFileExplorerDirNode(child));
         }
 
-        std::string old_focused_path = comp.focused_path;
-        bool old_focus_was_directory = comp.focused_is_directory;
-
         for (auto &child : tree_container.getChildren()) child.destroy();
 
-        auto root_node = FileWatcher::GetFileSystemFoldableTree(open_paths, comp.show_hidden);
+        auto root_node = FileWatcher::GetFileSystemFoldableTree(open_paths, focused_node);
         root_node->setParent(tree_container);
-
-        comp.focused_node = {};
-        comp.focused_path.clear();
-
-        if (!old_focused_path.empty()) {
-            flecs::entity found = findNodeByPath(*root_node, old_focused_path);
-            if (found.is_valid() && found.is_alive()) {
-                comp.focused_node = found;
-                comp.focused_path = old_focused_path;
-                comp.focused_is_directory = old_focus_was_directory;
-            }
-        }
     }
 
     flecs::entity UIFileExplorer::findNodeByPath(UIFileExplorerDirNode &node, const std::string &target_path)

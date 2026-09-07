@@ -1,13 +1,10 @@
 #include "ui_dir_node.hpp"
 #include "clay.h"
-#include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_registry.hpp"
-#include "core/event/events/file_system_event/reload_explorer_event.hpp"
+#include "core/event/events/file_system_event/file_selected_event.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
-#include "editor/editor_entities/ui_file_explorer/ui_file_node/ui_file_node.hpp"
 #include "meta/auto_register.hpp"
-#include "spdlog/spdlog.h"
 
 #include <filesystem>
 
@@ -23,9 +20,24 @@ namespace atmo::core::ecs::entities
         setComponent<components::UIFileExplorerNode>({});
 
         getComponentMutable<core::components::UIFoldableTreeItem>().open = false;
+
+        auto handle = p_handle;
+        getTitleButton().getSignal<>("Pressed").connect([handle]() {
+            if (!handle.is_alive())
+                return;
+
+            UIFileExplorerDirNode dirNode(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            auto &foldComp = dirNode.getComponentMutable<core::components::UIFoldableTreeItem>();
+            foldComp.open = !foldComp.open;
+
+            auto &comp = dirNode.getComponentMutable<components::UIFileExplorerNode>();
+            auto selectEvt = atmo::core::event::EventRegistry::Create<atmo::core::event::events::FileSelectedEvent>("Event::FileSelectedEvent");
+            selectEvt->path = comp.full_path;
+            atmo::core::event::EventRegistry::Dispatch(selectEvt);
+        });
     }
 
-    void UIFileExplorerDirNode::setPath(const std::string &path, bool show_hidden, bool force_scan)
+    void UIFileExplorerDirNode::setPath(const std::filesystem::path &path, bool force_scan)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
         node.full_path = path;
@@ -34,33 +46,7 @@ namespace atmo::core::ecs::entities
         std::string dirname = fs::path(path).filename().string();
         if (dirname.empty())
             dirname = path;
-        rename(dirname);
-
         UILabel(getTitleLabel()).setText(dirname);
-
-        auto handle = p_handle;
-        getTitleButton().getSignal<>("Pressed").connect([handle, show_hidden]() {
-            if (!handle.is_alive())
-                return;
-
-            UIFileExplorerDirNode dirNode(core::ecs::EntityRegistry::GetEntityFromId(handle));
-            auto &foldComp = dirNode.getComponentMutable<core::components::UIFoldableTreeItem>();
-            foldComp.open = !foldComp.open;
-
-            auto &node = dirNode.getComponentMutable<components::UIFileExplorerNode>();
-
-            if (foldComp.open && !node.open) {
-                node.open = true;
-            }
-
-            if (node.explorer_root != flecs::entity{}) {
-                UIFileExplorer root(core::ecs::EntityRegistry::GetEntityFromId(node.explorer_root));
-                root.setFocus(handle, node.full_path, true);
-            }
-
-            auto reload = atmo::core::event::EventRegistry::Create<atmo::core::event::events::ReloadExplorerEvent>("Event::ReloadExplorerEvent");
-            atmo::core::event::EventRegistry::Dispatch(reload);
-        });
     }
 
     bool UIFileExplorerDirNode::isOpen() const

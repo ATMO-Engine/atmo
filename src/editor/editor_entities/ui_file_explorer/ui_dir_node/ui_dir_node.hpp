@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <flecs.h>
 #include <string>
 #include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
@@ -9,17 +10,13 @@ namespace atmo::core::components
     struct UIFileExplorerNode {
         std::string full_path;
         bool is_directory = false;
-        bool open = false;
-        flecs::entity explorer_root = {};
     };
 } // namespace atmo::core::components
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIFileExplorerNode> {
     static constexpr const char *name = "FileExplorerNode";
     static constexpr const char *category = "UI";
-    static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::UIFileExplorerNode::full_path>("full_path"),
-        atmo::meta::field<&atmo::core::components::UIFileExplorerNode::is_directory>("is_directory"));
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UIFileExplorerNode::full_path>("full_path"));
 };
 
 namespace atmo::core::ecs::entities
@@ -38,7 +35,7 @@ namespace atmo::core::ecs::entities
             return "UIFileExplorerDirNode";
         }
 
-        void setPath(const std::string &path, bool show_hidden, bool force_scan = false);
+        void setPath(const std::filesystem::path &path, bool force_scan = false);
 
         bool isOpen() const;
         const std::string &path() const;
