@@ -313,7 +313,6 @@ namespace atmo::editor
         fileExplorerContainer->setParent(*option_panel);
 
         auto fileExplorer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIFileExplorer>("Entity::UI::UIRect::UIFileExplorer");
-        fileExplorer->setRootPath(project::ProjectManager::GetCurrentProjectPath().string());
         fileExplorer->setParent(*fileExplorerContainer);
 
 

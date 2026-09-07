@@ -1,17 +1,13 @@
 #include "ui_file_node.hpp"
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
-#include "core/ecs/entities/ui/ui.hpp"
-#include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/file_system_event/file_selected_event.hpp"
+#include "editor/editor_entities/ui_file_explorer/ui_dir_node/ui_dir_node.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
-#include "meta/auto_register.hpp"
-#include "spdlog/spdlog.h"
 
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
-#include <functional>
 
 namespace fs = std::filesystem;
 
@@ -24,8 +20,6 @@ namespace atmo::core::ecs::entities
         UIButton::initialize();
         setComponent<components::UIFileExplorerNode>({});
 
-        createSignal<const std::string &>("FileSelected");
-
         auto handle = p_handle;
         getSignal<>("Pressed").connect([handle]() {
             if (!handle.is_alive()) {
@@ -34,25 +28,26 @@ namespace atmo::core::ecs::entities
             UIFileExplorerFileNode fileNode(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &node = fileNode.getComponentMutable<components::UIFileExplorerNode>();
 
-            if (node.explorer_root != 0) {
-                UIFileExplorer root(core::ecs::EntityRegistry::GetEntityFromId(node.explorer_root));
-                root.setFocus(handle, node.full_path, false);
-            }
-
-            fileNode.getSignal<const std::string &>("FileSelected").emit(node.full_path);
+            auto &comp = fileNode.getComponentMutable<components::UIFileExplorerNode>();
+            auto selectEvt = atmo::core::event::EventRegistry::Create<atmo::core::event::events::FileSelectedEvent>("Event::FileSelectedEvent");
+            selectEvt->path = comp.full_path;
+            atmo::core::event::EventRegistry::Dispatch(selectEvt);
         });
     }
 
-    void UIFileExplorerFileNode::setPath(const std::string &path)
+    void UIFileExplorerFileNode::setPath(const std::filesystem::path &path)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
         node.full_path = path;
         node.is_directory = false;
 
         std::string filename = fs::path(path).filename().string();
-        rename(filename);
-
         UILabel(getChild("Button label")).setText(filename);
+    }
+
+    const std::string &UIFileExplorerFileNode::path() const
+    {
+        return getComponent<components::UIFileExplorerNode>().full_path;
     }
 
     void UIFileExplorerFileNode::setHighlight(bool highlighted)
