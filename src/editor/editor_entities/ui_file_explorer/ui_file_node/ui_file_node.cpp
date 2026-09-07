@@ -4,7 +4,9 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
@@ -47,6 +49,7 @@ namespace atmo::core::ecs::entities
     void UIFileExplorerFileNode::setPath(const std::string &path)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
+        auto &rect = getComponentMutable<components::UIRect>();
         auto file_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         node.full_path = path;
         node.is_directory = false;
@@ -54,7 +57,10 @@ namespace atmo::core::ecs::entities
         std::string filename = fs::path(path).filename().string();
         rename(filename);
 
+        rect.corner_radius = { 4, 4, 4, 4 };
         file_label->setText(filename);
+        file_label->setFontSize(11);
+        file_label->getComponentMutable<components::UI>().modulate = types::Color::BLACK;
         file_label->setParent(*this);
     }
 
@@ -62,13 +68,9 @@ namespace atmo::core::ecs::entities
     {
         auto &rect = getComponentMutable<core::components::UIRect>();
         if (highlighted) {
-            rect.color.r = 0.7f;
-            rect.color.g = 0.7f;
-            rect.color.b = 0.7f;
-            rect.color.a = 1.0f;
+            rect.color = types::Color("#DBEAFE");
         } else {
-            rect.color = core::types::Color::WHITE;
-            rect.color.a = 0.0f;
+            rect.color = core::types::Color::TRANSPARENT;
         }
     }
 } // namespace atmo::core::ecs::entities

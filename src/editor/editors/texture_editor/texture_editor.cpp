@@ -1,4 +1,5 @@
 #include "texture_editor.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
@@ -158,6 +159,7 @@ namespace atmo::editor
         auto sizeLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         sizeLabel->setText("Size");
         sizeLabel->setFontSize(16);
+        sizeLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         sizeLabel->setParent(*size_comp_panel);
 
         auto sizeSlider = core::ecs::EntityRegistry::Create<core::ecs::entities::UISlider>("Entity::UI::UIRect::UISlider");
@@ -192,6 +194,7 @@ namespace atmo::editor
         auto widthLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         widthLabel->setText("Width");
         widthLabel->setFontSize(16);
+        widthLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         widthLabel->setParent(*width_comp_panel);
 
         auto widthNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
@@ -222,6 +225,7 @@ namespace atmo::editor
         auto heightLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         heightLabel->setText("Height");
         heightLabel->setFontSize(16);
+        heightLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         heightLabel->setParent(*height_comp_panel);
 
         auto heightNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
@@ -236,6 +240,8 @@ namespace atmo::editor
         auto &saveBtn_layout = saveBtn->getComponentMutable<core::components::Layout>();
 
         saveBtn_label->setText("Save");
+        saveBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        saveBtn_label->setFontSize(16);
         saveBtn_rect.border.color = core::types::Color::BLACK;
         saveBtn_rect.color = core::types::Color::WHITE;
         saveBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -251,6 +257,8 @@ namespace atmo::editor
         auto &previewBtn_layout = previewBtn->getComponentMutable<core::components::Layout>();
 
         previewBtn_label->setText("Preview");
+        previewBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        previewBtn_label->setFontSize(16);
         previewBtn_rect.border.color = core::types::Color::BLACK;
         previewBtn_rect.color = core::types::Color::WHITE;
         previewBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -278,6 +286,8 @@ namespace atmo::editor
         auto &pencilBtn_layout = pencilBtn->getComponentMutable<core::components::Layout>();
 
         pencilBtn_label->setText("Draw");
+        pencilBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        pencilBtn_label->setFontSize(16);
         pencilBtn_rect.border.color = core::types::Color::BLACK;
         pencilBtn_rect.color = core::types::Color::WHITE;
         pencilBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -292,6 +302,8 @@ namespace atmo::editor
         auto &eraserBtn_layout = eraserBtn->getComponentMutable<core::components::Layout>();
 
         eraserBtn_label->setText("Erase");
+        eraserBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        eraserBtn_label->setFontSize(16);
         eraserBtn_rect.border.color = core::types::Color::BLACK;
         eraserBtn_rect.color = core::types::Color::WHITE;
         eraserBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;

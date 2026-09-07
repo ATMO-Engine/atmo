@@ -6,6 +6,7 @@
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
@@ -72,6 +73,8 @@ namespace atmo::core::ecs::entities
         add_btn->rename(std::string(AddButtonName));
         add_btn_label->setText("Add");
         add_btn_label->setParent(*add_btn);
+        add_btn_label->setFontSize(12);
+        add_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         add_btn->setParent(*add_container);
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
@@ -91,6 +94,8 @@ namespace atmo::core::ecs::entities
         auto rename_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
         rename_btn->rename(std::string(RenameButtonName));
         rename_btn_label->setText("Rename");
+        rename_btn_label->setFontSize(12);
+        rename_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         rename_btn_label->setParent(*rename_btn);
         rename_btn->setParent(*rename_container);
 
@@ -102,6 +107,8 @@ namespace atmo::core::ecs::entities
         auto delete_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
         delete_btn->rename(std::string(DeleteButtonName));
         delete_btn_label->setText("Delete");
+        delete_btn_label->setFontSize(12);
+        delete_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         delete_btn_label->setParent(*delete_btn);
         delete_btn->setParent(*toolbar);
 
@@ -109,6 +116,8 @@ namespace atmo::core::ecs::entities
         auto refresh_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
         refresh_btn->rename(std::string(RefreshButtonName));
         refresh_btn_label->setText("Refresh");
+        refresh_btn_label->setFontSize(12);
+        refresh_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         refresh_btn_label->setParent(*refresh_btn);
         refresh_btn->setParent(*toolbar);
 
@@ -194,7 +203,8 @@ namespace atmo::core::ecs::entities
             label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
             label->setText(std::format("Delete {}", comp.focused_path));
             label->setFontBold(false);
-            label->setFontSize(24);
+            label->setFontSize(12);
+            label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             label->setParent(*delete_editor_top_bar);
 
             auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -215,6 +225,8 @@ namespace atmo::core::ecs::entities
             auto confirm_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
             auto confirm_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
             confirm_btn_label->setText("Confirm");
+            confirm_btn_label->setFontSize(12);
+            confirm_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             confirm_btn_label->setParent(*confirm_btn);
             confirm_btn->setParent(*delete_bg);
             confirm_btn->getSignal<>("Released").connect([handle, delete_popup]() {
@@ -374,7 +386,7 @@ namespace atmo::core::ecs::entities
         auto root_node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
         root_node->setParent(tree_container);
         root_node->getComponentMutable<components::UIFileExplorerNode>().explorer_root = p_handle;
-
+        root_node->getChildren()[0].getChildren()[1].getComponentMutable<components::UIRect>().color = types::Color::TRANSPARENT;
         root_node->setPath(comp.root_path, comp.show_hidden, true);
 
         reopenPaths(*root_node, open_paths, comp.show_hidden);
