@@ -549,7 +549,7 @@ namespace atmo::editor
         section_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         section_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         section_label->setText(title);
-        section->setParent(*section);
+        section_label->setParent(*section);
         section->setParent(body);
         return section;
     }
