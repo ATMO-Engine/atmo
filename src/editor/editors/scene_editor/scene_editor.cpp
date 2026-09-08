@@ -710,7 +710,7 @@ namespace atmo::editor
             std::string label_name = (pos == std::string::npos) ? node.name : node.name.substr(pos + 2);
 
             if (node.children.empty()) {
-                if (!core::ecs::EntityRegistry::IsAbstract(node.name) && !label_name.starts_with("UI")) {
+                if (!core::ecs::EntityRegistry::IsAbstract(node.name)) {
                     auto button = makeEntityCreationButton(node.name);
                     button.getSignal<>("Released").connect([create_entity_popup]() mutable { create_entity_popup.destroy(); });
                     button.setParent(parentUI);
@@ -744,7 +744,7 @@ namespace atmo::editor
             title_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             title_label->setParent(title_btn);
             foldable->setParent(parentUI);
-            if (!core::ecs::EntityRegistry::IsAbstract(node.name) && !label_name.starts_with("UI")) {
+            if (!core::ecs::EntityRegistry::IsAbstract(node.name)) {
                 foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.name]() mutable {
                     auto created = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity);
 

@@ -83,8 +83,8 @@ namespace atmo::core
         void emit(Args... args)
         {
             if (SignalQueue::IsReadonly()) {
-                SignalQueue::Enqueue([this, args...]() mutable {
-                    for (auto &cb : m_callbacks) cb(args...);
+                SignalQueue::Enqueue([callbacks = m_callbacks, args...]() mutable {
+                    for (auto &cb : callbacks) cb(args...);
                 });
             } else {
                 for (auto &cb : m_callbacks) cb(args...);
