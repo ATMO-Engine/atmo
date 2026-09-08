@@ -61,7 +61,7 @@ namespace atmo::core::ecs::entities
         input_rect_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         input_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         input_rect_label->getComponentMutable<core::components::UI>().modulate = types::Color::BLACK;
-        input_rect_label->setFontSize(11);
+        input_rect_label->setFontSize(12);
         input_rect_label->setParent(*input_rect);
         input_rect->setParent(*this);
 
