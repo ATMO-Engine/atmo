@@ -38,12 +38,14 @@ namespace atmo::editor
         topbar_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         topbar_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 60.0f, 60.0f };
         topbar_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        topbar_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        topbar_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         topbar_container_layout.padding = { 16, 16, 16, 16 };
         topbar_container->setParent(*window_ui_container);
 
         auto topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &topbar_rect = topbar->getComponentMutable<core::components::UIRect>();
-        topbar_rect.color = core::types::Color("#bbbbbb");
+        topbar_rect.color = core::types::Color::WHITE;
         topbar_rect.corner_radius = { 4, 4, 4, 4 };
         auto &topbar_layout = topbar->getComponentMutable<core::components::Layout>();
         topbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -68,7 +70,7 @@ namespace atmo::editor
         auto create_btn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         create_btn_label->setText("atmo.create_new_project");
         create_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        create_btn_label->setFontSize(18);
+        create_btn_label->setFontSize(14);
         create_btn_label->setParent(*create_btn);
 
         auto new_project_name_input = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
@@ -102,7 +104,7 @@ namespace atmo::editor
 
         auto list = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &list_rect = list->getComponentMutable<core::components::UIRect>();
-        list_rect.color = core::types::Color("#bbbbbb");
+        list_rect.color = core::types::Color::WHITE;
         list_rect.corner_radius = { 4, 4, 4, 4 };
         auto &list_layout = list->getComponentMutable<core::components::Layout>();
         list_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -131,6 +133,7 @@ namespace atmo::editor
         btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         btn_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 64.0f, 64.0f };
         btn->getComponentMutable<core::components::UIRect>().corner_radius = { 4, 4, 4, 4 };
+        btn->getComponentMutable<core::components::UIRect>().color = core::types::Color("#E3ECF8");
         btn_label->setText(project_path);
         btn_label->setFontSize(12);
         btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
