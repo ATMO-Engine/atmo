@@ -483,7 +483,8 @@ namespace atmo::editor
             auto wrapped = core::ecs::EntityRegistry::Wrap(add_node_button);
             auto *ui = dynamic_cast<core::ecs::entities::UI *>(wrapped.get());
             auto window = ui->getWindow()->getChildren()[0];
-            ui->getSignal<>("Released").connect([this, window]() { createNewEntitySelectionPopup(window); });
+            ui->getSignal<>("Released").connect(
+                [this, window]() { createNewEntitySelectionPopup(window, *m_scene_ctx->getScene()); });
         }
 
         if (component_viewport.isAlive() && scene_viewport.isAlive()) {
@@ -504,6 +505,7 @@ namespace atmo::editor
     struct TreeRowEntities {
         core::ecs::entities::Entity container;
         core::ecs::entities::Entity ui;
+        core::ecs::entities::Entity add_child_button;
         core::ecs::entities::Entity close_button;
     };
 
@@ -540,6 +542,24 @@ namespace atmo::editor
         title_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         title_label->setParent(child_ui_btn);
 
+        auto add_child_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto add_child_entity_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        auto &add_child_entity_btn_rect = add_child_entity_btn->getComponentMutable<core::components::UIRect>();
+        add_child_entity_btn_rect.color = core::types::Color::TRANSPARENT;
+        auto &add_child_entity_btn_layout = add_child_entity_btn->getComponentMutable<core::components::Layout>();
+        add_child_entity_btn->getComponentMutable<core::components::UI>().visible = true;
+        add_child_entity_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        add_child_entity_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        add_child_entity_btn_layout.aspect_ratio = { 1.0f, 1.0f };
+        add_child_entity_icon->setTexturePath("project://assets/icons/plus.svg");
+        add_child_entity_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        add_child_entity_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        add_child_entity_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        add_child_entity_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        add_child_entity_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        add_child_entity_icon->setParent(*add_child_entity_btn);
+        add_child_entity_btn->setParent(*child_container);
+
         auto close_create_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto close_create_entity_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
         auto &close_create_entity_btn_rect = close_create_entity_btn->getComponentMutable<core::components::UIRect>();
@@ -558,14 +578,14 @@ namespace atmo::editor
         close_create_entity_icon->setParent(*close_create_entity_btn);
         close_create_entity_btn->setParent(*child_container);
 
-        return { *child_container, *child_UI, *close_create_entity_btn };
+        return { *child_container, *child_UI, *add_child_entity_btn, *close_create_entity_btn };
     }
 
     void SceneEditor::sceneEntityFoldableTreeinit(
         core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container)
     {
         auto entity_handle = entity.getHandle();
-        auto [child_container, child_UI, close_create_entity_btn] = createTreeEntity(entity, parent);
+        auto [child_container, child_UI, add_child_btn, close_create_entity_btn] = createTreeEntity(entity, parent);
 
         auto wrapped = core::ecs::EntityRegistry::Wrap(child_UI);
         auto ui = dynamic_cast<core::ecs::entities::UIFoldableTreeItem *>(wrapped.get());
@@ -607,6 +627,12 @@ namespace atmo::editor
 
                 child_container.destroy();
             });
+
+        add_child_btn.getSignal<>("Released").connect([add_child_btn, entity, this]() mutable {
+            auto window = core::ecs::entities::UI(add_child_btn.getHandle()).getWindow()->getChildren()[0];
+            core::SignalQueue::Enqueue(
+                [window, entity, this]() mutable { createNewEntitySelectionPopup(window, entity); });
+        });
 
         close_create_entity_btn.getSignal<>("Released").connect([entity]() mutable { core::SignalQueue::Enqueue([entity]() mutable { entity.destroy(); }); });
     };
@@ -692,13 +718,13 @@ namespace atmo::editor
         entity_creation_button_list->rename("Entity Creation List");
     }
 
-    void SceneEditor::createNewEntitySelectionPopup(core::ecs::entities::Entity parent)
+    void SceneEditor::createNewEntitySelectionPopup(core::ecs::entities::Entity popup_parent, core::ecs::entities::Entity new_entity_parent)
     {
         auto tree = atmo::core::ecs::EntityRegistry::GetEntriesTree();
-        createEntitySelectionPopup(parent);
+        createEntitySelectionPopup(popup_parent);
 
-        core::ecs::entities::Entity create_entity_popup = parent.findChildRecursive("Create Entity Popup");
-        auto entity_creation_button_list = parent.findChildRecursive("Entity Creation List");
+        core::ecs::entities::Entity create_entity_popup = popup_parent.findChildRecursive("Create Entity Popup");
+        auto entity_creation_button_list = popup_parent.findChildRecursive("Entity Creation List");
 
         if (!create_entity_popup.isAlive() || !entity_creation_button_list.isAlive()) {
             return;
@@ -711,7 +737,7 @@ namespace atmo::editor
 
             if (node.children.empty()) {
                 if (!core::ecs::EntityRegistry::IsAbstract(node.name)) {
-                    auto button = makeEntityCreationButton(node.name);
+                    auto button = makeEntityCreationButton(node.name, new_entity_parent);
                     button.getSignal<>("Released").connect([create_entity_popup]() mutable { create_entity_popup.destroy(); });
                     button.setParent(parentUI);
                 }
@@ -745,10 +771,10 @@ namespace atmo::editor
             title_label->setParent(title_btn);
             foldable->setParent(parentUI);
             if (!core::ecs::EntityRegistry::IsAbstract(node.name)) {
-                foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.name]() mutable {
+                foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, new_entity_parent, entity = node.name]() mutable {
                     auto created = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity);
 
-                    created->setParent(*m_scene_ctx->getScene());
+                    created->setParent(new_entity_parent);
                     create_entity_popup.destroy();
                 });
             }
@@ -763,7 +789,7 @@ namespace atmo::editor
         buildTreeUI(tree, entity_creation_button_list);
     }
 
-    core::ecs::entities::UIButton SceneEditor::makeEntityCreationButton(const std::string &entity_id)
+    core::ecs::entities::UIButton SceneEditor::makeEntityCreationButton(const std::string &entity_id, core::ecs::entities::Entity new_entity_parent)
     {
         auto create_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &create_entity_btn_layout = create_entity_btn->getComponentMutable<core::components::Layout>();
@@ -777,9 +803,9 @@ namespace atmo::editor
         create_entity_btn_layout.padding = { 8, 8, 8, 8 };
         create_entity_btn_layout.child_gap = 8;
         create_entity_btn_layout.direction = core::components::Layout::Direction::Vertical;
-        create_entity_btn->getSignal<>("Released").connect([this, entity_id]() {
+        create_entity_btn->getSignal<>("Released").connect([this, entity_id, new_entity_parent]() {
             auto entity = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity_id);
-            entity->setParent(*m_scene_ctx->getScene());
+            entity->setParent(new_entity_parent);
         });
 
         auto create_entity_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
