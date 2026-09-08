@@ -20,6 +20,13 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2iWidget(atmo::core
     input_entity_comp_x.input_type = atmo::core::components::UIInput::InputType::Int;
     input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Int;
 
+    if (value) {
+        atmo::core::types::Vector2i vec;
+        field.get(value, &vec);
+        x_input_entity_comp.value = vec.x;
+        y_input_entity_comp.value = vec.y;
+    }
+
     x_input_entity->getSignal<int>("IntValueChanged").connect([value, field](int val) {
         atmo::core::types::Vector2i vec;
         field.get(value, &vec);
