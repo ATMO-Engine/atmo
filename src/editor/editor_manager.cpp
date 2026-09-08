@@ -270,13 +270,11 @@ namespace atmo::editor
         auto toolbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         toolbar_container->getComponentMutable<core::components::Layout>().padding = { 16, 16, 16, 16 };
         toolbar_container->getComponentMutable<core::components::Layout>().floating.enabled = true;
-        toolbar_container->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        toolbar_container->getComponentMutable<core::components::Layout>().width.size = 1.0f;
-        toolbar_container->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        toolbar_container->getComponentMutable<core::components::Layout>().height.size = 1.0f;
+        toolbar_container->getComponentMutable<core::components::Layout>().floating.passthrough_inputs = true;
+        toolbar_container->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        toolbar_container->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         toolbar_container->getComponentMutable<core::components::Layout>().child_alignment.vertical = core::components::Layout::ChildAlignment::End;
         toolbar_container->getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
-        toolbar_container->getComponentMutable<core::components::Layout>().z_index = -1;
         toolbar_container->setParent(container);
 
         m_toolbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");

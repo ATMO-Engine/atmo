@@ -64,6 +64,7 @@ namespace atmo::core::ecs::entities
                 d.floating.attachTo = CLAY_ATTACH_TO_ROOT;
                 d.floating.offset.x = layout.floating.offest.x;
                 d.floating.offset.y = layout.floating.offest.y;
+                d.floating.pointerCaptureMode = layout.floating.passthrough_inputs ? CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH : CLAY_POINTER_CAPTURE_MODE_CAPTURE;
             }
 
             d.floating.zIndex = layout.z_index;

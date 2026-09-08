@@ -72,6 +72,7 @@ namespace atmo::core::components
         struct Floating {
             bool enabled = false;
             types::Vector2 offest = { 0, 0 };
+            bool passthrough_inputs = false;
         };
 
         Floating floating;
