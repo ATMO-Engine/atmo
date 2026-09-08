@@ -62,6 +62,8 @@ namespace atmo::core::ecs::entities
         auto add_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         auto &add_container_layout = add_container->getComponentMutable<core::components::Layout>();
         add_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        add_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        add_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         add_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         add_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         add_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
@@ -79,11 +81,14 @@ namespace atmo::core::ecs::entities
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
         add_input->rename(std::string(AddInputName));
+        add_input->setValue("File Name");
         add_input->setParent(*add_container);
 
         auto rename_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         auto &rename_container_layout = rename_container->getComponentMutable<core::components::Layout>();
         rename_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        rename_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        rename_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         rename_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         rename_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         rename_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
@@ -101,6 +106,7 @@ namespace atmo::core::ecs::entities
 
         auto rename_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
         rename_input->rename(std::string(RenameInputName));
+        rename_input->setValue("File Name");
         rename_input->setParent(*rename_container);
 
         auto delete_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");

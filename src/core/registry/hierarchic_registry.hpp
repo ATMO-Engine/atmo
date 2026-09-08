@@ -121,7 +121,7 @@ namespace atmo::core::registry
             requires std::derived_from<T, Root>
         static std::shared_ptr<T> Create(std::string_view name, FactoryArgs... args)
         {
-            auto &registry = Instance().p_registry;
+            const auto &registry = Instance().p_registry;
 
             auto it = registry.find(std::string(name));
             if (it == registry.end()) [[unlikely]] {
@@ -141,7 +141,7 @@ namespace atmo::core::registry
 
         static bool IsAbstract(std::string_view name)
         {
-            auto &registry = Instance().p_registry;
+            const auto &registry = Instance().p_registry;
             auto it = registry.find(std::string(name));
             return it->second.is_abstract;
         }
@@ -151,7 +151,7 @@ namespace atmo::core::registry
             std::string icon_path = std::string(Instance().p_registry[std::string(name)].icon);
 
             if (icon_path.empty())
-                icon_path = GetIconPath(name.substr(0, name.find_last_of("::")));
+                icon_path = GetIconPath(name.substr(0, name.rfind("::")));
 
             return icon_path;
         }
@@ -161,7 +161,7 @@ namespace atmo::core::registry
             std::optional<types::Color> icon_color = Instance().p_registry[std::string(name)].icon_color;
 
             if (!icon_color.has_value())
-                icon_color = GetIconColor(name.substr(0, name.find_last_of("::")));
+                icon_color = GetIconColor(name.substr(0, name.rfind("::")));
 
             return icon_color.value();
         }

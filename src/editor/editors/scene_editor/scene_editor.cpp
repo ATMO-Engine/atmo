@@ -701,13 +701,15 @@ namespace atmo::editor
 
         std::function<void(core::ecs::EntityRegistry::EntryTree &, core::ecs::entities::Entity &)> buildTreeUI;
         buildTreeUI = [&](core::ecs::EntityRegistry::EntryTree &node, core::ecs::entities::Entity &parentUI) {
-            size_t pos = node.name.find_last_of("::");
-            std::string label_name = (pos == std::string::npos) ? node.name : node.name.substr(pos + 1);
+            size_t pos = node.name.rfind("::");
+            std::string label_name = (pos == std::string::npos) ? node.name : node.name.substr(pos + 2);
 
             if (node.children.empty()) {
-                auto button = makeEntityCreationButton(node.name);
-                button.getSignal<>("Released").connect([create_entity_popup]() mutable { create_entity_popup.destroy(); });
-                button.setParent(parentUI);
+                if (!core::ecs::EntityRegistry::IsAbstract(node.name) && !label_name.starts_with("UI")) {
+                    auto button = makeEntityCreationButton(node.name);
+                    button.getSignal<>("Released").connect([create_entity_popup]() mutable { create_entity_popup.destroy(); });
+                    button.setParent(parentUI);
+                }
                 return;
             }
 
@@ -737,8 +739,7 @@ namespace atmo::editor
             title_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             title_label->setParent(title_btn);
             foldable->setParent(parentUI);
-
-            if (!core::ecs::EntityRegistry::IsAbstract(node.name) || !label_name.starts_with("UI")) {
+            if (!core::ecs::EntityRegistry::IsAbstract(node.name) && !label_name.starts_with("UI")) {
                 foldable->getTitleButton().getSignal<>("Released").connect([this, create_entity_popup, entity = node.name]() mutable {
                     auto created = core::ecs::EntityRegistry::CreateIn(&m_scene_ctx->getWorld(), entity);
 
@@ -749,7 +750,9 @@ namespace atmo::editor
 
             auto childContainer = foldable->getChildContainer();
 
-            for (auto &child : node.children) buildTreeUI(child, childContainer);
+            for (auto &child : node.children) {
+                buildTreeUI(child, childContainer);
+            }
         };
 
         buildTreeUI(tree, entity_creation_button_list);
@@ -782,8 +785,8 @@ namespace atmo::editor
         create_entity_topbar_layout.child_gap = 8;
         create_entity_topbar->setParent(*create_entity_btn);
 
-        size_t pos = entity_id.find_last_of("::");
-        std::string label_name = (pos == std::string::npos) ? entity_id : entity_id.substr(pos + 1);
+        size_t pos = entity_id.rfind("::");
+        std::string label_name = (pos == std::string::npos) ? entity_id : entity_id.substr(pos + 2);
 
         auto entity_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
         entity_icon->getComponentMutable<core::components::UIImage>().texture_path = core::ecs::EntityRegistry::GetIconPath(entity_id);
