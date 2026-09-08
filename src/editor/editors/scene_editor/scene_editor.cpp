@@ -411,21 +411,26 @@ namespace atmo::editor
         auto &right_panel_search_bar_layout = right_panel_search_bar->getComponentMutable<core::components::Layout>();
 
         right_panel_search_bar_rect.color = core::types::Color::BLACK;
-        right_panel_search_bar_rect.color.a = 0.30f;
+        right_panel_search_bar_rect.color.a = 0.0f;
         right_panel_search_bar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         right_panel_search_bar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         right_panel_search_bar->setParent(*top_right_panel_container);
 
-        auto right_panel_pin = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
-        auto &right_panel_pin_rect = right_panel_pin->getComponentMutable<core::components::UIRect>();
-        auto &right_panel_pin_layout = right_panel_pin->getComponentMutable<core::components::Layout>();
+        auto pin_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto &pin_btn_rect = pin_btn->getComponentMutable<core::components::UIRect>();
+        pin_btn_rect.color.a = 0;
+        pin_btn->getSignal<>("Released").connect([]() { spdlog::info("pin"); });
+        pin_btn->setParent(*top_right_panel_container);
 
-        right_panel_pin_rect.color = core::types::Color::BLACK;
-        right_panel_pin_layout.aspect_ratio = { 1, 1 };
-        right_panel_pin_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        right_panel_pin_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-        right_panel_pin_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 30.0f, 30.0f };
-        right_panel_pin->setParent(*top_right_panel_container);
+        auto pin_btn_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        pin_btn_icon->setTexturePath("project://assets/icons/pin.svg");
+        pin_btn_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        pin_btn_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        pin_btn_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        pin_btn_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        pin_btn_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        pin_btn_icon->getComponentMutable<core::components::UIImage>().rotation = 45.0f;
+        pin_btn_icon->setParent(*pin_btn);
 
         auto content_right_panel_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &content_right_panel_container_layout = content_right_panel_container->getComponentMutable<core::components::Layout>();
