@@ -229,7 +229,7 @@ namespace atmo::editor
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
                     m_active_editor_index = index;
                 } else {
-                    btn_rect.color = core::types::Color::TRANSPARENT;
+                    btn_rect.color = core::types::Color::TRANSPARENT_COL;
                     auto childs = editor_select->getChildren();
                     for (auto &child : editor_select->getChildren()) child.getComponentMutable<core::components::UI>().modulate = core::types::Color("94A3B8");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
@@ -595,7 +595,7 @@ namespace atmo::editor
         close_btn_holder->setParent(*project_settings_top_bar);
         auto close_project_settings_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto &close_project_settings_btn_rect = close_project_settings_btn->getComponentMutable<core::components::UIRect>();
-        close_project_settings_btn_rect.color = core::types::Color::TRANSPARENT;
+        close_project_settings_btn_rect.color = core::types::Color::TRANSPARENT_COL;
         close_project_settings_btn_rect.corner_radius = { 4, 4, 4, 4 };
 
         auto close_settings_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
