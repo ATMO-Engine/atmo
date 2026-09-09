@@ -10,15 +10,17 @@ std::optional<atmo::core::ecs::entities::Entity> createVector2iWidget(atmo::core
 {
     auto vector_container = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UI>("Entity::UI");
     auto x_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-    auto &input_entity_comp_x = x_input_entity->getComponentMutable<atmo::core::components::UIInput>();
-    auto &x_input_entity_comp = x_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
-
     auto y_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-    auto &input_entity_comp_y = y_input_entity->getComponentMutable<atmo::core::components::UIInput>();
-    auto &y_input_entity_comp = y_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
 
-    input_entity_comp_x.input_type = atmo::core::components::UIInput::InputType::Int;
-    input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Int;
+    x_input_entity->getComponentMutable<atmo::core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Int;
+    y_input_entity->getComponentMutable<atmo::core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Int;
+
+    if (value) {
+        atmo::core::types::Vector2i vec;
+        field.get(value, &vec);
+        x_input_entity->getComponentMutable<atmo::core::components::UINumberInput>().value = vec.x;
+        y_input_entity->getComponentMutable<atmo::core::components::UINumberInput>().value = vec.y;
+    }
 
     x_input_entity->getSignal<int>("IntValueChanged").connect([value, field](int val) {
         atmo::core::types::Vector2i vec;

@@ -22,8 +22,18 @@ namespace atmo::core::ecs::entities
             auto scene = entity.getScene();
             flecs::entity_t scene_id = scene ? scene->getHandle().id() : 0;
 
-            if (!body_data.dirty && scene_id == body_data.scene_id && b2Body_IsValid(body_data.body_id))
+            if (!body_data.dirty && scene_id == body_data.scene_id && b2Body_IsValid(body_data.body_id)) {
+                for (auto &shape : body_data.shapes) {
+                    if (!shape)
+                        continue;
+                    if (!shape->isValid() || shape->isDirty()) {
+                        shape->destroy();
+                        shape->create(body_data.body_id);
+                        shape->clearDirty();
+                    }
+                }
                 return;
+            }
 
             if (!scene)
                 return;
@@ -78,6 +88,7 @@ namespace atmo::core::ecs::entities
         for (auto &shape : body_data.shapes) {
             if (shape) {
                 shape->create(body_data.body_id);
+                shape->clearDirty();
             }
         }
     }

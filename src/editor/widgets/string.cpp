@@ -11,10 +11,15 @@ std::optional<atmo::core::ecs::entities::Entity> createStringWidget(atmo::core::
     auto &input_entity_comp = text_input_entity->getComponentMutable<atmo::core::components::UIInput>();
     auto &text_input_entity_comp = text_input_entity->getComponentMutable<atmo::core::components::UITextInput>();
 
-    if (value)
-        field.get(value, &text_input_entity_comp.value);
+    if (value) {
+        if (text_input_entity_comp.value.empty())
+            text_input_entity_comp.value = "Write a label";
+        else
+            field.get(value, &text_input_entity_comp.value);
+    }
 
     text_input_entity->getSignal<std::string>("StringValueChanged").connect([value, field](std::string val) { field.set(value, &val); });
+    text_input_entity->getSignal<std::string>("StringValueChanged").emit(text_input_entity_comp.value);
 
     return *text_input_entity;
 }

@@ -2,6 +2,7 @@
 #include <memory>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
@@ -99,5 +100,5 @@ namespace atmo::core::ecs::entities
     }
 } // namespace atmo::core::ecs::entities
 
-ATMO_REGISTER_ENTITY(entities::Entity2d);
+ATMO_REGISTER_ENTITY_COLOR(entities::Entity2d, atmo::core::types::Color("#5C74EA"));
 ATMO_REGISTER_COMPONENT(atmo::core::components::Transform2d);

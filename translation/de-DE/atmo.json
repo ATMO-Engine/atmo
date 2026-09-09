@@ -40,7 +40,7 @@
       "Entity::UI::UIRect": "UIRect",
       "Entity::UI::UILabel": "UIEtikett",
       "Entity::UI::UIRect::UIButton": "UIKnopf",
-      "Entity::UI::UIRect::UICheckBox": "UIAnkreuzkästchen",
+      "Entity::UI::UIRect::UIButton::UICheckBox": "UIAnkreuzkästchen",
       "Entity::UI::UIRect::UIButton::UIFoldableTreeItem": "UIFaltbarerBaumGegenstand"
     }
   }

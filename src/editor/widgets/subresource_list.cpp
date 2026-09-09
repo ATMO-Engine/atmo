@@ -37,7 +37,6 @@ namespace
     Entity makeSmallButton(const std::string &text)
     {
         auto button = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        button->getChildren()[0].destroy();
 
         auto &layout = button->getComponentMutable<atmo::core::components::Layout>();
         layout.width.type = atmo::core::components::Layout::SizingAxis::SizingAxisType::FIXED;
@@ -48,6 +47,7 @@ namespace
         auto label = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UILabel>("Entity::UI::UILabel");
         label->setFontSize(12);
         label->setText(text);
+        label->getComponentMutable<atmo::core::components::UI>().modulate = atmo::core::types::Color("#1C1C28");
         label->setTextAlignment(atmo::core::components::UILabel::TextAlignment::ALIGN_CENTER);
         label->setParent(*button);
 

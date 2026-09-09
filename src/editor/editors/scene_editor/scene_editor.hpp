@@ -53,9 +53,9 @@ namespace atmo::editor
 
         void
         sceneEntityFoldableTreeinit(core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container);
-        void createNewEntitySelectionPopup(core::ecs::entities::Entity parent);
-        core::ecs::entities::UIButton makeEntityCreationButton(const std::string &entity_id);
-        void createAddEntityFodableTree(EditorRegistry::EntityTree &tree, core::ecs::entities::Entity parentUI);
+        void createNewEntitySelectionPopup(core::ecs::entities::Entity popup_parent, core::ecs::entities::Entity new_entity_parent);
+        core::ecs::entities::UIButton makeEntityCreationButton(const std::string &entity_id, core::ecs::entities::Entity new_entity_parent);
+        void createAddEntityFodableTree(EditorRegistry::EntryTree &tree, core::ecs::entities::Entity parentUI);
         flecs::entity getSelectedEntity();
         void setSelectedEntity(flecs::entity new_slected_entity);
         void initEditorEntity(atmo::core::ecs::entities::UI &container);

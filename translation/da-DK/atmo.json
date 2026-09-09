@@ -40,7 +40,7 @@
       "Entity::UI::UIRect": "UIRect",
       "Entity::UI::UILabel": "UILabel",
       "Entity::UI::UIRect::UIButton": "UIButton",
-      "Entity::UI::UIRect::UICheckBox": "UICheckBox",
+      "Entity::UI::UIRect::UIButton::UICheckBox": "UICheckBox",
       "Entity::UI::UIRect::UIButton::UIFoldableTreeItem": "UIFoldableTreeItem"
     }
   }

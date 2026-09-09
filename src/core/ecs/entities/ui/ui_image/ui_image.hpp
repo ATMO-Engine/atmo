@@ -13,13 +13,16 @@ namespace atmo::core::components
         float natural_height = 0.0f;
         SDL_Texture *raw_texture = nullptr;
         float rendered_size[2] = { 0.f, 0.f };
+        float rotation = 0.0f;
     };
 } // namespace atmo::core::components
 
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIImage> {
     static constexpr const char *name = "UIImage";
     static constexpr const char *category = "UI";
-    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UIImage::texture_path>("texture_path").withWidget("file_path"));
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::core::components::UIImage::texture_path>("texture_path").withWidget("file_path"),
+        atmo::meta::field<&atmo::core::components::UIImage::rotation>("rotation"));
 };
 
 namespace atmo::core::ecs::entities

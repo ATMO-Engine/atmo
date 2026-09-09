@@ -10,6 +10,7 @@
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "clay_types.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/types.hpp"
@@ -265,22 +266,31 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                 }
             case CLAY_RENDER_COMMAND_TYPE_IMAGE:
                 {
+                    auto *image = static_cast<atmo::core::components::UIImage *>(rcmd->userData);
                     SDL_Texture *texture = (SDL_Texture *)rcmd->renderData.image.imageData;
                     Clay_Color tint = rcmd->renderData.image.backgroundColor;
+
+                    const float rotation = image ? image->rotation : 0.0f;
+                    const SDL_FPoint center{ rect.w * 0.5f, rect.h * 0.5f };
+
                     if (tint.a > 0) {
                         SDL_SetTextureColorModFloat(texture, tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f);
                         SDL_SetTextureAlphaModFloat(texture, tint.a / 255.0f);
                     }
-                    SDL_RenderTexture(rendererData->renderer, texture, nullptr, &rect);
+                    if (rotation != 0.0f) {
+                        SDL_RenderTextureRotated(rendererData->renderer, texture, nullptr, &rect, rotation, &center, SDL_FLIP_NONE);
+                    } else {
+                        SDL_RenderTexture(rendererData->renderer, texture, nullptr, &rect);
+                    }
+
                     if (tint.a > 0) {
                         SDL_SetTextureColorModFloat(texture, 1.0f, 1.0f, 1.0f);
                         SDL_SetTextureAlphaModFloat(texture, 1.0f);
                     }
                     // Write back actual rendered pixel size so owners can resize their texture.
-                    if (rcmd->userData) {
-                        auto *sz = static_cast<float *>(rcmd->userData);
-                        sz[0] = rect.w;
-                        sz[1] = rect.h;
+                    if (image) {
+                        image->rendered_size[0] = rect.w;
+                        image->rendered_size[1] = rect.h;
                     }
                     break;
                 }
