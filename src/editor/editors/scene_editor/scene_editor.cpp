@@ -483,8 +483,7 @@ namespace atmo::editor
             auto wrapped = core::ecs::EntityRegistry::Wrap(add_node_button);
             auto *ui = dynamic_cast<core::ecs::entities::UI *>(wrapped.get());
             auto window = ui->getWindow()->getChildren()[0];
-            ui->getSignal<>("Released").connect(
-                [this, window]() { createNewEntitySelectionPopup(window, *m_scene_ctx->getScene()); });
+            ui->getSignal<>("Released").connect([this, window]() { createNewEntitySelectionPopup(window, *m_scene_ctx->getScene()); });
         }
 
         if (component_viewport.isAlive() && scene_viewport.isAlive()) {
@@ -630,8 +629,7 @@ namespace atmo::editor
 
         add_child_btn.getSignal<>("Released").connect([add_child_btn, entity, this]() mutable {
             auto window = core::ecs::entities::UI(add_child_btn.getHandle()).getWindow()->getChildren()[0];
-            core::SignalQueue::Enqueue(
-                [window, entity, this]() mutable { createNewEntitySelectionPopup(window, entity); });
+            core::SignalQueue::Enqueue([window, entity, this]() mutable { createNewEntitySelectionPopup(window, entity); });
         });
 
         close_create_entity_btn.getSignal<>("Released").connect([entity]() mutable { core::SignalQueue::Enqueue([entity]() mutable { entity.destroy(); }); });
