@@ -31,10 +31,10 @@ namespace atmo::core::ecs::entities
         auto &rect = getComponentMutable<core::components::UIRect>();
         rect.color = core::types::Color::WHITE;
         rect.border.color = core::types::Color::BLACK;
-        rect.border.left = 1;
-        rect.border.right = 1;
-        rect.border.top = 1;
-        rect.border.bottom = 1;
+        rect.border.left = 3;
+        rect.border.right = 3;
+        rect.border.top = 3;
+        rect.border.bottom = 3;
 
         auto indicator = core::ecs::EntityRegistry::Create("Entity::UI::UIRect");
         auto &indicator_rect = indicator->getComponentMutable<core::components::UIRect>();

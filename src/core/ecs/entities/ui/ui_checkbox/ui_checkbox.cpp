@@ -1,7 +1,11 @@
 #include "ui_checkbox.hpp"
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/events/ui_event/hover_event/hover_event.hpp"
 #include "meta/auto_register.hpp"
@@ -13,60 +17,51 @@ namespace atmo::core::ecs::entities
 
     void UICheckBox::initialize()
     {
-        UIRect::initialize();
-
+        UIButton::initialize();
         setComponent<components::UICheckBox>({});
-        auto &chBoxComp = getComponentMutable<core::components::UICheckBox>();
 
-        auto &rect = getComponentMutable<core::components::UIRect>();
-        rect.border.color = core::types::Color{ static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<uint8_t>(100) };
-        rect.border.left = 5;
-        rect.border.top = 5;
-        rect.border.bottom = 5;
-        rect.border.right = 5;
+        getComponentMutable<core::components::UIButton>().toggle = true;
+        auto checkBox_border = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        auto &checkBox_border_UIcomp = checkBox_border->getComponentMutable<core::components::UI>();
+        auto &checkBox_border_Layoutcomp = checkBox_border->getComponentMutable<core::components::Layout>();
 
-        rect.corner_radius.top_left = 5.0f;
-        rect.corner_radius.top_right = 5.0f;
-        rect.corner_radius.bottom_left = 5.0f;
-        rect.corner_radius.bottom_right = 5.0f;
+        checkBox_border->setTexturePath("project://assets/icons/square.svg");
+        checkBox_border_UIcomp.modulate = core::types::Color::BLACK;
+        checkBox_border_Layoutcomp.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        checkBox_border_Layoutcomp.width.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        checkBox_border_Layoutcomp.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        checkBox_border_Layoutcomp.height.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
+        checkBox_border_Layoutcomp.child_alignment = { core::components::Layout::ChildAlignment::Center, core::components::Layout::ChildAlignment::Center };
+        checkBox_border->setParent(*this);
 
+        auto checkBox_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        auto &checkBox_icon_UIcomp = checkBox_icon->getComponentMutable<core::components::UI>();
+        auto &checkBox_icon_Layoutcomp = checkBox_icon->getComponentMutable<core::components::Layout>();
 
-        createSignal<UICheckBox &>("ToIdle");
-        getSignal<core::ecs::entities::UICheckBox &>("ToIdle").connect([](core::ecs::entities::UICheckBox &chBox) {
-            auto &chBoxComp = chBox.getComponentMutable<core::components::UICheckBox>();
-            chBoxComp.state = core::components::UICheckBox::CheckBoxState::IDLE;
+        checkBox_icon->setTexturePath("project://assets/icons/check.svg");
+        checkBox_icon_UIcomp.modulate = core::types::Color::BLACK;
+        checkBox_icon_Layoutcomp.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        checkBox_icon_Layoutcomp.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        checkBox_icon->setParent(*checkBox_border);
 
-            auto &rect = chBox.getComponentMutable<core::components::UIRect>();
-            rect.border.color = core::types::Color{ static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<uint8_t>(100) };
-
-            if (chBoxComp.trigger == true) {
-                rect.color = core::types::Color::WHITE;
-            } else {
-                rect.color = core::types::Color::BLACK;
+        auto handle = p_handle;
+        getSignal<bool>("Toggle").connect([handle](bool new_state) {
+            if (!handle.is_alive()) {
+                return;
             }
+            UICheckBox chBox(handle);
+            if (!chBox.getComponent<core::components::UICheckBox>().default_texture)
+                return;
+            auto &checkBoxIcon = chBox.getChildren()[0].getChildren()[0].getComponentMutable<core::components::UI>();
+
+            checkBoxIcon.visible = new_state;
         });
+    }
 
-        createSignal<UICheckBox &>("Hover");
-        getSignal<core::ecs::entities::UICheckBox &>("Hover").connect([](core::ecs::entities::UICheckBox &chBox) {
-            auto &chBoxComp = chBox.getComponentMutable<core::components::UICheckBox>();
-            chBoxComp.state = core::components::UICheckBox::CheckBoxState::HOVER;
-
-            auto &rect = chBox.getComponentMutable<core::components::UIRect>();
-            rect.border.color = core::types::Color::BLACK;
-        });
-
-        createSignal<UICheckBox &>("Clicked");
-        getSignal<core::ecs::entities::UICheckBox &>("Clicked").connect([](core::ecs::entities::UICheckBox &chBox) {
-            auto &chBoxComp = chBox.getComponentMutable<core::components::UICheckBox>();
-            chBoxComp.trigger = !chBoxComp.trigger;
-
-            auto &rect = chBox.getComponentMutable<core::components::UIRect>();
-            if (chBoxComp.trigger == true) {
-                rect.color = core::types::Color::WHITE;
-            } else {
-                rect.color = core::types::Color::BLACK;
-            }
-        });
+    void UICheckBox::removeTexture()
+    {
+        getComponentMutable<core::components::UICheckBox>().default_texture = false;
+        getChildren()[0].getComponentMutable<core::components::UI>().visible = false;
     }
 
     Clay_ElementDeclaration UICheckBox::buildDecl()
@@ -76,31 +71,9 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    // TODO: WHEN signals done this function might be called by multiple
-    //       ui_element so we should move it to somewhere where it will
-    //       be shared (and it should only call the signal assigned nothing more)
-    void ChecBoxHoverCallBack(Clay_ElementId id, Clay_PointerData data, intptr_t userData)
-    {
-        uint64_t boxId = static_cast<uint64_t>(userData);
-        UICheckBox chBox(core::ecs::EntityRegistry::GetEntityFromId(boxId));
-        if (!chBox.isAlive())
-            return;
-        chBox.getSignal<UICheckBox &>("Hover").emit(chBox);
-
-        if (data.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
-            chBox.getSignal<UICheckBox &>("Clicked").emit(chBox);
-        }
-    }
-
     void UICheckBox::draw(ClaySdL3RendererData *data)
     {
-        auto &checkComp = getComponentMutable<core::components::UICheckBox>();
-        intptr_t id = static_cast<intptr_t>(getID());
-        Clay_OnHover(ChecBoxHoverCallBack, id);
-
-        if (!Clay_Hovered() && checkComp.state != core::components::UICheckBox::CheckBoxState::IDLE) {
-            getSignal<UICheckBox &>("ToIdle").emit(*this);
-        }
+        UIButton::draw(data);
     }
 } // namespace atmo::core::ecs::entities
 

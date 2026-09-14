@@ -167,15 +167,15 @@ namespace atmo::core::ecs::entities
         int pixelH = (int)comp.pixels.size();
         int pixelW = pixelH > 0 ? (int)comp.pixels[0].size() : 0;
 
-        const atmo::core::types::Color transparent{ 0.0f, 0.0f, 0.0f, 0.0f };
+        const atmo::core::types::Color TRANSPARENT_COL{ 0.0f, 0.0f, 0.0f, 0.0f };
 
         if (pixelH != targetH || pixelW != targetW) {
             spdlog::warn("canvas sync: FrameBuffer: {}/{} != texture_size: {}/{}, syncing", pixelW, pixelH, targetW, targetH);
-            comp.pixels.resize(targetH, std::vector<atmo::core::types::Color>(targetW, transparent));
+            comp.pixels.resize(targetH, std::vector<atmo::core::types::Color>(targetW, TRANSPARENT_COL));
 
             for (int y = 0; y < targetH; ++y) {
                 auto &row = comp.pixels[y];
-                row.resize(targetW, transparent);
+                row.resize(targetW, TRANSPARENT_COL);
             }
             comp.texture_dirty = true;
             rebuildCheckboard();

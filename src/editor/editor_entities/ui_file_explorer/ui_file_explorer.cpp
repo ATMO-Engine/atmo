@@ -2,8 +2,11 @@
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
@@ -56,9 +59,11 @@ namespace atmo::core::ecs::entities
         toolbar->rename(std::string(ToolbarName));
         toolbar->setParent(*this);
 
-        auto add_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
+        auto add_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         auto &add_container_layout = add_container->getComponentMutable<core::components::Layout>();
         add_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        add_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        add_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         add_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         add_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         add_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
@@ -66,17 +71,24 @@ namespace atmo::core::ecs::entities
         add_container->setParent(*toolbar);
 
         auto add_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        auto add_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
         add_btn->rename(std::string(AddButtonName));
+        add_btn_label->setText("Add");
+        add_btn_label->setParent(*add_btn);
+        add_btn_label->setFontSize(12);
+        add_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         add_btn->setParent(*add_container);
-        UILabel(add_btn->getChild("Button label")).setText("Add");
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
         add_input->rename(std::string(AddInputName));
+        add_input->setValue("File Name");
         add_input->setParent(*add_container);
 
-        auto rename_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
+        auto rename_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         auto &rename_container_layout = rename_container->getComponentMutable<core::components::Layout>();
         rename_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        rename_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        rename_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         rename_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         rename_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         rename_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
@@ -84,25 +96,38 @@ namespace atmo::core::ecs::entities
         rename_container->setParent(*toolbar);
 
         auto rename_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        auto rename_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
         rename_btn->rename(std::string(RenameButtonName));
+        rename_btn_label->setText("Rename");
+        rename_btn_label->setFontSize(12);
+        rename_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        rename_btn_label->setParent(*rename_btn);
         rename_btn->setParent(*rename_container);
-        UILabel(rename_btn->getChild("Button label")).setText("Rename");
 
         auto rename_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
         rename_input->rename(std::string(RenameInputName));
+        rename_input->setValue("File Name");
         rename_input->setParent(*rename_container);
 
         auto delete_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        auto delete_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
         delete_btn->rename(std::string(DeleteButtonName));
+        delete_btn_label->setText("Delete");
+        delete_btn_label->setFontSize(12);
+        delete_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        delete_btn_label->setParent(*delete_btn);
         delete_btn->setParent(*toolbar);
-        UILabel(delete_btn->getChild("Button label")).setText("Delete");
 
         auto refresh_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        auto refresh_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
         refresh_btn->rename(std::string(RefreshButtonName));
+        refresh_btn_label->setText("Refresh");
+        refresh_btn_label->setFontSize(12);
+        refresh_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        refresh_btn_label->setParent(*refresh_btn);
         refresh_btn->setParent(*toolbar);
-        UILabel(refresh_btn->getChild("Button label")).setText("Refresh");
 
-        auto tree_container = core::ecs::EntityRegistry::Create("Entity::UI::UIRect");
+        auto tree_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &tree_layout = tree_container->getComponentMutable<core::components::Layout>();
         tree_layout.direction = core::components::Layout::Direction::Vertical;
         tree_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -184,7 +209,8 @@ namespace atmo::core::ecs::entities
             label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
             label->setText(std::format("Delete {}", comp.focused_path));
             label->setFontBold(false);
-            label->setFontSize(24);
+            label->setFontSize(12);
+            label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             label->setParent(*delete_editor_top_bar);
 
             auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -199,13 +225,16 @@ namespace atmo::core::ecs::entities
             close_open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             close_open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             close_open_editor_btn_layout.aspect_ratio = { 1.0f, 1.0f };
-            close_open_editor_btn->getChildren()[0].destroy();
             close_open_editor_btn->setParent(*close_btn_holder);
             close_open_editor_btn->getSignal<>("Released").connect([delete_popup]() { delete_popup->destroy(); });
 
             auto confirm_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+            auto confirm_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+            confirm_btn_label->setText("Confirm");
+            confirm_btn_label->setFontSize(12);
+            confirm_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            confirm_btn_label->setParent(*confirm_btn);
             confirm_btn->setParent(*delete_bg);
-            UILabel(confirm_btn->getChild("Button label")).setText("Confirm");
             confirm_btn->getSignal<>("Released").connect([handle, delete_popup]() {
                 if (!handle.is_alive()) {
                     return;
@@ -363,7 +392,7 @@ namespace atmo::core::ecs::entities
         auto root_node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
         root_node->setParent(tree_container);
         root_node->getComponentMutable<components::UIFileExplorerNode>().explorer_root = p_handle;
-
+        root_node->getChildren()[0].getChildren()[1].getComponentMutable<components::UIRect>().color = types::Color::TRANSPARENT_COL;
         root_node->setPath(comp.root_path, comp.show_hidden, true);
 
         reopenPaths(*root_node, open_paths, comp.show_hidden);

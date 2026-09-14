@@ -24,6 +24,36 @@
         }();                                        \
     }
 
+#define ATMO_REGISTER_ENTITY_ICON(entity, icon)         \
+    namespace                                           \
+    {                                                   \
+        static int _ = [] {                             \
+            using namespace atmo::core::ecs;            \
+            EntityRegistry::RegisterType<entity>(icon); \
+            return 0;                                   \
+        }();                                            \
+    }
+
+#define ATMO_REGISTER_ENTITY_COLOR(entity, color)            \
+    namespace                                                \
+    {                                                        \
+        static int _ = [] {                                  \
+            using namespace atmo::core::ecs;                 \
+            EntityRegistry::RegisterType<entity>("", color); \
+            return 0;                                        \
+        }();                                                 \
+    }
+
+#define ATMO_REGISTER_ENTITY_ICON_COLOR(entity, icon, color)   \
+    namespace                                                  \
+    {                                                          \
+        static int _ = [] {                                    \
+            using namespace atmo::core::ecs;                   \
+            EntityRegistry::RegisterType<entity>(icon, color); \
+            return 0;                                          \
+        }();                                                   \
+    }
+
 namespace atmo::core::ecs
 {
     class EntityRegistry : public registry::HierarchicRegistry<EntityRegistry, entities::Entity>

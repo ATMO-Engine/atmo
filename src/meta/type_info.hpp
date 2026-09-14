@@ -108,6 +108,9 @@ namespace atmo::meta
                 fi.set = [](void *component, const void *value) {
                     auto *owner = static_cast<Owner *>(component);
                     owner->*MemberPtr = *static_cast<const FieldT *>(value);
+                    if constexpr (std::derived_from<Owner, core::resource::SubResource>) {
+                        owner->onFieldChanged();
+                    }
                 };
             }
 
@@ -139,10 +142,19 @@ namespace atmo::meta
                 fi.subresource_base_full_name = Base::FullName().data();
 
                 fi.vector_size = [](const void *vec) -> std::size_t { return static_cast<const FieldT *>(vec)->size(); };
-                fi.vector_clear = [](void *vec) { static_cast<FieldT *>(vec)->clear(); };
+                fi.vector_clear = [](void *vec) {
+                    auto *v = static_cast<FieldT *>(vec);
+                    for (auto &elem : *v) {
+                        if (elem)
+                            elem->prepareForRemoval();
+                    }
+                    v->clear();
+                };
                 fi.vector_erase = [](void *vec, std::size_t index) {
                     auto *v = static_cast<FieldT *>(vec);
                     if (index < v->size()) {
+                        if ((*v)[index])
+                            (*v)[index]->prepareForRemoval();
                         v->erase(v->begin() + static_cast<std::ptrdiff_t>(index));
                     }
                 };

@@ -34,7 +34,6 @@ namespace atmo::core::ecs::entities
         }
 
         UIButton getTitleButton() const;
-        UILabel getTitleLabel() const;
         UIRect getChildContainer() const;
 
         Clay_ElementDeclaration buildDecl() override;

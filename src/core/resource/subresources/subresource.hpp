@@ -35,6 +35,19 @@ namespace atmo::core::resource
 
         virtual std::string serialize() const = 0;
         virtual void deserialize(const std::string &data) = 0;
+
+        /**
+         * @brief Hook invoked by the reflection system whenever a field is written through `FieldInfo::set`.
+         * Lets subresources (e.g. `Shape2d`) mark themselves dirty so a downstream sync system can re-apply
+         * the change to whatever external system owns the live representation (e.g. Box2D).
+         */
+        virtual void onFieldChanged() {}
+
+        /**
+         * @brief Hook invoked by the reflection system before a subresource is erased from its owning vector,
+         * so it can tear down any external resources it registered (e.g. `Shape2d` destroying its `b2ShapeId`).
+         */
+        virtual void prepareForRemoval() {}
     };
 } // namespace atmo::core::resource
 

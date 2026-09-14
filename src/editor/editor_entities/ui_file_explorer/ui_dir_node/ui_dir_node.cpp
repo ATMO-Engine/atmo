@@ -2,8 +2,11 @@
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/types.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_node/ui_file_node.hpp"
 #include "meta/auto_register.hpp"
@@ -52,6 +55,7 @@ namespace atmo::core::ecs::entities
     void UIFileExplorerDirNode::setPath(const std::string &path, bool show_hidden, bool force_scan)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
+        auto &rect = getTitleButton().getComponentMutable<components::UIRect>();
         node.full_path = path;
         node.is_directory = true;
 
@@ -60,7 +64,13 @@ namespace atmo::core::ecs::entities
             dirname = path;
         rename(dirname);
 
-        UILabel(getTitleLabel()).setText(dirname);
+        rect.corner_radius = { 4, 4, 4, 4 };
+
+        auto dirname_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        dirname_label->setText(dirname);
+        dirname_label->setFontSize(11);
+        dirname_label->getComponentMutable<components::UI>().modulate = types::Color::BLACK;
+        dirname_label->setParent(getTitleButton());
 
         auto handle = p_handle;
         getTitleButton().getSignal<>("Pressed").connect([handle, show_hidden]() {
@@ -154,13 +164,9 @@ namespace atmo::core::ecs::entities
     {
         auto &rect = getTitleButton().getComponentMutable<core::components::UIRect>();
         if (highlighted) {
-            rect.color.r = 0.7f;
-            rect.color.g = 0.7f;
-            rect.color.b = 0.7f;
-            rect.color.a = 1.0f;
+            rect.color = types::Color("#DBEAFE");
         } else {
-            rect.color = core::types::Color::WHITE;
-            rect.color.a = 0.0f;
+            rect.color = core::types::Color::TRANSPARENT_COL;
         }
     }
 } // namespace atmo::core::ecs::entities

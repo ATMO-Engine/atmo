@@ -1,4 +1,5 @@
 #include "texture_editor.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
@@ -38,7 +39,7 @@ namespace atmo::editor
             auto &viewport_image_layout = viewport_image->getComponentMutable<core::components::Layout>();
 
             viewport_img_comp.raw_texture = m_scene_ctx->getViewportTexture();
-            viewport_image_layout.floating = true;
+            viewport_image_layout.floating.enabled = true;
             viewport_image_layout.z_index = -1;
             viewport_image_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             viewport_image_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -106,7 +107,7 @@ namespace atmo::editor
         auto &option_panel_rect = option_panel->getComponentMutable<core::components::UIRect>();
         auto &option_panel_layout = option_panel->getComponentMutable<core::components::Layout>();
 
-        option_panel_rect.color.a = 0;
+        option_panel_rect.color = core::types::Color::WHITE;
         option_panel_layout.direction = core::components::Layout::Direction::Vertical;
         option_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         option_panel_layout.width.size = 0.2f;
@@ -122,9 +123,10 @@ namespace atmo::editor
         texture_editor_panel_rect.corner_radius.top_right = 4.0f;
         texture_editor_panel_rect.corner_radius.bottom_left = 4.0f;
         texture_editor_panel_rect.corner_radius.bottom_right = 4.0f;
-        texture_editor_panel_rect.border.color = core::types::Color("#dbdbdb");
-        texture_editor_panel_rect.color = core::types::Color("#dbdbdb");
+        texture_editor_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         texture_editor_panel_layout.direction = core::components::Layout::Direction::Vertical;
+        texture_editor_panel_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        texture_editor_panel_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         texture_editor_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         texture_editor_panel_layout.height.size = 0.45f;
@@ -143,8 +145,7 @@ namespace atmo::editor
         size_comp_panel_rect.corner_radius.top_right = 5.0f;
         size_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         size_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        size_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
-        size_comp_panel_rect.color = core::types::Color("#7d7d7d");
+        size_comp_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         size_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
         size_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         size_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
@@ -152,12 +153,13 @@ namespace atmo::editor
         size_comp_panel_layout.padding.right = 16;
         size_comp_panel_layout.padding.top = 16;
         size_comp_panel_layout.padding.bottom = 16;
-        size_comp_panel_layout.child_gap = 0;
+        size_comp_panel_layout.child_gap = 8;
         size_comp_panel->setParent(*texture_editor_panel);
 
         auto sizeLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         sizeLabel->setText("Size");
-        sizeLabel->setFontSize(16);
+        sizeLabel->setFontSize(12);
+        sizeLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         sizeLabel->setParent(*size_comp_panel);
 
         auto sizeSlider = core::ecs::EntityRegistry::Create<core::ecs::entities::UISlider>("Entity::UI::UIRect::UISlider");
@@ -177,21 +179,23 @@ namespace atmo::editor
         width_comp_panel_rect.corner_radius.top_right = 5.0f;
         width_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         width_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        width_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
-        width_comp_panel_rect.color = core::types::Color("#7d7d7d");
+        width_comp_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         width_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        width_comp_panel_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        width_comp_panel_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         width_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         width_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         width_comp_panel_layout.padding.left = 16;
         width_comp_panel_layout.padding.right = 16;
         width_comp_panel_layout.padding.top = 16;
         width_comp_panel_layout.padding.bottom = 16;
-        width_comp_panel_layout.child_gap = 0;
+        width_comp_panel_layout.child_gap = 8;
         width_comp_panel->setParent(*texture_editor_panel);
 
         auto widthLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         widthLabel->setText("Width");
-        widthLabel->setFontSize(16);
+        widthLabel->setFontSize(12);
+        widthLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         widthLabel->setParent(*width_comp_panel);
 
         auto widthNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
@@ -207,21 +211,23 @@ namespace atmo::editor
         height_comp_panel_rect.corner_radius.top_right = 5.0f;
         height_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         height_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        height_comp_panel_rect.border.color = core::types::Color("#7d7d7d");
-        height_comp_panel_rect.color = core::types::Color("#7d7d7d");
+        height_comp_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         height_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        height_comp_panel_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        height_comp_panel_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
         height_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         height_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
         height_comp_panel_layout.padding.left = 16;
         height_comp_panel_layout.padding.right = 16;
         height_comp_panel_layout.padding.top = 16;
         height_comp_panel_layout.padding.bottom = 16;
-        height_comp_panel_layout.child_gap = 0;
+        height_comp_panel_layout.child_gap = 8;
         height_comp_panel->setParent(*texture_editor_panel);
 
         auto heightLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         heightLabel->setText("Height");
-        heightLabel->setFontSize(16);
+        heightLabel->setFontSize(12);
+        heightLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         heightLabel->setParent(*height_comp_panel);
 
         auto heightNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
@@ -231,29 +237,39 @@ namespace atmo::editor
 
 
         auto saveBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto saveBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &saveBtn_rect = saveBtn->getComponentMutable<core::components::UIRect>();
         auto &saveBtn_layout = saveBtn->getComponentMutable<core::components::Layout>();
 
-        ((core::ecs::entities::UILabel)saveBtn->getChildren()[0]).setText("Save");
-        saveBtn_rect.border.color = core::types::Color::BLACK;
-        saveBtn_rect.color = core::types::Color::WHITE;
+        saveBtn_label->setText("Save");
+        saveBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        saveBtn_label->setFontSize(12);
+        saveBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         saveBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        saveBtn_layout.width.size = 0.30f;
+        saveBtn_layout.width.size = 0.35f;
         saveBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        saveBtn_layout.height.size = 0.05f;
+        saveBtn_layout.height.size = 0.10f;
+        saveBtn_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        saveBtn_layout.padding.left = 12;
+        saveBtn_label->setParent(*saveBtn);
         saveBtn->setParent(*texture_editor_panel);
 
         auto previewBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto previewBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &previewBtn_rect = previewBtn->getComponentMutable<core::components::UIRect>();
         auto &previewBtn_layout = previewBtn->getComponentMutable<core::components::Layout>();
 
-        ((core::ecs::entities::UILabel)previewBtn->getChildren()[0]).setText("Preview");
-        previewBtn_rect.border.color = core::types::Color::BLACK;
-        previewBtn_rect.color = core::types::Color::WHITE;
+        previewBtn_label->setText("Preview");
+        previewBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        previewBtn_label->setFontSize(12);
+        previewBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         previewBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        previewBtn_layout.width.size = 0.30f;
+        previewBtn_layout.width.size = 0.35f;
         previewBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        previewBtn_layout.height.size = 0.05f;
+        previewBtn_layout.height.size = 0.10f;
+        previewBtn_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        previewBtn_layout.padding.left = 12;
+        previewBtn_label->setParent(*previewBtn);
         previewBtn->setParent(*texture_editor_panel);
 
         auto pencilContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
@@ -266,30 +282,47 @@ namespace atmo::editor
         pencilContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         pencilContainer_layout.height.size = 0.05f;
         pencilContainer_layout.child_gap = 16;
+        pencilContainer_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         pencilContainer->setParent(*texture_editor_panel);
 
         auto pencilBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto pencilBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &pencilBtn_rect = pencilBtn->getComponentMutable<core::components::UIRect>();
         auto &pencilBtn_layout = pencilBtn->getComponentMutable<core::components::Layout>();
+        auto &pencilBtn_btn_comp = pencilBtn->getComponentMutable<core::components::UIButton>();
 
-        ((core::ecs::entities::UILabel)pencilBtn->getChildren()[0]).setText("Draw");
-        pencilBtn_rect.border.color = core::types::Color::BLACK;
-        pencilBtn_rect.color = core::types::Color::WHITE;
+        pencilBtn_btn_comp.toggle = true;
+        pencilBtn_btn_comp.group = 5;
+        pencilBtn_label->setText("Draw");
+        pencilBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        pencilBtn_label->setFontSize(12);
+        pencilBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         pencilBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        pencilBtn_layout.width.size = 0.30f;
+        pencilBtn_layout.width.size = 0.35f;
         pencilBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        pencilBtn_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        pencilBtn_layout.padding.left = 12;
+        pencilBtn_label->setParent(*pencilBtn);
         pencilBtn->setParent(*pencilContainer);
 
         auto eraserBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto eraserBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &eraserBtn_rect = eraserBtn->getComponentMutable<core::components::UIRect>();
         auto &eraserBtn_layout = eraserBtn->getComponentMutable<core::components::Layout>();
+        auto &eraserBtn_btn_comp = eraserBtn->getComponentMutable<core::components::UIButton>();
 
-        ((core::ecs::entities::UILabel)eraserBtn->getChildren()[0]).setText("Erase");
-        eraserBtn_rect.border.color = core::types::Color::BLACK;
-        eraserBtn_rect.color = core::types::Color::WHITE;
+        eraserBtn_btn_comp.toggle = true;
+        eraserBtn_btn_comp.group = 5;
+        eraserBtn_label->setText("Erase");
+        eraserBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        eraserBtn_label->setFontSize(12);
+        eraserBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         eraserBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        eraserBtn_layout.width.size = 0.30f;
+        eraserBtn_layout.width.size = 0.35f;
         eraserBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        eraserBtn_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        eraserBtn_layout.padding.left = 12;
+        eraserBtn_label->setParent(*eraserBtn);
         eraserBtn->setParent(*pencilContainer);
 
 
@@ -297,8 +330,7 @@ namespace atmo::editor
         auto &fileExplorerContainer_rect = fileExplorerContainer->getComponentMutable<core::components::UIRect>();
         auto &fileExplorerContainer_layout = fileExplorerContainer->getComponentMutable<core::components::Layout>();
 
-        fileExplorerContainer_rect.border.color = core::types::Color("#dbdbdb");
-        fileExplorerContainer_rect.color = core::types::Color("#dbdbdb");
+        fileExplorerContainer_rect.color = core::types::Color::TRANSPARENT_COL;
         fileExplorerContainer_rect.corner_radius.top_left = 4.0f;
         fileExplorerContainer_rect.corner_radius.top_right = 4.0f;
         fileExplorerContainer_rect.corner_radius.bottom_left = 4.0f;
@@ -321,8 +353,7 @@ namespace atmo::editor
         auto &colorPickContaine_rect = colorPickContainer->getComponentMutable<core::components::UIRect>();
         auto &colorPickContainer_layout = colorPickContainer->getComponentMutable<core::components::Layout>();
 
-        colorPickContaine_rect.border.color = core::types::Color("#dbdbdb");
-        colorPickContaine_rect.color = core::types::Color("#dbdbdb");
+        colorPickContaine_rect.color = core::types::Color::TRANSPARENT_COL;
         colorPickContaine_rect.corner_radius.top_left = 4.0f;
         colorPickContaine_rect.corner_radius.top_right = 4.0f;
         colorPickContaine_rect.corner_radius.bottom_left = 4.0f;
@@ -470,7 +501,7 @@ namespace atmo::editor
             canvas_comp.offset = { 0.0f, 0.0f };
         });
 
-        pencilBtn->getSignal<>("Pressed").connect([canvasHandle]() {
+        pencilBtn->getSignal<bool>("Toggle").connect([canvasHandle](bool new_state) {
             if (!canvasHandle.is_alive()) {
                 return;
             }
@@ -480,7 +511,7 @@ namespace atmo::editor
             canvas_comp.pen = core::components::UIDrawingCanvas::DrawType::PENCIL;
         });
 
-        eraserBtn->getSignal<>("Pressed").connect([canvasHandle]() {
+        eraserBtn->getSignal<bool>("Toggle").connect([canvasHandle](bool new_state) {
             if (!canvasHandle.is_alive()) {
                 return;
             }
