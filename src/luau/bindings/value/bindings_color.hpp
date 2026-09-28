@@ -1,7 +1,7 @@
 #pragma once
 #include "core/types.hpp"
-#include "luau/bindings/lua_bindings.hpp"
 #include "lualib.h"
+#include "luau/bindings/lua_bindings.hpp"
 #include "luau/bindings/value/value_binding_base.hpp"
 
 namespace atmo::luau

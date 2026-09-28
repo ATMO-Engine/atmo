@@ -1,8 +1,8 @@
 #pragma once
 
 #include "lua.h"
-#include "luau_ref.hpp"
 #include "luau.hpp"
+#include "luau_ref.hpp"
 
 #include "flecs.h"
 

@@ -21,7 +21,6 @@ namespace atmo
         template <typename Derived, typename T, typename ParentBinding = void> class LuaBindingsBase
         {
         public:
-
             using Parent = ParentBinding;
 
             static constexpr const char *ParentName()
@@ -45,6 +44,7 @@ namespace atmo
             {
                 return Derived::CheckPtrImpl(L, index);
             }
+
         protected:
             /**
              * @brief
@@ -61,11 +61,9 @@ namespace atmo
                 luaL_getmetatable(L, Derived::name);
 
                 lua_getfield(L, -1, "__properties");
-                if (lua_istable(L, -1))
-                {
+                if (lua_istable(L, -1)) {
                     lua_getfield(L, -1, key);
-                    if (!lua_isnil(L, -1))
-                    {
+                    if (!lua_isnil(L, -1)) {
                         auto *prop = static_cast<Property *>(lua_touserdata(L, -1));
                         lua_pop(L, 3);
                         if (!prop->getter) {
@@ -106,8 +104,7 @@ namespace atmo
                 lua_getfield(L, -1, "__properties");
                 if (lua_istable(L, -1)) {
                     lua_getfield(L, -1, key);
-                    if (!lua_isnil(L, -1))
-                    {
+                    if (!lua_isnil(L, -1)) {
                         Property *prop = static_cast<Property *>(lua_touserdata(L, -1));
                         lua_pop(L, 3);
                         if (!prop->setter) {
@@ -143,8 +140,7 @@ namespace atmo
             static void RegisterProperties(lua_State *L)
             {
                 lua_newtable(L);
-                for (int i = 0; Derived::m_properties[i].name; i++)
-                {
+                for (int i = 0; Derived::m_properties[i].name; i++) {
                     if (!Derived::m_properties[i].getter) {
                         luaL_error(L, "Property '%s.%s' has no getter", Derived::name, Derived::m_properties[i].name);
                     }
@@ -175,14 +171,14 @@ namespace atmo
                 }
                 if (!lua_istable(L, -1)) {
                     lua_pop(L, 1);
-                    luaL_error( L, "Parent '%s' metatable is invalid", parentName );
+                    luaL_error(L, "Parent '%s' metatable is invalid", parentName);
                 }
 
                 lua_getfield(L, -1, field);
                 lua_remove(L, -2);
                 if (!lua_istable(L, -1)) {
                     lua_pop(L, 1);
-                    luaL_error( L, "Parent '%s.%s' is not a table", parentName, field );
+                    luaL_error(L, "Parent '%s.%s' is not a table", parentName, field);
                 }
 
                 lua_createtable(L, 0, 1);
@@ -200,13 +196,13 @@ namespace atmo
              */
             static void RegisterIsA(lua_State *L)
             {
-                lua_newtable(L);                                                    // [-1] isa table
+                lua_newtable(L); // [-1] isa table
                 lua_pushboolean(L, true);
-                lua_setfield(L, -2, Derived::name);                          // isa[Derived::name] = true
+                lua_setfield(L, -2, Derived::name); // isa[Derived::name] = true
                 if constexpr (!std::is_void_v<ParentBinding>) {
                     ChainTable(L, ParentBinding::name, "__isa");
                 }
-                lua_setfield(L, -2, "__isa");                                // metatable.__isa = isa table
+                lua_setfield(L, -2, "__isa"); // metatable.__isa = isa table
             }
 
             /**
@@ -302,14 +298,13 @@ namespace atmo
         template <typename T, typename Member> Property makeValueProperty(const char *name, Member T::*member)
         {
             return Property{ name,
-                             [member](lua_State *L, void *obj) {
-                                 push_value(L, static_cast<T *>(obj)->*member);
-                             },
+                             [member](lua_State *L, void *obj) { push_value(L, static_cast<T *>(obj)->*member); },
                              [name](lua_State *L, void *) {
-                                 luaL_errorL(L,
-                                             "'%s' can't be modified, this value is a copy: create a new one instead "
-                                             "(e.g. transform.position = Vector2(x, y))",
-                                             name);
+                                 luaL_errorL(
+                                     L,
+                                     "'%s' can't be modified, this value is a copy: create a new one instead "
+                                     "(e.g. transform.position = Vector2(x, y))",
+                                     name);
                              } };
         }
 

@@ -10,43 +10,35 @@
 #include "core/ecs/entities/entity.hpp"
 #include "spdlog/spdlog.h"
 
-#define ATMO_REGISTER_LUA_ENTITY_BINDING(entityType)                                                     \
-namespace                                                                                                \
-{                                                                                                        \
-    static int _ = [] {                                                                                  \
-        using Binding = atmo::luau::LuaBindings<entityType>;                                             \
-        atmo::luau::LuauRegistry::Instance().registerType(                                               \
-            Binding::name,                                                                               \
-            atmo::luau::LuaEntry{                                                                        \
-                Binding::name,                                                                           \
-                Binding::ParentName(),                                                                   \
-                [](lua_State *L) { Binding::RegisterType(L); },                                          \
-                [](lua_State *L, flecs::entity &e) { Binding::Push(L, entityType(e)); }                  \
-            });                                                                                          \
-        return 0;                                                                                        \
-    }();                                                                                                 \
-}
+#define ATMO_REGISTER_LUA_ENTITY_BINDING(entityType)                                                              \
+    namespace                                                                                                     \
+    {                                                                                                             \
+        static int _ = [] {                                                                                       \
+            using Binding = atmo::luau::LuaBindings<entityType>;                                                  \
+            atmo::luau::LuauRegistry::Instance().registerType(                                                    \
+                Binding::name,                                                                                    \
+                atmo::luau::LuaEntry{ Binding::name,                                                              \
+                                      Binding::ParentName(),                                                      \
+                                      [](lua_State *L) { Binding::RegisterType(L); },                             \
+                                      [](lua_State *L, flecs::entity &e) { Binding::Push(L, entityType(e)); } }); \
+            return 0;                                                                                             \
+        }();                                                                                                      \
+    }
 
-#define ATMO_REGISTER_LUA_COMPONENT_BINDING(entityType)                                                  \
-namespace                                                                                                \
-{                                                                                                        \
-    static int _ = [] {                                                                                  \
-        using Binding = atmo::luau::LuaBindings<entityType>;                                             \
-        atmo::luau::LuauRegistry::Instance().registerType(                                               \
-            Binding::name,                                                                               \
-            atmo::luau::LuaEntry{                                                                        \
-                Binding::name,                                                                           \
-                Binding::ParentName(),                                                                   \
-                [](lua_State *L) { Binding::RegisterType(L); },                                          \
-                nullptr                                                                                  \
-            });                                                                                          \
-        return 0;                                                                                        \
-    }();                                                                                                 \
-}
+#define ATMO_REGISTER_LUA_COMPONENT_BINDING(entityType)                                                                                                \
+    namespace                                                                                                                                          \
+    {                                                                                                                                                  \
+        static int _ = [] {                                                                                                                            \
+            using Binding = atmo::luau::LuaBindings<entityType>;                                                                                       \
+            atmo::luau::LuauRegistry::Instance().registerType(                                                                                         \
+                Binding::name, atmo::luau::LuaEntry{ Binding::name, Binding::ParentName(), [](lua_State *L) { Binding::RegisterType(L); }, nullptr }); \
+            return 0;                                                                                                                                  \
+        }();                                                                                                                                           \
+    }
 
-namespace atmo::luau {
-    struct LuaEntry
-    {
+namespace atmo::luau
+{
+    struct LuaEntry {
         const char *metatable_name;
         const char *parent_name;
         std::function<void(lua_State *)> register_type;
@@ -116,8 +108,7 @@ namespace atmo::luau {
         void registerAll(lua_State *L)
         {
             std::unordered_map<std::string, bool> done;
-            for (auto &[name, entry] : m_entries)
-                registerOne(L, name, done);
+            for (auto &[name, entry] : m_entries) registerOne(L, name, done);
         }
 
     private:

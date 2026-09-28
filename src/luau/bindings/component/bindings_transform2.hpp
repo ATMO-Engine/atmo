@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/ecs/entities/2d/entity_2d.hpp"
+#include "lualib.h"
 #include "luau/bindings/component/component_binding_base.hpp"
 #include "luau/bindings/lua_bindings.hpp"
-#include "lualib.h"
 
 namespace atmo::luau
 {

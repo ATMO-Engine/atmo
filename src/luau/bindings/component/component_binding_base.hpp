@@ -6,7 +6,8 @@
 
 #include "luau/bindings/lua_bindings.hpp"
 
-namespace atmo::luau {
+namespace atmo::luau
+{
     /**
      * @brief
      * What a component userdata holds: never a raw pointer to flecs memory (it moves when the
@@ -17,8 +18,7 @@ namespace atmo::luau {
         flecs::entity entity;
     };
 
-    template <typename Derived, typename T, typename ParentBinding = void>
-    class ComponentLuaBindings : public LuaBindingsBase<Derived, T>
+    template <typename Derived, typename T, typename ParentBinding = void> class ComponentLuaBindings : public LuaBindingsBase<Derived, T>
     {
     public:
         /**

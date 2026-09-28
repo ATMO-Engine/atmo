@@ -1,7 +1,7 @@
-#include "core/types.hpp"
-#include "luau/bindings/lua_bindings.hpp"
-#include "luau/bindings/EntityLuauRegistry.hpp"
 #include "bindings_vector2.hpp"
+#include "core/types.hpp"
+#include "luau/bindings/EntityLuauRegistry.hpp"
+#include "luau/bindings/lua_bindings.hpp"
 
 namespace atmo::luau
 {

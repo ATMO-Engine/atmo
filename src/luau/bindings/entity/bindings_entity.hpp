@@ -1,13 +1,14 @@
 #pragma once
 #include <flecs.h>
 #include "core/ecs/entities/entity.hpp"
-#include "luau/bindings/lua_bindings.hpp"
-#include "lualib.h"
 #include "entity_binding_base.hpp"
+#include "lualib.h"
+#include "luau/bindings/lua_bindings.hpp"
 
 namespace atmo::luau
 {
-    template <> class LuaBindings<core::ecs::entities::Entity> : public EntityLuaBindings<LuaBindings<core::ecs::entities::Entity>, core::ecs::entities::Entity, void>
+    template <>
+    class LuaBindings<core::ecs::entities::Entity> : public EntityLuaBindings<LuaBindings<core::ecs::entities::Entity>, core::ecs::entities::Entity, void>
     {
     public:
         static void RegisterType(lua_State *state)

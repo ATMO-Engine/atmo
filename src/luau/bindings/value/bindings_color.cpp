@@ -1,6 +1,6 @@
 #include "core/types.hpp"
-#include "luau/bindings/lua_bindings.hpp"
 #include "luau/bindings/EntityLuauRegistry.hpp"
+#include "luau/bindings/lua_bindings.hpp"
 
 
 #include "bindings_color.hpp"

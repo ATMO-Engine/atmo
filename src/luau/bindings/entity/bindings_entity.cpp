@@ -1,11 +1,11 @@
 #include "bindings_entity.hpp"
 #include <spdlog/spdlog.h>
+#include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
 #include "flecs/addons/cpp/entity.hpp"
-#include "luau/bindings/component/bindings_transform2.hpp"
-#include "core/ecs/entities/2d/entity_2d.hpp"
-#include "luau/bindings/lua_bindings.hpp"
 #include "luau/bindings/EntityLuauRegistry.hpp"
+#include "luau/bindings/component/bindings_transform2.hpp"
+#include "luau/bindings/lua_bindings.hpp"
 
 namespace atmo::luau
 {

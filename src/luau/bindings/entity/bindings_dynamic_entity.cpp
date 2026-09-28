@@ -1,11 +1,11 @@
 #include "bindings_dynamic_entity.hpp"
 #include <spdlog/spdlog.h>
-#include "flecs/addons/cpp/entity.hpp"
-#include "luau/bindings/value/bindings_vector2.hpp"
 #include "box2d/box2d.h"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
-#include "luau/bindings/lua_bindings.hpp"
+#include "flecs/addons/cpp/entity.hpp"
 #include "luau/bindings/EntityLuauRegistry.hpp"
+#include "luau/bindings/lua_bindings.hpp"
+#include "luau/bindings/value/bindings_vector2.hpp"
 
 namespace atmo::luau
 {

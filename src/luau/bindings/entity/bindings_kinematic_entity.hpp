@@ -2,13 +2,15 @@
 #include <flecs.h>
 #include "core/ecs/entities/2d/physics_2d/body_2d/kinematic_2d/kinematic_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
+#include "lualib.h"
 #include "luau/bindings/entity/bindings_entity.hpp"
 #include "luau/bindings/lua_bindings.hpp"
-#include "lualib.h"
 
 namespace atmo::luau
 {
-    template <> class LuaBindings<core::ecs::entities::Kinematic2d> : public EntityLuaBindings<LuaBindings<core::ecs::entities::Kinematic2d>, core::ecs::entities::Kinematic2d, LuaBindings<core::ecs::entities::Entity>>
+    template <>
+    class LuaBindings<core::ecs::entities::Kinematic2d>
+        : public EntityLuaBindings<LuaBindings<core::ecs::entities::Kinematic2d>, core::ecs::entities::Kinematic2d, LuaBindings<core::ecs::entities::Entity>>
     {
     public:
         static void RegisterType(lua_State *state)

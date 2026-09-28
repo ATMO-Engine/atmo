@@ -1,6 +1,6 @@
 #include "bindings_input.hpp"
-#include "luau/bindings/value/bindings_vector2.hpp"
 #include "core/input/input_manager.hpp"
+#include "luau/bindings/value/bindings_vector2.hpp"
 
 namespace atmo::luau
 {

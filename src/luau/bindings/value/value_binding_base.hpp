@@ -5,15 +5,15 @@
 
 #include "luau/bindings/lua_bindings.hpp"
 
-namespace atmo::luau {
+namespace atmo::luau
+{
     /**
      * @brief
      * Bindings for small value types (Vector2, Color...): the value is copied inside the userdata,
      * so Lua never holds a pointer to C++ memory. Reading a property of this type gives a copy,
      * modifying it doesn't modify the source (write the whole value back instead).
      */
-    template <typename Derived, typename T>
-    class ValueLuaBindings : public LuaBindingsBase<Derived, T>
+    template <typename Derived, typename T> class ValueLuaBindings : public LuaBindingsBase<Derived, T>
     {
     public:
         /**
