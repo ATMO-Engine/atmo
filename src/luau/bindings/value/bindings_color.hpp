@@ -1,22 +1,19 @@
 #pragma once
 #include "core/types.hpp"
-#include "lua_bindings.hpp"
+#include "luau/bindings/lua_bindings.hpp"
 #include "lualib.h"
+#include "luau/bindings/value/value_binding_base.hpp"
 
 namespace atmo::luau
 {
-
     using namespace atmo::core::types;
 
-    template <> class LuaBindings<Color> : public atmo::luau::LuaBindingsBase<atmo::luau::LuaBindings<Color>, Color>
+    template <> class LuaBindings<Color> : public ValueLuaBindings<LuaBindings<Color>, Color>
     {
     public:
         static void RegisterType(lua_State *state)
         {
             luaL_newmetatable(state, name);
-
-            lua_pushcfunction(state, GC, "Color.__gc");
-            lua_setfield(state, -2, "__gc");
 
             lua_pushcfunction(state, Index, "Color.__index");
             lua_setfield(state, -2, "__index");
@@ -28,10 +25,16 @@ namespace atmo::luau
 
             lua_setfield(state, -2, "__methods");
 
+            RegisterProperties(state);
+
+            Seal(state);
+
             lua_pop(state, 1);
 
             lua_pushcfunction(state, New, name);
             lua_setglobal(state, name);
+
+            spdlog::debug("Color bindings");
         }
 
         static Property m_properties[];
@@ -45,13 +48,8 @@ namespace atmo::luau
             float b = (float)luaL_checknumber(state, 3);
             float a = (float)luaL_checknumber(state, 4);
 
-            Push(state, new Color(r, g, b, a), true);
+            Push(state, Color(r, g, b, a));
             return 1;
-        }
-
-        static int GC(lua_State *state)
-        {
-            return LuaBindingsBase<LuaBindings<Color>, Color>::GC(state);
         }
     };
 } // namespace atmo::luau

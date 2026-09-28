@@ -1,6 +1,7 @@
 #include "bindings_transform2.hpp"
-#include "bindings_vector2.hpp"
-#include "lua_bindings.hpp"
+#include "luau/bindings/lua_bindings.hpp"
+#include "luau/bindings/value/bindings_vector2.hpp"
+#include "luau/bindings/EntityLuauRegistry.hpp"
 
 namespace atmo::luau
 {
@@ -12,3 +13,5 @@ namespace atmo::luau
                                                           makeFloatProperty("g_rotation", &Transform2d::g_rotation),
                                                           { nullptr, nullptr, nullptr } };
 } // namespace atmo::luau
+
+ATMO_REGISTER_LUA_COMPONENT_BINDING(atmo::core::components::Transform2d);

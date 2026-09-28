@@ -1,22 +1,20 @@
 #pragma once
 
 #include "core/types.hpp"
-#include "lua_bindings.hpp"
+#include "luau/bindings/lua_bindings.hpp"
 #include "lualib.h"
+#include "luau/bindings/value/value_binding_base.hpp"
 
 namespace atmo::luau
 {
     using namespace atmo::core::types;
 
-    template <> class LuaBindings<Vector2> : public atmo::luau::LuaBindingsBase<atmo::luau::LuaBindings<Vector2>, Vector2>
+    template <> class LuaBindings<Vector2> : public ValueLuaBindings<LuaBindings<Vector2>, Vector2>
     {
     public:
         static void RegisterType(lua_State *state)
         {
             luaL_newmetatable(state, name);
-
-            lua_pushcfunction(state, GC, "Vector2.__gc");
-            lua_setfield(state, -2, "__gc");
 
             lua_pushcfunction(state, Index, "Vector2.__index");
             lua_setfield(state, -2, "__index");
@@ -31,10 +29,16 @@ namespace atmo::luau
 
             lua_setfield(state, -2, "__methods");
 
+            RegisterProperties(state);
+
+            Seal(state);
+
             lua_pop(state, 1);
 
             lua_pushcfunction(state, New, name);
             lua_setglobal(state, name);
+
+            spdlog::debug("Vector bindings");
         }
 
         static Property m_properties[];
@@ -46,13 +50,8 @@ namespace atmo::luau
             float x = (float)luaL_checknumber(state, 1);
             float y = (float)luaL_checknumber(state, 2);
 
-            LuaBindings<Vector2>::Push(state, new Vector2(x, y), true);
+            Push(state, Vector2(x, y));
             return 1;
-        }
-
-        static int GC(lua_State *state)
-        {
-            return LuaBindingsBase<LuaBindings<Vector2>, Vector2>::GC(state);
         }
 
         static int Length(lua_State *state)
