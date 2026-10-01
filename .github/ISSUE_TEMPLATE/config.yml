@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://docs.atmo-engine.com
+    about: Check the documentation for setup guides and API reference.
+  - name: Contributing guide
+    url: https://github.com/ATMO-Engine/atmo/blob/main/CONTRIBUTING.md
+    about: Read the contribution guidelines before opening an issue or a pull request.
