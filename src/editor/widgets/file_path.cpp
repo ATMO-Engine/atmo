@@ -19,8 +19,8 @@ std::optional<atmo::core::ecs::entities::Entity> createFilePathWidget(atmo::core
             field.get(value, &string_input_entity_comp.value);
     }
 
-    string_input_entity->getSignal<std::string>("StringValueChanged").connect([value, field](std::string val) { field.set(value, &val); });
-    string_input_entity->getSignal<std::string>("StringValueChanged").emit(string_input_entity_comp.value);
+    // string_input_entity->getSignal<std::string>("StringValueChanged").connect([value, field](std::string val) { field.set(value, &val); });
+    // string_input_entity->getSignal<std::string>("StringValueChanged").emit(string_input_entity_comp.value);
 
     return *string_input_entity;
 }
