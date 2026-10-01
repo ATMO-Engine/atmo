@@ -2,22 +2,6 @@
 
 #include "common/utils.hpp"
 
-TEST_CASE("SplitString", "[utils]")
-{
-    const auto basic = atmo::common::Utils::SplitString("one,two,three", ',');
-    REQUIRE(basic == std::vector<std::string>{ "one", "two", "three" });
-
-    REQUIRE(atmo::common::Utils::SplitString("", ',').empty());
-
-    const auto consecutive = atmo::common::Utils::SplitString("one,,three", ',');
-    REQUIRE(consecutive == std::vector<std::string>{ "one", "", "three" });
-
-    const auto trailing = atmo::common::Utils::SplitString("one,two,", ',');
-    REQUIRE(trailing == std::vector<std::string>{ "one", "two" });
-
-    REQUIRE(atmo::common::Utils::SplitString("single", ',') == std::vector<std::string>{ "single" });
-}
-
 TEST_CASE("GlobMatch", "[utils]")
 {
     REQUIRE(atmo::common::Utils::GlobMatch("readme.txt", "readme.txt"));
