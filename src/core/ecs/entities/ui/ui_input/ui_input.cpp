@@ -1,4 +1,5 @@
 #include "ui_input.hpp"
+#include "common/utils.hpp"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -101,7 +102,7 @@ namespace atmo::core::ecs::entities
             InputManager::StopTextInput(window);
         }
         if (InputManager::IsJustPressed("ui_delete") && input_comp.input_data.size() > 0) {
-            input_comp.input_data = input_comp.input_data.substr(0, input_comp.input_data.size() - 1);
+            common::Utils::PopBackUtf8(input_comp.input_data);
         }
     }
 } // namespace atmo::core::ecs::entities
