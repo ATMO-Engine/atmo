@@ -57,7 +57,7 @@ namespace atmo::core::ecs::entities
         openbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         openbox_layout.height.size = core::components::Layout::SizingAxis::MinMax(18.0f, 18.0f);
         openbox_rect.border = { 0, 0, 0, 0 };
-        openbox_ui.modulate = types::Color::TRANSPARENT;
+        openbox_ui.modulate = types::Color::TRANSPARENT_COL;
 
         auto openbox_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
         openbox_icon->setTexturePath("project://assets/icons/chevron-right.svg");

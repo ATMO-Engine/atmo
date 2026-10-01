@@ -392,7 +392,7 @@ namespace atmo::core::ecs::entities
         auto root_node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
         root_node->setParent(tree_container);
         root_node->getComponentMutable<components::UIFileExplorerNode>().explorer_root = p_handle;
-        root_node->getChildren()[0].getChildren()[1].getComponentMutable<components::UIRect>().color = types::Color::TRANSPARENT;
+        root_node->getChildren()[0].getChildren()[1].getComponentMutable<components::UIRect>().color = types::Color::TRANSPARENT_COL;
         root_node->setPath(comp.root_path, comp.show_hidden, true);
 
         reopenPaths(*root_node, open_paths, comp.show_hidden);

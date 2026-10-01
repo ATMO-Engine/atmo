@@ -27,12 +27,27 @@ namespace atmo
 
                     virtual void create(b2BodyId body) = 0;
                     void destroy(bool defer_body_update = false);
-                    bool isValid() const { return b2Shape_IsValid(p_shape_id); }
+                    bool isValid() const
+                    {
+                        return b2Shape_IsValid(p_shape_id);
+                    }
 
-                    bool isDirty() const { return p_dirty; }
-                    void clearDirty() { p_dirty = false; }
-                    void onFieldChanged() override { p_dirty = true; }
-                    void prepareForRemoval() override { destroy(); }
+                    bool isDirty() const
+                    {
+                        return p_dirty;
+                    }
+                    void clearDirty()
+                    {
+                        p_dirty = false;
+                    }
+                    void onFieldChanged() override
+                    {
+                        p_dirty = true;
+                    }
+                    void prepareForRemoval() override
+                    {
+                        destroy();
+                    }
 
                 protected:
                     b2ShapeId p_shape_id{ b2_nullShapeId };

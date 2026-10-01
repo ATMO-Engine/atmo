@@ -123,7 +123,7 @@ namespace atmo::editor
         texture_editor_panel_rect.corner_radius.top_right = 4.0f;
         texture_editor_panel_rect.corner_radius.bottom_left = 4.0f;
         texture_editor_panel_rect.corner_radius.bottom_right = 4.0f;
-        texture_editor_panel_rect.color = core::types::Color::TRANSPARENT;
+        texture_editor_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         texture_editor_panel_layout.direction = core::components::Layout::Direction::Vertical;
         texture_editor_panel_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         texture_editor_panel_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -145,7 +145,7 @@ namespace atmo::editor
         size_comp_panel_rect.corner_radius.top_right = 5.0f;
         size_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         size_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        size_comp_panel_rect.color = core::types::Color::TRANSPARENT;
+        size_comp_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         size_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
         size_comp_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         size_comp_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
@@ -179,7 +179,7 @@ namespace atmo::editor
         width_comp_panel_rect.corner_radius.top_right = 5.0f;
         width_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         width_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        width_comp_panel_rect.color = core::types::Color::TRANSPARENT;
+        width_comp_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         width_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
         width_comp_panel_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         width_comp_panel_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -211,7 +211,7 @@ namespace atmo::editor
         height_comp_panel_rect.corner_radius.top_right = 5.0f;
         height_comp_panel_rect.corner_radius.bottom_left = 5.0f;
         height_comp_panel_rect.corner_radius.bottom_right = 5.0f;
-        height_comp_panel_rect.color = core::types::Color::TRANSPARENT;
+        height_comp_panel_rect.color = core::types::Color::TRANSPARENT_COL;
         height_comp_panel_layout.direction = core::components::Layout::Direction::Horizontal;
         height_comp_panel_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         height_comp_panel_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -244,7 +244,7 @@ namespace atmo::editor
         saveBtn_label->setText("Save");
         saveBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         saveBtn_label->setFontSize(12);
-        saveBtn_rect.color = core::types::Color::TRANSPARENT;
+        saveBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         saveBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         saveBtn_layout.width.size = 0.35f;
         saveBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -262,7 +262,7 @@ namespace atmo::editor
         previewBtn_label->setText("Preview");
         previewBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         previewBtn_label->setFontSize(12);
-        previewBtn_rect.color = core::types::Color::TRANSPARENT;
+        previewBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         previewBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         previewBtn_layout.width.size = 0.35f;
         previewBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
@@ -296,7 +296,7 @@ namespace atmo::editor
         pencilBtn_label->setText("Draw");
         pencilBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         pencilBtn_label->setFontSize(12);
-        pencilBtn_rect.color = core::types::Color::TRANSPARENT;
+        pencilBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         pencilBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         pencilBtn_layout.width.size = 0.35f;
         pencilBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -316,7 +316,7 @@ namespace atmo::editor
         eraserBtn_label->setText("Erase");
         eraserBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         eraserBtn_label->setFontSize(12);
-        eraserBtn_rect.color = core::types::Color::TRANSPARENT;
+        eraserBtn_rect.color = core::types::Color::TRANSPARENT_COL;
         eraserBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         eraserBtn_layout.width.size = 0.35f;
         eraserBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -330,7 +330,7 @@ namespace atmo::editor
         auto &fileExplorerContainer_rect = fileExplorerContainer->getComponentMutable<core::components::UIRect>();
         auto &fileExplorerContainer_layout = fileExplorerContainer->getComponentMutable<core::components::Layout>();
 
-        fileExplorerContainer_rect.color = core::types::Color::TRANSPARENT;
+        fileExplorerContainer_rect.color = core::types::Color::TRANSPARENT_COL;
         fileExplorerContainer_rect.corner_radius.top_left = 4.0f;
         fileExplorerContainer_rect.corner_radius.top_right = 4.0f;
         fileExplorerContainer_rect.corner_radius.bottom_left = 4.0f;
@@ -353,7 +353,7 @@ namespace atmo::editor
         auto &colorPickContaine_rect = colorPickContainer->getComponentMutable<core::components::UIRect>();
         auto &colorPickContainer_layout = colorPickContainer->getComponentMutable<core::components::Layout>();
 
-        colorPickContaine_rect.color = core::types::Color::TRANSPARENT;
+        colorPickContaine_rect.color = core::types::Color::TRANSPARENT_COL;
         colorPickContaine_rect.corner_radius.top_left = 4.0f;
         colorPickContaine_rect.corner_radius.top_right = 4.0f;
         colorPickContaine_rect.corner_radius.bottom_left = 4.0f;

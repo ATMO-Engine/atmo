@@ -54,7 +54,7 @@ namespace atmo::core::ecs::entities
         auto &input_rect_comp = input_rect->getComponentMutable<core::components::UIRect>();
         auto &input_rect_layout = input_rect->getComponentMutable<core::components::Layout>();
 
-        input_rect_comp.color = types::Color::TRANSPARENT;
+        input_rect_comp.color = types::Color::TRANSPARENT_COL;
         input_rect_comp.corner_radius = { 4, 4, 4, 4 };
         input_rect_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         input_rect_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
@@ -89,7 +89,7 @@ namespace atmo::core::ecs::entities
         auto window = getWindow()->getComponent<core::components::Window>().window;
 
         if (!input_comp.editing) {
-            button_comp.color = core::types::Color::TRANSPARENT;
+            button_comp.color = core::types::Color::TRANSPARENT_COL;
             return;
         } else {
             button_comp.color = core::types::Color("#DBEAFE");

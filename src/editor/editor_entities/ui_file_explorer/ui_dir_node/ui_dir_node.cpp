@@ -166,7 +166,7 @@ namespace atmo::core::ecs::entities
         if (highlighted) {
             rect.color = types::Color("#DBEAFE");
         } else {
-            rect.color = core::types::Color::TRANSPARENT;
+            rect.color = core::types::Color::TRANSPARENT_COL;
         }
     }
 } // namespace atmo::core::ecs::entities
