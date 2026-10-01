@@ -26,3 +26,14 @@ name is available.
 ## Developers
 
     
+
+
+## Translators
+
+Atmo Engine translations are managed on Crowdin and are open to everyone.
+This section lists the contributors who translated the engine and editor,
+grouped by language.
+
+Translators are added once their first translations have been approved and
+merged into the repository. To be listed (or to change how your name appears),
+open a pull request editing this section, or ask in your translation pull request.

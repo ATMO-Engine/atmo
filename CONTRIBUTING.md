@@ -13,6 +13,7 @@ This document provides guidelines to help you contribute effectively.
 - [Coding Guidelines](#coding-guidelines)
 - [Formatting](#formatting)
 - [Testing](#testing)
+- [Translations](#translations)
 - [Pull Requests](#pull-requests)
 - [Commit Messages](#commit-messages)
 - [Code of Conduct](#code-of-conduct)
@@ -298,6 +299,26 @@ This will:
 Make sure:
 - All tests pass before submitting a pull request
 - No new warnings or errors are introduced
+
+
+## Translations
+
+Atmo Engine is translated by the community using [Crowdin](https://crowdin.com/project/atmo-engine).
+
+- Source strings live in `translation/en-US/*.json`
+- Translations are synchronized into `translation/<locale>/` (see `crowdin.yml`)
+- Only edit the `en-US` source files directly in the repository; other languages should be translated through Crowdin
+
+### Adding new strings
+
+- Add new keys to the `en-US` JSON files only
+- Use clear, descriptive keys and avoid concatenating translated strings in code
+
+### Credits
+
+All translators are credited in the [Translators](AUTHORS.md#translators) section of `AUTHORS.md`.
+Once your translations have been approved, open a pull request adding your name under your language
+(or mention it in your translation pull request) so that we can add you.
 
 
 ## Pull Requests
