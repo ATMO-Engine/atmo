@@ -1,6 +1,6 @@
 #include "bindings_input.hpp"
-#include "bindings_vector2.hpp"
 #include "core/input/input_manager.hpp"
+#include "luau/bindings/value/bindings_vector2.hpp"
 
 namespace atmo::luau
 {
@@ -35,7 +35,7 @@ namespace atmo::luau
     int InputBindings::GetMousePosition(lua_State *state)
     {
         auto pos = atmo::core::InputManager::GetMousePosition();
-        LuaBindings<atmo::core::types::Vector2>::Push(state, new atmo::core::types::Vector2(pos), true);
+        LuaBindings<atmo::core::types::Vector2>::Push(state, atmo::core::types::Vector2(pos));
         return 1;
     }
 } // namespace atmo::luau
