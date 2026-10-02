@@ -51,16 +51,12 @@ TEST_CASE("Invalid string 1", "[romver]")
 {
     std::string version = "1.a.4";
 
-    atmo::impl::Romver result(version);
-
-    REQUIRE(result.toString() == "0.0.1");
+    REQUIRE_THROWS_AS(atmo::impl::Romver(version), atmo::impl::Romver::ParseException);
 }
 
 TEST_CASE("Invalid string 2", "[romver]")
 {
     std::string version = "1a0.4";
 
-    atmo::impl::Romver result(version);
-
-    REQUIRE(result.toString() == "0.0.1");
+    REQUIRE_THROWS_AS(atmo::impl::Romver::Parse(version), atmo::impl::Romver::ParseException);
 }
