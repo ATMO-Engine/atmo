@@ -7,17 +7,6 @@ namespace atmo
 {
     namespace common
     {
-        std::vector<std::string> Utils::SplitString(const std::string &str, char delimiter)
-        {
-            std::vector<std::string> tokens;
-            std::istringstream stream(str);
-            std::string token;
-
-            while (std::getline(stream, token, delimiter)) {
-                tokens.push_back(token);
-            }
-            return tokens;
-        }
 
         bool Utils::GlobMatch(std::string_view pattern, std::string_view str)
         {
