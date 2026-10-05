@@ -5,6 +5,7 @@
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/types.hpp"
+#include "editor/editors/texture_editor/atmo_format.hpp"
 #include "meta/meta.hpp"
 
 namespace atmo::core::components
@@ -26,7 +27,7 @@ namespace atmo::core::components
         SDL_Texture *display_texture = nullptr;
         core::types::Vector2i display_texture_size = { 0, 0 };
 
-        std::vector<std::vector<atmo::core::types::Color>> pixels;
+        atmo::image::extension::AtmoFormat image;
         std::vector<uint8_t> upload_buffer;
         uint32_t current_stroke_id = 0;
         std::unordered_set<uint32_t> painted_pixels;
@@ -99,6 +100,7 @@ namespace atmo::core::ecs::entities
 
     private:
         void rebuildCheckboard();
+        std::vector<std::vector<atmo::core::types::Color>> *currentFrame();
 
         void paintPixel(const atmo::core::types::Vector2i &pos, const atmo::core::types::Color &color);
         void

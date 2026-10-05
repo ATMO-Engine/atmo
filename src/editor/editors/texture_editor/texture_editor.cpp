@@ -1,4 +1,6 @@
 #include "texture_editor.hpp"
+#include <algorithm>
+#include <format>
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
@@ -15,6 +17,7 @@
 #include "editor/editor_entities/ui_color_picker/ui_color_picker.hpp"
 #include "editor/editor_entities/ui_drawing_canvas/ui_drawing_canvas.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
+#include "editor/editor_entities/ui_list/ui_list.hpp"
 #include "editor/editor_registry.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
@@ -374,9 +377,80 @@ namespace atmo::editor
         canvas_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         canvas_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         canvas_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        canvas_container_layout.direction = core::components::Layout::Direction::Vertical;
+        canvas_container_layout.child_gap = 8;
         canvas_container->setParent(*texture_editor_container);
 
-        auto canvas = core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
+        auto canvas_area = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &canvas_area_layout = canvas_area->getComponentMutable<core::components::Layout>();
+        canvas_area_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        canvas_area_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        canvas_area_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        canvas_area->setParent(*canvas_container);
+
+        auto bottom_panel = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &bottom_panel_rect = bottom_panel->getComponentMutable<core::components::UIRect>();
+        auto &bottom_panel_layout = bottom_panel->getComponentMutable<core::components::Layout>();
+
+        bottom_panel_rect.color = core::types::Color::WHITE;
+        bottom_panel_rect.corner_radius.top_left = 4.0f;
+        bottom_panel_rect.corner_radius.top_right = 4.0f;
+        bottom_panel_rect.corner_radius.bottom_left = 4.0f;
+        bottom_panel_rect.corner_radius.bottom_right = 4.0f;
+        bottom_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        bottom_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        bottom_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        bottom_panel_layout.height.size = 0.2f;
+        bottom_panel_layout.padding = { 16, 16, 16, 16 };
+        bottom_panel_layout.child_gap = 16;
+        bottom_panel->setParent(*canvas_container);
+
+        auto layerBtnContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &layerBtnContainer_layout = layerBtnContainer->getComponentMutable<core::components::Layout>();
+        layerBtnContainer_layout.direction = core::components::Layout::Direction::Vertical;
+        layerBtnContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerBtnContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerBtnContainer_layout.child_gap = 8;
+        layerBtnContainer->setParent(*bottom_panel);
+
+        auto addLayerBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto addLayerBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &addLayerBtn_rect = addLayerBtn->getComponentMutable<core::components::UIRect>();
+        auto &addLayerBtn_layout = addLayerBtn->getComponentMutable<core::components::Layout>();
+        addLayerBtn->setParent(*layerBtnContainer);
+
+        addLayerBtn_label->setText("Add Layer");
+        addLayerBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        addLayerBtn_label->setFontSize(12);
+        addLayerBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        addLayerBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        addLayerBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        addLayerBtn_layout.padding.left = 12;
+        addLayerBtn_layout.padding.right = 12;
+        addLayerBtn_label->setParent(*addLayerBtn);
+
+        auto deleteLayerBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto deleteLayerBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &deleteLayerBtn_rect = deleteLayerBtn->getComponentMutable<core::components::UIRect>();
+        auto &deleteLayerBtn_layout = deleteLayerBtn->getComponentMutable<core::components::Layout>();
+        deleteLayerBtn->setParent(*layerBtnContainer);
+
+        deleteLayerBtn_label->setText("Delete Layer");
+        deleteLayerBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        deleteLayerBtn_label->setFontSize(12);
+        deleteLayerBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        deleteLayerBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        deleteLayerBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        deleteLayerBtn_layout.padding.left = 12;
+        deleteLayerBtn_layout.padding.right = 12;
+        deleteLayerBtn_label->setParent(*deleteLayerBtn);
+
+        auto layerList = core::ecs::EntityRegistry::Create<core::ecs::entities::UIList>("Entity::UI::UIRect::UIList");
+        layerList->setDirection(core::components::Layout::Direction::Vertical);
+        m_layer_list_handle = layerList->getHandle();
+        layerList->setParent(*bottom_panel);
+
+        auto canvas =core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
         auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
         canvas_layout.z_index = 0;
 
@@ -384,7 +458,7 @@ namespace atmo::editor
         canvasInfo.canvas_size = { 1.0f, 1.0f };
         canvasInfo.zoom = 1.0f;
         canvasInfo.offset = { 0.0f, 0.0f };
-        canvas->setParent(*canvas_container);
+        canvas->setParent(*canvas_area);
 
         auto widthHandle = widthNumberInput->getHandle();
         auto heightHandle = heightNumberInput->getHandle();
@@ -403,9 +477,22 @@ namespace atmo::editor
         });
         canvas->initPixelBuffer(128, 80);
 
+        layerList->getSignal<int>("ItemSelected").connect([canvasHandle = canvas->getHandle(), listHandle = layerList->getHandle()](int index) {
+            if (!canvasHandle.is_alive() || !listHandle.is_alive() || index < 0) {
+                return;
+            }
+            core::ecs::entities::UIList list(core::ecs::EntityRegistry::GetEntityFromId(listHandle));
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            canvas_comp.image.selectLayer(list.getSelectedItem());
+            canvas_comp.texture_dirty = true;
+        });
+
 
         auto canvasHandle = canvas->getHandle();
         m_canvas_handle = canvasHandle;
+        refreshLayerList();
 
         widthNumberInput->getSignal<int>("IntValueChanged").connect([canvasHandle](int val) {
             if (!canvasHandle.is_alive()) {
@@ -524,6 +611,40 @@ namespace atmo::editor
         fileExplorer->getSignal<std::string>("FileFocus").connect([this](std::string path) { open(path); });
 
         saveBtn->getSignal<>("Pressed").connect([this]() { save(); });
+
+        addLayerBtn->getSignal<>("Pressed").connect([this]() {
+            if (!m_canvas_handle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+            auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+            const auto names = image.layerNames();
+
+            std::size_t nb = names.size() + 1;
+            std::string name = std::format("Layer {}", nb);
+            while (std::find(names.begin(), names.end(), name) != names.end())
+                name = std::format("Layer {}", ++nb);
+
+            image.addLayer(name);
+            refreshLayerList();
+        });
+
+        deleteLayerBtn->getSignal<>("Pressed").connect([this]() {
+            if (!m_canvas_handle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+            const auto names = canvas_comp.image.layerNames();
+
+            if (names.size() <= 1 || canvas_comp.image.currentLayer() >= names.size()) {
+                return;
+            }
+
+            canvas_comp.image.removeLayer(names[canvas_comp.image.currentLayer()]);
+            canvas_comp.texture_dirty = true;
+            refreshLayerList();
+        });
     }
 
     void TextureEditor::createTools() {}
@@ -545,6 +666,20 @@ namespace atmo::editor
 
         core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
         canvas.importCanvas(*p_file_path);
+        refreshLayerList();
+    }
+
+    void TextureEditor::refreshLayerList()
+    {
+        if (!m_canvas_handle.is_alive() || !m_layer_list_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        core::ecs::entities::UIList list(core::ecs::EntityRegistry::GetEntityFromId(m_layer_list_handle));
+        const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+
+        list.setItems(image.layerNames());
+        list.select(image.currentLayer(), false);
     }
 } // namespace atmo::editor
 

@@ -44,7 +44,10 @@ namespace atmo::editor
         void load() override;
 
     private:
+        void refreshLayerList();
+
         flecs::entity m_canvas_handle;
+        flecs::entity m_layer_list_handle;
         flecs::entity m_viewport_image;
         std::unique_ptr<EditorSceneContext> m_scene_ctx;
         std::vector<std::function<void()>> m_inspector_update_fns;
