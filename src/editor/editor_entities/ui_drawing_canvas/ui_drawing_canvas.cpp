@@ -1,7 +1,6 @@
 #include "ui_drawing_canvas.hpp"
 #include "SDL3_image/SDL_image.h"
 #include "common/math.hpp"
-#include "core/ecs/components.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
@@ -164,19 +163,17 @@ namespace atmo::core::ecs::entities
         int targetW = comp.texture_size.x;
         int targetH = comp.texture_size.y;
 
-        int pixelH = (int)comp.pixels.size();
-        int pixelW = pixelH > 0 ? (int)comp.pixels[0].size() : 0;
+        int pixelW = comp.image.width();
+        int pixelH = comp.image.height();
 
-        const atmo::core::types::Color TRANSPARENT_COL{ 0.0f, 0.0f, 0.0f, 0.0f };
-
-        if (pixelH != targetH || pixelW != targetW) {
+        if (!comp.image.currentFrame()) {
+            spdlog::warn("canvas sync: no frame, creating a blank {}/{} one", targetW, targetH);
+            comp.image.reset(targetW, targetH);
+            comp.texture_dirty = true;
+            rebuildCheckboard();
+        } else if (pixelH != targetH || pixelW != targetW) {
             spdlog::warn("canvas sync: FrameBuffer: {}/{} != texture_size: {}/{}, syncing", pixelW, pixelH, targetW, targetH);
-            comp.pixels.resize(targetH, std::vector<atmo::core::types::Color>(targetW, TRANSPARENT_COL));
-
-            for (int y = 0; y < targetH; ++y) {
-                auto &row = comp.pixels[y];
-                row.resize(targetW, TRANSPARENT_COL);
-            }
+            comp.image.resizeFrame(targetW, targetH);
             comp.texture_dirty = true;
             rebuildCheckboard();
         }
@@ -198,23 +195,10 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        int oldH = (int)comp.pixels.size();
-        int oldW = oldH > 0 ? (int)comp.pixels[0].size() : 0;
-
-        if (heigth > oldH) {
-            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, { 0.0f, 0.0f, 0.0f, 0.0f }));
-        } else {
-            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, { 0.0f, 0.0f, 0.0f, 0.0f }));
-        }
-
-        for (int y = 0; y < (int)comp.pixels.size(); ++y) {
-            auto &row = comp.pixels[y];
-            if (width > (int)row.size()) {
-                row.resize(width, { 0.0f, 0.0f, 0.0f, 0.0f });
-            } else {
-                row.resize(width, { 0.0f, 0.0f, 0.0f, 0.0f });
-            }
-        }
+        if (comp.image.currentFrame())
+            comp.image.resizeFrame(width, heigth);
+        else
+            comp.image.reset(width, heigth);
 
         comp.texture_size = { width, heigth };
 
@@ -231,7 +215,7 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
+        comp.image.reset(w, h);
         comp.texture_size = { w, h };
 
         if (comp.drawing_texture) {
@@ -241,6 +225,12 @@ namespace atmo::core::ecs::entities
         comp.texture_dirty = true;
         rebuildCheckboard();
         getSignal<const core::types::Vector2i &>("New Dimensions").emit(comp.texture_size);
+    }
+
+    std::vector<std::vector<atmo::core::types::Color>> *UIDrawingCanvas::currentFrame()
+    {
+        auto *frame = getComponentMutable<components::UIDrawingCanvas>().image.currentFrame();
+        return frame ? &frame->frame : nullptr;
     }
 
     atmo::core::types::Vector2 UIDrawingCanvas::screenToCanvas(atmo::core::types::Vector2 screenPos) const
@@ -402,8 +392,11 @@ namespace atmo::core::ecs::entities
         if (!comp.texture_dirty)
             return;
 
-        int h = (int)comp.pixels.size();
-        int w = h > 0 ? (int)comp.pixels[0].size() : 0;
+        const auto img = comp.image.renderAll();
+        const auto *pixels = &img.frame;
+
+        int h = (int)pixels->size();
+        int w = h > 0 ? (int)(*pixels)[0].size() : 0;
 
         if (w <= 0 || h <= 0)
             return;
@@ -418,7 +411,7 @@ namespace atmo::core::ecs::entities
 
         comp.upload_buffer.resize(w * h * 4);
         for (int y = 0; y < h; ++y) {
-            const auto &row = comp.pixels[y];
+            const auto &row = (*pixels)[y];
             for (int x = 0; x < w; ++x) {
                 const auto &c = row[x];
                 int idx = (y * w + x) * 4;
@@ -481,8 +474,12 @@ namespace atmo::core::ecs::entities
         validateAndSyncDimensions();
 
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        int h = (int)comp.pixels.size();
-        int w = h > 0 ? (int)comp.pixels[0].size() : 0;
+        auto *pixels = currentFrame();
+        if (!pixels)
+            return;
+
+        int h = (int)pixels->size();
+        int w = h > 0 ? (int)(*pixels)[0].size() : 0;
 
         if (pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h) {
             return;
@@ -493,7 +490,7 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        auto &dst = comp.pixels[pos.y][pos.x];
+        auto &dst = (*pixels)[pos.y][pos.x];
 
         if (comp.pen == components::UIDrawingCanvas::DrawType::ERASER) {
             dst = atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -546,9 +543,12 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        int w = comp.texture_size.x;
-        int h = comp.texture_size.y;
-        if (w <= 0 || h <= 0 || comp.pixels.empty())
+        const auto img = comp.image.renderAll();
+        const auto *pixels = &img.frame;
+
+        int w = comp.image.width();
+        int h = comp.image.height();
+        if (w <= 0 || h <= 0 || (int)pixels->size() < h)
             return;
 
         SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA32);
@@ -558,7 +558,7 @@ namespace atmo::core::ecs::entities
         uint8_t *px = (uint8_t *)surface->pixels;
         for (int y = 0; y < h; ++y)
             for (int x = 0; x < w; ++x) {
-                const auto &c = comp.pixels[y][x];
+                const auto &c = (*pixels)[y][x];
                 int i = y * surface->pitch + x * 4;
                 px[i + 0] = (uint8_t)(c.r * 255.0f);
                 px[i + 1] = (uint8_t)(c.g * 255.0f);
@@ -654,12 +654,13 @@ namespace atmo::core::ecs::entities
             h = common::math::Clamp(h, 1, 10000);
         }
 
-        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
+        comp.image.reset(w, h);
+        auto &pixels = *currentFrame();
         uint8_t *px = (uint8_t *)rgba->pixels;
         for (int y = 0; y < h; ++y)
             for (int x = 0; x < w; ++x) {
                 int i = y * rgba->pitch + x * 4;
-                comp.pixels[y][x] = { px[i + 0] / 255.0f, px[i + 1] / 255.0f, px[i + 2] / 255.0f, px[i + 3] / 255.0f };
+                pixels[y][x] ={ px[i + 0] / 255.0f, px[i + 1] / 255.0f, px[i + 2] / 255.0f, px[i + 3] / 255.0f };
             }
         SDL_DestroySurface(rgba);
 
