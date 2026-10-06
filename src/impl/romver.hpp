@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 #include <string>
 
 #include "glaze/glaze.hpp"
@@ -9,6 +10,19 @@ namespace atmo::impl
     class Romver
     {
     public:
+        class ParseException : public std::exception
+        {
+        public:
+            ParseException(const std::string &version) : m_message("Invalid version string '" + version + "'") {};
+            const char *what() const noexcept override
+            {
+                return m_message.c_str();
+            }
+
+        private:
+            std::string m_message;
+        };
+
         Romver();
         Romver(const std::string &version);
 

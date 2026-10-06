@@ -1,45 +1,32 @@
-// #pragma once
+#pragma once
 
-// #include "core/event/Aevent_listener.hpp"
-// #include "core/event/event_dispatcher.hpp"
+#include <string_view>
 
+#include "core/event/event_registry.hpp"
+#include "core/event/events/event.hpp"
 
-// class EventExemple : public atmo::core::event::Event
-// {
-// public:
-//     EventExemple(int exemple) : m_exemple(exemple)
-//     {
-//         id = atmo::core::event::event_id<EventExemple>();
-//     }
-//     ~EventExemple() override = default;
+class EventExample : public atmo::core::event::EventRegistry::Registrable<EventExample, atmo::core::event::events::Event>
+{
+public:
+    EventExample(int exemple = 0) : example(exemple) {}
 
-//     int getExemple() const
-//     {
-//         return m_exemple;
-//     }
+    static constexpr std::string_view LocalName()
+    {
+        return "EventExample";
+    }
 
-// private:
-//     int m_exemple;
-// };
+    int example;
+};
 
-// class OtherEvent : public atmo::core::event::Event
-// {
-// public:
-//     OtherEvent(int value) : m_value(value) {}
-//     int getValue() const
-//     {
-//         return m_value;
-//     }
+class OtherEvent : public atmo::core::event::EventRegistry::Registrable<OtherEvent, atmo::core::event::events::Event>
+{
+public:
+    OtherEvent(int value = 0) {}
 
-// private:
-//     int m_value;
-// };
+    static constexpr std::string_view LocalName()
+    {
+        return "OtherEvent";
+    }
 
-// class ExempleListener : public atmo::core::event::AListener
-// {
-// public:
-//     bool called = false;
-//     ExempleListener();
-//     ~ExempleListener() override;
-//     void onEvent(atmo::core::event::Event *event);
-// };
+    int value = 0;
+};
