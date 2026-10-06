@@ -1,5 +1,6 @@
 #pragma once
 #include "lualib.h"
+#include "spdlog/spdlog.h"
 
 namespace atmo::luau
 {
@@ -26,6 +27,8 @@ namespace atmo::luau
             lua_setfield(state, -2, "getMousePosition");
 
             lua_setglobal(state, "Input");
+
+            spdlog::debug("Input bindings");
         }
 
     private:

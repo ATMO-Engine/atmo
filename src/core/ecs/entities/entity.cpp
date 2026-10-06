@@ -42,17 +42,19 @@ namespace atmo::core::ecs::entities
 
                 spdlog::debug("Loaded script for entity {}: {}", e.name().c_str(), script.script_path);
 
-                script.physics_event_id =
-                    event::EventRegistry::SetCallBack<event::events::PhysicsProgressTickEvent>([e](event::events::PhysicsProgressTickEvent *evt) {
-                        auto ent = Entity(e);
-                        auto &script = ent.getComponentMutable<components::Script>();
+                if (script.physics_event_id == 0) {
+                    script.physics_event_id =
+                        event::EventRegistry::SetCallBack<event::events::PhysicsProgressTickEvent>([e](event::events::PhysicsProgressTickEvent *evt) {
+                            auto ent = Entity(e);
+                            auto &script = ent.getComponentMutable<components::Script>();
 
-                        if (script.instance)
-                            script.instance->physicsUpdate(evt->delta_time);
-                    });
+                            if (script.instance)
+                                script.instance->physicsUpdate(evt->delta_time);
+                        });
+                }
 
-                script.instance->load(script.script_path, script.m_res->data, script.m_res->size, e);
-                script.instance->create();
+                if (script.instance->load(script.script_path, script.m_res->data, script.m_res->size, e))
+                    script.instance->create();
             } catch (std::exception &e) {
                 spdlog::error("Compilation error script not loaded: {}", e.what());
                 return;
@@ -69,16 +71,17 @@ namespace atmo::core::ecs::entities
         });
 
         world->observer<components::Script>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Script &script) {
-            if (script.script_path.empty())
-                return;
-            if (script.instance == nullptr || !script.m_res) {
-                return;
+            if (script.physics_event_id != 0) {
+                event::EventRegistry::RemoveCallBack<event::events::PhysicsProgressTickEvent>(script.physics_event_id);
+                script.physics_event_id = 0;
             }
 
-            event::EventRegistry::RemoveCallBack<event::events::PhysicsProgressTickEvent>(script.physics_event_id);
+            if (script.instance != nullptr) {
+                script.instance->destroy();
+                delete script.instance;
+                script.instance = nullptr;
+            }
 
-            script.instance->destroy();
-            delete script.instance;
             script.m_res = nullptr;
         });
     }
