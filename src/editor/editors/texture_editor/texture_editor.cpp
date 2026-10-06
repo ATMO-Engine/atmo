@@ -5,7 +5,6 @@
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
-#include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
@@ -462,6 +461,38 @@ namespace atmo::editor
         toggleAllLayersBtn_layout.padding.right = 12;
         toggleAllLayersBtn_label->setParent(*toggleAllLayersBtn);
 
+        auto layerUpBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto layerUpBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &layerUpBtn_rect = layerUpBtn->getComponentMutable<core::components::UIRect>();
+        auto &layerUpBtn_layout = layerUpBtn->getComponentMutable<core::components::Layout>();
+        layerUpBtn->setParent(*layerBtnContainer);
+
+        layerUpBtn_label->setText("Layer Up");
+        layerUpBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        layerUpBtn_label->setFontSize(12);
+        layerUpBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        layerUpBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerUpBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerUpBtn_layout.padding.left = 12;
+        layerUpBtn_layout.padding.right = 12;
+        layerUpBtn_label->setParent(*layerUpBtn);
+
+        auto layerDownBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto layerDownBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &layerDownBtn_rect = layerDownBtn->getComponentMutable<core::components::UIRect>();
+        auto &layerDownBtn_layout = layerDownBtn->getComponentMutable<core::components::Layout>();
+        layerDownBtn->setParent(*layerBtnContainer);
+
+        layerDownBtn_label->setText("Layer Down");
+        layerDownBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        layerDownBtn_label->setFontSize(12);
+        layerDownBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        layerDownBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerDownBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerDownBtn_layout.padding.left = 12;
+        layerDownBtn_layout.padding.right = 12;
+        layerDownBtn_label->setParent(*layerDownBtn);
+
         auto layerRow = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &layerRow_layout = layerRow->getComponentMutable<core::components::Layout>();
         layerRow_layout.direction = core::components::Layout::Direction::Horizontal;
@@ -663,6 +694,28 @@ namespace atmo::editor
             image.addLayer(name);
             refreshLayerList();
         });
+
+        // Up = towards the start of the list (drawn on top), Down = towards the end (drawn below)
+        auto moveSelectedLayer = [this](int step) {
+            if (!m_canvas_handle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+            const auto names = canvas_comp.image.layerNames();
+            const int from = canvas_comp.image.currentLayer();
+            const int to = from + step;
+
+            if (from >= (int)names.size() || to < 0 || to >= (int)names.size()) {
+                return;
+            }
+
+            canvas_comp.image.moveLayer(names[from], static_cast<std::uint8_t>(to));
+            canvas_comp.texture_dirty = true;
+            refreshLayerList();
+        };
+        layerUpBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { moveSelectedLayer(-1); });
+        layerDownBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { moveSelectedLayer(1); });
 
         toggleAllLayersBtn->getSignal<>("Pressed").connect([this]() {
             if (!m_canvas_handle.is_alive()) {
