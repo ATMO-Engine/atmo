@@ -445,10 +445,45 @@ namespace atmo::editor
         deleteLayerBtn_layout.padding.right = 12;
         deleteLayerBtn_label->setParent(*deleteLayerBtn);
 
+        auto toggleAllLayersBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto toggleAllLayersBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &toggleAllLayersBtn_rect = toggleAllLayersBtn->getComponentMutable<core::components::UIRect>();
+        auto &toggleAllLayersBtn_layout = toggleAllLayersBtn->getComponentMutable<core::components::Layout>();
+        toggleAllLayersBtn->setParent(*layerBtnContainer);
+
+        toggleAllLayersBtn_label->setText(m_allLayerVisible ? "Hide All" : "Show All");
+        m_toggle_all_label_handle = toggleAllLayersBtn_label->getHandle();
+        toggleAllLayersBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        toggleAllLayersBtn_label->setFontSize(12);
+        toggleAllLayersBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        toggleAllLayersBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        toggleAllLayersBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        toggleAllLayersBtn_layout.padding.left = 12;
+        toggleAllLayersBtn_layout.padding.right = 12;
+        toggleAllLayersBtn_label->setParent(*toggleAllLayersBtn);
+
+        auto layerRow = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &layerRow_layout = layerRow->getComponentMutable<core::components::Layout>();
+        layerRow_layout.direction = core::components::Layout::Direction::Horizontal;
+        layerRow_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        layerRow_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        layerRow_layout.child_gap = 4;
+        layerRow->setParent(*bottom_panel);
+
+        auto layerVisibility = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &layerVisibility_layout = layerVisibility->getComponentMutable<core::components::Layout>();
+        layerVisibility_layout.direction = core::components::Layout::Direction::Vertical;
+        layerVisibility_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerVisibility_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        layerVisibility_layout.padding = { 4, 4, 4, 4 };
+        layerVisibility_layout.child_gap = 4;
+        m_layer_visibility_handle = layerVisibility->getHandle();
+        layerVisibility->setParent(*layerRow);
+
         auto layerList = core::ecs::EntityRegistry::Create<core::ecs::entities::UIList>("Entity::UI::UIRect::UIList");
         layerList->setDirection(core::components::Layout::Direction::Vertical);
         m_layer_list_handle = layerList->getHandle();
-        layerList->setParent(*bottom_panel);
+        layerList->setParent(*layerRow);
 
         auto canvas =core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
         auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
@@ -629,6 +664,21 @@ namespace atmo::editor
             refreshLayerList();
         });
 
+        toggleAllLayersBtn->getSignal<>("Pressed").connect([this]() {
+            if (!m_canvas_handle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+            const auto names = canvas_comp.image.layerNames();
+
+            for (const auto &name : names)
+                canvas_comp.image.setLayerVisible(name, !m_allLayerVisible);
+
+            canvas_comp.texture_dirty = true;
+            refreshLayerVisibility();
+        });
+
         deleteLayerBtn->getSignal<>("Pressed").connect([this]() {
             if (!m_canvas_handle.is_alive()) {
                 return;
@@ -680,6 +730,79 @@ namespace atmo::editor
 
         list.setItems(image.layerNames());
         list.select(image.currentLayer(), false);
+
+        refreshLayerVisibility();
+    }
+
+    void TextureEditor::refreshLayerVisibility()
+    {
+        if (!m_canvas_handle.is_alive() || !m_layer_visibility_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        core::ecs::entities::UI column(core::ecs::EntityRegistry::GetEntityFromId(m_layer_visibility_handle));
+        const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+
+        for (auto &child : column.getChildren()) child.destroy();
+
+        for (const auto &name : image.layerNames()) {
+            auto visibleBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto visibleBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &visibleBtn_rect = visibleBtn->getComponentMutable<core::components::UIRect>();
+            auto &visibleBtn_layout = visibleBtn->getComponentMutable<core::components::Layout>();
+
+            visibleBtn_label->setText(image.isLayerVisible(name) ? "Hide" : "Show");
+            visibleBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            visibleBtn_label->setFontSize(12);
+            visibleBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+            visibleBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            visibleBtn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 48.0f, 48.0f };
+            visibleBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            visibleBtn_label->setParent(*visibleBtn);
+            visibleBtn->setParent(column);
+
+            auto labelHandle = visibleBtn_label->getHandle();
+            visibleBtn->getSignal<>("Pressed").connect([this, name, labelHandle]() {
+                if (!m_canvas_handle.is_alive() || !labelHandle.is_alive()) {
+                    return;
+                }
+                core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+                auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+                bool visible = !canvas_comp.image.isLayerVisible(name);
+                canvas_comp.image.setLayerVisible(name, visible);
+                canvas_comp.texture_dirty = true;
+
+                core::ecs::entities::UILabel label(core::ecs::EntityRegistry::GetEntityFromId(labelHandle));
+                label.setText(visible ? "Hide" : "Show");
+
+                refreshAllLayerVisible();
+            });
+        }
+
+        refreshAllLayerVisible();
+    }
+
+    void TextureEditor::refreshAllLayerVisible()
+    {
+        if (!m_canvas_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+        const auto names = image.layerNames();
+
+        auto isVisible = [&](const std::string &name) { return image.isLayerVisible(name); };
+        if (m_allLayerVisible && std::none_of(names.begin(), names.end(), isVisible))
+            m_allLayerVisible = false;
+        else if (!m_allLayerVisible && std::all_of(names.begin(), names.end(), isVisible))
+            m_allLayerVisible = true;
+
+        if (!m_toggle_all_label_handle.is_alive())
+            return;
+
+        core::ecs::entities::UILabel label(core::ecs::EntityRegistry::GetEntityFromId(m_toggle_all_label_handle));
+        label.setText(m_allLayerVisible ? "Hide All" : "Show All");
     }
 } // namespace atmo::editor
 

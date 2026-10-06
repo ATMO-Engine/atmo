@@ -80,11 +80,22 @@ per layer:
             }
             std::uint8_t currentLayer() const { return m_currentLayer; }
 
+            /**
+             * @brief Blends the current frame of every visible layer into a single frame
+             *
+             * The last layer of the list is drawn first and the first layer ends up on top of all the others.
+             *
+             * @return A size_x * size_y frame
+             */
+            Frame renderAll() const;
+
             void addLayer(const std::string &layerName);
             void renameLayer(const std::string &layerName, const std::string &newName);
             void removeLayer(const std::string &layerName);
             void moveLayer(const std::string &layerName, std::uint8_t desiredPos);
             void selectLayer(const std::string &layerName);
+            void setLayerVisible(const std::string &layerName, bool visible);
+            bool isLayerVisible(const std::string &layerName) const;
 
             Frame getFrame();
             void addFrame();

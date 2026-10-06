@@ -1,12 +1,10 @@
 #pragma once
 
 #include <unordered_set>
-#include "SDL3/SDL.h"
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/types.hpp"
 #include "editor/editors/texture_editor/atmo_format.hpp"
-#include "meta/meta.hpp"
 
 namespace atmo::core::components
 {

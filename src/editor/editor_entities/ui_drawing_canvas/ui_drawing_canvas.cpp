@@ -1,7 +1,6 @@
 #include "ui_drawing_canvas.hpp"
 #include "SDL3_image/SDL_image.h"
 #include "common/math.hpp"
-#include "core/ecs/components.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
@@ -393,9 +392,8 @@ namespace atmo::core::ecs::entities
         if (!comp.texture_dirty)
             return;
 
-        auto *pixels = currentFrame();
-        if (!pixels)
-            return;
+        const auto img = comp.image.renderAll();
+        const auto *pixels = &img.frame;
 
         int h = (int)pixels->size();
         int w = h > 0 ? (int)(*pixels)[0].size() : 0;
@@ -545,11 +543,12 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        // Single layer / single frame for now: only the current frame is exported
-        const auto *pixels = currentFrame();
+        const auto img = comp.image.renderAll();
+        const auto *pixels = &img.frame;
+
         int w = comp.image.width();
         int h = comp.image.height();
-        if (w <= 0 || h <= 0 || !pixels || (int)pixels->size() < h)
+        if (w <= 0 || h <= 0 || (int)pixels->size() < h)
             return;
 
         SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA32);

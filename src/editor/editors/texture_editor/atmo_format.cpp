@@ -54,6 +54,36 @@ namespace atmo::image::extension
         return const_cast<AtmoFormat *>(this)->currentFrame();
     }
 
+    Frame AtmoFormat::renderAll() const
+    {
+        Frame result = blankFrame();
+
+        for (auto lay = m_img.layer_list.rbegin(); lay != m_img.layer_list.rend(); ++lay) {
+            if (!lay->visible || m_currentFrame >= lay->frame_list.size())
+                continue;
+
+            const auto &src = lay->frame_list[m_currentFrame].frame;
+            for (std::size_t y = 0; y < result.frame.size() && y < src.size(); y++) {
+                for (std::size_t x = 0; x < result.frame[y].size() && x < src[y].size(); x++) {
+                    const auto &top = src[y][x];
+                    auto &dst = result.frame[y][x];
+
+                    const float outA = top.a + dst.a * (1.0f - top.a);
+                    if (outA <= 0.0f) {
+                        dst = atmo::core::types::Color::TRANSPARENT_COL;
+                        continue;
+                    }
+                    dst.r = (top.r * top.a + dst.r * dst.a * (1.0f - top.a)) / outA;
+                    dst.g = (top.g * top.a + dst.g * dst.a * (1.0f - top.a)) / outA;
+                    dst.b = (top.b * top.a + dst.b * dst.a * (1.0f - top.a)) / outA;
+                    dst.a = outA;
+                }
+            }
+        }
+
+        return result;
+    }
+
     void AtmoFormat::addLayer(const std::string &layerName)
     {
         if (m_img.layer_list.size() >= UINT8_MAX) {
@@ -150,6 +180,28 @@ namespace atmo::image::extension
         }
 
         spdlog::warn("{} not found, selection unchanged", layerName);
+    }
+
+    void AtmoFormat::setLayerVisible(const std::string &layerName, bool visible)
+    {
+        for (auto &lay : m_img.layer_list) {
+            if (lay.name == layerName) {
+                lay.visible = visible;
+                return;
+            }
+        }
+
+        spdlog::warn("{} not found, visibility unchanged", layerName);
+    }
+
+    bool AtmoFormat::isLayerVisible(const std::string &layerName) const
+    {
+        for (const auto &lay : m_img.layer_list) {
+            if (lay.name == layerName)
+                return lay.visible;
+        }
+
+        return false;
     }
 
     Frame AtmoFormat::getFrame()
