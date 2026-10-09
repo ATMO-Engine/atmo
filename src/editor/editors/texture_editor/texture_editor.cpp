@@ -916,7 +916,7 @@ namespace atmo::editor
         });
 
         pencilBtn->getSignal<bool>("Toggle").connect([canvasHandle](bool new_state) {
-            if (!canvasHandle.is_alive()) {
+            if (!new_state || !canvasHandle.is_alive()) {
                 return;
             }
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
@@ -926,7 +926,7 @@ namespace atmo::editor
         });
 
         eraserBtn->getSignal<bool>("Toggle").connect([canvasHandle](bool new_state) {
-            if (!canvasHandle.is_alive()) {
+            if (!new_state || !canvasHandle.is_alive()) {
                 return;
             }
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
@@ -934,6 +934,8 @@ namespace atmo::editor
 
             canvas_comp.pen = core::components::UIDrawingCanvas::DrawType::ERASER;
         });
+
+        pencilBtn->press();
 
         fileExplorer->getSignal<std::string>("FileFocus").connect([this](std::string path) { open(path); });
 
