@@ -378,7 +378,10 @@ namespace atmo::core::ecs::entities
                 handleZoom(mousePosInScreen);
                 handlePan(mousePosInScreen);
             }
-            handleDrawing(mousePosInScreen, mousePosInCanvas);
+            if (comp.drawing_locked)
+                comp.last_paint_mouse_pos = mousePosInCanvas;
+            else
+                handleDrawing(mousePosInScreen, mousePosInCanvas);
         } else {
             comp.last_paint_mouse_pos = mousePosInCanvas;
         }
@@ -543,41 +546,93 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        const auto img = comp.image.renderAll();
-        const auto *pixels = &img.frame;
+        std::string ext = std::filesystem::path(path).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-        int w = comp.image.width();
-        int h = comp.image.height();
-        if (w <= 0 || h <= 0 || (int)pixels->size() < h)
-            return;
+        if (ext == ".atmo")
+            comp.image.save(path);
+        else
+            exportSpriteSheet(path, comp.image.layerNames());
+    }
 
-        SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA32);
+    SDL_Surface *UIDrawingCanvas::LoadRgbaSurface(const std::string &path)
+    {
+        std::string ext = path.substr(path.find_last_of('.') + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext != "bmp" && ext != "png" && ext != "jpg" && ext != "jpeg")
+            throw ImportException(path, "file format not valid, file format available: .atmo, .bmp, .png, .jpg");
+
+        SDL_Surface *surface = IMG_Load(path.c_str());
         if (!surface)
-            return;
+            throw ImportException(path, SDL_GetError());
+
+        SDL_Surface *rgba = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
+        SDL_DestroySurface(surface);
+        if (!rgba)
+            throw ImportException(path, SDL_GetError());
+        return rgba;
+    }
+
+    components::UIDrawingCanvas::ExportFormat UIDrawingCanvas::FormatFromPath(const std::string &path)
+    {
+        std::string ext = path.substr(path.find_last_of('.') + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext == "bmp")
+            return components::UIDrawingCanvas::ExportFormat::BMP;
+        if (ext == "jpg" || ext == "jpeg")
+            return components::UIDrawingCanvas::ExportFormat::JPG;
+        return components::UIDrawingCanvas::ExportFormat::PNG;
+    }
+
+    bool UIDrawingCanvas::exportSpriteSheet(const std::string &path, const std::vector<std::string> &layerNames)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        const auto frames = comp.image.renderLayers(layerNames);
+        const int frameW = comp.image.width();
+        const int frameH = comp.image.height();
+        if (frames.empty() || frameW <= 0 || frameH <= 0) {
+            spdlog::warn("Export sprite sheet: nothing to export");
+            return false;
+        }
+
+        SDL_Surface *surface = SDL_CreateSurface(frameW * static_cast<int>(frames.size()), frameH, SDL_PIXELFORMAT_RGBA32);
+        if (!surface) {
+            spdlog::error("Export sprite sheet: {}", SDL_GetError());
+            return false;
+        }
 
         uint8_t *px = (uint8_t *)surface->pixels;
-        for (int y = 0; y < h; ++y)
-            for (int x = 0; x < w; ++x) {
-                const auto &c = (*pixels)[y][x];
-                int i = y * surface->pitch + x * 4;
-                px[i + 0] = (uint8_t)(c.r * 255.0f);
-                px[i + 1] = (uint8_t)(c.g * 255.0f);
-                px[i + 2] = (uint8_t)(c.b * 255.0f);
-                px[i + 3] = (uint8_t)(c.a * 255.0f);
-            }
+        for (std::size_t f = 0; f < frames.size(); ++f) {
+            const int originX = static_cast<int>(f) * frameW;
+            for (int y = 0; y < frameH && y < (int)frames[f].frame.size(); ++y)
+                for (int x = 0; x < frameW && x < (int)frames[f].frame[y].size(); ++x) {
+                    const auto &c = frames[f].frame[y][x];
+                    int i = y * surface->pitch + (originX + x) * 4;
+                    px[i + 0] = (uint8_t)(c.r * 255.0f);
+                    px[i + 1] = (uint8_t)(c.g * 255.0f);
+                    px[i + 2] = (uint8_t)(c.b * 255.0f);
+                    px[i + 3] = (uint8_t)(c.a * 255.0f);
+                }
+        }
 
-        switch (comp.format) {
+        bool saved = false;
+        switch (FormatFromPath(path)) {
             case core::components::UIDrawingCanvas::ExportFormat::PNG:
-                IMG_SavePNG(surface, path.c_str());
+                saved = IMG_SavePNG(surface, path.c_str());
                 break;
             case core::components::UIDrawingCanvas::ExportFormat::BMP:
-                SDL_SaveBMP(surface, path.c_str());
+                saved = SDL_SaveBMP(surface, path.c_str());
                 break;
             case core::components::UIDrawingCanvas::ExportFormat::JPG:
-                IMG_SaveJPG(surface, path.c_str(), 90);
+                saved = IMG_SaveJPG(surface, path.c_str(), 90);
                 break;
         }
+        if (!saved)
+            spdlog::error(R"(Export sprite sheet "{}": {})", path, SDL_GetError());
+
         SDL_DestroySurface(surface);
+        return saved;
     }
 
     void UIDrawingCanvas::importCanvas(const std::string &path)
@@ -608,61 +663,93 @@ namespace atmo::core::ecs::entities
         std::string ext = path.substr(path.find_last_of('.') + 1);
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-        SDL_Surface *surface = nullptr;
-
         /* temporary check. Must be reworked */
         auto fileSize = fs::file_size(path, ec);
-        if ((!ec && fileSize == 0) && (ext == "bmp" || ext == "png" || ext == "jpg" || ext == "jpeg")) {
+        if ((!ec && fileSize == 0) && (ext == "bmp" || ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "atmo")) {
             spdlog::info("Import Canvas: file {} exists but is empty, creating blank 16x16 canvas", path);
-            initPixelBuffer(16, 16);
+            initPixelBuffer(DEFAULT_TEXTURE_SIZE, DEFAULT_TEXTURE_SIZE);
             comp.file_path = path;
             return;
         }
 
-        if (ext == "bmp") {
-            comp.format = core::components::UIDrawingCanvas::ExportFormat::BMP;
-            surface = SDL_LoadBMP(path.c_str());
-        } else if (ext == "png") {
-            comp.format = core::components::UIDrawingCanvas::ExportFormat::PNG;
-            surface = IMG_Load(path.c_str());
-        } else if (ext == "jpg" || ext == "jpeg") {
-            comp.format = core::components::UIDrawingCanvas::ExportFormat::JPG;
-            surface = IMG_Load(path.c_str());
-        } else {
-            spdlog::warn("File format not valid no op, file format available: .bmp, .png, .jpg");
-            return;
-        }
-
-        comp.file_path = path;
-        if (!surface)
-            return;
-
-        SDL_Surface *rgba = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
-        SDL_DestroySurface(surface);
-        if (!rgba)
-            return;
-
-        int w = rgba->w;
-        int h = rgba->h;
-
-        if (w < 1 || w > 10000) {
-            spdlog::warn("Image width not within 1-10000 px range, clamped");
-            w = common::math::Clamp(w, 1, 10000);
-        }
-        if (h < 1 || h > 10000) {
-            spdlog::warn("Image heigth not within 1-10000 px range; clamped");
-            h = common::math::Clamp(h, 1, 10000);
-        }
-
-        comp.image.reset(w, h);
-        auto &pixels = *currentFrame();
-        uint8_t *px = (uint8_t *)rgba->pixels;
-        for (int y = 0; y < h; ++y)
-            for (int x = 0; x < w; ++x) {
-                int i = y * rgba->pitch + x * 4;
-                pixels[y][x] ={ px[i + 0] / 255.0f, px[i + 1] / 255.0f, px[i + 2] / 255.0f, px[i + 3] / 255.0f };
+        if (ext == "atmo") {
+            atmo::image::extension::AtmoFormat loaded;
+            if (!loaded.load(path))
+                return;
+            if (loaded.width() == 0 || loaded.height() == 0) {
+                spdlog::warn("Import Canvas: {} has an empty frame size, no op", path);
+                return;
             }
+
+            comp.image = std::move(loaded);
+            comp.file_path = path;
+            imageReloaded(comp.image.width(), comp.image.height());
+            return;
+        }
+
+        try {
+            auto size = ProbeImageSize(path);
+            importSpriteSheet(path, size.x, size.y, 1);
+        } catch (const ImportException &e) {
+            spdlog::warn("Import Canvas: {}, no op", e.what());
+        }
+    }
+
+    atmo::core::types::Vector2i UIDrawingCanvas::ProbeImageSize(const std::string &path)
+    {
+        SDL_Surface *surface = LoadRgbaSurface(path);
+        atmo::core::types::Vector2i size = { surface->w, surface->h };
+        SDL_DestroySurface(surface);
+        return size;
+    }
+
+    void UIDrawingCanvas::importSpriteSheet(const std::string &path, int frameW, int frameH, int frameCount)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        if (frameW < 1 || frameW > MAX_FRAME_SIZE || frameH < 1 || frameH > MAX_FRAME_SIZE)
+            throw ImportException(path, std::format("frame size {}x{} not within 1-{} px range", frameW, frameH, MAX_FRAME_SIZE));
+        if (frameCount < 1 || frameCount > UINT8_MAX)
+            throw ImportException(path, std::format("frame count {} not within 1-{} range", frameCount, UINT8_MAX));
+
+        SDL_Surface *rgba = LoadRgbaSurface(path);
+        const int sheetW = rgba->w;
+        const int sheetH = rgba->h;
+        const int columns = sheetW / frameW;
+        const int rows = sheetH / frameH;
+        if (frameCount > columns * rows) {
+            SDL_DestroySurface(rgba);
+            throw ImportException(
+                path, std::format("a {}x{} sheet only holds {} frames of {}x{}, {} requested", sheetW, sheetH, columns * rows, frameW, frameH, frameCount));
+        }
+
+        comp.image.reset(frameW, frameH);
+        comp.image.setFrameNumber(static_cast<std::uint8_t>(frameCount));
+
+        const uint8_t *px = (const uint8_t *)rgba->pixels;
+        for (int f = 0; f < frameCount; ++f) {
+            comp.image.selectFrame(static_cast<std::uint8_t>(f));
+            auto &pixels = *currentFrame();
+            const int originX = (f % columns) * frameW;
+            const int originY = (f / columns) * frameH;
+
+            for (int y = 0; y < frameH; ++y)
+                for (int x = 0; x < frameW; ++x) {
+                    int i = (originY + y) * rgba->pitch + (originX + x) * 4;
+                    pixels[y][x] = { px[i + 0] / 255.0f, px[i + 1] / 255.0f, px[i + 2] / 255.0f, px[i + 3] / 255.0f };
+                }
+        }
         SDL_DestroySurface(rgba);
+        comp.image.selectFrame(0);
+
+        comp.format = FormatFromPath(path);
+        comp.file_path = path;
+        imageReloaded(frameW, frameH);
+    }
+
+    void UIDrawingCanvas::imageReloaded(int w, int h)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
         if (comp.drawing_texture) {
             SDL_DestroyTexture(comp.drawing_texture);

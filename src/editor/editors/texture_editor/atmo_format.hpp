@@ -80,6 +80,9 @@ per layer:
             }
             std::uint8_t currentLayer() const { return m_currentLayer; }
 
+            std::size_t frameCount() const;
+            std::uint8_t currentFrameIndex() const { return m_currentFrame; }
+
             /**
              * @brief Blends the current frame of every visible layer into a single frame
              *
@@ -88,6 +91,17 @@ per layer:
              * @return A size_x * size_y frame
              */
             Frame renderAll() const;
+
+            /**
+             * @brief Blends the given layers together, frame by frame, whatever their visibility
+             *
+             * Same order as renderAll, layers are drawn in list order and not in the order of layerNames.
+             * Unknown names are ignored.
+             *
+             * @param layerNames Layers to blend
+             * @return One size_x * size_y frame per frame of the image, transparent if nothing matched
+             */
+            std::vector<Frame> renderLayers(const std::vector<std::string> &layerNames) const;
 
             void addLayer(const std::string &layerName);
             void renameLayer(const std::string &layerName, const std::string &newName);
@@ -108,7 +122,7 @@ per layer:
             /**
              * @brief Loads an .atmo image into m_img
              *
-             * @param path Disk path, "user://..." or "project://...".
+             * @param path Disk path or "project://...".
              * @return false if the file could not be opened or is malformed (m_img is left untouched).
              */
             bool load(std::string_view path);
@@ -116,13 +130,17 @@ per layer:
             /**
              * @brief Saves m_img to an .atmo image, overwriting the file if it exists
              *
-             * @param path Disk path, "user://..." or "project://...".
+             * @param path Disk path or "project://...".
              * @return false if the file could not be written.
              */
             bool save(std::string_view path) const;
         private:
-            std::size_t frameCount() const;
             Frame blankFrame() const;
+
+            /**
+             * @brief Alpha blends top over dst ("source over"), pixel by pixel
+             */
+            static void BlendOnto(Frame &dst, const Frame &top);
             void syncFrameCounts();
 
             File m_img;
@@ -130,9 +148,9 @@ per layer:
             std::uint8_t m_currentFrame = 0;
     };
 
-
     constexpr char MAGIC[8] = { 'A', 'T', 'M', 'O', 'I', 'M', 'G', '\0' };
     constexpr std::uint32_t VERSION = 1;
+    constexpr int MAX_FRAME_SIZE = UINT16_MAX;
 
     static_assert(sizeof(atmo::core::types::Color) == 4 * sizeof(float), "Color layout changed, update the .atmo format and bump VERSION");
 

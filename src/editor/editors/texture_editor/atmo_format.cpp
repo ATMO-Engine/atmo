@@ -54,6 +54,26 @@ namespace atmo::image::extension
         return const_cast<AtmoFormat *>(this)->currentFrame();
     }
 
+    void AtmoFormat::BlendOnto(Frame &dst, const Frame &top)
+    {
+        for (std::size_t y = 0; y < dst.frame.size() && y < top.frame.size(); y++) {
+            for (std::size_t x = 0; x < dst.frame[y].size() && x < top.frame[y].size(); x++) {
+                const auto &src = top.frame[y][x];
+                auto &out = dst.frame[y][x];
+
+                const float outA = src.a + out.a * (1.0f - src.a);
+                if (outA <= 0.0f) {
+                    out = atmo::core::types::Color::TRANSPARENT_COL;
+                    continue;
+                }
+                out.r = (src.r * src.a + out.r * out.a * (1.0f - src.a)) / outA;
+                out.g = (src.g * src.a + out.g * out.a * (1.0f - src.a)) / outA;
+                out.b = (src.b * src.a + out.b * out.a * (1.0f - src.a)) / outA;
+                out.a = outA;
+            }
+        }
+    }
+
     Frame AtmoFormat::renderAll() const
     {
         Frame result = blankFrame();
@@ -61,24 +81,21 @@ namespace atmo::image::extension
         for (auto lay = m_img.layer_list.rbegin(); lay != m_img.layer_list.rend(); ++lay) {
             if (!lay->visible || m_currentFrame >= lay->frame_list.size())
                 continue;
+            BlendOnto(result, lay->frame_list[m_currentFrame]);
+        }
 
-            const auto &src = lay->frame_list[m_currentFrame].frame;
-            for (std::size_t y = 0; y < result.frame.size() && y < src.size(); y++) {
-                for (std::size_t x = 0; x < result.frame[y].size() && x < src[y].size(); x++) {
-                    const auto &top = src[y][x];
-                    auto &dst = result.frame[y][x];
+        return result;
+    }
 
-                    const float outA = top.a + dst.a * (1.0f - top.a);
-                    if (outA <= 0.0f) {
-                        dst = atmo::core::types::Color::TRANSPARENT_COL;
-                        continue;
-                    }
-                    dst.r = (top.r * top.a + dst.r * dst.a * (1.0f - top.a)) / outA;
-                    dst.g = (top.g * top.a + dst.g * dst.a * (1.0f - top.a)) / outA;
-                    dst.b = (top.b * top.a + dst.b * dst.a * (1.0f - top.a)) / outA;
-                    dst.a = outA;
-                }
-            }
+    std::vector<Frame> AtmoFormat::renderLayers(const std::vector<std::string> &layerNames) const
+    {
+        std::vector<Frame> result(frameCount(), blankFrame());
+
+        for (auto lay = m_img.layer_list.rbegin(); lay != m_img.layer_list.rend(); ++lay) {
+            if (std::find(layerNames.begin(), layerNames.end(), lay->name) == layerNames.end())
+                continue;
+            for (std::size_t f = 0; f < result.size() && f < lay->frame_list.size(); f++)
+                BlendOnto(result[f], lay->frame_list[f]);
         }
 
         return result;
@@ -332,7 +349,7 @@ namespace atmo::image::extension
 
             auto sizeX = reader.pod<std::uint32_t>();
             auto sizeY = reader.pod<std::uint32_t>();
-            if (sizeX > UINT16_MAX || sizeY > UINT16_MAX)
+            if (sizeX > MAX_FRAME_SIZE || sizeY > MAX_FRAME_SIZE)
                 throw std::runtime_error("frame too large");
 
             for (std::uint32_t l = 0; l < layerCount; l++) {

@@ -1,10 +1,14 @@
 #include "texture_editor.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <format>
+#include <variant>
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
+#include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
@@ -16,7 +20,8 @@
 #include "editor/editor_entities/ui_color_picker/ui_color_picker.hpp"
 #include "editor/editor_entities/ui_drawing_canvas/ui_drawing_canvas.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
-#include "editor/editor_entities/ui_list/ui_list.hpp"
+#include "editor/editor_entities/ui_grid/ui_grid.hpp"
+#include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "editor/editor_registry.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
@@ -25,6 +30,8 @@ namespace atmo::editor
 {
     void TextureEditor::init(atmo::core::ecs::entities::UI &container)
     {
+        m_root_handle = container.getHandle();
+
         flecs::entity root = container.getHandle().world().lookup("_Root");
         SDL_Renderer *renderer = nullptr;
         if (root.is_valid() && root.has<core::components::Window>()) {
@@ -93,6 +100,8 @@ namespace atmo::editor
                     ctx->zoom(pinch, { ctx->getWidth() * 0.5f, ctx->getHeight() * 0.5f });
 
                 for (auto &fn : m_inspector_update_fns) fn();
+
+                tickAnimation(evt->delta_time);
             });
 
         auto texture_editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -102,6 +111,7 @@ namespace atmo::editor
         texture_editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         texture_editor_container_layout.z_index = 0;
         texture_editor_container_layout.padding = { 16, 16, 8, 16 };
+        texture_editor_container_layout.child_gap = 8;
         texture_editor_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         texture_editor_container->setParent(container);
 
@@ -256,6 +266,24 @@ namespace atmo::editor
         saveBtn_label->setParent(*saveBtn);
         saveBtn->setParent(*texture_editor_panel);
 
+        auto exportBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto exportBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &exportBtn_rect = exportBtn->getComponentMutable<core::components::UIRect>();
+        auto &exportBtn_layout = exportBtn->getComponentMutable<core::components::Layout>();
+
+        exportBtn_label->setText("Export");
+        exportBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        exportBtn_label->setFontSize(12);
+        exportBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        exportBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        exportBtn_layout.width.size = 0.35f;
+        exportBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
+        exportBtn_layout.height.size = 0.10f;
+        exportBtn_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        exportBtn_layout.padding.left = 12;
+        exportBtn_label->setParent(*exportBtn);
+        exportBtn->setParent(*texture_editor_panel);
+
         auto previewBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto previewBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
         auto &previewBtn_rect = previewBtn->getComponentMutable<core::components::UIRect>();
@@ -396,125 +424,137 @@ namespace atmo::editor
         bottom_panel_rect.corner_radius.top_right = 4.0f;
         bottom_panel_rect.corner_radius.bottom_left = 4.0f;
         bottom_panel_rect.corner_radius.bottom_right = 4.0f;
-        bottom_panel_layout.direction = core::components::Layout::Direction::Horizontal;
+        bottom_panel_layout.direction = core::components::Layout::Direction::Vertical;
         bottom_panel_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         bottom_panel_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        bottom_panel_layout.height.size = 0.2f;
+        bottom_panel_layout.height.size = 0.30f;
         bottom_panel_layout.padding = { 16, 16, 16, 16 };
-        bottom_panel_layout.child_gap = 16;
+        bottom_panel_layout.child_gap = 8;
         bottom_panel->setParent(*canvas_container);
 
-        auto layerBtnContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        auto &layerBtnContainer_layout = layerBtnContainer->getComponentMutable<core::components::Layout>();
-        layerBtnContainer_layout.direction = core::components::Layout::Direction::Vertical;
-        layerBtnContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        layerBtnContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        layerBtnContainer_layout.child_gap = 8;
-        layerBtnContainer->setParent(*bottom_panel);
+        auto timelineControlsRow = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &timelineControlsRow_layout = timelineControlsRow->getComponentMutable<core::components::Layout>();
+        timelineControlsRow_layout.direction = core::components::Layout::Direction::Horizontal;
+        timelineControlsRow_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        timelineControlsRow_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        timelineControlsRow_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+        timelineControlsRow_layout.child_gap = 8;
+        timelineControlsRow->setParent(*bottom_panel);
 
-        auto addLayerBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        auto addLayerBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        auto &addLayerBtn_rect = addLayerBtn->getComponentMutable<core::components::UIRect>();
-        auto &addLayerBtn_layout = addLayerBtn->getComponentMutable<core::components::Layout>();
-        addLayerBtn->setParent(*layerBtnContainer);
+        auto timelineControlsSpacer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &timelineControlsSpacer_layout = timelineControlsSpacer->getComponentMutable<core::components::Layout>();
+        timelineControlsSpacer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        timelineControlsSpacer->setParent(*timelineControlsRow);
 
-        addLayerBtn_label->setText("Add Layer");
-        addLayerBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        addLayerBtn_label->setFontSize(12);
-        addLayerBtn_rect.color = core::types::Color::TRANSPARENT_COL;
-        addLayerBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        addLayerBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        addLayerBtn_layout.padding.left = 12;
-        addLayerBtn_layout.padding.right = 12;
-        addLayerBtn_label->setParent(*addLayerBtn);
+        auto animationControlButtonContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &animationControlButtonContainer_layout = animationControlButtonContainer->getComponentMutable<core::components::Layout>();
+        animationControlButtonContainer_layout.direction = core::components::Layout::Direction::Horizontal;
+        animationControlButtonContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        animationControlButtonContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        animationControlButtonContainer_layout.child_gap = 8;
+        animationControlButtonContainer->setParent(*timelineControlsRow);
 
-        auto deleteLayerBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        auto deleteLayerBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        auto &deleteLayerBtn_rect = deleteLayerBtn->getComponentMutable<core::components::UIRect>();
-        auto &deleteLayerBtn_layout = deleteLayerBtn->getComponentMutable<core::components::Layout>();
-        deleteLayerBtn->setParent(*layerBtnContainer);
+        auto makePlaybackBtn = [&animationControlButtonContainer](const std::string &text) {
+            auto btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto btn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &btn_rect = btn->getComponentMutable<core::components::UIRect>();
+            auto &btn_layout = btn->getComponentMutable<core::components::Layout>();
 
-        deleteLayerBtn_label->setText("Delete Layer");
-        deleteLayerBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        deleteLayerBtn_label->setFontSize(12);
-        deleteLayerBtn_rect.color = core::types::Color::TRANSPARENT_COL;
-        deleteLayerBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        deleteLayerBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        deleteLayerBtn_layout.padding.left = 12;
-        deleteLayerBtn_layout.padding.right = 12;
-        deleteLayerBtn_label->setParent(*deleteLayerBtn);
+            btn_label->setText(text);
+            btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            btn_label->setFontSize(12);
+            btn_rect.color = core::types::Color::TRANSPARENT_COL;
+            btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            btn_layout.padding.left = 12;
+            btn_layout.padding.right = 12;
+            btn_label->setParent(*btn);
+            btn->setParent(*animationControlButtonContainer);
+            return btn;
+        };
 
-        auto toggleAllLayersBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        auto toggleAllLayersBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        auto &toggleAllLayersBtn_rect = toggleAllLayersBtn->getComponentMutable<core::components::UIRect>();
-        auto &toggleAllLayersBtn_layout = toggleAllLayersBtn->getComponentMutable<core::components::Layout>();
-        toggleAllLayersBtn->setParent(*layerBtnContainer);
+        auto previousFrameBtn = makePlaybackBtn("Previous");
+        auto playBtn = makePlaybackBtn("Play");
+        auto pauseBtn = makePlaybackBtn("Pause");
+        auto nextFrameBtn = makePlaybackBtn("Next");
 
-        toggleAllLayersBtn_label->setText(m_allLayerVisible ? "Hide All" : "Show All");
-        m_toggle_all_label_handle = toggleAllLayersBtn_label->getHandle();
-        toggleAllLayersBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        toggleAllLayersBtn_label->setFontSize(12);
-        toggleAllLayersBtn_rect.color = core::types::Color::TRANSPARENT_COL;
-        toggleAllLayersBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        toggleAllLayersBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        toggleAllLayersBtn_layout.padding.left = 12;
-        toggleAllLayersBtn_layout.padding.right = 12;
-        toggleAllLayersBtn_label->setParent(*toggleAllLayersBtn);
+        auto fpsLabel = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        fpsLabel->setText("FPS");
+        fpsLabel->setFontSize(12);
+        fpsLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        fpsLabel->setParent(*animationControlButtonContainer);
 
-        auto layerUpBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        auto layerUpBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        auto &layerUpBtn_rect = layerUpBtn->getComponentMutable<core::components::UIRect>();
-        auto &layerUpBtn_layout = layerUpBtn->getComponentMutable<core::components::Layout>();
-        layerUpBtn->setParent(*layerBtnContainer);
+        auto fpsNumberInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+        fpsNumberInput->getComponentMutable<core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Int;
+        fpsNumberInput->getComponentMutable<core::components::UINumberInput>().value = m_fps;
+        fpsNumberInput->setParent(*animationControlButtonContainer);
 
-        layerUpBtn_label->setText("Layer Up");
-        layerUpBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        layerUpBtn_label->setFontSize(12);
-        layerUpBtn_rect.color = core::types::Color::TRANSPARENT_COL;
-        layerUpBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        layerUpBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        layerUpBtn_layout.padding.left = 12;
-        layerUpBtn_layout.padding.right = 12;
-        layerUpBtn_label->setParent(*layerUpBtn);
+        fpsNumberInput->getSignal<int>("IntValueChanged").connect([this](int val) {
+            if (val < 1 || val > MAX_FPS) {
+                spdlog::warn("FPS is not inside 1 - {} bounds, clamped", MAX_FPS);
+                val = common::math::Clamp(val, 1, MAX_FPS);
+            }
+            m_fps = val;
+        });
 
-        auto layerDownBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-        auto layerDownBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        auto &layerDownBtn_rect = layerDownBtn->getComponentMutable<core::components::UIRect>();
-        auto &layerDownBtn_layout = layerDownBtn->getComponentMutable<core::components::Layout>();
-        layerDownBtn->setParent(*layerBtnContainer);
+        playBtn->getSignal<>("Pressed").connect([this]() {
+            setPlaying(true);
+            m_frame_time_accumulator = 0.0f;
+        });
+        pauseBtn->getSignal<>("Pressed").connect([this]() { setPlaying(false); });
+        previousFrameBtn->getSignal<>("Pressed").connect([this]() {
+            setPlaying(false);
+            stepFrame(-1);
+        });
+        nextFrameBtn->getSignal<>("Pressed").connect([this]() {
+            setPlaying(false);
+            stepFrame(1);
+        });
 
-        layerDownBtn_label->setText("Layer Down");
-        layerDownBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        layerDownBtn_label->setFontSize(12);
-        layerDownBtn_rect.color = core::types::Color::TRANSPARENT_COL;
-        layerDownBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        layerDownBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        layerDownBtn_layout.padding.left = 12;
-        layerDownBtn_layout.padding.right = 12;
-        layerDownBtn_label->setParent(*layerDownBtn);
+        auto frameBtnContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &frameBtnContainer_layout = frameBtnContainer->getComponentMutable<core::components::Layout>();
+        frameBtnContainer_layout.direction = core::components::Layout::Direction::Horizontal;
+        frameBtnContainer_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        frameBtnContainer_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        frameBtnContainer_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
+        frameBtnContainer_layout.child_gap = 8;
+        frameBtnContainer->setParent(*timelineControlsRow);
 
-        auto layerRow = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        auto &layerRow_layout = layerRow->getComponentMutable<core::components::Layout>();
-        layerRow_layout.direction = core::components::Layout::Direction::Horizontal;
-        layerRow_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        layerRow_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        layerRow_layout.child_gap = 4;
-        layerRow->setParent(*bottom_panel);
+        auto addFrameBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto addFrameBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &addFrameBtn_rect = addFrameBtn->getComponentMutable<core::components::UIRect>();
+        auto &addFrameBtn_layout = addFrameBtn->getComponentMutable<core::components::Layout>();
+        addFrameBtn->setParent(*frameBtnContainer);
 
-        auto layerVisibility = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-        auto &layerVisibility_layout = layerVisibility->getComponentMutable<core::components::Layout>();
-        layerVisibility_layout.direction = core::components::Layout::Direction::Vertical;
-        layerVisibility_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        layerVisibility_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        layerVisibility_layout.padding = { 4, 4, 4, 4 };
-        layerVisibility_layout.child_gap = 4;
-        m_layer_visibility_handle = layerVisibility->getHandle();
-        layerVisibility->setParent(*layerRow);
+        addFrameBtn_label->setText("Add Frame");
+        addFrameBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        addFrameBtn_label->setFontSize(12);
+        addFrameBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        addFrameBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        addFrameBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        addFrameBtn_layout.padding.left = 12;
+        addFrameBtn_layout.padding.right = 12;
+        addFrameBtn_label->setParent(*addFrameBtn);
 
-        auto layerList = core::ecs::EntityRegistry::Create<core::ecs::entities::UIList>("Entity::UI::UIRect::UIList");
-        layerList->setDirection(core::components::Layout::Direction::Vertical);
-        m_layer_list_handle = layerList->getHandle();
-        layerList->setParent(*layerRow);
+        auto deleteFrameBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto deleteFrameBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+        auto &deleteFrameBtn_rect = deleteFrameBtn->getComponentMutable<core::components::UIRect>();
+        auto &deleteFrameBtn_layout = deleteFrameBtn->getComponentMutable<core::components::Layout>();
+        deleteFrameBtn->setParent(*frameBtnContainer);
+
+        deleteFrameBtn_label->setText("Delete Frame");
+        deleteFrameBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        deleteFrameBtn_label->setFontSize(12);
+        deleteFrameBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+        deleteFrameBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        deleteFrameBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        deleteFrameBtn_layout.padding.left = 12;
+        deleteFrameBtn_layout.padding.right = 12;
+        deleteFrameBtn_label->setParent(*deleteFrameBtn);
+
+        auto timeline = core::ecs::EntityRegistry::Create<core::ecs::entities::UIGrid>("Entity::UI::UIRect::UIGrid");
+        m_timeline_handle = timeline->getHandle();
+        timeline->setParent(*bottom_panel);
 
         auto canvas =core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
         auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
@@ -541,32 +581,253 @@ namespace atmo::editor
             auto &heightInput_comp = heightInput.getComponentMutable<core::components::UINumberInput>();
             heightInput_comp.value = size.y;
         });
-        canvas->initPixelBuffer(128, 80);
+        canvas->initPixelBuffer(core::ecs::entities::DEFAULT_TEXTURE_SIZE, core::ecs::entities::DEFAULT_TEXTURE_SIZE);
 
-        layerList->getSignal<int>("ItemSelected").connect([canvasHandle = canvas->getHandle(), listHandle = layerList->getHandle()](int index) {
-            if (!canvasHandle.is_alive() || !listHandle.is_alive() || index < 0) {
+        timeline->getSignal<int, int>("CellSelected").connect([canvasHandle = canvas->getHandle()](int layerIdx, int frameIdx) {
+            if (!canvasHandle.is_alive() || layerIdx < 0 || frameIdx < 0) {
                 return;
             }
-            core::ecs::entities::UIList list(core::ecs::EntityRegistry::GetEntityFromId(listHandle));
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
             auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+            const auto nameList = canvas_comp.image.layerNames();
 
-            canvas_comp.image.selectLayer(list.getSelectedItem());
+            if (layerIdx >= (int)nameList.size()) {
+                return;
+            }
+
+            canvas_comp.image.selectLayer(nameList[layerIdx]);
+            canvas_comp.image.selectFrame(static_cast<std::uint8_t>(frameIdx));
             canvas_comp.texture_dirty = true;
+        });
+
+        timeline->setRowBuilder([this](core::ecs::entities::Entity &leading, core::ecs::entities::Entity &actions, int row) {
+            if (!m_canvas_handle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+            const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+            const auto names = image.layerNames();
+            if (row >= (int)names.size()) {
+                return;
+            }
+            const std::string name = names[row];
+
+            auto visibleBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto visibleBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &visibleBtn_rect = visibleBtn->getComponentMutable<core::components::UIRect>();
+            auto &visibleBtn_layout = visibleBtn->getComponentMutable<core::components::Layout>();
+
+            visibleBtn_label->setText(image.isLayerVisible(name) ? "Hide" : "Show");
+            visibleBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            visibleBtn_label->setFontSize(12);
+            visibleBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+            visibleBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            visibleBtn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 48.0f, 48.0f };
+            visibleBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            visibleBtn_label->setParent(*visibleBtn);
+            visibleBtn->setParent(leading);
+
+            auto labelHandle = visibleBtn_label->getHandle();
+            if (row >= (int)m_visibility_label_handles.size())
+                m_visibility_label_handles.resize(row + 1);
+            m_visibility_label_handles[row] = labelHandle;
+            visibleBtn->getSignal<>("Pressed").connect([this, name, labelHandle]() {
+                if (!m_canvas_handle.is_alive() || !labelHandle.is_alive()) {
+                    return;
+                }
+                core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+                auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+                bool visible = !canvas_comp.image.isLayerVisible(name);
+                canvas_comp.image.setLayerVisible(name, visible);
+                canvas_comp.texture_dirty = true;
+
+                core::ecs::entities::UILabel label(core::ecs::EntityRegistry::GetEntityFromId(labelHandle));
+                label.setText(visible ? "Hide" : "Show");
+
+                refreshAllLayerVisible();
+            });
+
+            auto deleteBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto deleteBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &deleteBtn_rect = deleteBtn->getComponentMutable<core::components::UIRect>();
+            auto &deleteBtn_layout = deleteBtn->getComponentMutable<core::components::Layout>();
+
+            deleteBtn_label->setText("-");
+            deleteBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            deleteBtn_label->setFontSize(12);
+            deleteBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+            deleteBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            deleteBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            deleteBtn_layout.padding.left = 8;
+            deleteBtn_layout.padding.right = 8;
+            deleteBtn_label->setParent(*deleteBtn);
+            deleteBtn->setParent(actions);
+
+            deleteBtn->getSignal<>("Pressed").connect([this, name]() {
+                core::SignalQueue::Enqueue([this, name]() {
+                    if (!m_canvas_handle.is_alive()) {
+                        return;
+                    }
+                    core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+                    auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+                    if (canvas_comp.image.layerNames().size() <= 1) {
+                        return;
+                    }
+
+                    canvas_comp.image.removeLayer(name);
+                    canvas_comp.texture_dirty = true;
+                    refreshTimeline();
+                });
+            });
+        });
+
+        auto moveSelectedLayer = [this](int step) {
+            if (!m_canvas_handle.is_alive()) {
+                return;
+            }
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+            const auto names = canvas_comp.image.layerNames();
+            const int from = canvas_comp.image.currentLayer();
+            const int to = from + step;
+
+            if (from >= (int)names.size() || to < 0 || to >= (int)names.size()) {
+                return;
+            }
+
+            canvas_comp.image.moveLayer(names[from], static_cast<std::uint8_t>(to));
+            canvas_comp.texture_dirty = true;
+            refreshTimeline();
+        };
+
+        timeline->setHeaderBuilder([this, moveSelectedLayer](core::ecs::entities::Entity &corner) {
+            auto toggleAllBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto toggleAllBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &toggleAllBtn_rect = toggleAllBtn->getComponentMutable<core::components::UIRect>();
+            auto &toggleAllBtn_layout = toggleAllBtn->getComponentMutable<core::components::Layout>();
+
+            toggleAllBtn_label->setText(m_allLayerVisible ? "Hide" : "Show");
+            m_toggle_all_label_handle = toggleAllBtn_label->getHandle();
+            toggleAllBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            toggleAllBtn_label->setFontSize(12);
+            toggleAllBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+            toggleAllBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            toggleAllBtn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 48.0f, 48.0f };
+            toggleAllBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            toggleAllBtn_label->setParent(*toggleAllBtn);
+            toggleAllBtn->setParent(corner);
+
+            toggleAllBtn->getSignal<>("Pressed").connect([this]() {
+                if (!m_canvas_handle.is_alive()) {
+                    return;
+                }
+                core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+                auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+                const auto names = canvas_comp.image.layerNames();
+
+                for (const auto &name : names)
+                    canvas_comp.image.setLayerVisible(name, !m_allLayerVisible);
+                canvas_comp.texture_dirty = true;
+
+                for (std::size_t i = 0; i < names.size() && i < m_visibility_label_handles.size(); i++) {
+                    if (!m_visibility_label_handles[i].is_alive())
+                        continue;
+                    core::ecs::entities::UILabel label(core::ecs::EntityRegistry::GetEntityFromId(m_visibility_label_handles[i]));
+                    label.setText(canvas_comp.image.isLayerVisible(names[i]) ? "Hide" : "Show");
+                }
+
+                refreshAllLayerVisible();
+            });
+
+            auto layerUpBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto layerUpBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &layerUpBtn_rect = layerUpBtn->getComponentMutable<core::components::UIRect>();
+            auto &layerUpBtn_layout = layerUpBtn->getComponentMutable<core::components::Layout>();
+
+            layerUpBtn_label->setText("^");
+            layerUpBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            layerUpBtn_label->setFontSize(12);
+            layerUpBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+            layerUpBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            layerUpBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            layerUpBtn_layout.padding.left = 8;
+            layerUpBtn_layout.padding.right = 8;
+            layerUpBtn_label->setParent(*layerUpBtn);
+            layerUpBtn->setParent(corner);
+
+            auto layerDownBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto layerDownBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &layerDownBtn_rect = layerDownBtn->getComponentMutable<core::components::UIRect>();
+            auto &layerDownBtn_layout = layerDownBtn->getComponentMutable<core::components::Layout>();
+
+            layerDownBtn_label->setText("v");
+            layerDownBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            layerDownBtn_label->setFontSize(12);
+            layerDownBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+            layerDownBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            layerDownBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            layerDownBtn_layout.padding.left = 8;
+            layerDownBtn_layout.padding.right = 8;
+            layerDownBtn_label->setParent(*layerDownBtn);
+            layerDownBtn->setParent(corner);
+
+            layerUpBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { core::SignalQueue::Enqueue([moveSelectedLayer]() { moveSelectedLayer(-1); }); });
+            layerDownBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { core::SignalQueue::Enqueue([moveSelectedLayer]() { moveSelectedLayer(1); }); });
+
+            auto spacer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+            spacer->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            spacer->setParent(corner);
+
+            auto addLayerBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto addLayerBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &addLayerBtn_rect = addLayerBtn->getComponentMutable<core::components::UIRect>();
+            auto &addLayerBtn_layout = addLayerBtn->getComponentMutable<core::components::Layout>();
+
+            addLayerBtn_label->setText("+");
+            addLayerBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            addLayerBtn_label->setFontSize(12);
+            addLayerBtn_rect.color = core::types::Color::TRANSPARENT_COL;
+            addLayerBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            addLayerBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            addLayerBtn_layout.padding.left = 8;
+            addLayerBtn_layout.padding.right = 8;
+            addLayerBtn_label->setParent(*addLayerBtn);
+            addLayerBtn->setParent(corner);
+
+            addLayerBtn->getSignal<>("Pressed").connect([this]() {
+                core::SignalQueue::Enqueue([this]() {
+                    if (!m_canvas_handle.is_alive()) {
+                        return;
+                    }
+                    core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+                    auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+                    const auto names = image.layerNames();
+
+                    std::size_t nb = names.size() + 1;
+                    std::string name = std::format("Layer {}", nb);
+                    while (std::find(names.begin(), names.end(), name) != names.end())
+                        name = std::format("Layer {}", ++nb);
+
+                    image.addLayer(name);
+                    refreshTimeline();
+                });
+            });
         });
 
 
         auto canvasHandle = canvas->getHandle();
         m_canvas_handle = canvasHandle;
-        refreshLayerList();
+        refreshTimeline();
 
         widthNumberInput->getSignal<int>("IntValueChanged").connect([canvasHandle](int val) {
             if (!canvasHandle.is_alive()) {
                 return;
             }
-            if (val < 1 || val > 10000) {
-                spdlog::warn("Width is not inside 1 - 10000 bounds, clamped");
-                val = common::math::Clamp(val, 1, 10000);
+            if (val < 1 || val > core::ecs::entities::MAX_FRAME_SIZE) {
+                spdlog::warn("Width is not inside 1 - {} bounds, clamped", core::ecs::entities::MAX_FRAME_SIZE);
+                val = common::math::Clamp(val, 1, core::ecs::entities::MAX_FRAME_SIZE);
             }
 
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
@@ -579,9 +840,9 @@ namespace atmo::editor
             if (!canvasHandle.is_alive()) {
                 return;
             }
-            if (val < 1 || val > 10000) {
-                spdlog::warn("Height is not inside 1 - 10000 bounds, clamped");
-                val = common::math::Clamp(val, 1, 10000);
+            if (val < 1 || val > core::ecs::entities::MAX_FRAME_SIZE) {
+                spdlog::warn("Height is not inside 1 - {} bounds, clamped", core::ecs::entities::MAX_FRAME_SIZE);
+                val = common::math::Clamp(val, 1, core::ecs::entities::MAX_FRAME_SIZE);
             }
 
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(canvasHandle));
@@ -678,75 +939,38 @@ namespace atmo::editor
 
         saveBtn->getSignal<>("Pressed").connect([this]() { save(); });
 
-        addLayerBtn->getSignal<>("Pressed").connect([this]() {
+        exportBtn->getSignal<>("Released").connect([this]() { openExportPopup(); });
+
+
+
+
+        addFrameBtn->getSignal<>("Pressed").connect([this]() {
             if (!m_canvas_handle.is_alive()) {
                 return;
             }
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-            auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
-            const auto names = image.layerNames();
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
 
-            std::size_t nb = names.size() + 1;
-            std::string name = std::format("Layer {}", nb);
-            while (std::find(names.begin(), names.end(), name) != names.end())
-                name = std::format("Layer {}", ++nb);
-
-            image.addLayer(name);
-            refreshLayerList();
+            canvas_comp.image.addFrame();
+            canvas_comp.image.selectFrame(static_cast<std::uint8_t>(canvas_comp.image.frameCount() - 1));
+            canvas_comp.texture_dirty = true;
+            refreshTimeline();
         });
 
-        // Up = towards the start of the list (drawn on top), Down = towards the end (drawn below)
-        auto moveSelectedLayer = [this](int step) {
+        deleteFrameBtn->getSignal<>("Pressed").connect([this]() {
             if (!m_canvas_handle.is_alive()) {
                 return;
             }
             core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
             auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-            const auto names = canvas_comp.image.layerNames();
-            const int from = canvas_comp.image.currentLayer();
-            const int to = from + step;
 
-            if (from >= (int)names.size() || to < 0 || to >= (int)names.size()) {
+            if (canvas_comp.image.frameCount() <= 1) {
                 return;
             }
 
-            canvas_comp.image.moveLayer(names[from], static_cast<std::uint8_t>(to));
+            canvas_comp.image.removeFrame(canvas_comp.image.currentFrameIndex());
             canvas_comp.texture_dirty = true;
-            refreshLayerList();
-        };
-        layerUpBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { moveSelectedLayer(-1); });
-        layerDownBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { moveSelectedLayer(1); });
-
-        toggleAllLayersBtn->getSignal<>("Pressed").connect([this]() {
-            if (!m_canvas_handle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-            const auto names = canvas_comp.image.layerNames();
-
-            for (const auto &name : names)
-                canvas_comp.image.setLayerVisible(name, !m_allLayerVisible);
-
-            canvas_comp.texture_dirty = true;
-            refreshLayerVisibility();
-        });
-
-        deleteLayerBtn->getSignal<>("Pressed").connect([this]() {
-            if (!m_canvas_handle.is_alive()) {
-                return;
-            }
-            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-            const auto names = canvas_comp.image.layerNames();
-
-            if (names.size() <= 1 || canvas_comp.image.currentLayer() >= names.size()) {
-                return;
-            }
-
-            canvas_comp.image.removeLayer(names[canvas_comp.image.currentLayer()]);
-            canvas_comp.texture_dirty = true;
-            refreshLayerList();
+            refreshTimeline();
         });
     }
 
@@ -768,72 +992,412 @@ namespace atmo::editor
             return;
 
         core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-        canvas.importCanvas(*p_file_path);
-        refreshLayerList();
-    }
+        const std::string &path = *p_file_path;
 
-    void TextureEditor::refreshLayerList()
-    {
-        if (!m_canvas_handle.is_alive() || !m_layer_list_handle.is_alive())
+        std::string ext = std::filesystem::path(path).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext == ".atmo") {
+            canvas.importCanvas(path);
+            refreshTimeline();
             return;
-
-        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-        core::ecs::entities::UIList list(core::ecs::EntityRegistry::GetEntityFromId(m_layer_list_handle));
-        const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
-
-        list.setItems(image.layerNames());
-        list.select(image.currentLayer(), false);
-
-        refreshLayerVisibility();
-    }
-
-    void TextureEditor::refreshLayerVisibility()
-    {
-        if (!m_canvas_handle.is_alive() || !m_layer_visibility_handle.is_alive())
-            return;
-
-        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-        core::ecs::entities::UI column(core::ecs::EntityRegistry::GetEntityFromId(m_layer_visibility_handle));
-        const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
-
-        for (auto &child : column.getChildren()) child.destroy();
-
-        for (const auto &name : image.layerNames()) {
-            auto visibleBtn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
-            auto visibleBtn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-            auto &visibleBtn_rect = visibleBtn->getComponentMutable<core::components::UIRect>();
-            auto &visibleBtn_layout = visibleBtn->getComponentMutable<core::components::Layout>();
-
-            visibleBtn_label->setText(image.isLayerVisible(name) ? "Hide" : "Show");
-            visibleBtn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-            visibleBtn_label->setFontSize(12);
-            visibleBtn_rect.color = core::types::Color::TRANSPARENT_COL;
-            visibleBtn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
-            visibleBtn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 48.0f, 48.0f };
-            visibleBtn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-            visibleBtn_label->setParent(*visibleBtn);
-            visibleBtn->setParent(column);
-
-            auto labelHandle = visibleBtn_label->getHandle();
-            visibleBtn->getSignal<>("Pressed").connect([this, name, labelHandle]() {
-                if (!m_canvas_handle.is_alive() || !labelHandle.is_alive()) {
-                    return;
-                }
-                core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-                auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-
-                bool visible = !canvas_comp.image.isLayerVisible(name);
-                canvas_comp.image.setLayerVisible(name, visible);
-                canvas_comp.texture_dirty = true;
-
-                core::ecs::entities::UILabel label(core::ecs::EntityRegistry::GetEntityFromId(labelHandle));
-                label.setText(visible ? "Hide" : "Show");
-
-                refreshAllLayerVisible();
-            });
         }
 
+        core::types::Vector2i sheetSize = { 0, 0 };
+        try {
+            sheetSize = core::ecs::entities::UIDrawingCanvas::ProbeImageSize(path);
+        } catch (const core::ecs::entities::UIDrawingCanvas::ImportException &) {
+            canvas.importCanvas(path);
+            refreshTimeline();
+            return;
+        }
+
+        openSpriteSheetImportPopup(path, sheetSize);
+    }
+
+    void TextureEditor::openSpriteSheetImportPopup(const std::string &path, core::types::Vector2i sheetSize)
+    {
+        if (!m_root_handle.is_alive())
+            return;
+
+        core::ecs::entities::UI root(core::ecs::EntityRegistry::GetEntityFromId(m_root_handle));
+
+        auto popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
+        popup->setParent(root);
+
+        auto popup_bg = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &popup_bg_rect = popup_bg->getComponentMutable<core::components::UIRect>();
+        auto &popup_bg_layout = popup_bg->getComponentMutable<core::components::Layout>();
+        popup_bg_rect.color = core::types::Color::WHITE;
+        popup_bg_rect.corner_radius = { 4.0f, 4.0f, 4.0f, 4.0f };
+        popup_bg_layout.direction = core::components::Layout::Direction::Vertical;
+        popup_bg_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        popup_bg_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
+        popup_bg_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        popup_bg_layout.padding = { 16, 16, 16, 16 };
+        popup_bg_layout.child_gap = 12;
+        popup_bg->setParent(*popup);
+
+        auto makeLabel = [](const std::string &text, int fontSize) {
+            auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            label->setText(text);
+            label->setFontSize(fontSize);
+            label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            return label;
+        };
+
+        makeLabel("Import sprite sheet", 14)->setParent(*popup_bg);
+        makeLabel(std::format("{}: {}x{} px", std::filesystem::path(path).filename().string(), sheetSize.x, sheetSize.y), 12)->setParent(*popup_bg);
+
+        auto makeIntField = [&popup_bg, &makeLabel](const std::string &text, int initialValue) {
+            auto row = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+            auto &row_layout = row->getComponentMutable<core::components::Layout>();
+            row_layout.direction = core::components::Layout::Direction::Horizontal;
+            row_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            row_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            row_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+            row_layout.child_gap = 8;
+            row->setParent(*popup_bg);
+
+            auto label = makeLabel(text, 12);
+            label->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            label->setParent(*row);
+
+            auto input = core::ecs::EntityRegistry::Create<core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
+            input->getComponentMutable<core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Int;
+            input->getComponentMutable<core::components::UINumberInput>().value = initialValue;
+            input->setParent(*row);
+            return input->getHandle();
+        };
+
+        auto frameCountHandle = makeIntField("Frame count", 1);
+        auto frameWidthHandle = makeIntField("Frame width", sheetSize.x);
+        auto frameHeightHandle = makeIntField("Frame height", sheetSize.y);
+
+        auto errorLabel = makeLabel("", 12);
+        errorLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::RED;
+        errorLabel->setParent(*popup_bg);
+
+        auto btnRow = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &btnRow_layout = btnRow->getComponentMutable<core::components::Layout>();
+        btnRow_layout.direction = core::components::Layout::Direction::Horizontal;
+        btnRow_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        btnRow_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        btnRow_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
+        btnRow_layout.child_gap = 8;
+        btnRow->setParent(*popup_bg);
+
+        auto makeTextBtn = [&btnRow, &makeLabel](const std::string &text) {
+            auto btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto &btn_layout = btn->getComponentMutable<core::components::Layout>();
+            btn->getComponentMutable<core::components::UIRect>().color = core::types::Color::TRANSPARENT_COL;
+            btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            btn_layout.padding.left = 12;
+            btn_layout.padding.right = 12;
+            makeLabel(text, 12)->setParent(*btn);
+            btn->setParent(*btnRow);
+            return btn;
+        };
+
+        auto cancelBtn = makeTextBtn("Cancel");
+        cancelBtn->getSignal<>("Released").connect([popup]() { popup->destroy(); });
+
+        auto importBtn = makeTextBtn("Import");
+        importBtn->getSignal<>("Released").connect(
+            [this, path, popup, frameCountHandle, frameWidthHandle, frameHeightHandle, errorLabelHandle = errorLabel->getHandle()]() {
+                if (!m_canvas_handle.is_alive() || !frameCountHandle.is_alive() || !frameWidthHandle.is_alive() || !frameHeightHandle.is_alive())
+                    return;
+
+                auto readInt = [](flecs::entity handle) {
+                    core::ecs::entities::UINumberInput input(core::ecs::EntityRegistry::GetEntityFromId(handle));
+                    return std::visit([](auto v) { return static_cast<int>(v); }, input.getComponent<core::components::UINumberInput>().value);
+                };
+
+                core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+                try {
+                    canvas.importSpriteSheet(path, readInt(frameWidthHandle), readInt(frameHeightHandle), readInt(frameCountHandle));
+                } catch (const core::ecs::entities::UIDrawingCanvas::ImportException &e) {
+                    if (errorLabelHandle.is_alive()) {
+                        core::ecs::entities::UILabel errorLabel(core::ecs::EntityRegistry::GetEntityFromId(errorLabelHandle));
+                        errorLabel.setText(e.getReason());
+                    }
+                    return;
+                }
+
+                refreshTimeline();
+                popup->destroy();
+            });
+    }
+
+    void TextureEditor::openExportPopup()
+    {
+        if (!m_root_handle.is_alive() || !m_canvas_handle.is_alive())
+            return;
+
+        constexpr int FORMAT_BUTTON_GROUP = 6;
+        static constexpr std::string_view ATMO_EXTENSION = ".atmo";
+        static const std::vector<std::string> extensions = { ".atmo", ".png", ".bmp", ".jpg" };
+
+        core::ecs::entities::UI root(core::ecs::EntityRegistry::GetEntityFromId(m_root_handle));
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+        const auto layerNames = image.layerNames();
+
+        std::filesystem::path exportDir = project::ProjectManager::GetCurrentProjectPath();
+        std::string defaultName = "texture";
+        if (p_file_path) {
+            const auto opened = project::FileSystem::ResolvePath(*p_file_path);
+            exportDir = opened.parent_path();
+            defaultName = opened.stem().string();
+        }
+
+        auto selectedExt = std::make_shared<std::string>(".png");
+        auto selectedLayers = std::make_shared<std::vector<bool>>();
+        for (const auto &name : layerNames)
+            selectedLayers->push_back(image.isLayerVisible(name));
+
+        auto popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
+        popup->setParent(root);
+
+        auto popup_bg = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &popup_bg_rect = popup_bg->getComponentMutable<core::components::UIRect>();
+        auto &popup_bg_layout = popup_bg->getComponentMutable<core::components::Layout>();
+        popup_bg_rect.color = core::types::Color::WHITE;
+        popup_bg_rect.corner_radius = { 4.0f, 4.0f, 4.0f, 4.0f };
+        popup_bg_layout.direction = core::components::Layout::Direction::Vertical;
+        popup_bg_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        popup_bg_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 320.0f, 320.0f };
+        popup_bg_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        popup_bg_layout.padding = { 16, 16, 16, 16 };
+        popup_bg_layout.child_gap = 12;
+        popup_bg->setParent(*popup);
+
+        auto makeLabel = [](const std::string &text, int fontSize) {
+            auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            label->setText(text);
+            label->setFontSize(fontSize);
+            label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            return label;
+        };
+
+        auto makeRow = [](core::ecs::entities::Entity &parent) {
+            auto row = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+            auto &row_layout = row->getComponentMutable<core::components::Layout>();
+            row_layout.direction = core::components::Layout::Direction::Horizontal;
+            row_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            row_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            row_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Center;
+            row_layout.child_gap = 8;
+            row->setParent(parent);
+            return row;
+        };
+
+        auto makeTextBtn = [&makeLabel](core::ecs::entities::Entity &parent, const std::string &text) {
+            auto btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto &btn_layout = btn->getComponentMutable<core::components::Layout>();
+            btn->getComponentMutable<core::components::UIRect>().color = core::types::Color::TRANSPARENT_COL;
+            btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+            btn_layout.padding.left = 12;
+            btn_layout.padding.right = 12;
+            makeLabel(text, 12)->setParent(*btn);
+            btn->setParent(parent);
+            return btn;
+        };
+
+        makeLabel("Export texture", 14)->setParent(*popup_bg);
+
+        auto nameRow = makeRow(*popup_bg);
+        makeLabel("File name", 12)->setParent(*nameRow);
+        auto nameInput = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
+        nameInput->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        nameInput->setValue(defaultName);
+        nameInput->setParent(*nameRow);
+
+        auto formatRow = makeRow(*popup_bg);
+        makeLabel("Format", 12)->setParent(*formatRow);
+
+        auto layerSection = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &layerSection_layout = layerSection->getComponentMutable<core::components::Layout>();
+        layerSection_layout.direction = core::components::Layout::Direction::Vertical;
+        layerSection_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        layerSection_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        layerSection_layout.child_gap = 4;
+        layerSection->setParent(*popup_bg);
+
+        makeLabel("Layers to blend", 12)->setParent(*layerSection);
+        for (std::size_t i = 0; i < layerNames.size(); i++) {
+            auto layerRow = makeRow(*layerSection);
+
+            auto checkbox = core::ecs::EntityRegistry::Create<core::ecs::entities::UICheckBox>("Entity::UI::UIRect::UIButton::UICheckBox");
+            auto &checkbox_layout = checkbox->getComponentMutable<core::components::Layout>();
+            checkbox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            checkbox_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
+            checkbox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            checkbox_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
+            checkbox->setParent(*layerRow);
+
+            makeLabel(layerNames[i], 12)->setParent(*layerRow);
+
+            checkbox->getSignal<bool>("Toggle").connect([selectedLayers, i](bool new_state) { (*selectedLayers)[i] = new_state; });
+
+            const bool checked = (*selectedLayers)[i];
+            checkbox->getComponentMutable<core::components::UIButton>().is_pressed = checked;
+            checkbox->getSignal<bool>("Toggle").emit(checked);
+        }
+
+        for (const auto &ext : extensions) {
+            auto formatBtn = makeTextBtn(*formatRow, ext);
+            auto &formatBtn_comp = formatBtn->getComponentMutable<core::components::UIButton>();
+            formatBtn_comp.toggle = true;
+            formatBtn_comp.group = FORMAT_BUTTON_GROUP;
+
+            formatBtn->getSignal<bool>("Toggle").connect([selectedExt, ext, layerSectionHandle = layerSection->getHandle()](bool new_state) {
+                if (!new_state)
+                    return;
+                *selectedExt = ext;
+                if (layerSectionHandle.is_alive()) {
+                    core::ecs::entities::UI section(core::ecs::EntityRegistry::GetEntityFromId(layerSectionHandle));
+                    section.getComponentMutable<core::components::UI>().visible = ext != ATMO_EXTENSION;
+                }
+            });
+
+            if (ext == *selectedExt)
+                formatBtn->press();
+        }
+
+        auto errorLabel = makeLabel("", 12);
+        errorLabel->getComponentMutable<core::components::UI>().modulate = core::types::Color::RED;
+        errorLabel->setParent(*popup_bg);
+
+        auto btnRow = makeRow(*popup_bg);
+        btnRow->getComponentMutable<core::components::Layout>().child_alignment.horizontal = core::components::Layout::ChildAlignment::End;
+
+        auto cancelBtn = makeTextBtn(*btnRow, "Cancel");
+        cancelBtn->getSignal<>("Released").connect([popup]() { popup->destroy(); });
+
+        auto exportBtn = makeTextBtn(*btnRow, "Export");
+        exportBtn->getSignal<>("Released").connect([this,
+                                                    popup,
+                                                    exportDir,
+                                                    layerNames,
+                                                    selectedExt,
+                                                    selectedLayers,
+                                                    nameInputHandle = nameInput->getHandle(),
+                                                    errorLabelHandle = errorLabel->getHandle()]() {
+            if (!m_canvas_handle.is_alive() || !nameInputHandle.is_alive())
+                return;
+
+            auto showError = [errorLabelHandle](const std::string &message) {
+                if (!errorLabelHandle.is_alive())
+                    return;
+                core::ecs::entities::UILabel errorLabel(core::ecs::EntityRegistry::GetEntityFromId(errorLabelHandle));
+                errorLabel.setText(message);
+            };
+
+            core::ecs::entities::UITextInput nameInput(core::ecs::EntityRegistry::GetEntityFromId(nameInputHandle));
+            std::string fileName = nameInput.getComponent<core::components::UIInput>().input_data;
+            if (fileName.empty() || fileName.find_first_of("/\\") != std::string::npos) {
+                showError("Invalid file name");
+                return;
+            }
+            if (std::filesystem::path(fileName).extension() != *selectedExt)
+                fileName += *selectedExt;
+            const std::string path = (exportDir / fileName).string();
+
+            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+
+            bool exported = false;
+            if (*selectedExt == ATMO_EXTENSION) {
+                exported = canvas_comp.image.save(path);
+            } else {
+                std::vector<std::string> layersToBlend;
+                for (std::size_t i = 0; i < layerNames.size(); i++)
+                    if ((*selectedLayers)[i])
+                        layersToBlend.push_back(layerNames[i]);
+
+                if (layersToBlend.empty()) {
+                    showError("Select at least one layer");
+                    return;
+                }
+                exported = canvas.exportSpriteSheet(path, layersToBlend);
+            }
+
+            if (!exported) {
+                showError(std::format("Could not write {}", fileName));
+                return;
+            }
+
+            spdlog::info("Texture exported to {}", path);
+            popup->destroy();
+        });
+    }
+
+    void TextureEditor::refreshTimeline()
+    {
+        if (!m_canvas_handle.is_alive() || !m_timeline_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        core::ecs::entities::UIGrid timeline(core::ecs::EntityRegistry::GetEntityFromId(m_timeline_handle));
+        const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
+
+        std::vector<std::string> frames;
+        for (std::size_t i = 0; i < image.frameCount(); i++)
+            frames.push_back(std::to_string(i + 1));
+
+        m_visibility_label_handles.clear();
+        timeline.setLabels(image.layerNames(), frames);
+        timeline.select(image.currentLayer(), image.currentFrameIndex(), false);
+
         refreshAllLayerVisible();
+    }
+
+    void TextureEditor::stepFrame(int step)
+    {
+        if (!m_canvas_handle.is_alive() || !m_timeline_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
+        const int count = static_cast<int>(canvas_comp.image.frameCount());
+        if (count <= 0)
+            return;
+
+        const int frame = ((canvas_comp.image.currentFrameIndex() + step) % count + count) % count;
+        canvas_comp.image.selectFrame(static_cast<std::uint8_t>(frame));
+        canvas_comp.texture_dirty = true;
+
+        core::ecs::entities::UIGrid timeline(core::ecs::EntityRegistry::GetEntityFromId(m_timeline_handle));
+        timeline.select(canvas_comp.image.currentLayer(), frame, false);
+    }
+
+    void TextureEditor::setPlaying(bool playing)
+    {
+        m_playing = playing;
+        if (!m_canvas_handle.is_alive())
+            return;
+
+        core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+        canvas.getComponentMutable<core::components::UIDrawingCanvas>().drawing_locked = playing;
+    }
+
+    void TextureEditor::tickAnimation(float deltaTime)
+    {
+        if (!m_playing)
+            return;
+
+        const float frameDuration = 1.0f / static_cast<float>(m_fps);
+        m_frame_time_accumulator += deltaTime;
+
+        int steps = 0;
+        while (m_frame_time_accumulator >= frameDuration) {
+            m_frame_time_accumulator -= frameDuration;
+            steps++;
+        }
+        if (steps > 0)
+            stepFrame(steps);
     }
 
     void TextureEditor::refreshAllLayerVisible()
@@ -855,7 +1419,7 @@ namespace atmo::editor
             return;
 
         core::ecs::entities::UILabel label(core::ecs::EntityRegistry::GetEntityFromId(m_toggle_all_label_handle));
-        label.setText(m_allLayerVisible ? "Hide All" : "Show All");
+        label.setText(m_allLayerVisible ? "Hide" : "Show");
     }
 } // namespace atmo::editor
 
