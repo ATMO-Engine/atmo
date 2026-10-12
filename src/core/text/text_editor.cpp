@@ -74,7 +74,6 @@ namespace atmo::core::text
                 return deleteRanges(
                     [this](const Selection &s) {
                         auto start = m_buffer.lineRange(m_buffer.lineOf(s.head)).first;
-                        // At the start of a line, join with the previous one.
                         return std::pair{ start == s.head ? Utf8::PrevBoundary(m_buffer.text(), s.head) : start, s.head };
                     },
                     EditKind::Other);
@@ -357,7 +356,6 @@ namespace atmo::core::text
         for (auto &sel : m_selections) {
             std::optional<float> preferred_x = vertical ? sel.preferred_x : std::nullopt;
 
-            // Collapsing a selection with Left/Right goes to the respective edge instead of moving.
             if (!extend && !sel.empty() && (command == EditCommand::MoveLeft || command == EditCommand::MoveRight)) {
                 auto edge = command == EditCommand::MoveLeft ? sel.min() : sel.max();
                 sel = Selection::Caret(edge);
@@ -428,7 +426,6 @@ namespace atmo::core::text
             return fromDisplayOffset(layout->offsetAt(*preferred_x, target_y));
         }
 
-        // Without a layout: logical lines and codepoint columns.
         auto pos = m_buffer.offsetToLineCol(sel.head);
         auto [line_start, _] = m_buffer.lineRange(pos.line);
         if (!preferred_x)
@@ -518,7 +515,6 @@ namespace atmo::core::text
     std::pair<std::size_t, std::size_t> TextEditor::lineRangeAt(std::size_t offset) const
     {
         auto [start, end] = m_buffer.lineRange(m_buffer.lineOf(offset));
-        // Include the newline so that triple-click + delete removes the whole line.
         if (end < m_buffer.size())
             ++end;
         return { start, end };

@@ -131,7 +131,6 @@ namespace atmo::core::text
     {
         offset = SnapToBoundary(str, offset);
 
-        // Skip horizontal whitespace backwards.
         while (offset > 0) {
             auto prev = PrevBoundary(str, offset);
             if (Classify(Decode(str, prev)) != CharClass::Space)
@@ -177,7 +176,6 @@ namespace atmo::core::text
             return { 0, 0 };
 
         offset = SnapToBoundary(str, offset);
-        // At the end of the text or a line, select the run before the caret.
         if (offset >= str.size() || (Decode(str, offset) == U'\n' && offset > 0))
             offset = PrevBoundary(str, offset);
 

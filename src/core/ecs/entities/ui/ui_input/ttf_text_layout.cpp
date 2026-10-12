@@ -98,11 +98,9 @@ namespace atmo::core::ecs::entities
 
         if (offset < m_string.size() && TTF_GetTextSubString(m_text, static_cast<int>(offset), &ss) && ss.offset == static_cast<int>(offset) &&
             !(ss.flags & TTF_SUBSTRING_TEXT_END)) {
-            // Before a newline cluster at the start of a line, the cluster rect may be degenerate; its x is still valid.
             return { static_cast<float>(ss.rect.x), static_cast<float>(ss.line_index) * height, height };
         }
 
-        // After the last cluster of a line or of the text: use the trailing edge of the previous cluster.
         auto prev = text::Utf8::PrevBoundary(m_string, offset);
         if (!TTF_GetTextSubString(m_text, static_cast<int>(prev), &ss))
             return { 0.0f, 0.0f, height };
@@ -131,7 +129,6 @@ namespace atmo::core::ecs::entities
         auto offset = static_cast<std::size_t>(ss.offset);
         if (m_string[offset] == '\n')
             return offset;
-        // Snap to the nearest edge of the cluster.
         if (x > static_cast<float>(ss.rect.x) + static_cast<float>(ss.rect.w) * 0.5f)
             offset += static_cast<std::size_t>(ss.length);
         return std::min(offset, m_string.size());
@@ -166,7 +163,6 @@ namespace atmo::core::ecs::entities
             const TTF_SubString *ss = subs[i];
             float x = static_cast<float>(ss->rect.x);
             float w = static_cast<float>(ss->rect.w);
-            // Show selected newlines as a small block, like most editors.
             if (ss->length > 0 && m_string[static_cast<std::size_t>(ss->offset)] == '\n')
                 w = std::max(w, height * 0.3f);
 

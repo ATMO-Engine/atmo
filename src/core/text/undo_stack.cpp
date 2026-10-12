@@ -64,7 +64,6 @@ namespace atmo::core::text
                 {
                     if (!next.removed.empty() || next.offset != prev.offset + prev.inserted.size())
                         return false;
-                    // Start a new step when a word begins after whitespace ("hello |world").
                     auto last = Utf8::Decode(prev.inserted, Utf8::PrevBoundary(prev.inserted, prev.inserted.size()));
                     if (Utf8::IsWhitespace(last) && !Utf8::IsWhitespace(Utf8::Decode(next.inserted, 0)))
                         return false;

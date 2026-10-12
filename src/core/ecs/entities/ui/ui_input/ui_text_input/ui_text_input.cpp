@@ -12,7 +12,6 @@ namespace atmo::core::ecs::entities
                 return;
 
             UITextInput input(e);
-            // Never overwrite what the user is typing; the value is re-applied on commit.
             if (input.isFocused())
                 return;
 

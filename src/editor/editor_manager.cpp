@@ -132,7 +132,6 @@ namespace atmo::editor
             if (sdl_event.type != SDL_EVENT_KEY_DOWN || sdl_event.key.repeat)
                 return;
 
-            // A focused text input handles its own editing shortcuts (it already received this event).
             if (core::FocusManager::HasTextFocus() && core::text::Keymap::Lookup(sdl_event.key.key, static_cast<SDL_Keymod>(sdl_event.key.mod)))
                 return;
 

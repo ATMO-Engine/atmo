@@ -73,7 +73,6 @@ namespace atmo::core::ecs::entities
                     return;
 
                 UINumberInput input(e);
-                // Never overwrite what the user is typing; the value is re-applied on commit.
                 if (input.isFocused())
                     return;
 
@@ -99,7 +98,6 @@ namespace atmo::core::ecs::entities
         auto &comp = getComponentMutable<core::components::UINumberInput>();
 
         auto previous = Normalize(comp.value, type);
-        // Invalid input reverts to the last valid value.
         auto next = Parse(getText(), type).value_or(previous);
 
         comp.value = next;

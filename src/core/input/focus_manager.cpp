@@ -30,7 +30,6 @@ namespace atmo::core
         if (self.m_target.id == 0)
             return;
 
-        // Reset before calling back so that the callback can safely query or change focus.
         auto previous = std::exchange(self.m_target, {});
         if (previous.window)
             InputManager::StopTextInput(previous.window);

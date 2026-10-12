@@ -253,7 +253,6 @@ TEST_CASE("TextEditor vertical movement keeps preferred column", "[text]")
     e.execute(Cmd(EditCommand::MovePageUp), &layout);
     REQUIRE(e.primary().head == 5);
 
-    // Without a layout, logical lines and codepoint columns are used.
     e.setSelection(Selection::Caret(5));
     e.execute(Cmd(EditCommand::MoveDown));
     e.execute(Cmd(EditCommand::MoveDown));
@@ -333,12 +332,10 @@ TEST_CASE("TextEditor undo coalescing", "[text]")
     REQUIRE(e.text() == "hello");
     REQUIRE(e.primary().head == 5);
 
-    // A word after whitespace starts a new step.
     TypeEach(e, " world");
     e.execute(Cmd(EditCommand::Undo));
     REQUIRE(e.text() == "hello ");
 
-    // A caret move breaks merging.
     e.execute(Cmd(EditCommand::MoveLeft));
     e.execute(Cmd(EditCommand::MoveRight));
     TypeEach(e, "ab");
@@ -346,14 +343,12 @@ TEST_CASE("TextEditor undo coalescing", "[text]")
     e.execute(Cmd(EditCommand::Undo));
     REQUIRE(e.text() == "hello ");
 
-    // An idle gap breaks merging.
     TypeEach(e, "x");
     clock.now += std::chrono::seconds(2);
     TypeEach(e, "y");
     e.execute(Cmd(EditCommand::Undo));
     REQUIRE(e.text() == "hello x");
 
-    // Consecutive backspaces are one step and restore the caret.
     e.execute(Cmd(EditCommand::Backspace));
     e.execute(Cmd(EditCommand::Backspace));
     REQUIRE(e.text() == "hello");
@@ -361,7 +356,6 @@ TEST_CASE("TextEditor undo coalescing", "[text]")
     REQUIRE(e.text() == "hello x");
     REQUIRE(e.primary().head == 7);
 
-    // A new edit clears redo.
     e.execute(Cmd(EditCommand::Undo));
     REQUIRE(e.undoStack().canRedo());
     e.insertText("!");

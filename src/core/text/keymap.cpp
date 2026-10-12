@@ -10,9 +10,7 @@ namespace atmo::core::text
         const bool gui = (mod & SDL_KMOD_GUI) != 0;
         const bool mac = platform == Platform::MacOS;
 
-        // The "primary" shortcut modifier: Cmd on macOS, Ctrl elsewhere.
         const bool primary = mac ? gui : ctrl;
-        // The word-wise movement modifier: Option on macOS, Ctrl elsewhere.
         const bool word = mac ? alt : ctrl;
 
         using C = EditCommand;
@@ -75,7 +73,6 @@ namespace atmo::core::text
                 break;
         }
 
-        // Emacs-style line movement, standard in macOS text fields.
         if (mac && ctrl && !gui && !alt) {
             if (key == SDLK_A)
                 return act(C::MoveLineStart);

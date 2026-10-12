@@ -116,7 +116,6 @@ namespace atmo::core::ecs::entities
             const float caret_width = std::max(1.0f, std::round(dpi_x));
             auto content = drawn == &overlay && editor.showsPlaceholder() ? layout.size() : drawn->size();
 
-            // Keep the caret in view.
             if (focused) {
                 if (caret.x - scroll_x > rect.w - caret_width)
                     scroll_x = caret.x - rect.w + caret_width;
@@ -420,7 +419,6 @@ namespace atmo::core::ecs::entities
                 break;
 
             if (auto *key = std::get_if<TextKeyDown>(&event)) {
-                // While composing, keys belong to the IME.
                 if (!st.editor.preedit().text.empty())
                     continue;
 
@@ -450,7 +448,6 @@ namespace atmo::core::ecs::entities
                 st.editor.insertText(commit->text);
                 st.layout.setText(st.editor.displayText());
             } else if (auto *composition = std::get_if<TextComposition>(&event)) {
-                // SDL reports the IME cursor in codepoints.
                 std::size_t cursor = 0;
                 for (int i = 0; i < composition->start && cursor < composition->text.size(); ++i) cursor = text::Utf8::NextBoundary(composition->text, cursor);
                 st.editor.setPreedit(composition->text, cursor);
@@ -462,7 +459,6 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIInput>();
 
-        // External writes to the component (deserialization, scripts) win over the editor.
         if (comp.text != st.synced_text) {
             st.editor.setText(comp.text);
             st.synced_text = comp.text;
@@ -520,7 +516,6 @@ namespace atmo::core::ecs::entities
             st.placeholder = locale::LocaleManager::GetTranslation(comp.placeholder);
         }
 
-        // Focus can be lost without our knowledge (e.g. another input got it).
         if (st.focused && !FocusManager::IsFocused(getID()))
             st.focused = false;
 
