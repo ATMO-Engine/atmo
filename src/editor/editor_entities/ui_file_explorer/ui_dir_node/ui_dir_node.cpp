@@ -55,7 +55,7 @@ namespace atmo::core::ecs::entities
     void UIFileExplorerDirNode::setPath(const std::filesystem::path &path, bool force_scan)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
-        node.full_path = path;
+        node.full_path = path.string();
         node.is_directory = true;
 
         std::string dirname = path.filename().string();

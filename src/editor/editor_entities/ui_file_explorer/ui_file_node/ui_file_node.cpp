@@ -50,7 +50,7 @@ namespace atmo::core::ecs::entities
     void UIFileExplorerFileNode::setPath(const std::filesystem::path &path)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
-        node.full_path = path;
+        node.full_path = path.string();
         node.is_directory = false;
 
         UILabel(node.label).setText(path.filename().string());
