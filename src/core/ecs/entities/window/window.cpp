@@ -280,4 +280,4 @@ namespace atmo::core::ecs::entities
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::Window);
-ATMO_REGISTER_COMPONENT(atmo::core::components::Window)
+ATMO_REGISTER_COMPONENT(atmo::core::components::Window);

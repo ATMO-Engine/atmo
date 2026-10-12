@@ -1,8 +1,14 @@
 #include "ui_dir_node.hpp"
 #include "clay.h"
+#include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
+#include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/file_system_event/file_selected_event.hpp"
+#include "core/types.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
 #include "meta/auto_register.hpp"
 
@@ -20,6 +26,15 @@ namespace atmo::core::ecs::entities
         setComponent<components::UIFileExplorerNode>({});
 
         getComponentMutable<core::components::UIFoldableTreeItem>().open = false;
+
+        auto title_button = getTitleButton();
+        title_button.getComponentMutable<components::UIRect>().corner_radius = { 4, 4, 4, 4 };
+
+        auto title_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        title_label->setFontSize(11);
+        title_label->getComponentMutable<components::UI>().modulate = types::Color::BLACK;
+        title_label->setParent(title_button);
+        getComponentMutable<components::UIFileExplorerNode>().label = title_label->getHandle();
 
         auto handle = p_handle;
         getTitleButton().getSignal<>("Pressed").connect([handle]() {
@@ -43,10 +58,10 @@ namespace atmo::core::ecs::entities
         node.full_path = path;
         node.is_directory = true;
 
-        std::string dirname = fs::path(path).filename().string();
+        std::string dirname = path.filename().string();
         if (dirname.empty())
-            dirname = path;
-        UILabel(getTitleLabel()).setText(dirname);
+            dirname = path.string();
+        UILabel(node.label).setText(dirname);
     }
 
     bool UIFileExplorerDirNode::isOpen() const
@@ -63,13 +78,9 @@ namespace atmo::core::ecs::entities
     {
         auto &rect = getTitleButton().getComponentMutable<core::components::UIRect>();
         if (highlighted) {
-            rect.color.r = 0.7f;
-            rect.color.g = 0.7f;
-            rect.color.b = 0.7f;
-            rect.color.a = 1.0f;
+            rect.color = types::Color("#DBEAFE");
         } else {
-            rect.color = core::types::Color::WHITE;
-            rect.color.a = 0.0f;
+            rect.color = core::types::Color::TRANSPARENT_COL;
         }
     }
 } // namespace atmo::core::ecs::entities

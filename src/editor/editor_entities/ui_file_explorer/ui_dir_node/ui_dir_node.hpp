@@ -10,6 +10,8 @@ namespace atmo::core::components
     struct UIFileExplorerNode {
         std::string full_path;
         bool is_directory = false;
+
+        flecs::entity label;
     };
 } // namespace atmo::core::components
 

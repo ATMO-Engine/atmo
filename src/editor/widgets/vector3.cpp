@@ -11,17 +11,20 @@ std::optional<atmo::core::ecs::entities::Entity> createVector3Widget(atmo::core:
     auto vector_container = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UI>("Entity::UI");
 
     auto x_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-    auto &input_entity_comp_x = x_input_entity->getComponentMutable<atmo::core::components::UIInput>();
-
     auto y_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-    auto &input_entity_comp_y = y_input_entity->getComponentMutable<atmo::core::components::UIInput>();
-
     auto z_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UINumberInput>("Entity::UI::UIInput::UINumberInput");
-    auto &input_entity_comp_z = z_input_entity->getComponentMutable<atmo::core::components::UIInput>();
 
-    input_entity_comp_x.input_type = atmo::core::components::UIInput::InputType::Float;
-    input_entity_comp_y.input_type = atmo::core::components::UIInput::InputType::Float;
-    input_entity_comp_z.input_type = atmo::core::components::UIInput::InputType::Float;
+    x_input_entity->getComponentMutable<atmo::core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Float;
+    y_input_entity->getComponentMutable<atmo::core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Float;
+    z_input_entity->getComponentMutable<atmo::core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Float;
+
+    if (value) {
+        atmo::core::types::Vector3 vec;
+        field.get(value, &vec);
+        x_input_entity->getComponentMutable<atmo::core::components::UINumberInput>().value = vec.x;
+        y_input_entity->getComponentMutable<atmo::core::components::UINumberInput>().value = vec.y;
+        z_input_entity->getComponentMutable<atmo::core::components::UINumberInput>().value = vec.z;
+    }
 
     x_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) {
         atmo::core::types::Vector3 vec;

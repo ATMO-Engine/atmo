@@ -1,86 +1,69 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
-#include <sys/inotify.h>
-#include <vector>
-#include "editor/editor_entities/ui_file_explorer/ui_dir_node/ui_dir_node.hpp"
-#include "editor/editor_entities/ui_file_explorer/ui_file_node/ui_file_node.hpp"
-#ifdef __linux__
-
+#include <memory>
 #include <mutex>
-#include <string>
-#include <unordered_map>
+#include <vector>
 
 namespace atmo
 {
+    namespace file_watcher
+    {
+        class Backend;
+    } // namespace file_watcher
+
+    /**
+     * @brief Keeps an in-memory tree of the project directory in sync with the disk.
+     *
+     * A platform backend (inotify, FSEvents, ReadDirectoryChangesW) reports changed directories from its own thread. Those reports are queued and
+     * applied to the tree on the main thread, once per frame, and a ReloadExplorerEvent is dispatched when the tree actually changed.
+     * Every public function must be called from the main thread.
+     */
     class FileWatcher
     {
     public:
         struct FileSystemNode {
             std::filesystem::path path;
-            bool is_dir;
-            int wd;
+            bool is_dir = false;
 
             std::vector<FileSystemNode> child;
         };
 
-        struct FileChange {
-            struct PendingChange {
-                int wd;
-                uint32_t mask;
-                uint32_t cookie;
-                std::string file_name;
-            };
-
-            PendingChange file_context;
-            std::filesystem::path wd_path;
-        };
-
-        static bool IsValid() noexcept
-        {
-            return Instance().m_inotify_fd >= 0;
-        }
-
-        static void AddWatch(const std::filesystem::path &path);
-        static void RemoveWatch(const std::filesystem::path &path);
-        static void ClearWatches();
-
         static void InitFileSystem(const std::filesystem::path &root);
 
-        static std::shared_ptr<atmo::core::ecs::entities::UIFileExplorerDirNode>
-        GetFileSystemFoldableTree(const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path);
+        /**
+         * @brief Applies the changes reported by the backend to the tree.
+         *
+         * @return true if the tree changed.
+         */
+        static bool PollChanges();
+
+        static const FileSystemNode &GetTree();
 
         static FileWatcher &Instance();
 
     private:
+        struct PendingChange {
+            std::filesystem::path dir;
+            bool recursive = false;
+        };
+
         FileWatcher();
         ~FileWatcher();
 
-        std::shared_ptr<atmo::core::ecs::entities::UIFileExplorerFileNode>
-        createFoldableTreeLeaf(const FileSystemNode &file, const std::filesystem::path &focused_path);
-        std::shared_ptr<atmo::core::ecs::entities::UIFileExplorerDirNode>
-        createFoldableTree(const FileSystemNode &file, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path);
+        void pushChange(const std::filesystem::path &dir, bool recursive);
+        FileSystemNode *findNearestNode(const std::filesystem::path &dir);
 
-        FileSystemNode *getWorkingNode(const FileSystemNode *root, const std::filesystem::path &changes);
+        static FileSystemNode ScanFolder(const std::filesystem::path &path);
+        static bool RefreshFolder(FileSystemNode &node);
 
-        void createAction(const inotify_event *evt, const FileChange &changes);
-        void deleteAction(const inotify_event *evt, const FileChange &changes);
-        void moveInAction(const inotify_event *evt, const FileChange &changes);
-        void moveOutAction(const inotify_event *evt, const FileChange &changes);
+        std::unique_ptr<file_watcher::Backend> m_backend;
 
-        void workerLoop(); // tourne dans le ThreadPool, bloque sur read()
+        std::mutex m_pending_mutex;
+        std::vector<PendingChange> m_pending;
 
-        static FileSystemNode ScanFolder(const std::filesystem::path &path, bool recursive = true);
-
-        int m_inotify_fd = -1;
-
-        std::mutex m_watchMutex;
-        std::mutex m_graphMutex;
-        // map bidirectionnelle wd <-> path pour retrouver le path depuis un événement
-        std::unordered_map<int, std::filesystem::path> m_wd_to_path;
-        std::unordered_map<std::filesystem::path, int> m_path_to_wd;
         FileSystemNode m_root;
+        uint32_t m_tick_listener = 0;
     };
 } // namespace atmo
-
-#endif // __linux__

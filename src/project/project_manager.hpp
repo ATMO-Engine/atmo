@@ -52,7 +52,7 @@ namespace atmo
 
                 Instance().m_project_root = resolved_root;
 
-                FileWatcher::InitFileSystem(project_path);
+                FileWatcher::InitFileSystem(resolved_root);
             }
 #endif
 

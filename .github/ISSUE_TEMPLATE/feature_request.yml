@@ -1,0 +1,68 @@
+name: Feature request
+description: Suggest a new feature or an improvement
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your suggestion.
+        For large or architecture-impacting changes, please describe them here before opening a pull request.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the engine does this concern?
+      options:
+        - Core / ECS
+        - Editor
+        - Luau scripting
+        - Rendering
+        - Physics
+        - Project / Assets
+        - Localization
+        - Build / CI
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem are you trying to solve? Why is it needed?
+      placeholder: Describe the problem you are facing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: A clear description of what you want to happen. Luau snippets or UI mockups are welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative solutions or workarounds you have considered.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: References to other engines, screenshots, links, etc.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this feature has not been requested yet
+          required: true
+        - label: This feature requires a new dependency (to be discussed first)
+        - label: I would like to work on this feature

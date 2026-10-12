@@ -3,6 +3,7 @@
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "meta/widget_registry.hpp"
+#include "spdlog/spdlog.h"
 
 std::optional<atmo::core::ecs::entities::Entity> createFilePathWidget(atmo::core::ecs::entities::Entity parent, void *value, const atmo::meta::FieldInfo &field)
 {
@@ -11,10 +12,15 @@ std::optional<atmo::core::ecs::entities::Entity> createFilePathWidget(atmo::core
     auto &string_input_entity_comp = string_input_entity->getComponentMutable<atmo::core::components::UITextInput>();
 
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Text;
-    if (value)
-        field.get(value, &string_input_entity_comp.value);
+    if (value) {
+        if (string_input_entity_comp.value.empty())
+            string_input_entity_comp.value = "Write a path";
+        else
+            field.get(value, &string_input_entity_comp.value);
+    }
 
     string_input_entity->getSignal<std::string>("StringValueChanged").connect([value, field](std::string val) { field.set(value, &val); });
+    string_input_entity->getSignal<std::string>("StringValueChanged").emit(string_input_entity_comp.value);
 
     return *string_input_entity;
 }

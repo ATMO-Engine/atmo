@@ -152,7 +152,7 @@ namespace atmo::core
     int Engine::initLogger()
     {
 #if defined(ATMO_DEBUG)
-        // spdlog::set_level(spdlog::level::debug);
+        spdlog::set_level(spdlog::level::debug);
 #endif
 
         return 0;

@@ -3,16 +3,22 @@
 #include <filesystem>
 #include <flecs.h>
 #include <string>
-#include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_dir_node/ui_dir_node.hpp"
+#include "editor/editor_entities/ui_file_explorer/ui_file_node/ui_file_node.hpp"
+#include "file_watcher/file_watcher.hpp"
 
 namespace atmo::core::components
 {
     struct UIFileExplorer {
         std::filesystem::path focused_path;
+
+        flecs::entity add_input;
+        flecs::entity add_folder_input;
+        flecs::entity rename_input;
+        flecs::entity tree_container;
     };
 } // namespace atmo::core::components
 
@@ -45,11 +51,11 @@ namespace atmo::core::ecs::entities
 
     private:
         void rebuild();
-        flecs::entity findNodeByPath(UIFileExplorerDirNode &node, const std::string &target_path);
 
-        UIButton getAddButton() const;
-        UIButton getDeleteButton() const;
-        UIButton getRenameButton() const;
+        static std::shared_ptr<UIFileExplorerDirNode>
+        CreateDirNode(const FileWatcher::FileSystemNode &dir, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path);
+        static std::shared_ptr<UIFileExplorerFileNode> CreateFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path);
+
         UITextInput getAddInput() const;
         UITextInput getAddFolderInput() const;
         UITextInput getRenameInput() const;

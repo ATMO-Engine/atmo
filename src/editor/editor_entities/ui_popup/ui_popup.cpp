@@ -20,7 +20,7 @@ namespace atmo::core::ecs::entities
         layout.child_alignment.vertical = components::Layout::ChildAlignment::Center;
         layout.width.type = components::Layout::SizingAxis::SizingAxisType::GROW;
         layout.height.type = components::Layout::SizingAxis::SizingAxisType::GROW;
-        layout.floating = true;
+        layout.floating.enabled = true;
     }
 
     Clay_ElementDeclaration UIPopup::buildDecl()

@@ -2,12 +2,15 @@
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_button/ui_button.hpp"
+#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
+#include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/file_system_event/file_selected_event.hpp"
 #include "core/event/events/file_system_event/reload_explorer_event.hpp"
-#include "editor/editor_entities/ui_file_explorer/ui_dir_node/ui_dir_node.hpp"
+#include "core/types.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "file_watcher/file_watcher.hpp"
 #include "meta/auto_register.hpp"
@@ -22,21 +25,6 @@ namespace fs = std::filesystem;
 
 namespace atmo::core::ecs::entities
 {
-    namespace
-    {
-        constexpr std::string_view ToolbarName = "FileExplorer toolbar";
-        constexpr std::string_view AddButtonContainer = "Add Button Container";
-        constexpr std::string_view AddFolderButtonContainer = "Add Folder Button Container";
-        constexpr std::string_view AddButtonName = "FileExplorer add button";
-        constexpr std::string_view AddInputName = "FileExplorer add input";
-        constexpr std::string_view AddFolderInputName = "FileExplorer add folder input";
-        constexpr std::string_view DeleteButtonName = "FileExplorer delete button";
-        constexpr std::string_view RenameButtonContainer = "Rename Button Container";
-        constexpr std::string_view RenameButtonName = "FileExplorer rename button";
-        constexpr std::string_view RenameInputName = "FileExplorer rename input";
-        constexpr std::string_view TreeContainerName = "FileExplorer tree container";
-    } // namespace
-
     void UIFileExplorer::RegisterSystems(flecs::world *world) {}
 
     void UIFileExplorer::initialize()
@@ -60,73 +48,83 @@ namespace atmo::core::ecs::entities
         toolbar_layout.child_gap = 6;
         toolbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         toolbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        toolbar->rename(std::string(ToolbarName));
         toolbar->setParent(*this);
 
-
-        auto add_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
+        auto add_container = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &add_container_layout = add_container->getComponentMutable<core::components::Layout>();
         add_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        add_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        add_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         add_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         add_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         add_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
-        add_container->rename(std::string(AddButtonContainer));
         add_container->setParent(*toolbar);
 
         auto add_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
-        add_btn->rename(std::string(AddButtonName));
+        auto add_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        add_btn_label->setText("Add File");
+        add_btn_label->setFontSize(12);
+        add_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        add_btn_label->setParent(*add_btn);
         add_btn->setParent(*add_container);
-        UILabel(add_btn->getChild("Button label")).setText("Add File");
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
-        add_input->rename(std::string(AddInputName));
+        add_input->setValue("File Name");
         add_input->setParent(*add_container);
 
-
-        auto add_folder_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
+        auto add_folder_container = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &add_folder_container_layout = add_folder_container->getComponentMutable<core::components::Layout>();
         add_folder_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        add_folder_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        add_folder_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
         add_folder_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         add_folder_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         add_folder_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
-        add_folder_container->rename(std::string(AddFolderButtonContainer));
         add_folder_container->setParent(*toolbar);
 
         auto add_folder_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
-        add_folder_btn->rename(std::string(AddButtonName));
+        auto add_folder_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        add_folder_btn_label->setText("Add Folder");
+        add_folder_btn_label->setFontSize(12);
+        add_folder_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        add_folder_btn_label->setParent(*add_folder_btn);
         add_folder_btn->setParent(*add_folder_container);
-        UILabel(add_folder_btn->getChild("Button label")).setText("Add Folder");
 
         auto add_folder_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
-        add_folder_input->rename(std::string(AddFolderInputName));
+        add_folder_input->setValue("Folder Name");
         add_folder_input->setParent(*add_folder_container);
 
-
-        auto rename_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect");
+        auto rename_container = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &rename_container_layout = rename_container->getComponentMutable<core::components::Layout>();
         rename_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        rename_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        rename_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
         rename_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         rename_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         rename_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
-        rename_container->rename(std::string(RenameButtonContainer));
         rename_container->setParent(*toolbar);
 
         auto rename_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
-        rename_btn->rename(std::string(RenameButtonName));
+        auto rename_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        rename_btn_label->setText("Rename");
+        rename_btn_label->setFontSize(12);
+        rename_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        rename_btn_label->setParent(*rename_btn);
         rename_btn->setParent(*rename_container);
-        UILabel(rename_btn->getChild("Button label")).setText("Rename");
 
         auto rename_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
-        rename_input->rename(std::string(RenameInputName));
+        rename_input->setValue("File Name");
         rename_input->setParent(*rename_container);
 
-
         auto delete_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
-        delete_btn->rename(std::string(DeleteButtonName));
+        auto delete_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        delete_btn_label->setText("Delete");
+        delete_btn_label->setFontSize(12);
+        delete_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        delete_btn_label->setParent(*delete_btn);
         delete_btn->setParent(*toolbar);
-        UILabel(delete_btn->getChild("Button label")).setText("Delete");
 
-        auto tree_container = core::ecs::EntityRegistry::Create("Entity::UI::UIRect");
+        auto tree_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &tree_layout = tree_container->getComponentMutable<core::components::Layout>();
         tree_layout.direction = core::components::Layout::Direction::Vertical;
         tree_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -137,9 +135,13 @@ namespace atmo::core::ecs::entities
         tree_layout.clip.vertical = true;
         auto &tree_rect = tree_container->getComponentMutable<core::components::UIRect>();
         tree_rect.color = core::types::Color("#ffffff");
-        tree_container->rename(std::string(TreeContainerName));
         tree_container->setParent(*this);
 
+        auto &explorer_comp = getComponentMutable<components::UIFileExplorer>();
+        explorer_comp.add_input = add_input->getHandle();
+        explorer_comp.add_folder_input = add_folder_input->getHandle();
+        explorer_comp.rename_input = rename_input->getHandle();
+        explorer_comp.tree_container = tree_container->getHandle();
 
         auto handle = p_handle;
 
@@ -240,7 +242,8 @@ namespace atmo::core::ecs::entities
             label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
             label->setText(std::format("Delete {}", comp.focused_path.string()));
             label->setFontBold(false);
-            label->setFontSize(24);
+            label->setFontSize(12);
+            label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
             label->setParent(*delete_editor_top_bar);
 
             auto close_btn_holder = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
@@ -255,13 +258,16 @@ namespace atmo::core::ecs::entities
             close_open_editor_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             close_open_editor_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             close_open_editor_btn_layout.aspect_ratio = { 1.0f, 1.0f };
-            close_open_editor_btn->getChildren()[0].destroy();
             close_open_editor_btn->setParent(*close_btn_holder);
             close_open_editor_btn->getSignal<>("Released").connect([delete_popup]() { delete_popup->destroy(); });
 
             auto confirm_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+            auto confirm_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+            confirm_btn_label->setText("Confirm");
+            confirm_btn_label->setFontSize(12);
+            confirm_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            confirm_btn_label->setParent(*confirm_btn);
             confirm_btn->setParent(*delete_bg);
-            UILabel(confirm_btn->getChild("Button label")).setText("Confirm");
             confirm_btn->getSignal<>("Released").connect([handle, delete_popup]() {
                 if (!handle.is_alive()) {
                     return;
@@ -353,7 +359,7 @@ namespace atmo::core::ecs::entities
     void UIFileExplorer::rebuild()
     {
         auto &comp = getComponentMutable<components::UIFileExplorer>();
-        auto tree_container = getChildren()[1];
+        UIRect tree_container = getTreeContainer();
 
         std::vector<std::string> open_paths;
         std::filesystem::path focused_node = comp.focused_path;
@@ -381,33 +387,91 @@ namespace atmo::core::ecs::entities
 
         for (auto &child : tree_container.getChildren()) child.destroy();
 
-        auto root_node = FileWatcher::GetFileSystemFoldableTree(open_paths, focused_node);
+        const FileWatcher::FileSystemNode &tree = FileWatcher::GetTree();
+        if (tree.path.empty())
+            return;
+
+        auto root_node = CreateDirNode(tree, open_paths, focused_node);
         root_node->setParent(tree_container);
     }
 
-    flecs::entity UIFileExplorer::findNodeByPath(UIFileExplorerDirNode &node, const std::string &target_path)
+    std::shared_ptr<UIFileExplorerFileNode> UIFileExplorer::CreateFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path)
     {
-        if (node.path() == target_path)
-            return node.getHandle();
+        auto node = core::ecs::EntityRegistry::Create<UIFileExplorerFileNode>("Entity::UI::UIRect::UIButton::UIFileExplorerFileNode");
 
-        UIRect container = node.getChildContainer();
-        for (auto &child : container.getChildren()) {
-            if (!child.hasComponent<components::UIFileExplorerNode>())
-                continue;
+        auto &btnComp = node->getComponentMutable<core::components::UIButton>();
+        btnComp.toggle = true;
+        btnComp.group = -1;
+        auto nodeHandle = node->getHandle();
 
-            auto &child_node = child.getComponentMutable<components::UIFileExplorerNode>();
-            if (child_node.full_path == target_path)
-                return child;
-
-            if (child_node.is_directory) {
-                UIFileExplorerDirNode child_dir(child);
-                flecs::entity found = findNodeByPath(child_dir, target_path);
-                if (found.is_valid())
-                    return found;
+        node->getSignal<bool>("Toggle").connect([nodeHandle](bool state) {
+            if (!nodeHandle.is_alive()) {
+                return;
             }
+
+            UIFileExplorerFileNode node(nodeHandle);
+            auto &uiComp = node.getComponentMutable<core::components::UIRect>();
+            if (state) {
+                node.getSignal<>("Pressed").emit();
+                uiComp.color = core::types::Color::BLACK;
+                uiComp.color.a = 0.2f;
+            } else {
+                uiComp.color.a = 0.0f;
+            }
+        });
+
+        node->setPath(file.path);
+
+        if (file.path == focused_path) {
+            node->getSignal<bool>("Toggle").emit(true);
         }
 
-        return flecs::entity::null();
+        return node;
+    }
+
+    std::shared_ptr<UIFileExplorerDirNode>
+    UIFileExplorer::CreateDirNode(const FileWatcher::FileSystemNode &dir, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path)
+    {
+        auto node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
+        node->setPath(dir.path);
+
+        auto btn = node->getTitleButton();
+        auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+        btnComp.toggle = true;
+        btnComp.group = -1;
+        auto btnHandle = btn.getHandle();
+        btn.getSignal<bool>("Toggle").connect([btnHandle](bool state) {
+            if (!btnHandle.is_alive()) {
+                return;
+            }
+
+            UIButton node(btnHandle);
+            auto &uiComp = node.getComponentMutable<core::components::UIRect>();
+            if (state) {
+                node.getSignal<>("Pressed").emit();
+                uiComp.color = core::types::Color::BLACK;
+                uiComp.color.a = 0.2f;
+            } else {
+                uiComp.color.a = 0.0f;
+            }
+        });
+
+        if (dir.path == focused_path) {
+            btn.getSignal<bool>("Toggle").emit(true);
+        }
+        bool should_be_open = std::find(open_paths.begin(), open_paths.end(), dir.path.string()) != open_paths.end();
+        if (should_be_open) {
+            auto &treeComp = node->getComponentMutable<core::components::UIFoldableTreeItem>();
+            treeComp.open = true;
+        }
+
+        for (const auto &child : dir.child) {
+            if (child.is_dir)
+                CreateDirNode(child, open_paths, focused_path)->setParent(node->getChildContainer());
+            else
+                CreateFileNode(child, focused_path)->setParent(node->getChildContainer());
+        }
+        return node;
     }
 
     Clay_ElementDeclaration UIFileExplorer::buildDecl()
@@ -418,39 +482,24 @@ namespace atmo::core::ecs::entities
 
     void UIFileExplorer::draw(ClaySdL3RendererData *) {}
 
-    UIButton UIFileExplorer::getAddButton() const
-    {
-        return UIButton(getChild(ToolbarName).getChild(AddButtonName));
-    }
-
-    UIButton UIFileExplorer::getDeleteButton() const
-    {
-        return UIButton(getChild(ToolbarName).getChild(DeleteButtonName));
-    }
-
-    UIButton UIFileExplorer::getRenameButton() const
-    {
-        return UIButton(getChild(ToolbarName).getChild(RenameButtonName));
-    }
-
     UITextInput UIFileExplorer::getAddInput() const
     {
-        return UITextInput(getChild(ToolbarName).getChild(AddButtonContainer).getChild(AddInputName));
+        return UITextInput(getComponent<components::UIFileExplorer>().add_input);
     }
 
     UITextInput UIFileExplorer::getAddFolderInput() const
     {
-        return UITextInput(getChild(ToolbarName).getChild(AddFolderButtonContainer).getChild(AddFolderInputName));
+        return UITextInput(getComponent<components::UIFileExplorer>().add_folder_input);
     }
 
     UITextInput UIFileExplorer::getRenameInput() const
     {
-        return UITextInput(getChild(ToolbarName).getChild(RenameButtonContainer).getChild(RenameInputName));
+        return UITextInput(getComponent<components::UIFileExplorer>().rename_input);
     }
 
     UIRect UIFileExplorer::getTreeContainer() const
     {
-        return UIRect(getChild(TreeContainerName));
+        return UIRect(getComponent<components::UIFileExplorer>().tree_container);
     }
 } // namespace atmo::core::ecs::entities
 
