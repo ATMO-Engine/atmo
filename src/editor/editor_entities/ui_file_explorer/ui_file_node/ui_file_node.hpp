@@ -1,7 +1,7 @@
 #pragma once
 
+#include <filesystem>
 #include <flecs.h>
-#include <string>
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 
 namespace atmo::core::ecs::entities
@@ -20,7 +20,8 @@ namespace atmo::core::ecs::entities
             return "UIFileExplorerFileNode";
         }
 
-        void setPath(const std::string &path);
+        void setPath(const std::filesystem::path &path);
+        const std::string &path() const;
 
         void setHighlight(bool highlighted);
     };
