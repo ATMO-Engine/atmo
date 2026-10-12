@@ -1,50 +1,52 @@
 #include "ui_text_input.hpp"
 #include <string>
-#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
+#include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
 {
     void UITextInput::RegisterSystems(flecs::world *world)
     {
-        world->system<core::components::UITextInput>("TextInput_Update")
-            .kind(flecs::OnStore)
-            .each([world](flecs::entity e, core::components::UITextInput &comp) {
-                if (comp.value != comp.prev_value) {
-                    auto wrapped = EntityRegistry::Wrap(e);
-                    auto *ui = dynamic_cast<entities::UIInput *>(wrapped.get());
+        world->system<core::components::UITextInput>("TextInput_Update").kind(flecs::OnStore).each([](flecs::entity e, core::components::UITextInput &comp) {
+            if (comp.value == comp.prev_value)
+                return;
 
-                    comp.prev_value = comp.value;
+            UITextInput input(e);
+            // Never overwrite what the user is typing; the value is re-applied on commit.
+            if (input.isFocused())
+                return;
 
-                    ui->getComponentMutable<core::components::UIInput>().input_data = comp.value;
-                }
-            });
+            comp.prev_value = comp.value;
+            input.setText(comp.value);
+        });
     }
 
-    void UITextInput::validateInput()
+    void UITextInput::commit()
     {
-        auto &input = getComponentMutable<core::components::UIInput>();
-        auto &text = getComponentMutable<core::components::UITextInput>();
+        auto &comp = getComponentMutable<core::components::UITextInput>();
+        auto text = getText();
+        if (text == comp.value && comp.value == comp.prev_value)
+            return;
 
-        constexpr size_t MAX_LENGTH = 15;
-
-        // if (input.input_data.size() > MAX_LENGTH) {
-        //     input.input_data.resize(MAX_LENGTH);
-        // }
-
-        text.value = input.input_data;
-        getSignal<std::string>("StringValueChanged").emit(text.value);
-    };
+        comp.value = text;
+        comp.prev_value = text;
+        getSignal<std::string>("StringValueChanged").emit(comp.value);
+    }
 
     void UITextInput::clear()
     {
-        getComponentMutable<core::components::UIInput>().input_data.clear();
-        getComponentMutable<core::components::UITextInput>().value.clear();
-    };
+        UIInput::clear();
+        auto &comp = getComponentMutable<core::components::UITextInput>();
+        comp.value.clear();
+        comp.prev_value.clear();
+    }
 
     void UITextInput::setValue(const std::string &value)
     {
-        getComponentMutable<core::components::UITextInput>().value = value;
+        auto &comp = getComponentMutable<core::components::UITextInput>();
+        comp.value = value;
+        comp.prev_value = value;
+        setText(value);
     }
 
     void UITextInput::initialize()
@@ -52,21 +54,9 @@ namespace atmo::core::ecs::entities
         UIInput::initialize();
 
         setComponent<core::components::UITextInput>({});
-
         createSignal<std::string>("StringValueChanged");
 
-        auto &input_type = getComponentMutable<core::components::UIInput>();
-        input_type.input_type = core::components::UIInput::InputType::Text;
-    }
-
-    Clay_ElementDeclaration UITextInput::buildDecl()
-    {
-        return UI::buildDecl();
-    }
-
-    void UITextInput::draw(ClaySdL3RendererData *data)
-    {
-        UIInput::draw(data);
+        getComponentMutable<core::components::UIInput>().input_type = core::components::UIInput::InputType::Text;
     }
 } // namespace atmo::core::ecs::entities
 

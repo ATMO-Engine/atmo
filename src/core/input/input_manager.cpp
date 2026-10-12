@@ -30,12 +30,16 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
     switch (e.type) {
         case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP:
+            if (e.type == SDL_EVENT_KEY_DOWN && Instance().p_textInput)
+                Instance().p_textEvents.emplace_back(TextKeyDown{ e.key.key, e.key.scancode, e.key.mod, e.key.repeat });
             for (auto evt : Instance().p_events)
                 if (auto keyEvent = std::dynamic_pointer_cast<KeyEvent>(evt))
                     HandleKeyboardEvent(e.key, keyEvent);
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
+            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT)
+                Instance().p_lastClickCount = e.button.clicks;
             for (auto evt : Instance().p_events)
                 if (auto mouseEvent = std::dynamic_pointer_cast<MouseButtonEvent>(evt))
                     HandleMouseButtonEvent(e.button, mouseEvent);
@@ -50,7 +54,11 @@ void atmo::core::InputManager::ProcessEvent(const SDL_Event &e, float deltaTime)
             break;
         case SDL_EVENT_TEXT_INPUT:
             if (Instance().p_textInput)
-                Instance().p_textBuffer += e.text.text;
+                Instance().p_textEvents.emplace_back(TextCommit{ e.text.text });
+            break;
+        case SDL_EVENT_TEXT_EDITING:
+            if (Instance().p_textInput)
+                Instance().p_textEvents.emplace_back(TextComposition{ e.edit.text ? e.edit.text : "", e.edit.start, e.edit.length });
             break;
         case SDL_EVENT_PINCH_UPDATE:
             for (auto evt : Instance().p_events)
@@ -220,11 +228,9 @@ void atmo::core::InputManager::HandleMouseButtonEvent(const SDL_MouseButtonEvent
 }
 
 
-std::string atmo::core::InputManager::ConsumeText() noexcept
+std::vector<atmo::core::TextInputEvent> atmo::core::InputManager::ConsumeTextEvents() noexcept
 {
-    auto t = Instance().p_textBuffer;
-    Instance().p_textBuffer.clear();
-    return t;
+    return std::exchange(Instance().p_textEvents, {});
 }
 
 void atmo::core::InputManager::StartTextInput(SDL_Window *window) noexcept
@@ -240,7 +246,24 @@ void atmo::core::InputManager::StopTextInput(SDL_Window *window) noexcept
     if (Instance().p_textInput) {
         SDL_StopTextInput(window);
         Instance().p_textInput = false;
+        Instance().p_textEvents.clear();
     }
+}
+
+bool atmo::core::InputManager::IsTextInputActive() noexcept
+{
+    return Instance().p_textInput;
+}
+
+void atmo::core::InputManager::SetTextInputArea(SDL_Window *window, const SDL_Rect &area, int cursor) noexcept
+{
+    if (window)
+        SDL_SetTextInputArea(window, &area, cursor);
+}
+
+int atmo::core::InputManager::GetLastClickCount() noexcept
+{
+    return Instance().p_lastClickCount;
 }
 
 std::pair<atmo::core::types::Vector2, float> atmo::core::InputManager::GetScrollDelta(const std::string &inputName)

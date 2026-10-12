@@ -81,7 +81,7 @@ namespace atmo::core::ecs::entities
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
         add_input->rename(std::string(AddInputName));
-        add_input->setValue("File Name");
+        add_input->setPlaceholder("File Name");
         add_input->setParent(*add_container);
 
         auto rename_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
@@ -106,7 +106,7 @@ namespace atmo::core::ecs::entities
 
         auto rename_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
         rename_input->rename(std::string(RenameInputName));
-        rename_input->setValue("File Name");
+        rename_input->setPlaceholder("File Name");
         rename_input->setParent(*rename_container);
 
         auto delete_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
@@ -155,7 +155,7 @@ namespace atmo::core::ecs::entities
                 return;
 
             UITextInput input = explorer.getAddInput();
-            std::string new_name = input.getComponentMutable<core::components::UITextInput>().value;
+            std::string new_name = input.getText();
             if (new_name.empty())
                 return;
 
@@ -272,7 +272,7 @@ namespace atmo::core::ecs::entities
                 return;
 
             UITextInput input = explorer.getRenameInput();
-            std::string new_name = input.getComponentMutable<core::components::UITextInput>().value;
+            std::string new_name = input.getText();
             if (new_name.empty())
                 return;
 

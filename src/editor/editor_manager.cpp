@@ -13,6 +13,8 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/progress_tick_event/progress_tick_event.hpp"
+#include "core/input/focus_manager.hpp"
+#include "core/text/keymap.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
@@ -85,7 +87,7 @@ namespace atmo::editor
                 .id = "atmo.commands.edit.undo",
                 .category = "atmo.commands.edit.category",
                 .shortcut = Shortcut{ SDLK_Z, PRIMARY_MOD },
-                .action = [] {},
+                .action = [] { core::FocusManager::DispatchEditAction({ core::text::EditCommand::Undo }); },
             });
 
         m_commands.registerCommand(
@@ -93,7 +95,7 @@ namespace atmo::editor
                 .id = "atmo.commands.edit.redo",
                 .category = "atmo.commands.edit.category",
                 .shortcut = Shortcut{ SDLK_Z, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
-                .action = [] {},
+                .action = [] { core::FocusManager::DispatchEditAction({ core::text::EditCommand::Redo }); },
             });
 
         m_commands.registerCommand(
@@ -128,6 +130,10 @@ namespace atmo::editor
         core::event::EventRegistry::SetCallBack<core::event::events::InputEvent>([this](core::event::events::InputEvent *event) {
             const SDL_Event &sdl_event = event->sdl_event;
             if (sdl_event.type != SDL_EVENT_KEY_DOWN || sdl_event.key.repeat)
+                return;
+
+            // A focused text input handles its own editing shortcuts (it already received this event).
+            if (core::FocusManager::HasTextFocus() && core::text::Keymap::Lookup(sdl_event.key.key, static_cast<SDL_Keymod>(sdl_event.key.mod)))
                 return;
 
             const Command *cmd = m_commands.findByShortcut(sdl_event.key.key, static_cast<SDL_Keymod>(sdl_event.key.mod));

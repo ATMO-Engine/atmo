@@ -289,7 +289,6 @@ namespace atmo::core
         InputManager::AddInput("ui_pinch", new InputManager::PinchEvent(), true);
         InputManager::AddInput("ui_quit", new InputManager::KeyEvent(SDL_SCANCODE_ESCAPE, true), true);
         InputManager::AddInput("ui_confirm", new InputManager::KeyEvent(SDL_SCANCODE_RETURN, true), true);
-        InputManager::AddInput("ui_delete", new InputManager::KeyEvent(SDL_SCANCODE_BACKSPACE, true), true);
 
         return 0;
     }

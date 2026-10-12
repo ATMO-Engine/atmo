@@ -57,22 +57,8 @@ namespace atmo::core::ecs::entities
         input_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         input_rect_layout.width.size = 0.1f;
 
-        auto &input_entity_comp = numberInput->getComponentMutable<core::components::UIInput>();
-        input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
-        input_entity_comp.input_data = "1.0";
-
-        auto button = UIButton(numberInput->getChildren()[0]);
-        if (!button.getHandle().is_alive()) {
-            return;
-        }
-        auto label = UILabel(button.getChildren()[0]);
-        if (!label.getHandle().is_alive()) {
-            return;
-        }
-        numberInput->validateInput();
-        auto &nbInput_comp = numberInput->getComponentMutable<core::components::UIInput>();
-        nbInput_comp.input_data = std::format("{:g}", 1.0f);
-        label.setText(nbInput_comp.input_data);
+        numberInput->getComponentMutable<core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Float;
+        numberInput->setNumber(1.0f);
 
         numberInput->rename(rowName + "input");
         numberInput->setParent(*color_panel);

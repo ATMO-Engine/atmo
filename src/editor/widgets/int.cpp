@@ -11,8 +11,11 @@ std::optional<atmo::core::ecs::entities::Entity> createIntWidget(atmo::core::ecs
     auto &int_input_entity_comp = int_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
 
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Int;
-    if (value)
-        field.get(value, &int_input_entity_comp.value);
+    if (value) {
+        int current = 0;
+        field.get(value, &current);
+        int_input_entity_comp.value = current;
+    }
 
     int_input_entity->getSignal<int>("IntValueChanged").connect([value, field](int val) { field.set(value, &val); });
 
@@ -22,7 +25,9 @@ std::optional<atmo::core::ecs::entities::Entity> createIntWidget(atmo::core::ecs
 void updateIntWidget(atmo::core::ecs::entities::Entity widget, void *value, const atmo::meta::FieldInfo &field)
 {
     auto &comp = widget.getComponentMutable<atmo::core::components::UINumberInput>();
-    field.get(value, &comp.value);
+    int current = 0;
+    field.get(value, &current);
+    comp.value = current;
 }
 
 ATMO_REGISTER_WIDGET("int", createIntWidget, {}, updateIntWidget)
