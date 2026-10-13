@@ -1,0 +1,48 @@
+name: notify-docs
+
+# Tells ATMO-Engine/docs to rebuild:
+# - "engine-main" once `build` (builds + unit tests on every platform) passes on a push to main,
+# - "engine-release" when a release is published.
+# The docs repository resolves what to build itself, so this workflow only sends the signal.
+on:
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+    branches: [main]
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Notify the docs repository
+    if: >-
+      github.event_name == 'release' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    steps:
+      # A GitHub App installed on ATMO-Engine/docs, allowed to create repository dispatches (Contents: read & write).
+      - name: Create a token for ATMO-Engine/docs
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.DOCS_APP_ID }}
+          private-key: ${{ secrets.DOCS_APP_PRIVATE_KEY }}
+          owner: ATMO-Engine
+          repositories: docs
+
+      - name: Send repository dispatch
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          EVENT_TYPE: ${{ github.event_name == 'release' && 'engine-release' || 'engine-main' }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease || false }}
+        run: |
+          gh api repos/ATMO-Engine/docs/dispatches \
+            -f event_type="$EVENT_TYPE" \
+            -f "client_payload[sha]=$SHA" \
+            -f "client_payload[tag]=$TAG" \
+            -F "client_payload[prerelease]=$PRERELEASE"
+          echo "Sent $EVENT_TYPE (${TAG:-$SHA}) to ATMO-Engine/docs"
