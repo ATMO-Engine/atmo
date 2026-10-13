@@ -3,27 +3,51 @@ name: build
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore: ["**.md", "LICENSE", "THIRD_PARTY_LICENSES"]
   push:
     branches: [main]
+    paths-ignore: ["**.md", "LICENSE", "THIRD_PARTY_LICENSES"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  XMAKE_VERSION: "3.1.1"
 
 jobs:
-  build-linux:
-    name: Linux build
-    runs-on: ubuntu-latest
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            build-cache: true
+          - name: macOS
+            os: macos-26
+            build-cache: true
+          - name: Windows
+            os: windows-latest
+            build-cache: false
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: "recursive"
+          submodules: true
 
       - name: Install SDL3 build dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y --no-install-recommends \
             build-essential git make pkg-config cmake ninja-build \
             libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
@@ -34,178 +58,57 @@ jobs:
       - name: Setup Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
-          xmake-version: latest
+          xmake-version: ${{ env.XMAKE_VERSION }}
           actions-cache-folder: .xmake-cache
 
-      - name: Cache xmake packages
-        uses: actions/cache@v4
+      - name: Compute cache keys
+        id: keys
+        shell: bash
+        run: |
+          echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
+          if [ "${{ matrix.build-cache }}" = true ]; then
+            echo "XMAKE_ACTION_BUILD_CACHE=true" >> "$GITHUB_ENV"
+          fi
+          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua') }}-$(git rev-parse HEAD:submodules)" >> "$GITHUB_OUTPUT"
+          echo "build=xmake-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}" >> "$GITHUB_OUTPUT"
+          echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore xmake packages
+        id: packages
+        uses: actions/cache/restore@v4
         with:
-          path: |
-            build/.packages
-            ~/.xmake/packages
-          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
-          restore-keys: ${{ runner.os }}-
+          path: ${{ runner.temp }}/xmake-packages
+          key: ${{ steps.keys.outputs.packages }}
+
+      - name: Restore build cache
+        if: matrix.build-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: build/.build_cache
+          key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
+          restore-keys: |
+            ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-
+            ${{ github.event_name == 'pull_request' && format('{0}-', steps.keys.outputs.build) || '' }}
+
+      - name: Configure and install packages
+        run: xmake f -y -m release
+
+      - name: Save xmake packages
+        if: steps.packages.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/xmake-packages
+          key: ${{ steps.keys.outputs.packages }}
 
       - name: Build
-        run: |
-          xmake -y
-          xmake build atmo-test
+        run: xmake build -y atmo-test
 
-  test-linux:
-    name: Linux unit tests
-    runs-on: ubuntu-latest
-    needs: build-linux
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Save build cache
+        if: matrix.build-cache && github.event_name == 'push'
+        uses: actions/cache/save@v4
         with:
-          submodules: "recursive"
-
-      - name: Install SDL3 build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential git make pkg-config cmake ninja-build \
-            libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
-            libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
-            libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
-            libpipewire-0.3-dev libwayland-dev libxinerama-dev
-
-      - name: Setup Xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-          actions-cache-folder: .xmake-cache
-
-      - name: Cache xmake packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/.packages
-            ~/.xmake/packages
-          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
-          restore-keys: ${{ runner.os }}-
+          path: build/.build_cache
+          key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
 
       - name: Run unit tests
-        run: |
-          xmake build -y atmo-test
-          xmake test -v
-
-  build-macos:
-    name: macOS build
-    runs-on: macos-26
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-
-      - name: Setup Xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-          actions-cache-folder: .xmake-cache
-
-      - name: Cache xmake packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/.packages
-            ~/.xmake/packages
-          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
-          restore-keys: ${{ runner.os }}-
-
-      - name: Build
-        run: |
-          xmake -y
-          xmake build atmo-test
-
-  test-macos:
-    name: macOS unit tests
-    runs-on: macos-26
-    needs: build-macos
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-
-      - name: Setup Xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-          actions-cache-folder: .xmake-cache
-
-      - name: Cache xmake packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/.packages
-            ~/.xmake/packages
-          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
-          restore-keys: ${{ runner.os }}-
-
-      - name: Run unit tests
-        run: |
-          xmake build -y atmo-test
-          xmake test -v
-
-  build-windows:
-    name: Windows build
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-
-      - name: Setup Xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-          actions-cache-folder: .xmake-cache
-
-      - name: Cache xmake packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/.packages
-            ~/.xmake/packages
-          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
-          restore-keys: ${{ runner.os }}-
-
-      - name: Build
-        run: |
-          xmake -y
-          xmake build atmo-test
-
-  test-windows:
-    name: Windows unit tests
-    runs-on: windows-latest
-    needs: build-windows
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-
-      - name: Setup Xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-          actions-cache-folder: .xmake-cache
-
-      - name: Cache xmake packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/.packages
-            ~/.xmake/packages
-          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
-          restore-keys: ${{ runner.os }}-
-
-      - name: Run unit tests
-        run: |
-          xmake build -y atmo-test
-          xmake test -v
+        run: xmake test -v
