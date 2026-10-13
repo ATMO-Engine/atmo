@@ -3,7 +3,6 @@ name: build
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-  # Also on main, so every merged commit gets a build + test result: the docs document the newest green commit.
   push:
     branches: [main]
 
