@@ -2,45 +2,37 @@
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/file_system_event/file_selected_event.hpp"
+#include "core/event/events/file_system_event/reload_explorer_event.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
+#include "file_watcher/file_watcher.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
 
-#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <vector>
 
 namespace fs = std::filesystem;
 
 namespace atmo::core::ecs::entities
 {
-    namespace
-    {
-        constexpr std::string_view ToolbarName = "FileExplorer toolbar";
-        constexpr std::string_view AddButtonContainer = "Add Button Container";
-        constexpr std::string_view AddButtonName = "FileExplorer add button";
-        constexpr std::string_view AddInputName = "FileExplorer add input";
-        constexpr std::string_view DeleteButtonName = "FileExplorer delete button";
-        constexpr std::string_view RenameButtonContainer = "Rename Button Container";
-        constexpr std::string_view RenameButtonName = "FileExplorer rename button";
-        constexpr std::string_view RenameInputName = "FileExplorer rename input";
-        constexpr std::string_view RefreshButtonName = "FileExplorer refresh button";
-        constexpr std::string_view TreeContainerName = "FileExplorer tree container";
-    } // namespace
-
-    void UIFileExplorer::RegisterSystems(flecs::world *) {}
+    void UIFileExplorer::RegisterSystems(flecs::world *world) {}
 
     void UIFileExplorer::initialize()
     {
         UIRect::initialize();
         setComponent<components::UIFileExplorer>({});
 
+        createSignal<>("FileChange");
         createSignal<std::string>("FileFocus");
 
         auto &lay = getComponentMutable<core::components::Layout>();
@@ -56,10 +48,9 @@ namespace atmo::core::ecs::entities
         toolbar_layout.child_gap = 6;
         toolbar_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         toolbar_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
-        toolbar->rename(std::string(ToolbarName));
         toolbar->setParent(*this);
 
-        auto add_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        auto add_container = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &add_container_layout = add_container->getComponentMutable<core::components::Layout>();
         add_container_layout.direction = core::components::Layout::Direction::Horizontal;
         add_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
@@ -67,16 +58,14 @@ namespace atmo::core::ecs::entities
         add_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         add_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         add_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
-        add_container->rename(std::string(AddButtonContainer));
         add_container->setParent(*toolbar);
 
         auto add_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         auto add_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
-        add_btn->rename(std::string(AddButtonName));
-        add_btn_label->setText("Add");
-        add_btn_label->setParent(*add_btn);
+        add_btn_label->setText("Add File");
         add_btn_label->setFontSize(12);
         add_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        add_btn_label->setParent(*add_btn);
         add_btn->setParent(*add_container);
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
@@ -84,7 +73,29 @@ namespace atmo::core::ecs::entities
         add_input->setPlaceholder("File Name");
         add_input->setParent(*add_container);
 
-        auto rename_container = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        auto add_folder_container = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
+        auto &add_folder_container_layout = add_folder_container->getComponentMutable<core::components::Layout>();
+        add_folder_container_layout.direction = core::components::Layout::Direction::Horizontal;
+        add_folder_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        add_folder_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
+        add_folder_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        add_folder_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        add_folder_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
+        add_folder_container->setParent(*toolbar);
+
+        auto add_folder_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
+        auto add_folder_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        add_folder_btn_label->setText("Add Folder");
+        add_folder_btn_label->setFontSize(12);
+        add_folder_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        add_folder_btn_label->setParent(*add_folder_btn);
+        add_folder_btn->setParent(*add_folder_container);
+
+        auto add_folder_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
+        add_folder_input->setValue("Folder Name");
+        add_folder_input->setParent(*add_folder_container);
+
+        auto rename_container = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &rename_container_layout = rename_container->getComponentMutable<core::components::Layout>();
         rename_container_layout.direction = core::components::Layout::Direction::Horizontal;
         rename_container_layout.child_alignment.vertical = core::components::Layout::ChildAlignment::Start;
@@ -92,12 +103,10 @@ namespace atmo::core::ecs::entities
         rename_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
         rename_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         rename_container_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 28.0f, 28.0f };
-        rename_container->rename(std::string(RenameButtonContainer));
         rename_container->setParent(*toolbar);
 
         auto rename_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         auto rename_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
-        rename_btn->rename(std::string(RenameButtonName));
         rename_btn_label->setText("Rename");
         rename_btn_label->setFontSize(12);
         rename_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
@@ -111,21 +120,11 @@ namespace atmo::core::ecs::entities
 
         auto delete_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
         auto delete_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
-        delete_btn->rename(std::string(DeleteButtonName));
         delete_btn_label->setText("Delete");
         delete_btn_label->setFontSize(12);
         delete_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
         delete_btn_label->setParent(*delete_btn);
         delete_btn->setParent(*toolbar);
-
-        auto refresh_btn = core::ecs::EntityRegistry::Create<UIButton>("Entity::UI::UIRect::UIButton");
-        auto refresh_btn_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
-        refresh_btn->rename(std::string(RefreshButtonName));
-        refresh_btn_label->setText("Refresh");
-        refresh_btn_label->setFontSize(12);
-        refresh_btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
-        refresh_btn_label->setParent(*refresh_btn);
-        refresh_btn->setParent(*toolbar);
 
         auto tree_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
         auto &tree_layout = tree_container->getComponentMutable<core::components::Layout>();
@@ -138,8 +137,13 @@ namespace atmo::core::ecs::entities
         tree_layout.clip.vertical = true;
         auto &tree_rect = tree_container->getComponentMutable<core::components::UIRect>();
         tree_rect.color = core::types::Color("#ffffff");
-        tree_container->rename(std::string(TreeContainerName));
         tree_container->setParent(*this);
+
+        auto &explorer_comp = getComponentMutable<components::UIFileExplorer>();
+        explorer_comp.add_input = add_input->getHandle();
+        explorer_comp.add_folder_input = add_folder_input->getHandle();
+        explorer_comp.rename_input = rename_input->getHandle();
+        explorer_comp.tree_container = tree_container->getHandle();
 
         auto handle = p_handle;
 
@@ -151,7 +155,7 @@ namespace atmo::core::ecs::entities
 
 
             auto &comp = explorer.getComponentMutable<components::UIFileExplorer>();
-            if (comp.focused_node == flecs::entity{})
+            if (comp.focused_path.empty())
                 return;
 
             UITextInput input = explorer.getAddInput();
@@ -159,20 +163,52 @@ namespace atmo::core::ecs::entities
             if (new_name.empty())
                 return;
 
-            std::string target_dir = comp.focused_is_directory ? comp.focused_path : fs::path(comp.focused_path).parent_path().string();
+            bool isDir = std::filesystem::is_directory(comp.focused_path);
+
+            std::string target_dir = isDir ? comp.focused_path.string() : comp.focused_path.parent_path().string();
 
             fs::path new_path = fs::path(target_dir) / new_name;
 
             if (fs::exists(new_path)) {
-                spdlog::warn("UIFileExplorer: '{}' existe déjà, création annulée", new_path.string());
+                spdlog::warn("UIFileExplorer: '{}' already exists, cancel", new_path.string());
                 return;
             }
 
             std::ofstream(new_path).close();
-
-            explorer.rebuild();
         });
 
+        add_folder_btn->getSignal<>("Pressed").connect([handle]() {
+            if (!handle.is_alive())
+                return;
+
+            UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            auto &comp = explorer.getComponentMutable<components::UIFileExplorer>();
+            if (comp.focused_path.empty())
+                return;
+
+            UITextInput input = explorer.getAddFolderInput();
+            std::string new_name = input.getComponentMutable<core::components::UITextInput>().value;
+            if (new_name.empty())
+                return;
+
+            bool isDir = std::filesystem::is_directory(comp.focused_path);
+
+            std::string target_dir = isDir ? comp.focused_path.string() : comp.focused_path.parent_path().string();
+
+            fs::path new_path = fs::path(target_dir) / new_name;
+
+            if (fs::exists(new_path)) {
+                spdlog::warn("UIFileExplorer: '{}' already exists, cancel", new_path.string());
+                return;
+            }
+
+            std::error_code ec;
+            fs::create_directory(new_path, ec);
+            if (ec) {
+                spdlog::warn("UIFileExplorer: folder creation failed '{}': {}", new_path.string(), ec.message());
+                return;
+            }
+        });
 
         delete_btn->getSignal<>("Pressed").connect([handle]() {
             if (!handle.is_alive()) {
@@ -180,9 +216,8 @@ namespace atmo::core::ecs::entities
             }
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &comp = explorer.getComponentMutable<core::components::UIFileExplorer>();
-            if (comp.focused_node == flecs::entity{}) {
+            if (comp.focused_path.empty())
                 return;
-            }
 
             auto delete_popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
             delete_popup->setParent(explorer);
@@ -207,7 +242,7 @@ namespace atmo::core::ecs::entities
 
             auto label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
             label->setFontPath("project://assets/fonts/Nunito/Nunito.ttf");
-            label->setText(std::format("Delete {}", comp.focused_path));
+            label->setText(std::format("Delete {}", comp.focused_path.string()));
             label->setFontBold(false);
             label->setFontSize(12);
             label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
@@ -241,20 +276,19 @@ namespace atmo::core::ecs::entities
                 }
                 UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
                 auto &comp = explorer.getComponentMutable<core::components::UIFileExplorer>();
+                bool isDir = std::filesystem::is_directory(comp.focused_path);
 
                 std::error_code ec;
-                if (comp.focused_is_directory) {
+                if (isDir) {
                     fs::remove_all(comp.focused_path, ec);
                 } else {
                     fs::remove(comp.focused_path, ec);
                 }
 
                 if (ec) {
-                    spdlog::warn("UIFileExplorer: échec de suppression de '{}': {}", comp.focused_path, ec.message());
+                    spdlog::warn("UIFileExplorer: deletion failed '{}': {}", comp.focused_path.string(), ec.message());
                     return;
                 }
-
-                explorer.rebuild();
 
                 delete_popup->destroy();
             });
@@ -268,7 +302,7 @@ namespace atmo::core::ecs::entities
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
 
             auto &comp = explorer.getComponentMutable<components::UIFileExplorer>();
-            if (comp.focused_node == flecs::entity{})
+            if (comp.focused_path.empty())
                 return;
 
             UITextInput input = explorer.getRenameInput();
@@ -282,78 +316,46 @@ namespace atmo::core::ecs::entities
             std::error_code ec;
             fs::rename(old_path, new_path, ec);
             if (ec) {
-                spdlog::warn("UIFileExplorer: échec du renommage '{}' -> '{}': {}", old_path.string(), new_path.string(), ec.message());
+                spdlog::warn("UIFileExplorer: renamme failed '{}' -> '{}': {}", old_path.string(), new_path.string(), ec.message());
                 return;
             }
 
             comp.focused_path = new_path.string();
-
-            explorer.rebuild();
         });
 
 
-        refresh_btn->getSignal<>("Pressed").connect([handle]() {
+        createSignal<>("Reload");
+        getSignal<>("Reload").connect([handle]() {
             if (!handle.is_alive()) {
                 return;
             }
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
             explorer.rebuild();
         });
-    }
+        atmo::core::event::EventRegistry::SetCallBack<atmo::core::event::events::ReloadExplorerEvent>([handle](event::events::ReloadExplorerEvent *evt) {
+            if (!handle.is_alive()) {
+                return;
+            }
+            UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            explorer.getSignal<>("Reload").emit();
+        });
 
-    void UIFileExplorer::setRootPath(const std::string &path)
-    {
-        auto &comp = getComponentMutable<components::UIFileExplorer>();
-
-        std::error_code ec;
-        if (!fs::is_directory(path, ec) || ec) {
-            spdlog::warn("UIFileExplorer: '{}' n'est pas un dossier valide", path);
-            return;
-        }
-
-        comp.root_path = fs::canonical(path, ec).string();
-        comp.focused_node = {};
-        comp.focused_path.clear();
+        atmo::core::event::EventRegistry::SetCallBack<atmo::core::event::events::FileSelectedEvent>([handle](event::events::FileSelectedEvent *evt) {
+            if (!handle.is_alive()) {
+                return;
+            }
+            UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
+            auto &comp = explorer.getComponentMutable<atmo::core::components::UIFileExplorer>();
+            comp.focused_path = evt->path;
+        });
 
         rebuild();
     }
 
-    void UIFileExplorer::setFocus(flecs::entity node, const std::string &path, bool is_directory)
-    {
-        auto &comp = getComponentMutable<components::UIFileExplorer>();
-
-        if (comp.focused_node != flecs::entity{} && comp.focused_node.is_alive()) {
-            auto &old_node = comp.focused_node.get_mut<components::UIFileExplorerNode>();
-            if (old_node.is_directory) {
-                UIFileExplorerDirNode old_dir(comp.focused_node);
-                old_dir.setHighlight(false);
-            } else {
-                UIFileExplorerFileNode old_file(comp.focused_node);
-                old_file.setHighlight(false);
-            }
-        }
-
-        if (node != flecs::entity{} && node.is_alive()) {
-            auto &new_node = node.get_mut<components::UIFileExplorerNode>();
-            if (new_node.is_directory) {
-                UIFileExplorerDirNode new_dir(node);
-                new_dir.setHighlight(true);
-            } else {
-                UIFileExplorerFileNode new_file(node);
-                new_file.setHighlight(true);
-            }
-        }
-
-        comp.focused_node = node;
-        comp.focused_path = path;
-        comp.focused_is_directory = is_directory;
-
-        getSignal<std::string>("FileFocus").emit(path);
-    }
-
     bool UIFileExplorer::hasFocus() const
     {
-        return (getComponent<components::UIFileExplorer>().focused_node != flecs::entity{});
+        return false;
+        // return (getComponent<components::UIFileExplorer>().focused_node != flecs::entity{});
     }
 
     void UIFileExplorer::rebuild()
@@ -362,6 +364,7 @@ namespace atmo::core::ecs::entities
         UIRect tree_container = getTreeContainer();
 
         std::vector<std::string> open_paths;
+        std::filesystem::path focused_node = comp.focused_path;
         std::function<void(UIFileExplorerDirNode)> collect = [&](UIFileExplorerDirNode dir) {
             if (!dir.isOpen())
                 return;
@@ -384,118 +387,122 @@ namespace atmo::core::ecs::entities
                 collect(UIFileExplorerDirNode(child));
         }
 
-        std::string old_focused_path = comp.focused_path;
-        bool old_focus_was_directory = comp.focused_is_directory;
-
         for (auto &child : tree_container.getChildren()) child.destroy();
 
-        auto root_node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
-        root_node->setParent(tree_container);
-        root_node->getComponentMutable<components::UIFileExplorerNode>().explorer_root = p_handle;
-        root_node->getChildren()[0].getChildren()[1].getComponentMutable<components::UIRect>().color = types::Color::TRANSPARENT_COL;
-        root_node->setPath(comp.root_path, comp.show_hidden, true);
-
-        reopenPaths(*root_node, open_paths, comp.show_hidden);
-
-        comp.focused_node = {};
-        comp.focused_path.clear();
-
-        if (!old_focused_path.empty()) {
-            flecs::entity found = findNodeByPath(*root_node, old_focused_path);
-            if (found.is_valid() && found.is_alive()) {
-                comp.focused_node = found;
-                comp.focused_path = old_focused_path;
-                comp.focused_is_directory = old_focus_was_directory;
-            }
-        }
-    }
-
-    void UIFileExplorer::reopenPaths(UIFileExplorerDirNode &node, const std::vector<std::string> &open_paths, bool show_hidden)
-    {
-        const std::string &my_path = node.path();
-
-        bool should_be_open = std::find(open_paths.begin(), open_paths.end(), my_path) != open_paths.end();
-        if (!should_be_open)
+        const FileWatcher::FileSystemNode &tree = FileWatcher::GetTree();
+        if (tree.path.empty())
             return;
 
-        auto &node_comp = node.getComponentMutable<components::UIFileExplorerNode>();
-        if (!node_comp.scanned) {
-            node.openAndScan(show_hidden);
-        }
+        auto root_node = CreateDirNode(tree, open_paths, focused_node);
+        root_node->setParent(tree_container);
+    }
 
-        UIRect container = node.getChildContainer();
-        for (auto &child : container.getChildren()) {
-            if (!child.hasComponent<components::UIFileExplorerNode>())
-                continue;
+    std::shared_ptr<UIFileExplorerFileNode> UIFileExplorer::CreateFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path)
+    {
+        auto node = core::ecs::EntityRegistry::Create<UIFileExplorerFileNode>("Entity::UI::UIRect::UIButton::UIFileExplorerFileNode");
 
-            auto &child_node = child.getComponentMutable<components::UIFileExplorerNode>();
-            if (child_node.is_directory) {
-                UIFileExplorerDirNode child_dir(child);
-                reopenPaths(child_dir, open_paths, show_hidden);
+        auto &btnComp = node->getComponentMutable<core::components::UIButton>();
+        btnComp.toggle = true;
+        btnComp.group = -1;
+        auto nodeHandle = node->getHandle();
+
+        node->getSignal<bool>("Toggle").connect([nodeHandle](bool state) {
+            if (!nodeHandle.is_alive()) {
+                return;
             }
-        }
-    }
 
-    flecs::entity UIFileExplorer::findNodeByPath(UIFileExplorerDirNode &node, const std::string &target_path)
-    {
-        if (node.path() == target_path)
-            return node.getHandle();
-
-        UIRect container = node.getChildContainer();
-        for (auto &child : container.getChildren()) {
-            if (!child.hasComponent<components::UIFileExplorerNode>())
-                continue;
-
-            auto &child_node = child.getComponentMutable<components::UIFileExplorerNode>();
-            if (child_node.full_path == target_path)
-                return child;
-
-            if (child_node.is_directory) {
-                UIFileExplorerDirNode child_dir(child);
-                flecs::entity found = findNodeByPath(child_dir, target_path);
-                if (found.is_valid())
-                    return found;
+            UIFileExplorerFileNode node(nodeHandle);
+            auto &uiComp = node.getComponentMutable<core::components::UIRect>();
+            if (state) {
+                node.getSignal<>("Pressed").emit();
+                uiComp.color = core::types::Color::BLACK;
+                uiComp.color.a = 0.2f;
+            } else {
+                uiComp.color.a = 0.0f;
             }
+        });
+
+        node->setPath(file.path);
+
+        if (file.path == focused_path) {
+            node->getSignal<bool>("Toggle").emit(true);
         }
 
-        return flecs::entity::null();
+        return node;
     }
 
-    UIButton UIFileExplorer::getAddButton() const
+    std::shared_ptr<UIFileExplorerDirNode>
+    UIFileExplorer::CreateDirNode(const FileWatcher::FileSystemNode &dir, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path)
     {
-        return UIButton(getChild(ToolbarName).getChild(AddButtonName));
-    }
-    UIButton UIFileExplorer::getDeleteButton() const
-    {
-        return UIButton(getChild(ToolbarName).getChild(DeleteButtonName));
-    }
-    UIButton UIFileExplorer::getRenameButton() const
-    {
-        return UIButton(getChild(ToolbarName).getChild(RenameButtonName));
-    }
-    UIButton UIFileExplorer::getRefreshButton() const
-    {
-        return UIButton(getChild(ToolbarName).getChild(RefreshButtonName));
-    }
-    UITextInput UIFileExplorer::getAddInput() const
-    {
-        return UITextInput(getChild(ToolbarName).getChild(AddButtonContainer).getChild(AddInputName));
-    }
-    UITextInput UIFileExplorer::getRenameInput() const
-    {
-        return UITextInput(getChild(ToolbarName).getChild(RenameButtonContainer).getChild(RenameInputName));
-    }
-    UIRect UIFileExplorer::getTreeContainer() const
-    {
-        return UIRect(getChild(TreeContainerName));
+        auto node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
+        node->setPath(dir.path);
+
+        auto btn = node->getTitleButton();
+        auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
+        btnComp.toggle = true;
+        btnComp.group = -1;
+        auto btnHandle = btn.getHandle();
+        btn.getSignal<bool>("Toggle").connect([btnHandle](bool state) {
+            if (!btnHandle.is_alive()) {
+                return;
+            }
+
+            UIButton node(btnHandle);
+            auto &uiComp = node.getComponentMutable<core::components::UIRect>();
+            if (state) {
+                node.getSignal<>("Pressed").emit();
+                uiComp.color = core::types::Color::BLACK;
+                uiComp.color.a = 0.2f;
+            } else {
+                uiComp.color.a = 0.0f;
+            }
+        });
+
+        if (dir.path == focused_path) {
+            btn.getSignal<bool>("Toggle").emit(true);
+        }
+        bool should_be_open = std::find(open_paths.begin(), open_paths.end(), dir.path.string()) != open_paths.end();
+        if (should_be_open) {
+            auto &treeComp = node->getComponentMutable<core::components::UIFoldableTreeItem>();
+            treeComp.open = true;
+        }
+
+        for (const auto &child : dir.child) {
+            if (child.is_dir)
+                CreateDirNode(child, open_paths, focused_path)->setParent(node->getChildContainer());
+            else
+                CreateFileNode(child, focused_path)->setParent(node->getChildContainer());
+        }
+        return node;
     }
 
     Clay_ElementDeclaration UIFileExplorer::buildDecl()
     {
-        return UIRect::buildDecl();
+        auto d = UIRect::buildDecl();
+        return d;
     }
 
     void UIFileExplorer::draw(ClaySdL3RendererData *) {}
+
+    UITextInput UIFileExplorer::getAddInput() const
+    {
+        return UITextInput(getComponent<components::UIFileExplorer>().add_input);
+    }
+
+    UITextInput UIFileExplorer::getAddFolderInput() const
+    {
+        return UITextInput(getComponent<components::UIFileExplorer>().add_folder_input);
+    }
+
+    UITextInput UIFileExplorer::getRenameInput() const
+    {
+        return UITextInput(getComponent<components::UIFileExplorer>().rename_input);
+    }
+
+    UIRect UIFileExplorer::getTreeContainer() const
+    {
+        return UIRect(getComponent<components::UIFileExplorer>().tree_container);
+    }
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIFileExplorer)
