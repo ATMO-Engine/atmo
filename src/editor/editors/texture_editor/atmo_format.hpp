@@ -14,7 +14,7 @@
 namespace atmo::image::extension
 {
 
-    /**  .atmo binary layout (little-endian, as written by the host):
+    /**  .atx binary layout (little-endian, as written by the host):
 
     char[8]   magic "ATMOIMG\0"
     uint32    version
@@ -132,7 +132,7 @@ namespace atmo::image::extension
         void resizeFrame(std::uint16_t x, std::uint16_t y);
 
         /**
-         * @brief Loads an .atmo image into m_img
+         * @brief Loads an .atx image into m_img
          *
          * @param path Disk path or "project://...".
          * @return false if the file could not be opened or is malformed (m_img is left untouched).
@@ -140,7 +140,7 @@ namespace atmo::image::extension
         bool load(std::string_view path);
 
         /**
-         * @brief Saves m_img to an .atmo image, overwriting the file if it exists
+         * @brief Saves m_img to an .atx image, overwriting the file if it exists
          *
          * @param path Disk path or "project://...".
          * @return false if the file could not be written.
@@ -165,7 +165,7 @@ namespace atmo::image::extension
     constexpr std::uint32_t VERSION = 1;
     constexpr int MAX_FRAME_SIZE = UINT16_MAX;
 
-    static_assert(sizeof(atmo::core::types::Color) == 4 * sizeof(float), "Color layout changed, update the .atmo format and bump VERSION");
+    static_assert(sizeof(atmo::core::types::Color) == 4 * sizeof(float), "Color layout changed, update the .atx format and bump VERSION");
 
     class Writer
     {

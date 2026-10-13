@@ -549,7 +549,7 @@ namespace atmo::core::ecs::entities
         std::string ext = std::filesystem::path(path).extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-        if (ext == ".atmo")
+        if (ext == ".atx")
             comp.image.save(path);
         else
             exportSpriteSheet(path, comp.image.layerNames());
@@ -560,7 +560,7 @@ namespace atmo::core::ecs::entities
         std::string ext = path.substr(path.find_last_of('.') + 1);
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (ext != "bmp" && ext != "png" && ext != "jpg" && ext != "jpeg")
-            throw ImportException(path, "file format not valid, file format available: .atmo, .bmp, .png, .jpg");
+            throw ImportException(path, "file format not valid, file format available: .atx, .bmp, .png, .jpg");
 
         SDL_Surface *surface = IMG_Load(path.c_str());
         if (!surface)

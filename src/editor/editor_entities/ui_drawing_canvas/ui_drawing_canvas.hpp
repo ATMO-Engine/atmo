@@ -55,7 +55,7 @@ namespace atmo::core::components
         DrawType pen = DrawType::PENCIL;
 
         bool preview = false;
-        bool drawing_locked = false; // Ignores brush strokes, zoom and pan still work (e.g. while the animation plays)
+        bool drawing_locked = false;
     };
 } // namespace atmo::core::components
 
@@ -134,32 +134,32 @@ namespace atmo::core::ecs::entities
         void importCanvas(const std::string &path);
 
         /**
-         * @brief Gets the size of a raster image (png, jpg, bmp) without touching the canvas
+         * @brief Gets the size of an image (png, jpg, bmp) without touching the canvas
          *
          * @exception ImportException If the file can't be decoded
          */
         static atmo::core::types::Vector2i ProbeImageSize(const std::string &path);
 
         /**
-         * @brief Slices a raster sprite sheet into a single layer image with one frame per sprite
+         * @brief Slices a sprite sheet into a single layer image with one frame per sprite
          *
          * Sprites are read left to right then top to bottom, starting at the top left corner.
          * Everything is checked before the image is replaced, so it is left untouched when this throws.
          *
          * @param frameW Width of a sprite
          * @param frameH Height of a sprite
-         * @param frameCount Number of sprites to take, must fit in the sheet and in the .atmo frame limit
+         * @param frameCount Number of sprites to take, must fit in the sheet and in the .atx frame limit
          * @exception ImportException If the file can't be decoded or the slicing doesn't fit in the sheet
          */
         void importSpriteSheet(const std::string &path, int frameW, int frameH, int frameCount);
 
         /**
-         * @brief Blends the given layers and writes every frame side by side, left to right, in a raster sprite sheet
+         * @brief Blends the given layers and writes every frame side by side, left to right, in a sprite sheet
          *
          * The sheet is a single row of frames, so importSpriteSheet reads it back with the same frame size.
          * The format (png, bmp, jpg) is taken from the extension of path.
          *
-         * @param path Disk path of the sheet, overwritten if it exists
+         * @param path Path of the sheet, overwritten if it exists
          * @param layerNames Layers to blend, the others are left out whatever their visibility
          * @return false if the sheet could not be created or written
          */

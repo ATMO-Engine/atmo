@@ -995,7 +995,7 @@ namespace atmo::editor
 
         std::string ext = std::filesystem::path(path).extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if (ext == ".atmo") {
+        if (ext == ".atx") {
             canvas.importCanvas(path);
             refreshTimeline();
             return;
@@ -1134,8 +1134,8 @@ namespace atmo::editor
             return;
 
         constexpr int FORMAT_BUTTON_GROUP = 6;
-        static constexpr std::string_view ATMO_EXTENSION = ".atmo";
-        static const std::vector<std::string> extensions = { ".atmo", ".png", ".bmp", ".jpg" };
+        static constexpr std::string_view ATMO_EXTENSION = ".atx";
+        static const std::vector<std::string> extensions = { ".atx", ".png", ".bmp", ".jpg" };
 
         core::ecs::entities::UI root(core::ecs::EntityRegistry::GetEntityFromId(m_root_handle));
         core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));

@@ -47,9 +47,9 @@ namespace atmo::editor
         void refreshAllLayerVisible();
 
         /**
-         * @brief Asks for the frame count and frame size, then slices the raster image into an .atmo image
+         * @brief Asks for the frame count and frame size, then slices the image into an .atx image
          *
-         * @param path Raster image to import
+         * @param path Image to import
          * @param sheetSize Size of the whole image, used as the default frame size
          */
         void openSpriteSheetImportPopup(const std::string &path, core::types::Vector2i sheetSize);
@@ -57,7 +57,7 @@ namespace atmo::editor
         /**
          * @brief Asks for a file name and a format, then exports the image next to the opened file
          *
-         * .atmo writes the image as is. A raster format (png, bmp, jpg) also asks which layers to blend and writes
+         * .atx writes the image as is. png, bmp, jpg format also asks which layers to blend and writes
          * every frame of the blend side by side in a sprite sheet.
          */
         void openExportPopup();
