@@ -95,8 +95,7 @@ namespace atmo::core::ecs::entities
         for (auto &child : getChildren()) child.destroy();
 
         buildHeaderRow();
-        for (int row = 0; row < (int)getComponent<components::UIGrid>().row_labels.size(); row++)
-            buildRow(row);
+        for (int row = 0; row < (int)getComponent<components::UIGrid>().row_labels.size(); row++) buildRow(row);
 
         applyHighlight();
     }

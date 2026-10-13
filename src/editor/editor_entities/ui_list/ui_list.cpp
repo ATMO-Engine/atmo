@@ -32,8 +32,7 @@ namespace atmo::core::ecs::entities
     {
         getComponentMutable<core::components::Layout>().direction = direction;
 
-        for (auto &child : getChildren())
-            applyItemLayout(child);
+        for (auto &child : getChildren()) applyItemLayout(child);
     }
 
     void UIList::setItems(const std::vector<std::string> &items)

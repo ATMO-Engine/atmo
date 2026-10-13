@@ -94,8 +94,7 @@ namespace atmo::image::extension
         for (auto lay = m_img.layer_list.rbegin(); lay != m_img.layer_list.rend(); ++lay) {
             if (std::find(layerNames.begin(), layerNames.end(), lay->name) == layerNames.end())
                 continue;
-            for (std::size_t f = 0; f < result.size() && f < lay->frame_list.size(); f++)
-                BlendOnto(result[f], lay->frame_list[f]);
+            for (std::size_t f = 0; f < result.size() && f < lay->frame_list.size(); f++) BlendOnto(result[f], lay->frame_list[f]);
         }
 
         return result;
@@ -144,9 +143,7 @@ namespace atmo::image::extension
 
     void AtmoFormat::removeLayer(const std::string &layerName)
     {
-        auto it = std::find_if(m_img.layer_list.begin(), m_img.layer_list.end(), [&](const Layer &lay){
-            return lay.name == layerName;
-        });
+        auto it = std::find_if(m_img.layer_list.begin(), m_img.layer_list.end(), [&](const Layer &lay) { return lay.name == layerName; });
 
         if (it == m_img.layer_list.end()) {
             spdlog::warn("{} not found, nothing suppresed", layerName);
@@ -166,9 +163,7 @@ namespace atmo::image::extension
 
     void AtmoFormat::moveLayer(const std::string &layerName, std::uint8_t desiredPos)
     {
-        auto it = std::find_if(m_img.layer_list.begin(), m_img.layer_list.end(), [&](const Layer &lay){
-            return lay.name == layerName;
-        });
+        auto it = std::find_if(m_img.layer_list.begin(), m_img.layer_list.end(), [&](const Layer &lay) { return lay.name == layerName; });
 
         if (it == m_img.layer_list.end()) {
             spdlog::warn("{} not found, move ignored", layerName);
@@ -239,8 +234,7 @@ namespace atmo::image::extension
         }
 
         const Frame frame = blankFrame();
-        for (auto &lay : m_img.layer_list)
-            lay.frame_list.push_back(frame);
+        for (auto &lay : m_img.layer_list) lay.frame_list.push_back(frame);
 
         m_img.frame_nb++;
         syncFrameCounts();
@@ -249,8 +243,7 @@ namespace atmo::image::extension
     void AtmoFormat::setFrameNumber(std::uint8_t size)
     {
         const Frame frame = blankFrame();
-        for (auto &lay : m_img.layer_list)
-            lay.frame_list.resize(size, frame);
+        for (auto &lay : m_img.layer_list) lay.frame_list.resize(size, frame);
 
         m_img.frame_nb = size;
         syncFrameCounts();
@@ -287,8 +280,7 @@ namespace atmo::image::extension
             return;
         }
 
-        for (auto &lay : m_img.layer_list)
-            lay.frame_list.erase(lay.frame_list.begin() + idx);
+        for (auto &lay : m_img.layer_list) lay.frame_list.erase(lay.frame_list.begin() + idx);
 
         m_img.frame_nb--;
         if (m_currentFrame > idx)
@@ -311,8 +303,7 @@ namespace atmo::image::extension
         for (auto &lay : m_img.layer_list) {
             for (auto &frame : lay.frame_list) {
                 frame.frame.resize(y);
-                for (auto &row : frame.frame)
-                    row.resize(x, atmo::core::types::Color::TRANSPARENT_COL);
+                for (auto &row : frame.frame) row.resize(x, atmo::core::types::Color::TRANSPARENT_COL);
             }
         }
 
@@ -329,8 +320,7 @@ namespace atmo::image::extension
 
             char magic[sizeof(MAGIC)];
             reader.need(sizeof(magic));
-            for (auto &c : magic)
-                c = reader.pod<char>();
+            for (auto &c : magic) c = reader.pod<char>();
             if (std::memcmp(magic, MAGIC, sizeof(MAGIC)) != 0)
                 throw std::runtime_error("Not an atmo image");
 
@@ -364,8 +354,7 @@ namespace atmo::image::extension
                     frame.frame.resize(sizeY);
                     for (auto &row : frame.frame) {
                         row.reserve(sizeX);
-                        for (std::uint32_t x = 0; x < sizeX; x++)
-                            row.push_back(reader.pod<atmo::core::types::Color>());
+                        for (std::uint32_t x = 0; x < sizeX; x++) row.push_back(reader.pod<atmo::core::types::Color>());
                     }
                     layer.frame_list.push_back(std::move(frame));
                 }
@@ -390,8 +379,7 @@ namespace atmo::image::extension
     {
         Writer writer;
 
-        for (char c : MAGIC)
-            writer.pod(c);
+        for (char c : MAGIC) writer.pod(c);
         writer.pod(VERSION);
         writer.pod(static_cast<std::uint32_t>(m_img.layer_list.size()));
         writer.pod(static_cast<std::uint32_t>(m_img.frame_nb));

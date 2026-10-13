@@ -16,8 +16,7 @@ namespace atmo::core::components
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIList> {
     static constexpr const char *name = "List";
     static constexpr const char *category = "UI";
-    static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::UIList::selected>("selected"));
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UIList::selected>("selected"));
 };
 
 namespace atmo::core::ecs::entities

@@ -556,7 +556,7 @@ namespace atmo::editor
         m_timeline_handle = timeline->getHandle();
         timeline->setParent(*bottom_panel);
 
-        auto canvas =core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
+        auto canvas = core::ecs::EntityRegistry::Create<core::ecs::entities::UIDrawingCanvas>("Entity::UI::UIDrawingCanvas");
         auto &canvas_layout = canvas->getComponentMutable<core::components::Layout>();
         canvas_layout.z_index = 0;
 
@@ -727,8 +727,7 @@ namespace atmo::editor
                 auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
                 const auto names = canvas_comp.image.layerNames();
 
-                for (const auto &name : names)
-                    canvas_comp.image.setLayerVisible(name, !m_allLayerVisible);
+                for (const auto &name : names) canvas_comp.image.setLayerVisible(name, !m_allLayerVisible);
                 canvas_comp.texture_dirty = true;
 
                 for (std::size_t i = 0; i < names.size() && i < m_visibility_label_handles.size(); i++) {
@@ -774,7 +773,8 @@ namespace atmo::editor
             layerDownBtn->setParent(corner);
 
             layerUpBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { core::SignalQueue::Enqueue([moveSelectedLayer]() { moveSelectedLayer(-1); }); });
-            layerDownBtn->getSignal<>("Pressed").connect([moveSelectedLayer]() { core::SignalQueue::Enqueue([moveSelectedLayer]() { moveSelectedLayer(1); }); });
+            layerDownBtn->getSignal<>("Pressed").connect(
+                [moveSelectedLayer]() { core::SignalQueue::Enqueue([moveSelectedLayer]() { moveSelectedLayer(1); }); });
 
             auto spacer = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
             spacer->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -807,8 +807,7 @@ namespace atmo::editor
 
                     std::size_t nb = names.size() + 1;
                     std::string name = std::format("Layer {}", nb);
-                    while (std::find(names.begin(), names.end(), name) != names.end())
-                        name = std::format("Layer {}", ++nb);
+                    while (std::find(names.begin(), names.end(), name) != names.end()) name = std::format("Layer {}", ++nb);
 
                     image.addLayer(name);
                     refreshTimeline();
@@ -942,8 +941,6 @@ namespace atmo::editor
         saveBtn->getSignal<>("Pressed").connect([this]() { save(); });
 
         exportBtn->getSignal<>("Released").connect([this]() { openExportPopup(); });
-
-
 
 
         addFrameBtn->getSignal<>("Pressed").connect([this]() {
@@ -1105,8 +1102,8 @@ namespace atmo::editor
         cancelBtn->getSignal<>("Released").connect([popup]() { popup->destroy(); });
 
         auto importBtn = makeTextBtn("Import");
-        importBtn->getSignal<>("Released").connect(
-            [this, path, popup, frameCountHandle, frameWidthHandle, frameHeightHandle, errorLabelHandle = errorLabel->getHandle()]() {
+        importBtn->getSignal<>("Released")
+            .connect([this, path, popup, frameCountHandle, frameWidthHandle, frameHeightHandle, errorLabelHandle = errorLabel->getHandle()]() {
                 if (!m_canvas_handle.is_alive() || !frameCountHandle.is_alive() || !frameWidthHandle.is_alive() || !frameHeightHandle.is_alive())
                     return;
 
@@ -1155,8 +1152,7 @@ namespace atmo::editor
 
         auto selectedExt = std::make_shared<std::string>(".png");
         auto selectedLayers = std::make_shared<std::vector<bool>>();
-        for (const auto &name : layerNames)
-            selectedLayers->push_back(image.isLayerVisible(name));
+        for (const auto &name : layerNames) selectedLayers->push_back(image.isLayerVisible(name));
 
         auto popup = core::ecs::EntityRegistry::Create<core::ecs::entities::UIPopup>("Entity::UI::UIRect::UIPopup");
         popup->setParent(root);
@@ -1279,61 +1275,62 @@ namespace atmo::editor
         cancelBtn->getSignal<>("Released").connect([popup]() { popup->destroy(); });
 
         auto exportBtn = makeTextBtn(*btnRow, "Export");
-        exportBtn->getSignal<>("Released").connect([this,
-                                                    popup,
-                                                    exportDir,
-                                                    layerNames,
-                                                    selectedExt,
-                                                    selectedLayers,
-                                                    nameInputHandle = nameInput->getHandle(),
-                                                    errorLabelHandle = errorLabel->getHandle()]() {
-            if (!m_canvas_handle.is_alive() || !nameInputHandle.is_alive())
-                return;
-
-            auto showError = [errorLabelHandle](const std::string &message) {
-                if (!errorLabelHandle.is_alive())
+        exportBtn->getSignal<>("Released")
+            .connect([this,
+                      popup,
+                      exportDir,
+                      layerNames,
+                      selectedExt,
+                      selectedLayers,
+                      nameInputHandle = nameInput->getHandle(),
+                      errorLabelHandle = errorLabel->getHandle()]() {
+                if (!m_canvas_handle.is_alive() || !nameInputHandle.is_alive())
                     return;
-                core::ecs::entities::UILabel errorLabel(core::ecs::EntityRegistry::GetEntityFromId(errorLabelHandle));
-                errorLabel.setText(message);
-            };
 
-            core::ecs::entities::UITextInput nameInput(core::ecs::EntityRegistry::GetEntityFromId(nameInputHandle));
-            std::string fileName = nameInput.getComponent<core::components::UIInput>().input_data;
-            if (fileName.empty() || fileName.find_first_of("/\\") != std::string::npos) {
-                showError("Invalid file name");
-                return;
-            }
-            if (std::filesystem::path(fileName).extension() != *selectedExt)
-                fileName += *selectedExt;
-            const std::string path = (exportDir / fileName).string();
+                auto showError = [errorLabelHandle](const std::string &message) {
+                    if (!errorLabelHandle.is_alive())
+                        return;
+                    core::ecs::entities::UILabel errorLabel(core::ecs::EntityRegistry::GetEntityFromId(errorLabelHandle));
+                    errorLabel.setText(message);
+                };
 
-            core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
-            auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
-
-            bool exported = false;
-            if (*selectedExt == ATMO_EXTENSION) {
-                exported = canvas_comp.image.save(path);
-            } else {
-                std::vector<std::string> layersToBlend;
-                for (std::size_t i = 0; i < layerNames.size(); i++)
-                    if ((*selectedLayers)[i])
-                        layersToBlend.push_back(layerNames[i]);
-
-                if (layersToBlend.empty()) {
-                    showError("Select at least one layer");
+                core::ecs::entities::UITextInput nameInput(core::ecs::EntityRegistry::GetEntityFromId(nameInputHandle));
+                std::string fileName = nameInput.getComponent<core::components::UIInput>().input_data;
+                if (fileName.empty() || fileName.find_first_of("/\\") != std::string::npos) {
+                    showError("Invalid file name");
                     return;
                 }
-                exported = canvas.exportSpriteSheet(path, layersToBlend);
-            }
+                if (std::filesystem::path(fileName).extension() != *selectedExt)
+                    fileName += *selectedExt;
+                const std::string path = (exportDir / fileName).string();
 
-            if (!exported) {
-                showError(std::format("Could not write {}", fileName));
-                return;
-            }
+                core::ecs::entities::UIDrawingCanvas canvas(core::ecs::EntityRegistry::GetEntityFromId(m_canvas_handle));
+                auto &canvas_comp = canvas.getComponentMutable<core::components::UIDrawingCanvas>();
 
-            spdlog::info("Texture exported to {}", path);
-            popup->destroy();
-        });
+                bool exported = false;
+                if (*selectedExt == ATMO_EXTENSION) {
+                    exported = canvas_comp.image.save(path);
+                } else {
+                    std::vector<std::string> layersToBlend;
+                    for (std::size_t i = 0; i < layerNames.size(); i++)
+                        if ((*selectedLayers)[i])
+                            layersToBlend.push_back(layerNames[i]);
+
+                    if (layersToBlend.empty()) {
+                        showError("Select at least one layer");
+                        return;
+                    }
+                    exported = canvas.exportSpriteSheet(path, layersToBlend);
+                }
+
+                if (!exported) {
+                    showError(std::format("Could not write {}", fileName));
+                    return;
+                }
+
+                spdlog::info("Texture exported to {}", path);
+                popup->destroy();
+            });
     }
 
     void TextureEditor::refreshTimeline()
@@ -1346,8 +1343,7 @@ namespace atmo::editor
         const auto &image = canvas.getComponentMutable<core::components::UIDrawingCanvas>().image;
 
         std::vector<std::string> frames;
-        for (std::size_t i = 0; i < image.frameCount(); i++)
-            frames.push_back(std::to_string(i + 1));
+        for (std::size_t i = 0; i < image.frameCount(); i++) frames.push_back(std::to_string(i + 1));
 
         m_visibility_label_handles.clear();
         timeline.setLabels(image.layerNames(), frames);

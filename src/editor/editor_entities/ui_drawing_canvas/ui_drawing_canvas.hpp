@@ -88,9 +88,7 @@ namespace atmo::core::ecs::entities
         {
         public:
             ImportException(const std::string &path, const std::string &reason) :
-                m_path(path),
-                m_reason(reason),
-                m_message(std::format(R"(Failed to import "{}": {})", path, reason))
+                m_path(path), m_reason(reason), m_message(std::format(R"(Failed to import "{}": {})", path, reason))
             {
             }
 
