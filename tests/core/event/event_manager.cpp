@@ -14,6 +14,8 @@ TEST_CASE("Simple Dispatch", "[event]")
         REQUIRE(evt->example == 1);
     });
 
+    EventRegistry::Dispatch(example);
+
     EventRegistry::RemoveCallBack<EventExample>(id);
 }
 
