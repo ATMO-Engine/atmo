@@ -6,15 +6,12 @@
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/event/event_registry.hpp"
+#include "core/event/events/file_system_event/file_selected_event.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_file_explorer/ui_file_explorer.hpp"
-#include "meta/auto_register.hpp"
-#include "spdlog/spdlog.h"
 
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
-#include <functional>
 
 namespace fs = std::filesystem;
 
@@ -27,7 +24,13 @@ namespace atmo::core::ecs::entities
         UIButton::initialize();
         setComponent<components::UIFileExplorerNode>({});
 
-        createSignal<const std::string &>("FileSelected");
+        getComponentMutable<components::UIRect>().corner_radius = { 4, 4, 4, 4 };
+
+        auto file_label = core::ecs::EntityRegistry::Create<UILabel>("Entity::UI::UILabel");
+        file_label->setFontSize(11);
+        file_label->getComponentMutable<components::UI>().modulate = types::Color::BLACK;
+        file_label->setParent(*this);
+        getComponentMutable<components::UIFileExplorerNode>().label = file_label->getHandle();
 
         auto handle = p_handle;
         getSignal<>("Pressed").connect([handle]() {
@@ -37,31 +40,25 @@ namespace atmo::core::ecs::entities
             UIFileExplorerFileNode fileNode(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &node = fileNode.getComponentMutable<components::UIFileExplorerNode>();
 
-            if (node.explorer_root != 0) {
-                UIFileExplorer root(core::ecs::EntityRegistry::GetEntityFromId(node.explorer_root));
-                root.setFocus(handle, node.full_path, false);
-            }
-
-            fileNode.getSignal<const std::string &>("FileSelected").emit(node.full_path);
+            auto &comp = fileNode.getComponentMutable<components::UIFileExplorerNode>();
+            auto selectEvt = atmo::core::event::EventRegistry::Create<atmo::core::event::events::FileSelectedEvent>("Event::FileSelectedEvent");
+            selectEvt->path = comp.full_path;
+            atmo::core::event::EventRegistry::Dispatch(selectEvt);
         });
     }
 
-    void UIFileExplorerFileNode::setPath(const std::string &path)
+    void UIFileExplorerFileNode::setPath(const std::filesystem::path &path)
     {
         auto &node = getComponentMutable<components::UIFileExplorerNode>();
-        auto &rect = getComponentMutable<components::UIRect>();
-        auto file_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
-        node.full_path = path;
+        node.full_path = path.string();
         node.is_directory = false;
 
-        std::string filename = fs::path(path).filename().string();
-        rename(filename);
+        UILabel(node.label).setText(path.filename().string());
+    }
 
-        rect.corner_radius = { 4, 4, 4, 4 };
-        file_label->setText(filename);
-        file_label->setFontSize(11);
-        file_label->getComponentMutable<components::UI>().modulate = types::Color::BLACK;
-        file_label->setParent(*this);
+    const std::string &UIFileExplorerFileNode::path() const
+    {
+        return getComponent<components::UIFileExplorerNode>().full_path;
     }
 
     void UIFileExplorerFileNode::setHighlight(bool highlighted)

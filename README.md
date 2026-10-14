@@ -39,6 +39,14 @@ https://docs.atmo-engine.com
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.
 
 
+# Authors
+
+Atmo Engine is developed by a community of voluntary contributors.
+See [AUTHORS.md](AUTHORS.md) for the list of founders, main contributors and translators.
+
+Want to help translate Atmo Engine? See the [Translations](CONTRIBUTING.md#translations) section of the contributing guide.
+
+
 # License
 
 This project is licensed under the MIT License.
