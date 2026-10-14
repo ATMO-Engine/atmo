@@ -7,6 +7,8 @@ namespace atmo::core::ecs::entities
 {
     void UITextInput::RegisterSystems(flecs::world *world)
     {
+        world->component<core::components::UITextInput>();
+
         world->system<core::components::UITextInput>("TextInput_Update")
             .kind(flecs::OnStore)
             .each([world](flecs::entity e, core::components::UITextInput &comp) {

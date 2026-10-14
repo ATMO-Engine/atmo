@@ -85,6 +85,9 @@ cd <project-folder>
 xmake
 ```
 
+The first build downloads and builds the third-party libraries through xmake's package manager. There are no submodules to initialize.
+If you change a dependency version in `xmake.lua`, commit the updated `xmake-requires.lock` with it. See the Dependencies section of the README.
+
 Build Configurations
 
 You can build the project in different modes:

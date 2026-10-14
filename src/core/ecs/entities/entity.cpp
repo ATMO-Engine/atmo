@@ -20,6 +20,8 @@ namespace atmo::core::ecs::entities
 {
     void Entity::RegisterSystems(flecs::world *world)
     {
+        world->component<components::EntityBase>();
+
         world->observer<components::EntityBase>("EntityBase_remove").event(flecs::OnRemove).each([](flecs::entity e, components::EntityBase &base) {
             for (auto &signal : base.signals) {
                 signal.second->disconnectAll();

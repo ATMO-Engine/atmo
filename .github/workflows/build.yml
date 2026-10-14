@@ -40,8 +40,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Install SDL3 build dependencies
         if: runner.os == 'Linux'
@@ -69,7 +67,7 @@ jobs:
           if [ "${{ matrix.build-cache }}" = true ]; then
             echo "XMAKE_ACTION_BUILD_CACHE=true" >> "$GITHUB_ENV"
           fi
-          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua') }}-$(git rev-parse HEAD:submodules)" >> "$GITHUB_OUTPUT"
+          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}" >> "$GITHUB_OUTPUT"
           echo "build=xmake-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}" >> "$GITHUB_OUTPUT"
           echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
@@ -92,6 +90,24 @@ jobs:
 
       - name: Configure and install packages
         run: xmake f -y -m release
+
+      - name: Check lock file
+        id: lock
+        shell: bash
+        run: |
+          if git diff --quiet -- xmake-requires.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::xmake-requires.lock has no entries for this platform yet. Download the xmake-requires-lock-${{ runner.os }} artifact and commit it."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload lock file
+        if: steps.lock.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: xmake-requires-lock-${{ runner.os }}
+          path: xmake-requires.lock
 
       - name: Save xmake packages
         if: steps.packages.outputs.cache-hit != 'true'

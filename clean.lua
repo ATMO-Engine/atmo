@@ -18,24 +18,18 @@ local function clean_full()
     os.tryrm(".cache")
 end
 
-local function clean_submodules()
-    local submodules = os.dirs("submodules/*")
-    for _, submodule in ipairs(submodules) do
-        if os.isdir(submodule.."/build") then
-            os.tryrm(submodule.."/build")
-        end
-    end
+local function clean_packages()
+    os.execv(os.programfile(), {"require", "--uninstall", "-y"})
 end
 
 local function clean_all()
-    clean_submodules()
+    clean_packages()
     clean_full()
 end
 
 local modes = {
     {"soft", clean_soft},
     {"full", clean_full},
-    {"submodules", clean_submodules},
     {"all", clean_all}
 }
 

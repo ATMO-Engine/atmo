@@ -63,7 +63,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
-          submodules: true
 
       - name: Install LLVM 21 and system dependencies
         run: |
@@ -90,7 +89,7 @@ jobs:
         id: keys
         run: |
           echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
-          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua') }}-$(git rev-parse HEAD:submodules)" >> "$GITHUB_OUTPUT"
+          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}" >> "$GITHUB_OUTPUT"
 
       - name: Restore xmake packages
         uses: actions/cache/restore@v4
@@ -110,7 +109,7 @@ jobs:
           echo "$CHANGED"
 
           ALL=$(find src/ -name '*.cpp')
-          if echo "$CHANGED" | grep -qE '^(xmake\.lua|submodules/|\.github/)|(^|/)\.clang-tidy$'; then
+          if echo "$CHANGED" | grep -qE '^(xmake\.lua|xmake-requires\.lock|deps/|\.github/)|(^|/)\.clang-tidy$'; then
             echo "The build or lint configuration changed, checking every file."
             FILES=$ALL
           elif ! FILES=$(python3 .github/scripts/affected_sources.py clang-scan-deps-21 $(echo "$CHANGED" | grep '^src/')); then
