@@ -69,7 +69,6 @@ namespace atmo::core::ecs::entities
         add_btn->setParent(*add_container);
 
         auto add_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
-        add_input->rename(std::string(AddInputName));
         add_input->setPlaceholder("File Name");
         add_input->setParent(*add_container);
 
@@ -114,7 +113,6 @@ namespace atmo::core::ecs::entities
         rename_btn->setParent(*rename_container);
 
         auto rename_input = core::ecs::EntityRegistry::Create<UITextInput>("Entity::UI::UIInput::UITextInput");
-        rename_input->rename(std::string(RenameInputName));
         rename_input->setPlaceholder("File Name");
         rename_input->setParent(*rename_container);
 
