@@ -1294,7 +1294,7 @@ namespace atmo::editor
                 };
 
                 core::ecs::entities::UITextInput nameInput(core::ecs::EntityRegistry::GetEntityFromId(nameInputHandle));
-                std::string fileName = nameInput.getComponent<core::components::UIInput>().input_data;
+                std::string fileName = nameInput.getText();
                 if (fileName.empty() || fileName.find_first_of("/\\") != std::string::npos) {
                     showError("Invalid file name");
                     return;
