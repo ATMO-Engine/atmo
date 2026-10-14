@@ -32,320 +32,28 @@ add_rules("plugin.compile_commands.autoupdate", {
     arguments = {"--target=" .. (get_config("target") or "atmo")}
 })
 
-local SUBMODULE_PATH = "submodules/"
+set_policy("package.requires_lock", true)
+add_repositories("atmo-deps deps")
 
-package("spdlog")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "spdlog"))
-    on_install(function(package)
-        local configs = {}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-        table.insert(configs, "-DBUILD_STATIC_LIBS=" .. (package:config("static") and "ON" or "OFF"))
-        import("package.tools.cmake").install(package, configs)
-    end)
-package_end()
+local SDL_VERSION = "3.4.12"
 
-package("luau")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "luau"))
-    on_install(function(package)
-        local configs = {"-DLUAU_BUILD_TESTS=OFF", "-DCMAKE_POLICY_DEFAULT_CMP0057=NEW", "-DBUILD_SHARED_LIBS=OFF", "-DLUAU_BUILD_WEB=OFF", "-DLUAU_EXTERN_C=OFF"}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "RelWithDebInfo"))
-        import("package.tools.cmake").build(package, configs, { builddir = "build" })
-
-        local cmake_file = io.readfile("CMakeLists.txt")
-
-        local links = {}
-        for library_name, library_type in cmake_file:gmatch("add_library%(([%a|%.]+) (%w+)") do
-            library_type = library_type:lower()
-            if library_name:startswith("Luau.") and (library_type == "static" or library_type == "interface") then
-                if library_name:endswith(".lib") then
-                    library_name = library_name:sub(1, -5)
-                end
-                if library_type == "static" then
-                    table.insert(links, library_name)
-                end
-                local include_dir = library_name:sub(6)
-                include_dir = include_dir:gsub("%..*", "")
-                os.trycp(include_dir .. "/include/*", package:installdir("include"))
-            end
-        end
-
-        for i = #links, 1, -1 do
-            local link = links[i]
-            package:add("links", link)
-        end
-
-        os.trycp("build/**.a", package:installdir("lib"))
-        os.trycp("build/**.so", package:installdir("lib"))
-        os.trycp("build/**.dylib", package:installdir("lib"))
-        os.trycp("build/**.lib", package:installdir("lib"))
-        os.trycp("build/**.dll", package:installdir("bin"))
-        os.trycp("build/luau*", package:installdir("bin"))
-
-        package:addenv("PATH", "bin")
-    end)
-package_end()
-
-package("flecs")
-add_deps("cmake")
-set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "flecs"))
-
-if is_plat("windows", "mingw") then
-    add_syslinks("wsock32", "ws2_32")
-elseif is_plat("linux") then
-    add_syslinks("pthread")
-elseif is_plat("bsd") then
-    add_syslinks("execinfo", "pthread")
+add_requires("spdlog v1.15.3", { system = false })
+add_requires("luau 0.689", { system = false })
+add_requires("flecs v4.1.4", { system = false })
+add_requires("glaze v7.2.2", { system = false })
+add_requires("libsdl3 " .. SDL_VERSION, { system = false })
+add_requires("libsdl3_ttf 2025.09.12", { system = false })
+add_requires("libsdl3_image 3.4.0", { system = false })
+add_requires("clay 2025.08.19", { system = false })
+add_requires("catch2 v3.10.0", { system = false })
+add_requires("box2d v3.1.1", { system = false })
+add_requires("argparse v3.2", { system = false })
+add_requires("ctre v3.11.0", { system = false })
+if is_mode("debug", "profile") then
+    add_requires("tracy v0.13.1", { system = false, configs = { enforce_callstack = false } })
 end
 
-on_load("windows", "mingw", function (package)
-    if not package:config("shared") then
-        package:add("defines", "flecs_STATIC")
-    end
-end)
-
-on_install(function(package)
-    local configs = {}
-    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-    table.insert(configs, "-DFLECS_STATIC=ON")
-    table.insert(configs, "-DFLECS_SHARED=OFF")
-    table.insert(configs, "-DFLECS_PIC=OFF")
-    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-    table.insert(configs, "-DFLECS_CPP_NO_AUTO_REGISTRATION=1")
-    table.insert(configs, "-DFLECS_META=ON")
-    import("package.tools.cmake").install(package, configs)
-
-    local pdb = path.join(package:builddir(), "flecs.pdb")
-    os.trycp(pdb, package:installdir("lib"))
-end)
-package_end()
-
-package("glaze")
-add_deps("cmake")
-set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "glaze"))
-on_install(function(package)
-    local configs = {"-DBUILD_STATIC_LIBS=ON"}
-    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-    table.insert(configs, "-DGLAZE_BUILD_EXAMPLES=OFF")
-    table.insert(configs, "-DGLAZE_BUILD_TESTS=OFF")
-    table.insert(configs, "-DGLAZE_BUILD_DOCS=OFF")
-    -- table.insert(configs, "-DGLAZE_BUILD_TOOLS=OFF")
-    table.insert(configs, "-Dglaze_DEVELOPER_MODE=OFF")
-    table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
-    import("package.tools.cmake").install(package, configs)
-end)
-package_end()
-
-package("libsdl3")
-add_deps("cmake")
-set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "sdl"))
-on_install(function(package)
-    local configs = {"-DBUILD_STATIC_LIBS=ON"}
-    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-    table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
-    table.insert(configs, "-DSDL_TEST=OFF")
-    import("package.tools.cmake").install(package, configs)
-end)
-package_end()
-
-package("libsdl3_ttf")
-add_deps("cmake", "libsdl3", "freetype")
-set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "sdl_ttf"))
-on_install(function (package)
-        local configs = {"-DSDLTTF_SAMPLES=OFF", "-DSDLTTF_VENDORED=OFF"}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
-        table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
-        table.insert(configs, "-DSDLTTF_HARFBUZZ=" .. (package:config("harfbuzz") and "ON" or "OFF"))
-        table.insert(configs, "-DSDLTTF_PLUTOSVG=" .. (package:config("plutosvg") and "ON" or "OFF"))
-        local freetype = package:dep("freetype")
-        if freetype then
-            local fetchinfo = freetype:fetch()
-            if fetchinfo then
-                local includedirs = table.wrap(fetchinfo.includedirs or fetchinfo.sysincludedirs)
-                if #includedirs > 0 then
-                    table.insert(configs, "-DFREETYPE_INCLUDE_DIRS=" .. table.concat(includedirs, ";"))
-                end
-                local libfiles = table.wrap(fetchinfo.libfiles)
-                if #libfiles > 0 then
-                    table.insert(configs, "-DFREETYPE_LIBRARY=" .. libfiles[1])
-                end
-                if not freetype:config("shared") then
-                    local libfiles = {}
-                    for _, dep in ipairs(freetype:librarydeps()) do
-                        local depinfo = dep:fetch()
-                        if depinfo then
-                            table.join2(libfiles, depinfo.libfiles)
-                        end
-                    end
-                    if #libfiles > 0 then
-                        local libraries = ""
-                        for _, libfile in ipairs(libfiles) do
-                            libraries = libraries .. " " .. (libfile:gsub("\\", "/"))
-                        end
-                        io.replace("CMakeLists.txt", "target_link_libraries(${sdl3_ttf_target_name} PRIVATE Freetype::Freetype)",
-                            "target_link_libraries(${sdl3_ttf_target_name} PRIVATE Freetype::Freetype " .. libraries .. ")", {plain = true})
-                    end
-                end
-            end
-        end
-        import("package.tools.cmake").install(package, configs, {packagedeps={"plutovg"}})
-    end)
-package_end()
-
-package("libsdl3_image")
-add_deps("cmake", "libsdl3")
-set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "sdl_image"))
-on_install(function(package)
-    local configs = {"-DBUILD_STATIC_LIBS=ON", "-DSDLIMAGE_SAMPLES=OFF", "-DSDLIMAGE_TESTS=OFF", "-DSDLIMAGE_VENDORED=OFF"}
-    table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-    table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
-    import("package.tools.cmake").install(package, configs)
-end)
-package_end()
-
-package("clay")
-set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "clay"))
-on_install(function(package)
-    os.cp("clay.h", package:installdir("include"))
-end)
-package_end()
-
-package("catch2")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "catch2"))
-
-    on_load(function (package)
-        package:add("deps", "cmake")
-        package:add("components", "main", "lib")
-        if package:is_plat("macosx") then
-            package:add("extsources", "brew::catch2/catch2-with-main")
-        end
-    end)
-
-    on_component("main", function (package, component)
-        local link = "Catch2Main"
-        if package:is_debug() then
-            link = link.."d"
-        end
-        component:add("links", link)
-    end)
-
-    on_component("lib", function (package, component)
-        local link = "Catch2"
-        if package:is_debug() then
-            link = link.."d"
-        end
-        component:add("links", link)
-    end)
-
-    on_install(function (package)
-        if package:is_plat("windows") then
-            local main_component = package:component("main")
-            if package:has_tool("cxx", "cl", "clang-cl") then
-                main_component:add("ldflags", "-subsystem:console")
-            elseif package:has_tool("cxx", "clang", "clangxx") then
-                main_component:add("ldflags", "-Wl,/subsystem:console")
-            end
-            os.mkdir(path.join(package:builddir(), "src/pdb"))
-        end
-
-        local configs = {"-DCATCH_INSTALL_DOCS=OFF", "-DCATCH_BUILD_TESTING=OFF", "-DCATCH_BUILD_EXAMPLES=OFF"}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-        table.insert(configs, "-DBUILD_SHARED_LIBS=OFF")
-        table.insert(configs, "-DCMAKE_CXX_STANDARD=23")
-        import("package.tools.cmake").install(package, configs)
-
-        if package:is_plat("windows") and package:is_debug() then
-            local dir = package:installdir("lib")
-            os.cp(path.join(package:builddir(), "src/*.pdb"), dir)
-        end
-    end)
-package_end()
-
-package("semver")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "semver"))
-    on_install(function(package)
-        os.cp("include/semver.hpp", package:installdir("include"))
-    end)
-package_end()
-
-package("tracy")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy"))
-    on_install(function (package)
-        os.cp("public/*", package:installdir("include"))
-    end)
-package_end()
-
-package("box2d")
-
-    if is_plat("linux", "bsd") then
-        add_syslinks("pthread")
-    end
-
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "box2d"))
-
-    on_install("!bsd", function(package)
-        if package:is_plat("windows") and package:is_debug() then
-            package:add("defines", "B2_ENABLE_ASSERT")
-        end
-
-        io.replace("CMakeLists.txt", [[set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")]], "", {plain = true})
-
-        local configs = {
-            "-DBOX2D_BUILD_UNIT_TESTS=OFF",
-            "-DBOX2D_BUILD_TESTBED=OFF",
-
-            "-DBOX2D_SAMPLES=OFF",
-            "-DBOX2D_UNIT_TESTS=OFF",
-            "-DBOX2D_VALIDATE=OFF",
-            "-DBUILD_SHARED_LIBS=OFF",
-            "--compile-no-warning-as-error",
-        }
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
-        table.insert(configs, "-DBOX2D_SANITIZE=" .. (package:config("asan") and "ON" or "OFF"))
-        table.insert(configs, "-DBOX2D_AVX2=OFF")
-
-        os.mkdir(path.join(package:builddir(), "src/pdb"))
-        import("package.tools.cmake").install(package, configs)
-    end)
-package_end()
-
-package("argparse")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "argparse"))
-
-    on_install(function(package)
-        os.cp("include/argparse/argparse.hpp", package:installdir("include/argparse"))
-    end)
-package_end()
-
-package("ctre")
-    add_deps("cmake")
-    set_sourcedir(path.join(os.scriptdir(), SUBMODULE_PATH .. "compile-time-regular-expressions"))
-
-    on_install(function (package)
-        import("package.tools.cmake").install(package, {"-DCTRE_BUILD_TESTS=OFF"})
-    end)
-package_end()
-
-add_requires(
-    "spdlog", { system = false },
-    "luau", { system = false },
-    "flecs", {configs = {shared = false}, system = false},
-    "glaze", { system = false },
-    "libsdl3", { system = false },
-    "libsdl3_ttf", { system = false },
-    "libsdl3_image", { system = false },
-    "clay", { system = false },
-    "catch2", { system = false },
-    "semver", { system = false },
-    "box2d", { system = false },
-    "argparse", { system = false },
-    "tracy", { system = false },
-    "ctre", {system = false }
-)
+add_requireconfs("libsdl3_ttf.libsdl3", "libsdl3_image.libsdl3", { override = true, version = SDL_VERSION, system = false })
 
 function platform_specifics()
     if is_plat("macosx") then
@@ -388,7 +96,8 @@ function platform_specifics()
 end
 
 function packages()
-    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "semver", "box2d", "argparse", "tracy", "ctre")
+    add_packages("spdlog", "luau", "flecs", "glaze", "libsdl3", "libsdl3_ttf", "libsdl3_image", "clay", "box2d", "argparse", "ctre")
+    add_defines("FLECS_CPP_NO_AUTO_REGISTRATION", "FLECS_META=")
 end
 
 target("atmo")
@@ -405,7 +114,7 @@ target("atmo")
         add_defines("ATMO_PROFILING")
         add_defines("ATMO_PROFILER_TRACY")
         add_defines("TRACY_ENABLE")
-        add_files(path.join(os.scriptdir(), SUBMODULE_PATH .. "tracy/public/TracyClient.cpp"))
+        add_packages("tracy")
     end
 
     if is_mode("debug") then
@@ -511,7 +220,7 @@ task("clean")
         import("core.base.option")
         local mode = option.get("mode")
 
-        if not table.contains({"soft", "full", "submodules", "all"}, mode) then
+        if not table.contains({"soft", "full", "all"}, mode) then
             raise("invalid clean mode: %s", mode)
         end
 
@@ -530,7 +239,6 @@ task("clean")
                 nil, "mode", "v", "soft", "Clean mode.",
                     " - soft",
                     " - full",
-                    " - submodules",
                     " - all"
             }
         }
