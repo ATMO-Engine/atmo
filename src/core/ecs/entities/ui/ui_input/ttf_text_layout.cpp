@@ -54,8 +54,6 @@ namespace atmo::core::ecs::entities
                 return false;
             }
             TTF_SetTextWrapWidth(m_text, m_wrap_width);
-            // By default SDL_ttf collapses whitespace at line ends to zero width, which would keep the caret from
-            // advancing over trailing spaces.
             TTF_SetTextWrapWhitespaceVisible(m_text, true);
         }
 
