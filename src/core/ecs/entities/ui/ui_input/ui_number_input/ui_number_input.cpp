@@ -1,115 +1,144 @@
 #include "ui_number_input.hpp"
-#include <cstdlib>
+#include <charconv>
+#include <cmath>
 #include <format>
+#include <optional>
 #include <string>
-#include <sys/stat.h>
-#include "common/math.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_input.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "ctre.hpp"
-#include "spdlog/spdlog.h"
+#include "meta/auto_register.hpp"
 
 namespace atmo::core::ecs::entities
 {
+    namespace
+    {
+        using InputType = core::components::UIInput::InputType;
+
+        double AsDouble(const std::variant<int, float> &value)
+        {
+            return std::visit([](auto v) { return static_cast<double>(v); }, value);
+        }
+
+        std::variant<int, float> Normalize(const std::variant<int, float> &value, InputType type)
+        {
+            if (type == InputType::Int)
+                return static_cast<int>(std::lround(AsDouble(value)));
+            return static_cast<float>(AsDouble(value));
+        }
+
+        std::string Trim(const std::string &str)
+        {
+            auto start = str.find_first_not_of(" \t");
+            if (start == std::string::npos)
+                return {};
+            auto end = str.find_last_not_of(" \t");
+            return str.substr(start, end - start + 1);
+        }
+
+        std::optional<std::variant<int, float>> Parse(const std::string &raw, InputType type)
+        {
+            std::string text = Trim(raw);
+            if (!text.empty() && text.front() == '+')
+                text.erase(0, 1);
+
+            if (type == InputType::Int) {
+                if (!ctre::match<"^-?[0-9]+$">(text))
+                    return std::nullopt;
+                int value = 0;
+                auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+                if (ec != std::errc() || ptr != text.data() + text.size())
+                    return std::nullopt;
+                return value;
+            }
+
+            if (!ctre::match<"^-?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)([eE][+\\-]?[0-9]+)?$">(text))
+                return std::nullopt;
+            try {
+                float value = std::stof(text);
+                if (!std::isfinite(value))
+                    return std::nullopt;
+                return value;
+            } catch (...) {
+                return std::nullopt;
+            }
+        }
+    } // namespace
+
     void UINumberInput::RegisterSystems(flecs::world *world)
     {
         world->component<core::components::UINumberInput>();
 
         world->system<core::components::UINumberInput>("NumberInput_Update")
             .kind(flecs::OnStore)
-            .each([world](flecs::entity e, core::components::UINumberInput &comp) {
-                if (comp.value != comp.prev_value) {
-                    auto wrapped = EntityRegistry::Wrap(e);
-                    auto *ui = dynamic_cast<entities::UIInput *>(wrapped.get());
+            .each([](flecs::entity e, core::components::UINumberInput &comp) {
+                if (comp.value == comp.prev_value)
+                    return;
 
-                    comp.prev_value = comp.value;
-                    if (ui->getComponent<core::components::UIInput>().input_type == core::components::UIInput::InputType::Int)
-                        ui->getComponentMutable<core::components::UIInput>().input_data = std::to_string(std::get<int>(comp.value));
+                UINumberInput input(e);
+                if (input.isFocused())
+                    return;
 
-                    if (ui->getComponent<core::components::UIInput>().input_type == core::components::UIInput::InputType::Float) {
-                        ui->getComponentMutable<core::components::UIInput>().input_data = std::format("{:.2f}", std::get<float>(comp.value));
-                    }
-                }
+                comp.prev_value = comp.value;
+                input.showValue();
             });
-    };
+    }
 
-    void UINumberInput::validateInput()
+    void UINumberInput::showValue()
     {
-        auto &input_content = getComponentMutable<core::components::UIInput>();
-        auto &entity_content = getComponentMutable<core::components::UINumberInput>();
+        const auto type = getComponent<core::components::UIInput>().input_type;
+        const auto value = Normalize(getComponent<core::components::UINumberInput>().value, type);
 
-        switch (input_content.input_type) {
-            case core::components::UIInput::InputType::Int:
-                {
-                    if (ctre::match<"^-?[0-9]+$">(input_content.input_data)) {
-                        int value;
+        if (type == InputType::Int)
+            setText(std::to_string(std::get<int>(value)));
+        else
+            setText(std::format("{:g}", std::get<float>(value)));
+    }
 
-                        auto [ptr, ec] =
-                            std::from_chars(input_content.input_data.data(), input_content.input_data.data() + input_content.input_data.size(), value);
+    void UINumberInput::commit()
+    {
+        const auto type = getComponent<core::components::UIInput>().input_type;
+        auto &comp = getComponentMutable<core::components::UINumberInput>();
 
-                        if (ec == std::errc()) {
-                            entity_content.value = value;
-                        } else {
-                            clear();
-                        }
-                    } else {
-                        clear();
-                    }
-                    getSignal<int>("IntValueChanged").emit(std::get<int>(entity_content.value));
-                    break;
-                }
+        auto previous = Normalize(comp.value, type);
+        auto next = Parse(getText(), type).value_or(previous);
 
-            case core::components::UIInput::InputType::Float:
-                {
-                    if (ctre::match<"^-?[0-9]+(\\.[0-9]+)?$">(input_content.input_data)) {
-                        try {
-                            entity_content.value = std::stof(input_content.input_data);
-                        } catch (...) {
-                            clear();
-                        }
-                    } else {
-                        clear();
-                    }
-                    getSignal<float>("FloatValueChanged").emit(std::get<float>(entity_content.value));
-                    break;
-                }
-            default:
-                return;
-        }
-    };
+        comp.value = next;
+        comp.prev_value = next;
+        showValue();
+
+        if (next == previous)
+            return;
+
+        if (type == InputType::Int)
+            getSignal<int>("IntValueChanged").emit(std::get<int>(next));
+        else
+            getSignal<float>("FloatValueChanged").emit(std::get<float>(next));
+    }
 
     void UINumberInput::clear()
     {
-        auto &input_content = getComponentMutable<core::components::UIInput>();
-        auto &entity_content = getComponentMutable<core::components::UINumberInput>();
-
-        switch (input_content.input_type) {
-            case core::components::UIInput::InputType::Int:
-                {
-                    input_content.input_data.clear();
-                    input_content.input_data = "0";
-                    entity_content.value = 0;
-                    entity_content.prev_value = 0;
-                    break;
-                }
-            case core::components::UIInput::InputType::Float:
-                {
-                    input_content.input_data.clear();
-                    input_content.input_data = "0.0";
-                    entity_content.value = 0.0f;
-                    entity_content.prev_value = 0.0f;
-                    break;
-                }
-            default:
-                break;
-        }
-    };
-
-    Clay_ElementDeclaration UINumberInput::buildDecl()
-    {
-        return UI::buildDecl();
+        const auto type = getComponent<core::components::UIInput>().input_type;
+        auto &comp = getComponentMutable<core::components::UINumberInput>();
+        comp.value = Normalize(0, type);
+        comp.prev_value = comp.value;
+        showValue();
     }
 
+    void UINumberInput::setNumber(int value)
+    {
+        auto &comp = getComponentMutable<core::components::UINumberInput>();
+        comp.value = value;
+        comp.prev_value = value;
+        showValue();
+    }
+
+    void UINumberInput::setNumber(float value)
+    {
+        auto &comp = getComponentMutable<core::components::UINumberInput>();
+        comp.value = value;
+        comp.prev_value = value;
+        showValue();
+    }
 
     void UINumberInput::initialize()
     {
@@ -119,18 +148,8 @@ namespace atmo::core::ecs::entities
         createSignal<float>("FloatValueChanged");
         createSignal<int>("IntValueChanged");
 
-        auto button = getChildren()[0];
-        auto label = UILabel(button.getChildren()[0]);
-        auto &input_comp = getComponentMutable<core::components::UIInput>();
-
-        input_comp.input_type = core::components::UIInput::InputType::Float;
+        getComponentMutable<core::components::UIInput>().input_type = InputType::Float;
         clear();
-        label.setText(input_comp.input_data);
-    }
-
-    void UINumberInput::draw(ClaySdL3RendererData *data)
-    {
-        UIInput::draw(data);
     }
 } // namespace atmo::core::ecs::entities
 

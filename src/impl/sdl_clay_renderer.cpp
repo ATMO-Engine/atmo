@@ -294,6 +294,12 @@ void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_Render
                     }
                     break;
                 }
+            case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
+                {
+                    if (auto *custom = static_cast<ClayCustomRenderable *>(rcmd->renderData.custom.customData))
+                        custom->render(rendererData, rect, dpi_scale.x, dpi_scale.y);
+                    break;
+                }
             default:
                 SDL_Log("Unknown render command type: %d", rcmd->commandType);
         }
