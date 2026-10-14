@@ -1,45 +1,74 @@
-// #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
 
-// #include <iostream>
-// #include "exemple_listener.hpp"
+#include "exemple_listener.hpp"
 
+using atmo::core::event::EventRegistry;
 
-// TEST_CASE("Simple Dispatch", "[event]")
-// {
-//     ExempleListener listener;
+TEST_CASE("Simple Dispatch", "[event]")
+{
+    auto example = atmo::core::event::EventRegistry::Create<EventExample>("Event::EventExample");
+    example->example = 1;
+    REQUIRE(example != nullptr);
 
-//     atmo::core::event::EventDispatcher::Dispatch<EventExemple>(new EventExemple(42));
-//     REQUIRE(listener.called == true);
-// }
+    auto id = atmo::core::event::EventRegistry::SetCallBack<EventExample>([](EventExample *evt) {
+        REQUIRE(evt->example == 1);
+    });
 
-// TEST_CASE("Dispatch Unknown Event", "[event]")
-// {
-//     ExempleListener listener;
+    EventRegistry::Dispatch(example);
 
-//     atmo::core::event::EventDispatcher::Dispatch(new OtherEvent(200));
-//     REQUIRE(listener.called == false);
-// }
+    EventRegistry::RemoveCallBack<EventExample>(id);
+}
 
-// TEST_CASE("Unsubscribe Listener", "[event]")
-// {
-//     ExempleListener listener;
+TEST_CASE("Doesn't trigger other event", "[event]")
+{
+    bool example_called = false;
+    bool other_called = false;
 
-//     atmo::core::event::EventDispatcher::Unsubscribe<EventExemple>(listener);
-//     atmo::core::event::EventDispatcher::Dispatch<EventExemple>(new EventExemple(100));
-//     REQUIRE(listener.called == false);
-// }
+    auto id1 = EventRegistry::SetCallBack<EventExample>([&example_called](EventExample *) { example_called = true; });
+    auto id2 = EventRegistry::SetCallBack<OtherEvent>([&other_called](OtherEvent *) { other_called = true; });
 
-// TEST_CASE("Different ID", "[event]")
-// {
-//     REQUIRE(atmo::core::event::event_id<EventExemple>() != atmo::core::event::event_id<OtherEvent>());
-// }
+    auto example = EventRegistry::Create<EventExample>("Event::EventExample");
+    EventRegistry::Dispatch(example);
 
-// TEST_CASE("Consume Event", "[event]")
-// {
-//     ExempleListener listener;
-//     ExempleListener listener2;
+    EventRegistry::RemoveCallBack<EventExample>(id1);
+    EventRegistry::RemoveCallBack<EventExample>(id2);
 
-//     atmo::core::event::EventDispatcher::Dispatch<EventExemple>(new EventExemple(123));
-//     REQUIRE(listener.called == true);
-//     REQUIRE(listener2.called == false);
-// }
+    REQUIRE(example_called);
+    REQUIRE_FALSE(other_called);
+}
+
+TEST_CASE("Remove callback", "[event]")
+{
+    bool example_called = false;
+
+    auto example_id = EventRegistry::SetCallBack<EventExample>([&example_called](EventExample *) { example_called = true; });
+
+    auto example = EventRegistry::Create<EventExample>("Event::EventExample");
+
+    EventRegistry::RemoveCallBack<EventExample>(example_id);
+    EventRegistry::Dispatch(example);
+
+    REQUIRE_FALSE(example_called);
+}
+
+TEST_CASE("Consume callback", "[event]")
+{
+    bool first_called = false;
+    bool second_called = false;
+
+    auto id1 = EventRegistry::SetCallBack<EventExample>([&first_called](EventExample *evt) {
+        first_called = true;
+        evt->consume();
+    });
+    auto id2 = EventRegistry::SetCallBack<EventExample>([&second_called](EventExample *) { second_called = true; });
+
+    auto example = EventRegistry::Create<EventExample>("Event::EventExample");
+    EventRegistry::Dispatch(example);
+
+    EventRegistry::RemoveCallBack<EventExample>(id1);
+    EventRegistry::RemoveCallBack<EventExample>(id2);
+
+    REQUIRE(first_called);
+    REQUIRE_FALSE(second_called);
+    REQUIRE(example->isConsumed());
+}
