@@ -87,12 +87,25 @@ namespace atmo
 
             /**
              * @brief
-             * Send log error message
+             * Call the function on the stack in protected mode, every error is logged with its traceback.
+             * Stack: [function, arg1 ... argN] -> [] (no result is kept)
+             *
+             * @param L The vm or thread you are working on
+             * @param nargs The number of arguments pushed after the function
+             * @param context The context of the call, shown in the log (ex: script or callback name)
+             * @return true if the call succeeded, false if it raised an error (already logged)
+             */
+            static bool ProtectedCall(lua_State *L, int nargs, const std::string &context);
+
+            /**
+             * @brief
+             * Send log error message, pop the error message from the stack
              *
              * @param L The vm or thread you are working on
              * @param context The context of the environment (ex: script or entity name)
+             * @param traceback The call stack at the moment of the error, empty if unknown
              */
-            static void LogLuauError(lua_State *L, const std::string &context);
+            static void LogLuauError(lua_State *L, const std::string &context, const std::string &traceback = "");
 
             /**
              * @brief

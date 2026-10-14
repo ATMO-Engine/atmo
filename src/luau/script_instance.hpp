@@ -1,13 +1,14 @@
 #pragma once
 
 #include "lua.h"
+#include "luau.hpp"
 #include "luau_ref.hpp"
+
+#include "flecs.h"
 
 #include <cstddef>
 #include <string>
-#include "luau.hpp"
 
-#include "flecs.h"
 
 namespace atmo
 {
@@ -85,7 +86,7 @@ namespace atmo
             bool m_stop = false;
 
             /**
-             * @brief Push a global function on the stack if it exists
+             * @brief Push a global function on the stack if it exists (nothing is pushed otherwise)
              * @param name The name of the function to push
              * @return true if function has been found and push, int other case false
              */
@@ -93,11 +94,11 @@ namespace atmo
 
             /**
              * @brief
-             * Handle the success state of the luau pcall function
+             * Release everything created by a failed load and stop the instance so no callback is called
              *
-             * @param result the result of pcall function
+             * @return false always, to be returned by load
              */
-            void handleCall(int result);
+            bool failLoad();
 
             /**
              * @brief
@@ -115,6 +116,17 @@ namespace atmo
              * @param thread The thread in which the action will performed
              */
             void createEnvironment(lua_State *thread);
+
+            /**
+             * @brief
+             * Register the entity given to the lua stack and attach the metatable attached to the entity type
+             *
+             * @param L The vm in which it is registered
+             * @param e the entity to register
+             * @return true if the metatable for the given type exist
+             * @return false if it doesn't exist
+             */
+            bool pushTypeEntity(lua_State *L, flecs::entity &e);
         };
     } // namespace luau
 } // namespace atmo

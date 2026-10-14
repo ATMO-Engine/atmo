@@ -66,6 +66,8 @@ namespace atmo::core::ecs::entities
 
     void UINumberInput::RegisterSystems(flecs::world *world)
     {
+        world->component<core::components::UINumberInput>();
+
         world->system<core::components::UINumberInput>("NumberInput_Update")
             .kind(flecs::OnStore)
             .each([](flecs::entity e, core::components::UINumberInput &comp) {

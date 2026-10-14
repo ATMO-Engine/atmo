@@ -7,6 +7,8 @@ namespace atmo::core::ecs::entities
 {
     void Camera2d::RegisterSystems(flecs::world *world)
     {
+        world->component<components::WorldCameraState>();
+
         world->system("Camera2d_ResetWorldState").kind(flecs::OnLoad).run([](flecs::iter &it) {
             it.world().set<components::WorldCameraState>({ .has_camera = false });
         });

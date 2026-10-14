@@ -1,16 +1,11 @@
 #include "script_instance.hpp"
-#include <iostream>
 #include "instance_manager.hpp"
 #include "lua.h"
 #include "lualib.h"
 #include "luau.hpp"
+#include "luau/bindings/EntityLuauRegistry.hpp"
 #include "luau_ref.hpp"
-#include "spdlog/common.h"
 #include "spdlog/spdlog.h"
-
-
-#include "bindings/bindings_entity.hpp"
-
 
 namespace atmo
 {
@@ -45,8 +40,8 @@ namespace atmo
 
             lua_State *newThread = lua_newthread(state);
 
-            int r = lua_ref(state, -1);
-            ref.set(r);
+            ref.set(lua_ref(state, -1));
+            lua_pop(state, 1);
 
             // not used now, but will be usefull if we ever need the code to get the script instance
             // (example asynchonous code to stop and resume the right instance for a wait(x) function)
@@ -59,51 +54,52 @@ namespace atmo
         {
             lua_pushvalue(thread, LUA_GLOBALSINDEX);
 
-            int ref = lua_ref(thread, -1);
-            m_envRef.set(ref);
+            m_envRef.set(lua_ref(thread, -1));
+            lua_pop(thread, 1);
+        }
+
+        bool ScriptInstance::pushTypeEntity(lua_State *L, flecs::entity &e)
+        {
+            return luau::LuauRegistry::Instance().pushEntity(L, e);
         }
 
         bool ScriptInstance::load(const std::string &name, const char *bytecode, size_t size, flecs::entity &entity)
         {
+            clean();
+            m_envRef.clear();
+            m_stop = false;
+
             m_thread = createThread(m_threadRef);
             if (m_thread == nullptr) {
+                m_stop = true;
                 return false;
             }
-
             luaL_sandboxthread(m_thread);
-
             createEnvironment(m_thread);
 
-            void *mem = lua_newuserdata(m_thread, sizeof(std::shared_ptr<flecs::entity>));
-            new (mem) std::shared_ptr<flecs::entity>(std::make_shared<flecs::entity>(entity));
-            luaL_getmetatable(m_thread, LuaBindings<flecs::entity>::name);
-            lua_setmetatable(m_thread, -2);
-            lua_setglobal(m_thread, "this");
-
-            if (!m_vm) {
-                spdlog::error("ScriptInstance: vm is null, cannot load bytecode");
-                return false;
+            if (!pushTypeEntity(m_thread, entity)) {
+                return failLoad();
             }
+            lua_setglobal(m_thread, "this");
 
             if (!m_vm->LoadBytecodeCoroutine(m_thread, name, bytecode, size, 0)) {
                 spdlog::warn("Byte code couldn't be loaded inside thread");
-                return false;
+                return failLoad();
             }
 
-            int result = lua_pcall(m_thread, 0, 0, 0);
-            if (result != LUA_OK) {
-                const char *err = lua_tostring(m_thread, -1);
-                spdlog::warn("Load error: {}", err);
+            if (!Luau::ProtectedCall(m_thread, 0, name)) {
+                return failLoad();
             }
 
             return true;
         }
 
-        void ScriptInstance::handleCall(int result)
+        bool ScriptInstance::failLoad()
         {
-            if (result != LUA_OK) {
-                luau::Luau::LogLuauError(m_thread, "runtime");
-            }
+            clean();
+            m_envRef.clear();
+            m_stop = true;
+            return false;
         }
 
         void ScriptInstance::create()
@@ -116,9 +112,10 @@ namespace atmo
                 return;
             }
 
-            lua_getglobal(m_thread, "Create");
-            int result = lua_pcall(m_thread, 0, 0, 0);
-            handleCall(result);
+            if (!pushFunction("Create")) {
+                return;
+            }
+            Luau::ProtectedCall(m_thread, 0, "Create");
         }
 
         void ScriptInstance::update(float dt)
@@ -132,10 +129,11 @@ namespace atmo
                 return;
             }
 
-            lua_getglobal(m_thread, "Update");
+            if (!pushFunction("Update")) {
+                return;
+            }
             lua_pushnumber(m_thread, dt);
-            int result = lua_pcall(m_thread, 1, 0, 0);
-            handleCall(result);
+            Luau::ProtectedCall(m_thread, 1, "Update");
         }
 
         void ScriptInstance::physicsUpdate(float dt)
@@ -149,10 +147,11 @@ namespace atmo
                 return;
             }
 
-            lua_getglobal(m_thread, "PhysicsUpdate");
+            if (!pushFunction("PhysicsUpdate")) {
+                return;
+            }
             lua_pushnumber(m_thread, dt);
-            int result = lua_pcall(m_thread, 1, 0, 0);
-            handleCall(result);
+            Luau::ProtectedCall(m_thread, 1, "PhysicsUpdate");
         }
 
         bool ScriptInstance::pushFunction(const char *name)
@@ -160,7 +159,6 @@ namespace atmo
             lua_getglobal(m_thread, name);
             if (!lua_isfunction(m_thread, -1)) {
                 lua_pop(m_thread, 1);
-                spdlog::warn("function {} is not defined", name);
                 return false;
             }
             return true;
@@ -180,10 +178,12 @@ namespace atmo
                 return;
             }
 
-            LuaBindings<flecs::entity>::Push(m_thread, &other, false);
+            if (!pushTypeEntity(m_thread, other)) {
+                lua_pop(m_thread, 1);
+                return;
+            }
 
-            int result = lua_pcall(m_thread, 1, 0, 0);
-            handleCall(result);
+            Luau::ProtectedCall(m_thread, 1, "OnCollisionEnter");
         }
 
         void ScriptInstance::destroy()
