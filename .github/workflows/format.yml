@@ -8,6 +8,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  XMAKE_VERSION: "3.1.1"
+
 jobs:
   clang-checks:
     name: Clang Format
@@ -16,12 +22,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Cache LLVM apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: llvm-21-apt-${{ runner.os }}
 
       - name: Install LLVM apt repo
         run: |
@@ -62,18 +62,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
-
-      - name: Cache LLVM apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: llvm-21-apt-${{ runner.os }}
+          fetch-depth: 2
+          submodules: true
 
       - name: Install LLVM 21 and system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget gnupg \
+          sudo apt-get install -y --no-install-recommends wget gnupg \
             build-essential git make pkg-config cmake ninja-build \
             libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
@@ -83,29 +78,53 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 21
-          sudo apt-get install -y clang-tidy-21
+          sudo apt-get install -y clang-tidy-21 clang-tools-21
 
       - name: Setup Xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
-          xmake-version: latest
+          xmake-version: ${{ env.XMAKE_VERSION }}
           actions-cache-folder: .xmake-cache
 
-      - name: Cache xmake packages
-        uses: actions/cache@v4
+      - name: Compute cache keys
+        id: keys
+        run: |
+          echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
+          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua') }}-$(git rev-parse HEAD:submodules)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore xmake packages
+        uses: actions/cache/restore@v4
         with:
-          path: |
-            build/.packages
-            ~/.xmake/packages
-          key: ${{ runner.os }}-${{ hashFiles('xmake.lua', '.gitmodules') }}
-          restore-keys: ${{ runner.os }}-
+          path: ${{ runner.temp }}/xmake-packages
+          key: ${{ steps.keys.outputs.packages }}
 
       - name: Generate compile_commands.json
         run: |
+          xmake f -y -m release
           xmake project -k compile_commands -t atmo -y
 
+      - name: Select the files to check
+        run: |
+          CHANGED=$(git diff --name-only --diff-filter=d HEAD^1 HEAD)
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          ALL=$(find src/ -name '*.cpp')
+          if echo "$CHANGED" | grep -qE '^(xmake\.lua|submodules/|\.github/)|(^|/)\.clang-tidy$'; then
+            echo "The build or lint configuration changed, checking every file."
+            FILES=$ALL
+          elif ! FILES=$(python3 .github/scripts/affected_sources.py clang-scan-deps-21 $(echo "$CHANGED" | grep '^src/')); then
+            echo "::warning::Could not compute the include graph, checking every file."
+            FILES=$ALL
+          fi
+
+          FILES=$(echo "$FILES" | sort -u | xargs)
+          echo "Files to check: ${FILES:-none}"
+          echo "FILES=$FILES" >> "$GITHUB_ENV"
+
       - name: Run clang-tidy
+        if: env.FILES != ''
         run: |
           run-clang-tidy-21 -j $(nproc) -quiet -p . \
             -clang-tidy-binary clang-tidy-21 \
-            $(find src/ -name '*.cpp' | tr '\n' ' ')
+            $FILES
