@@ -1,15 +1,10 @@
 #include "luau.hpp"
-#include "bindings/bindings_color.hpp"
-#include "bindings/bindings_entity.hpp"
 #include "bindings/bindings_input.hpp"
-#include "bindings/bindings_transform2.hpp"
-#include "bindings/bindings_vector2.hpp"
-#include "core/ecs/entities/2d/entity_2d.hpp"
-#include "core/types.hpp"
 #include "ctre.hpp"
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"
+#include "luau/bindings/EntityLuauRegistry.hpp"
 #include "script_instance.hpp"
 #include "spdlog/spdlog.h"
 
@@ -52,21 +47,68 @@ namespace atmo
             }
         }
 
-        void Luau::LogLuauError(lua_State *L, const std::string &context)
+        namespace
+        {
+            thread_local std::string s_lastTraceback;
+
+            int MessageHandler(lua_State *L)
+            {
+                const char *trace = lua_debugtrace(L);
+                s_lastTraceback = trace ? trace : "";
+
+                const size_t firstLineEnd = s_lastTraceback.find('\n');
+                s_lastTraceback.erase(0, firstLineEnd == std::string::npos ? std::string::npos : firstLineEnd + 1);
+                return 1;
+            }
+        } // namespace
+
+        bool Luau::ProtectedCall(lua_State *L, int nargs, const std::string &context)
+        {
+            const int handlerIndex = lua_gettop(L) - nargs;
+            lua_pushcfunction(L, MessageHandler, "messageHandler");
+            lua_insert(L, handlerIndex);
+
+            s_lastTraceback.clear();
+            const int status = lua_pcall(L, nargs, 0, handlerIndex);
+            if (status != LUA_OK) {
+                LogLuauError(L, context, s_lastTraceback);
+            }
+
+            lua_remove(L, handlerIndex);
+            return status == LUA_OK;
+        }
+
+        void Luau::LogLuauError(lua_State *L, const std::string &context, const std::string &traceback)
         {
             const char *rawError = lua_tostring(L, -1);
             std::string errorMsg = rawError ? rawError : "unknown error (no message on stack)";
             lua_pop(L, 1);
 
+            std::string trace;
+            if (!traceback.empty()) {
+                trace = "\n\t traceback:";
+                std::string_view rest = traceback;
+                while (!rest.empty()) {
+                    const size_t end = rest.find('\n');
+                    const std::string_view line = rest.substr(0, end);
+                    if (!line.empty()) {
+                        trace += "\n\t\t";
+                        trace += line;
+                    }
+                    rest = end == std::string_view::npos ? std::string_view{} : rest.substr(end + 1);
+                }
+            }
+
             if (auto m = ctre::match<"^(.*):(\\d+): (.*)$">(errorMsg)) {
                 spdlog::error(
-                    "[Luau] Error ({}) \n\t file: '{}' \n\t line: {} \n\t message: {}",
+                    "[Luau] Error ({}) \n\t file: '{}' \n\t line: {} \n\t message: {}{}",
                     context,
                     m.get<1>().to_string(),
                     m.get<2>().to_string(),
-                    m.get<3>().to_string());
+                    m.get<3>().to_string(),
+                    trace);
             } else {
-                spdlog::error("[Luau] Error ({}): {}", context, errorMsg);
+                spdlog::error("[Luau] Error ({}): {}{}", context, errorMsg, trace);
             }
         }
 
@@ -114,13 +156,21 @@ namespace atmo
 
         void Luau::registerBindings()
         {
-            LuaBindings<atmo::core::types::Vector2>::RegisterType(p_L);
-            LuaBindings<atmo::core::types::Color>::RegisterType(p_L);
-            LuaBindings<atmo::core::components::Transform2d>::RegisterType(p_L);
-            LuaBindings<flecs::entity>::RegisterType(p_L);
+            spdlog::debug("Bindings registration start:");
 
-            InputBindings::RegisterType(p_L);
-            return;
+            lua_pushcfunction(
+                p_L,
+                [](lua_State *L) -> int {
+                    InputBindings::RegisterType(L);
+                    LuauRegistry::Instance().registerAll(L);
+                    return 0;
+                },
+                "registerBindings");
+            if (!ProtectedCall(p_L, 0, "bindings registration")) {
+                return;
+            }
+
+            spdlog::debug("Bindings registration finished");
         }
 
         void Luau::registerModule(const std::string &name, lua_CFunction loader)

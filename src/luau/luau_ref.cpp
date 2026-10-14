@@ -29,8 +29,7 @@ namespace atmo::luau
 
         lua_State *state = m_vm->getState();
         if (state && m_ref != LUA_NOREF) {
-            lua_pushnil(state);
-            lua_rawseti(state, LUA_REGISTRYINDEX, m_ref);
+            lua_unref(state, m_ref);
             m_ref = LUA_NOREF;
         }
     }
