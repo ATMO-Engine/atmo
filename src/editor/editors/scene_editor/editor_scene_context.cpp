@@ -19,6 +19,7 @@
 #include "glaze/glaze.hpp"
 #include "glaze/json/prettify.hpp"
 #include "project/project_manager.hpp"
+#include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
@@ -27,14 +28,14 @@ namespace atmo::editor
     {
         releaseGpuTextures();
         destroyRenderTexture();
+
+        auto &rendering_server = server::rendering::RenderingServer::Instance();
+        rendering_server.viewportFree(m_viewport);
+        rendering_server.canvasFree(m_canvas);
     }
 
     void EditorSceneContext::releaseGpuTextures()
     {
-        m_world.each<core::components::Sprite2d>([](core::components::Sprite2d &sprite) {
-            sprite.m_texture = nullptr;
-            sprite.m_texture_renderer = nullptr;
-        });
         m_world.each<core::components::UIImage>([](core::components::UIImage &image) { image.texture = nullptr; });
 
         if (m_renderer)
@@ -53,10 +54,21 @@ namespace atmo::editor
         core::components::register_core_components(m_world);
 
         createRenderTexture(m_width, m_height);
+
+        auto &rendering_server = server::rendering::RenderingServer::Instance();
+        m_canvas = rendering_server.canvasCreate();
+        m_viewport = rendering_server.viewportCreate();
+        rendering_server.viewportSetSize(m_viewport, { m_width, m_height });
+        rendering_server.viewportSetCanvas(m_viewport, m_canvas);
+        rendering_server.viewportSetClearColor(m_viewport, project::ProjectManager::GetSettings().window.background_color);
+
         m_world.set<core::components::WorldContext>({
             .is_editor_isolated = true,
             .renderer = m_renderer,
             .render_target = m_render_texture,
+            .canvas = m_canvas,
+            .viewport = m_viewport,
+            .viewport_size = { static_cast<float>(m_width), static_cast<float>(m_height) },
         });
 
         core::ecs::EntityRegistry::RegisterSystemsForWorld(&m_world);
@@ -121,9 +133,13 @@ namespace atmo::editor
         destroyRenderTexture();
         createRenderTexture(width, height);
 
+        server::rendering::RenderingServer::Instance().viewportSetSize(m_viewport, { width, height });
+
         auto *ctx = m_world.try_get_mut<core::components::WorldContext>();
-        if (ctx)
+        if (ctx) {
             ctx->render_target = m_render_texture;
+            ctx->viewport_size = { static_cast<float>(width), static_cast<float>(height) };
+        }
     }
 
     void EditorSceneContext::createRenderTexture(int width, int height)

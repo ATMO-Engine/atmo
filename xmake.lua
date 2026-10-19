@@ -5,13 +5,23 @@ set_allowedmodes("release", "debug", "profile")
 
 set_languages("c++23")
 
+option("tsan")
+    set_default(false)
+    set_showmenu(true)
+    set_description("Build debug mode with ThreadSanitizer instead of AddressSanitizer and UBSan")
+option_end()
+
 if is_mode("debug") then
     set_symbols("debug")
     set_optimize("none")
 
     if not is_plat("windows") then
-        set_policy("build.sanitizer.address", true)
-        set_policy("build.sanitizer.undefined", true)
+        if has_config("tsan") then
+            set_policy("build.sanitizer.thread", true)
+        else
+            set_policy("build.sanitizer.address", true)
+            set_policy("build.sanitizer.undefined", true)
+        end
     end
 end
 
@@ -54,6 +64,80 @@ if is_mode("debug", "profile") then
 end
 
 add_requireconfs("libsdl3_ttf.libsdl3", "libsdl3_image.libsdl3", { override = true, version = SDL_VERSION, system = false })
+
+option("rendering_vulkan")
+    set_showmenu(true)
+    set_description("Build the Vulkan RenderingPlatform (default: off on macOS, on elsewhere)")
+    on_check(function (option)
+        option:enable(not is_plat("macosx"))
+    end)
+option_end()
+
+local VULKAN_SDK_VERSION = "1.4.335+0"
+
+add_requires("slang v2026.20", { system = false, configs = { shared = false, asan = false, slangc = true, dxil = false, slang_llvm_flavor = "DISABLE" } })
+if has_config("rendering_vulkan") then
+    add_requires("vulkan-headers " .. VULKAN_SDK_VERSION, { system = false })
+    add_requires("volk " .. VULKAN_SDK_VERSION, { system = false })
+    add_requires("vulkan-memory-allocator v3.4.0", { system = false })
+    add_requireconfs("volk.vulkan-headers", "vulkan-memory-allocator.vulkan-headers", { override = true, version = VULKAN_SDK_VERSION, system = false })
+    if is_plat("macosx") then
+        add_requires("moltenvk v1.4.2", { system = false, configs = { asan = false } })
+    end
+end
+
+rule("slang.builtin")
+    set_extensions(".slang")
+    on_load(function (target)
+        target:add("includedirs", path.join(target:autogendir(), "rules", "slang"))
+    end)
+    on_preparecmd_file(function (target, batchcmds, sourcefile, opt)
+        import("core.project.project")
+
+        local outdir = path.join(target:autogendir(), "rules", "slang", "shaders")
+        local sourcedir = path.directory(sourcefile)
+        local outputs = {}
+
+        batchcmds:mkdir(outdir)
+
+        if target:extraconf("rules", "slang.builtin", "embed_sources") then
+            local header = path.join(outdir, path.filename(sourcefile) .. ".h")
+            batchcmds:show_progress(opt.progress, "${color.build.object}embedding.slang %s", sourcefile)
+            batchcmds:vlua("cli.binutils.bin2c", {"-i", path(sourcefile), "-o", path(header), "--nozeroend"})
+            table.insert(outputs, header)
+        end
+
+        if io.readfile(sourcefile):find("%[shader%(") then
+            local slangc = path.join(project.required_package("slang"):installdir(), "bin", is_host("windows") and "slangc.exe" or "slangc")
+            for _, shader_target in ipairs(target:extraconf("rules", "slang.builtin", "targets") or {}) do
+                local blob = path.join(outdir, path.basename(sourcefile) .. "." .. shader_target)
+                batchcmds:show_progress(opt.progress, "${color.build.object}compiling.slang %s (%s)", sourcefile, shader_target)
+                batchcmds:vrunv(slangc, {path(sourcefile), "-I", path(sourcedir), "-target", shader_target, "-O0", "-fvk-use-entrypoint-name", "-o", path(blob)})
+                batchcmds:vlua("cli.binutils.bin2c", {"-i", path(blob), "-o", path(blob .. ".h"), "--nozeroend"})
+                table.insert(outputs, blob .. ".h")
+            end
+        end
+
+        if #outputs == 0 then
+            return
+        end
+
+        batchcmds:add_depfiles(os.files(path.join(sourcedir, "*.slang")))
+        batchcmds:set_depmtime(os.mtime(outputs[1]))
+        batchcmds:set_depcache(target:dependfile(outputs[1]))
+    end)
+rule_end()
+
+rule("moltenvk.bundle")
+    after_build(function (target)
+        import("core.project.project")
+
+        local moltenvk = project.required_package("moltenvk")
+        if moltenvk then
+            os.cp(path.join(moltenvk:installdir(), "lib", "libMoltenVK.dylib"), target:targetdir())
+        end
+    end)
+rule_end()
 
 function platform_specifics()
     if is_plat("macosx") then
@@ -100,6 +184,29 @@ function packages()
     add_defines("FLECS_CPP_NO_AUTO_REGISTRATION", "FLECS_META=")
 end
 
+function rendering(opt)
+    local shader_targets = {}
+    if has_config("rendering_vulkan") then
+        table.insert(shader_targets, "spirv")
+        add_packages("vulkan-headers", "volk", "vulkan-memory-allocator")
+        add_defines("ATMO_RENDERING_VULKAN")
+        if is_plat("macosx") then
+            add_rules("moltenvk.bundle")
+        end
+    else
+        remove_files("src/server/rendering/api/vulkan/**.cpp")
+    end
+
+    add_rules("slang.builtin", { targets = shader_targets, embed_sources = opt.shader_compiler })
+    add_files("src/server/rendering/shaders/*.slang")
+
+    if opt.shader_compiler then
+        add_packages("slang")
+    else
+        remove_files("src/server/rendering/shader/shader_compiler.cpp")
+    end
+end
+
 target("atmo")
     set_kind("binary")
     set_default(true)
@@ -109,6 +216,7 @@ target("atmo")
     if is_plat("macosx") then
         add_files("src/editor/menu_bar/macos_menu_bar.mm")
     end
+    rendering({ shader_compiler = true })
     platform_specifics()
     if is_mode("debug") or is_mode("profile") then
         add_defines("ATMO_PROFILING")
@@ -193,6 +301,7 @@ target("atmo-test")
     if is_plat("macosx") then
         add_files("src/editor/menu_bar/macos_menu_bar.mm")
     end
+    rendering({ shader_compiler = true })
     platform_specifics()
     add_tests("atmo-test", {
         rundir = os.projectdir(),
@@ -209,6 +318,7 @@ target("atmo-export")
     packages()
     add_files("src/**.cpp|src/editor/**.cpp")
     add_includedirs("src")
+    rendering({ shader_compiler = false })
     platform_specifics()
     add_defines("ATMO_EXPORT")
 target_end()

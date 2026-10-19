@@ -2,21 +2,23 @@
 
 #include <memory>
 #include <string>
-#include "SDL3/SDL_render.h"
-#include "SDL3/SDL_surface.h"
+#include "SDL3/SDL_rect.h"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/resource/texture_2d.hpp"
 #include "meta/meta.hpp"
+#include "server/rendering/rid.hpp"
+#include "server/rendering/types.hpp"
 
 namespace atmo::core::components
 {
     struct Sprite2d {
         std::string texture_path;
         std::string prev_texture_path;
-        std::shared_ptr<SDL_Surface> m_res;
-        std::shared_ptr<SDL_Texture> m_texture;
-        SDL_Renderer *m_texture_renderer = nullptr;
-        std::string prev_texture_path_gpu;
+        std::shared_ptr<resource::Texture2d> m_texture;
+        server::rendering::CanvasItemRid m_item;
+        server::rendering::Affine2d m_transform;
+        bool m_dirty = true;
         types::Vector2 texture_size{ 0.0f, 0.0f };
     };
 } // namespace atmo::core::components

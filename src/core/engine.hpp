@@ -27,6 +27,15 @@ namespace atmo::core
     class Engine
     {
     private:
+        struct RenderingServerShutdown {
+            RenderingServerShutdown() = default;
+            ~RenderingServerShutdown();
+
+            RenderingServerShutdown(const RenderingServerShutdown &) = delete;
+            RenderingServerShutdown &operator=(const RenderingServerShutdown &) = delete;
+        };
+
+        RenderingServerShutdown m_rendering_server_shutdown;
         ecs::ECS m_ecs;
         std::atomic<bool> m_running{ false };
         bool m_headless = false;

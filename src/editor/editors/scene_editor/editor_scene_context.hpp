@@ -6,6 +6,7 @@
 #include "SDL3/SDL_render.h"
 #include "core/types.hpp"
 #include "flecs.h"
+#include "server/rendering/rid.hpp"
 
 namespace atmo::core::ecs::entities
 {
@@ -128,6 +129,8 @@ namespace atmo::editor
         void releaseGpuTextures();
 
         flecs::world m_world;
+        server::rendering::CanvasRid m_canvas;
+        server::rendering::ViewportRid m_viewport;
         SDL_Texture *m_render_texture = nullptr;
         SDL_Renderer *m_renderer = nullptr;
         std::shared_ptr<core::ecs::entities::Scene> m_scene;

@@ -1,98 +1,97 @@
 #include "sprite_2d.hpp"
-#include "SDL3/SDL_rect.h"
-#include "SDL3/SDL_render.h"
+
 #include "core/ecs/components.hpp"
-#include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
-#include "core/ecs/entities/window/window.hpp"
+#include "core/ecs/entities/2d/camera_2d/canvas_view.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "meta/auto_register.hpp"
-#include "project/file_system.hpp"
+#include "project/project_manager.hpp"
+#include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
-    void Sprite2d::RegisterSystems(flecs::world *world)
+    namespace
     {
-        world->system<components::Sprite2d>("Sprite2d_Sync").kind(flecs::PreUpdate).each([](flecs::entity /*e*/, components::Sprite2d &sprite) {
-            if (sprite.texture_path.empty() || sprite.texture_path == sprite.prev_texture_path)
+        void LoadTexture(components::Sprite2d &sprite)
+        {
+            sprite.prev_texture_path = sprite.texture_path;
+            sprite.m_texture = nullptr;
+            sprite.texture_size = { 0.0f, 0.0f };
+            sprite.m_dirty = true;
+
+            if (sprite.texture_path.empty())
                 return;
 
-            sprite.prev_texture_path = sprite.texture_path;
-
-
             try {
-                sprite.m_res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite.texture_path);
-            } catch (std::exception &e) {
+                sprite.m_texture = resource::ResourceManager::GetInstance().getResource<resource::Texture2d>(sprite.texture_path);
+            } catch (const std::exception &e) {
                 spdlog::error("Failed to open texture for sprite: {}", e.what());
+                return;
             }
 
-            if (sprite.m_res)
-                sprite.texture_size = { static_cast<float>(sprite.m_res->w), static_cast<float>(sprite.m_res->h) };
+            if (sprite.m_texture)
+                sprite.texture_size = { static_cast<float>(sprite.m_texture->size().x), static_cast<float>(sprite.m_texture->size().y) };
+        }
+        server::rendering::TextureFilter ProjectTextureFilter()
+        {
+            const std::string &name = project::ProjectManager::GetSettings().rendering.texture_filter;
+            if (std::optional<server::rendering::TextureFilter> filter = ParseTextureFilter(name))
+                return *filter;
+
+            static bool warned = false;
+            if (!warned)
+                spdlog::warn("Unknown rendering.texture_filter '{}', expected linear or nearest", name);
+            warned = true;
+            return server::rendering::TextureFilter::Linear;
+        }
+    } // namespace
+
+    void Sprite2d::RegisterSystems(flecs::world *world)
+    {
+        world->system<components::Sprite2d>("Sprite2d_Sync").kind(flecs::PreUpdate).each([](flecs::entity, components::Sprite2d &sprite) {
+            if (sprite.texture_path != sprite.prev_texture_path)
+                LoadTexture(sprite);
         });
 
-        world->system<components::Sprite2d, components::Transform2d>("Sprite2D_Render")
+        world->system<components::Sprite2d, const components::Transform2d>("Sprite2d_Draw")
             .kind(flecs::OnValidate)
-            .each([world](flecs::entity e, components::Sprite2d &sprite, components::Transform2d &transform) {
-                SDL_Renderer *renderer = nullptr;
-                SDL_Texture *texture = nullptr;
+            .each([](flecs::entity e, components::Sprite2d &sprite, const components::Transform2d &transform) {
+                auto &server = server::rendering::RenderingServer::Instance();
 
-                const components::WorldContext *ctx = world->try_get<components::WorldContext>();
-                if (ctx && ctx->is_editor_isolated) {
-                    renderer = ctx->renderer;
-                    if (!renderer || sprite.texture_path.empty() || !sprite.m_res)
+                if (!sprite.m_item.isValid()) {
+                    const components::WorldContext *ctx = e.world().try_get<components::WorldContext>();
+                    if (!ctx || !ctx->canvas.isValid())
                         return;
-                } else {
-                    flecs::entity root = world->lookup("_Root");
-                    if (!root.is_valid() || !root.has<components::Window>())
-                        return;
-
-                    auto window = root.get_ref<components::Window>();
-                    if (!window || !window->renderer_data.renderer || sprite.texture_path.empty())
-                        return;
-
-                    renderer = window->renderer_data.renderer;
+                    sprite.m_item = server.canvasItemCreate(ctx->canvas);
+                    sprite.m_transform = {};
+                    server.canvasItemSetTransform(sprite.m_item, sprite.m_transform);
+                    sprite.m_dirty = true;
                 }
 
-                if (sprite.texture_path != sprite.prev_texture_path_gpu || renderer != sprite.m_texture_renderer) {
-                    sprite.m_texture = resource::ResourceManager::GetInstance().getResource<SDL_Texture>(sprite.texture_path, renderer);
-                    sprite.m_texture_renderer = renderer;
-                    sprite.prev_texture_path_gpu = sprite.texture_path;
-                }
-                texture = sprite.m_texture.get();
-
-                if (!texture || !renderer)
-                    return;
-
-                const auto *cam = world->try_get<components::WorldCameraState>();
-                int vp_w = 0, vp_h = 0;
-                SDL_GetCurrentRenderOutputSize(renderer, &vp_w, &vp_h);
-
-                float sx, sy, zoom;
-                if (cam && cam->has_camera) {
-                    zoom = cam->zoom;
-                    sx = (transform.g_position.x - cam->position.x) * zoom + static_cast<float>(vp_w) * 0.5f;
-                    sy = (transform.g_position.y - cam->position.y) * zoom + static_cast<float>(vp_h) * 0.5f;
-                } else {
-                    zoom = 1.0f;
-                    sx = transform.g_position.x;
-                    sy = transform.g_position.y;
+                if (sprite.m_dirty) {
+                    server.canvasItemClear(sprite.m_item);
+                    if (sprite.m_texture)
+                        server.canvasItemAddTextureRect(
+                            sprite.m_item,
+                            server::rendering::Rect2::Centered(sprite.texture_size),
+                            sprite.m_texture->rid(),
+                            { .filter = ProjectTextureFilter() });
+                    sprite.m_dirty = false;
                 }
 
-                const float w = sprite.texture_size.x * transform.g_scale.x * zoom;
-                const float h = sprite.texture_size.y * transform.g_scale.y * zoom;
-
-                SDL_FRect dst{ sx - w * 0.5f, sy - h * 0.5f, w, h };
-                SDL_FPoint center{ dst.w * 0.5f, dst.h * 0.5f };
-
-                SDL_RenderTextureRotated(renderer, texture, nullptr, &dst, transform.g_rotation, &center, SDL_FLIP_NONE);
+                const auto global = server::rendering::Affine2d::FromTrs(transform.g_position, transform.g_rotation, transform.g_scale);
+                if (global != sprite.m_transform) {
+                    sprite.m_transform = global;
+                    server.canvasItemSetTransform(sprite.m_item, global);
+                }
             });
 
-        world->observer<components::Sprite2d>("Sprite2D_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Sprite2d &sprite) {
-            sprite.m_res = nullptr;
+        world->observer<components::Sprite2d>("Sprite2d_Remove").event(flecs::OnRemove).each([](flecs::entity, components::Sprite2d &sprite) {
+            server::rendering::RenderingServer::Instance().canvasItemFree(sprite.m_item);
+            sprite.m_item = {};
             sprite.m_texture = nullptr;
-            sprite.m_texture_renderer = nullptr;
         });
     }
 
@@ -107,16 +106,15 @@ namespace atmo::core::ecs::entities
     {
         auto sprite = p_handle.get_ref<components::Sprite2d>();
         sprite->texture_path = path;
+        LoadTexture(*sprite.get());
 
-        if (sprite->texture_path.empty())
-            return;
-
-        sprite->m_res = resource::ResourceManager::GetInstance().getResource<SDL_Surface>(sprite->texture_path);
-
-        spdlog::debug("Loaded Sprite2D texture for entity {}: {}", p_handle.name().c_str(), sprite->texture_path);
-        spdlog::debug("Sprite2D texture size: {}x{}", sprite->m_res->w, sprite->m_res->h);
-
-        sprite->texture_size = { static_cast<float>(sprite->m_res->w), static_cast<float>(sprite->m_res->h) };
+        if (sprite->m_texture)
+            spdlog::debug(
+                "Loaded Sprite2D texture for entity {}: {} ({}x{})",
+                p_handle.name().c_str(),
+                sprite->texture_path,
+                sprite->texture_size.x,
+                sprite->texture_size.y);
     }
 
     std::string_view Sprite2d::getTexturePath() const noexcept

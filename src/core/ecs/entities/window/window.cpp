@@ -21,6 +21,7 @@
 #include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
+#include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog.h"
 #include "window.hpp"
 
@@ -39,9 +40,10 @@ namespace atmo::core::ecs::entities
         if (ctx && ctx->is_editor_isolated)
             return;
 
-        world->system<components::Window>("PollEvents").kind(flecs::PreUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
+        world->system("PollEvents").kind(flecs::PreUpdate).run([](flecs::iter &it) { server::rendering::RenderingServer::Instance().pollEvents(); });
+
+        world->system<components::Window>("BeginDraw").kind(flecs::PreUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
             entities::Window entity(it.entity(i));
-            entity.pollEvents(it.delta_time());
             entity.beginDraw(window);
         });
 
@@ -58,10 +60,6 @@ namespace atmo::core::ecs::entities
                     label.m_render_cache->texture = nullptr;
                 }
             });
-            e.world().each<components::Sprite2d>([](components::Sprite2d &sprite) {
-                sprite.m_texture = nullptr;
-                sprite.m_texture_renderer = nullptr;
-            });
             e.world().each<components::UIImage>([](components::UIImage &image) { image.texture = nullptr; });
 
             if (window.renderer_data.renderer) {
@@ -70,10 +68,17 @@ namespace atmo::core::ecs::entities
                 window.renderer_data.renderer = nullptr;
             }
 
-            if (window.window) {
-                SDL_DestroyWindow(window.window);
-                window.window = nullptr;
+            auto &rendering_server = server::rendering::RenderingServer::Instance();
+            if (auto *ctx = e.world().try_get_mut<components::WorldContext>();
+                ctx && ctx->viewport.isValid() && ctx->viewport == rendering_server.windowGetViewport(window.rid)) {
+                rendering_server.canvasFree(ctx->canvas);
+                ctx->canvas = {};
+                ctx->viewport = {};
             }
+
+            rendering_server.windowFree(window.rid);
+            window.rid = {};
+            window.window = nullptr;
 
             if (window.renderer_data.text_engine) {
                 TTF_DestroyRendererTextEngine(window.renderer_data.text_engine);
@@ -86,6 +91,19 @@ namespace atmo::core::ecs::entities
                 window.close_callback.value()();
             }
         });
+    }
+
+    static void RefreshWorldViewport(flecs::entity handle)
+    {
+        auto &rendering_server = server::rendering::RenderingServer::Instance();
+        const auto *window = handle.try_get<components::Window>();
+        auto *ctx = handle.world().try_get_mut<components::WorldContext>();
+        if (!window || !ctx || !ctx->viewport.isValid() || ctx->viewport != rendering_server.windowGetViewport(window->rid))
+            return;
+
+        const types::Vector2i size = rendering_server.windowGetSize(window->rid);
+        ctx->viewport_size = { static_cast<float>(size.x), static_cast<float>(size.y) };
+        ctx->viewport_dpi = rendering_server.windowGetDpiScale(window->rid);
     }
 
     static Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
@@ -116,44 +134,75 @@ namespace atmo::core::ecs::entities
         setComponent<components::Window>({ "Atmo Engine", project::ProjectManager::GetSettings().window.size });
         auto &window = getComponentMutable<components::Window>();
 
-        static constexpr SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY | RENDERING_PLATFORM;
-
-        if (args::ArgManager::Get<bool>("--headless") == false &&
-            SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &window.window, &window.renderer_data.renderer)) {
-            updateDPI(window);
-            SDL_SetWindowResizable(window.window, true);
-
-            window.renderer_data.text_engine = TTF_CreateRendererTextEngine(window.renderer_data.renderer);
-            if (!window.renderer_data.text_engine) {
-                spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
-                return;
-            }
-
-            auto totalMemSize = Clay_MinMemorySize();
-            window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
-
-            Clay_Initialize(window.clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
-                                spdlog::error("Clay error: {}", errorData.errorText.chars);
-                            } });
-
-            Clay_SetMeasureTextFunction(measureText, &window.dpi_scale);
-        } else if (args::ArgManager::Get<bool>("--headless") == false) {
-            spdlog::error("Failed to create window and renderer: {}", SDL_GetError());
-        } else {
+        if (args::ArgManager::Get<bool>("--headless")) {
             window.headless = true;
+            return;
         }
-    }
 
-    void Window::updateDPI(components::Window &window)
-    {
-        int windowW, windowH;
-        SDL_GetWindowSize(window.window, &windowW, &windowH);
+        auto &rendering_server = server::rendering::RenderingServer::Instance();
+        window.rid = rendering_server.windowCreate({ .title = window.title, .size = window.size });
+        window.window = rendering_server.legacySdlWindow(window.rid);
+        if (!window.window) {
+            spdlog::error("Failed to create window");
+            return;
+        }
 
-        int pixelW, pixelH;
-        SDL_GetWindowSizeInPixels(window.window, &pixelW, &pixelH);
+        window.dpi_scale = rendering_server.windowGetDpiScale(window.rid);
+        const bool legacy_renderer = rendering_server.legacyRendererEnabled();
 
-        window.dpi_scale.x = (float)pixelW / windowW;
-        window.dpi_scale.y = (float)pixelH / windowH;
+        const server::rendering::ViewportRid viewport = rendering_server.windowGetViewport(window.rid);
+        rendering_server.viewportSetClearColor(viewport, project::ProjectManager::GetSettings().window.background_color);
+        rendering_server.viewportSetBorderColor(viewport, project::ProjectManager::GetSettings().window.letterbox_color);
+        if (auto *ctx = p_handle.world().try_get_mut<components::WorldContext>(); ctx && !ctx->is_editor_isolated && !ctx->canvas.isValid()) {
+            ctx->canvas = rendering_server.canvasCreate();
+            ctx->viewport = viewport;
+            ctx->viewport_size = { static_cast<float>(window.size.x), static_cast<float>(window.size.y) };
+            ctx->viewport_dpi = window.dpi_scale;
+            rendering_server.viewportSetCanvas(viewport, ctx->canvas);
+        }
+        rendering_server.windowSetEventCallback(window.rid, [handle = p_handle](const server::rendering::WindowEvent &event) {
+            switch (event.type) {
+                case server::rendering::WindowEventType::QuitRequested:
+                    handle.destruct();
+                    break;
+                case server::rendering::WindowEventType::Resized:
+                    Clay_SetLayoutDimensions({ static_cast<float>(event.size.x), static_cast<float>(event.size.y) });
+                    RefreshWorldViewport(handle);
+                    break;
+                case server::rendering::WindowEventType::DisplayScaleChanged:
+                    {
+                        entities::Window entity(handle);
+                        auto &component = entity.getComponentMutable<components::Window>();
+                        component.dpi_scale = server::rendering::RenderingServer::Instance().windowGetDpiScale(component.rid);
+                        RefreshWorldViewport(handle);
+                        break;
+                    }
+            }
+        });
+
+        auto totalMemSize = Clay_MinMemorySize();
+        window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
+
+        Clay_Initialize(window.clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
+                            spdlog::error("Clay error: {}", errorData.errorText.chars);
+                        } });
+
+        Clay_SetMeasureTextFunction(measureText, &window.dpi_scale);
+
+        if (!legacy_renderer)
+            return;
+
+        window.renderer_data.renderer = SDL_CreateRenderer(window.window, nullptr);
+        if (!window.renderer_data.renderer) {
+            spdlog::error("Failed to create renderer: {}", SDL_GetError());
+            return;
+        }
+
+        window.renderer_data.text_engine = TTF_CreateRendererTextEngine(window.renderer_data.renderer);
+        if (!window.renderer_data.text_engine) {
+            spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
+            return;
+        }
     }
 
     bool Window::setTitle(const std::string &name)
@@ -163,24 +212,19 @@ namespace atmo::core::ecs::entities
         if (window->headless)
             return false;
 
-        if (SDL_SetWindowTitle(window->window, name.c_str())) {
-            window->title = name;
-            return true;
-        } else {
-            spdlog::error("Failed to set window title: {}", SDL_GetError());
+        if (!server::rendering::RenderingServer::Instance().windowSetTitle(window->rid, name))
             return false;
-        }
+
+        window->title = name;
+        return true;
     }
 
     void Window::setSize(const core::types::Vector2i &size)
     {
         auto window = p_handle.get_ref<components::Window>();
 
-        if (SDL_SetWindowSize(window->window, size.x, size.y)) {
+        if (server::rendering::RenderingServer::Instance().windowSetSize(window->rid, size))
             window->size = size;
-        } else {
-            spdlog::error("Failed to set window size: {}", SDL_GetError());
-        }
     }
 
     types::Vector2 Window::getDPIScale() const noexcept
@@ -192,36 +236,14 @@ namespace atmo::core::ecs::entities
     {
         auto window = p_handle.get_ref<components::Window>();
 
-        if (!SDL_RaiseWindow(window->window)) {
-            spdlog::error("Failed to focus window: {}", SDL_GetError());
-        }
-    }
-
-    void Window::pollEvents(float deltaTime)
-    {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_EVENT_QUIT:
-                    p_handle.destruct();
-                    break;
-                case SDL_EVENT_WINDOW_RESIZED:
-                    Clay_SetLayoutDimensions({ (float)event.window.data1, (float)event.window.data2 });
-                    break;
-                case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
-                    updateDPI(getComponentMutable<components::Window>());
-                    break;
-                default:
-                    auto default_event = atmo::core::event::EventRegistry::Create<atmo::core::event::events::InputEvent>("Event::SDLEvent::InputEvent");
-                    default_event->sdl_event = event;
-                    atmo::core::event::EventRegistry::Dispatch(default_event);
-                    break;
-            };
-        }
+        server::rendering::RenderingServer::Instance().windowFocus(window->rid);
     }
 
     void Window::beginDraw(components::Window &window)
     {
+        if (!window.renderer_data.renderer)
+            return;
+
         static const types::Color &clear_color = project::ProjectManager::GetSettings().window.background_color;
         static std::array<std::uint8_t, 4> clear_color_sdl = clear_color.toInt<std::array<std::uint8_t, 4>>();
 
@@ -232,7 +254,7 @@ namespace atmo::core::ecs::entities
 
     void Window::draw(components::Window &window)
     {
-        if (window.headless)
+        if (window.headless || !window.renderer_data.renderer)
             return;
 
         bool clickState = false;

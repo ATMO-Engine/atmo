@@ -30,6 +30,7 @@
 #include "luau/script_instance.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog-inl.h"
 #include "spdlog/spdlog.h"
 
@@ -146,6 +147,11 @@ static atmo::core::args::ArgManager::LaunchResult handleArgLang(atmo::core::args
 
 namespace atmo::core
 {
+    Engine::RenderingServerShutdown::~RenderingServerShutdown()
+    {
+        server::rendering::RenderingServer::Instance().shutdown();
+    }
+
     Engine::Engine() = default;
     Engine::~Engine() = default;
 
@@ -197,6 +203,17 @@ namespace atmo::core
         ArgManager::AddLaunchHandler(10000, "--help", handleArgHelp);
 
         ArgManager::AddArgument("--headless").defaultValue(false).implicitValue(true).help("Start in headless mode (no graphical interface)");
+
+        ArgManager::AddArgument("--rendering-platform")
+            .help(
+                "Rendering platform to use: metal, vulkan or null. The default is metal on macOS and null elsewhere; an unavailable platform falls back to "
+                "the default.")
+            .metavar("platform");
+        ArgManager::AddArgument("--render-thread")
+            .defaultValue(std::string("on"))
+            .help("Run rendering on its own thread (on) or inline on the main thread (off), which keeps stack traces readable.")
+            .metavar("on|off");
+        ArgManager::AddArgument("--gpu-validation").defaultValue(false).implicitValue(true).help("Enable the rendering platform's validation layer.");
 
         ArgManager::AddArgument("--lang").help("Override the user's automatically detected preferred language.");
         ArgManager::AddLaunchHandler(0, "--lang", handleArgLang);
@@ -318,6 +335,19 @@ namespace atmo::core
         std::signal(SIGINT, [](int signum) { g_engine.stop(); });
         std::signal(SIGTERM, [](int signum) { g_engine.stop(); });
 
+        server::rendering::RenderingSettings rendering_settings{
+            .render_thread = args::ArgManager::Get<std::string>("--render-thread") != "off",
+            .gpu_validation = args::ArgManager::Get<bool>("--gpu-validation"),
+        };
+        if (std::optional<std::string> platform = args::ArgManager::Present<std::string>("--rendering-platform")) {
+            rendering_settings.platform = server::rendering::ParsePlatformKind(*platform);
+            if (!rendering_settings.platform)
+                spdlog::warn("Unknown rendering platform '{}', using automatic selection", *platform);
+        }
+
+        if (!server::rendering::RenderingServer::Instance().init(rendering_settings))
+            return 1;
+
         m_ecs.reset();
 
         return 0;
@@ -412,6 +442,7 @@ namespace atmo::core
 
         while (m_ecs.progress(deltaTime)) {
             ATMO_PROFILE_FRAME();
+            server::rendering::RenderingServer::Instance().sync();
 
             if (!m_running.load()) {
                 m_ecs.stop();

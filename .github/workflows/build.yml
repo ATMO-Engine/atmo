@@ -22,7 +22,7 @@ jobs:
   build:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -33,9 +33,17 @@ jobs:
           - name: macOS
             os: macos-26
             build-cache: true
+            extra-config: --rendering_vulkan=y
           - name: Windows
             os: windows-latest
             build-cache: false
+          - name: Linux TSan
+            os: ubuntu-latest
+            build-cache: false
+            variant: tsan
+            mode: debug
+            extra-config: --tsan=y
+            test-args: '"[rendering]"'
 
     steps:
       - name: Checkout repository
@@ -51,7 +59,8 @@ jobs:
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
             libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
             libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
-            libpipewire-0.3-dev libwayland-dev libxinerama-dev
+            libpipewire-0.3-dev libwayland-dev libxinerama-dev \
+            libvulkan1 mesa-vulkan-drivers vulkan-validationlayers
 
       - name: Setup Xmake
         uses: xmake-io/github-action-setup-xmake@v1
@@ -67,7 +76,7 @@ jobs:
           if [ "${{ matrix.build-cache }}" = true ]; then
             echo "XMAKE_ACTION_BUILD_CACHE=true" >> "$GITHUB_ENV"
           fi
-          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}" >> "$GITHUB_OUTPUT"
+          echo "packages=xmake-packages-${{ runner.os }}-${{ matrix.variant || 'default' }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}" >> "$GITHUB_OUTPUT"
           echo "build=xmake-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}" >> "$GITHUB_OUTPUT"
           echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
@@ -103,11 +112,15 @@ jobs:
           fi
 
       - name: Upload lock file
-        if: steps.lock.outputs.changed == 'true'
+        if: steps.lock.outputs.changed == 'true' && !matrix.variant
         uses: actions/upload-artifact@v4
         with:
           name: xmake-requires-lock-${{ runner.os }}
           path: xmake-requires.lock
+
+      - name: Apply the job configuration
+        if: matrix.extra-config || matrix.mode
+        run: xmake f -y -m ${{ matrix.mode || 'release' }} ${{ matrix.extra-config }}
 
       - name: Save xmake packages
         if: steps.packages.outputs.cache-hit != 'true'
@@ -126,5 +139,14 @@ jobs:
           path: build/.build_cache
           key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
 
+      - name: Allow ThreadSanitizer memory mappings
+        if: matrix.variant == 'tsan'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
       - name: Run unit tests
+        if: ${{ !matrix.test-args }}
         run: xmake test -v
+
+      - name: Run selected unit tests
+        if: matrix.test-args
+        run: ./build/atmo-test ${{ matrix.test-args }}

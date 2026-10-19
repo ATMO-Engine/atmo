@@ -11,12 +11,7 @@
 #include "core/types.hpp"
 #include "impl/clay_types.hpp"
 #include "meta/meta.hpp"
-
-#if defined(__APPLE__)
-#define RENDERING_PLATFORM SDL_WINDOW_METAL
-#else
-#define RENDERING_PLATFORM SDL_WINDOW_VULKAN
-#endif
+#include "server/rendering/rid.hpp"
 
 namespace atmo::core::components
 {
@@ -24,6 +19,7 @@ namespace atmo::core::components
         std::string title;
         types::Vector2i size;
         types::Vector2 dpi_scale;
+        server::rendering::WindowRid rid;
         SDL_Window *window = nullptr;
         ClaySdL3RendererData renderer_data{};
         Clay_Arena clay_arena{};
@@ -70,10 +66,8 @@ namespace atmo::core::ecs::entities
         void primeScrollContainers();
 
     private:
-        void pollEvents(float deltaTime);
         void beginDraw(components::Window &window);
         void draw(components::Window &window);
-        void updateDPI(components::Window &window);
 
         Clay_ElementId getIdForEntity(const Entity &e);
         Clay_ElementDeclaration buildDecl(const Entity &e);
