@@ -3,10 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "SDL3/SDL_hints.h"
-#include "SDL3/SDL_init.h"
-#include "SDL3/SDL_render.h"
-#include "SDL3/SDL_video.h"
+#include "SDL3/SDL_surface.h"
 
 #include "core/resource/auto_register_loader.hpp"
 #include "core/resource/resource.hpp"
@@ -67,41 +64,4 @@ TEST_CASE("A resource type can self-register its loader from its own file", "[re
     auto res = ResourceManager::GetInstance().getResource<TestResourceType>("hello");
     REQUIRE(res != nullptr);
     REQUIRE(res->value == 5);
-}
-
-TEST_CASE("getResource keys GPU resources by (path, renderer)", "[resource][gpu]")
-{
-    REQUIRE(SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy"));
-    REQUIRE(SDL_Init(SDL_INIT_VIDEO));
-
-    SDL_Window *window1 = SDL_CreateWindow("atmo-test-1", 64, 64, SDL_WINDOW_HIDDEN);
-    SDL_Window *window2 = SDL_CreateWindow("atmo-test-2", 64, 64, SDL_WINDOW_HIDDEN);
-    REQUIRE(window1 != nullptr);
-    REQUIRE(window2 != nullptr);
-
-    SDL_Renderer *renderer1 = SDL_CreateRenderer(window1, nullptr);
-    SDL_Renderer *renderer2 = SDL_CreateRenderer(window2, nullptr);
-    REQUIRE(renderer1 != nullptr);
-    REQUIRE(renderer2 != nullptr);
-
-    {
-        auto tex1 = ResourceManager::GetInstance().getResource<SDL_Texture>(kAtmoPng, renderer1);
-        auto tex1_again = ResourceManager::GetInstance().getResource<SDL_Texture>(kAtmoPng, renderer1);
-        auto tex2 = ResourceManager::GetInstance().getResource<SDL_Texture>(kAtmoPng, renderer2);
-
-        REQUIRE(tex1 != nullptr);
-        REQUIRE(tex2 != nullptr);
-        REQUIRE(tex1.get() == tex1_again.get());
-        REQUIRE(tex1.get() != tex2.get());
-    }
-
-    ResourceManager::GetInstance().releaseRenderer(renderer1);
-    SDL_DestroyRenderer(renderer1);
-
-    ResourceManager::GetInstance().releaseRenderer(renderer2);
-    SDL_DestroyRenderer(renderer2);
-
-    SDL_DestroyWindow(window1);
-    SDL_DestroyWindow(window2);
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }

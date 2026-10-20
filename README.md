@@ -33,19 +33,25 @@ The first `xmake` run downloads and builds every third-party library, including 
 
 ## Rendering platforms
 
-`--rendering-platform=metal|vulkan|null` picks the rendering platform. Without it, the engine tries Metal first on macOS and uses Null elsewhere; a platform that is unavailable falls back to that default. The Metal platform does not exist yet, so the default still ends on Null.
+The engine picks the best rendering platform for the machine it runs on:
 
-The rendering rework is in progress. Sprites, cameras and physics debug drawing now go through the new 2D canvas renderer, while the UI and the editor still use SDL_Renderer until the next phase. In the meantime:
+| OS      | Tried in order        |
+|---------|-----------------------|
+| macOS   | Metal, Vulkan, Null   |
+| Windows | D3D12, Vulkan, Null   |
+| Linux   | Vulkan, Null          |
 
-- On the default platform (Null), the UI and editor work, but scenes draw nothing.
-- On Vulkan, scenes are drawn by the new renderer, but there is no UI yet.
+A platform is skipped when it is not built or when the GPU lacks what it needs. A platform that only finds a software rasterizer (such as lavapipe) is used only if no other platform has a real GPU. Null draws nothing; it is what `--headless` uses. The Metal and D3D12 platforms do not exist yet, so for now every OS lands on Vulkan when it is built.
+
+`--rendering-platform=metal|d3d12|vulkan|null` asks for a specific platform; if it is unavailable, the engine falls back to the automatic choice.
 
 ```
-xmake run atmo --rendering-platform=vulkan
 xmake run atmo --rendering-platform=vulkan --gpu-validation
 ```
 
-- Vulkan needs a Vulkan 1.3 driver with dynamic rendering, synchronization2 and descriptor indexing. If none is found, the engine falls back to the default platform.
+The game, the UI and the editor are all drawn by the RenderingServer. A macOS build without the Vulkan platform therefore opens an empty window until the Metal platform lands; build with `xmake f --rendering_vulkan=y` (below) to work on macOS in the meantime.
+
+- Vulkan needs a Vulkan 1.3 driver with dynamic rendering, synchronization2 and descriptor indexing.
 - The Vulkan platform is built by default on Windows and Linux. On macOS it is opt-in, because it needs MoltenVK (a long first build that requires Xcode) and Metal will be the macOS backend: run `xmake f --rendering_vulkan=y` once. The build then copies `libMoltenVK.dylib` next to the binary. A Vulkan loader installed on the system (for example from the Vulkan SDK) is used first, which is what makes `--gpu-validation` work.
 - Do not commit the `xmake-requires.lock` changes that `--rendering_vulkan=y` causes on macOS: the lock file matches the default configuration of each platform.
 - `--gpu-validation` needs the Khronos validation layer (`VK_LAYER_KHRONOS_validation`) to be installed.

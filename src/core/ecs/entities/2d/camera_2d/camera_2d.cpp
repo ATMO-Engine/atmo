@@ -57,7 +57,8 @@ namespace atmo::core::ecs::entities
                 ComputeCanvasView(mode, { static_cast<float>(design.x), static_cast<float>(design.y) }, ctx->viewport_size, ctx->viewport_dpi, camera);
 
             auto &server = server::rendering::RenderingServer::Instance();
-            server.viewportSetCanvasTransform(ctx->viewport, view.transform);
+            server.viewportSetCanvasTransform(
+                ctx->viewport, ctx->is_editor_isolated ? server::rendering::Affine2d::Scaling(ctx->viewport_dpi) * view.transform : view.transform);
             server.viewportSetContentRect(ctx->viewport, view.content);
         });
 

@@ -480,7 +480,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIFileExplorer::draw(ClaySdL3RendererData *) {}
+    void UIFileExplorer::draw() {}
 
     UITextInput UIFileExplorer::getAddInput() const
     {

@@ -7,15 +7,21 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <functional>
+#include <iterator>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include <clay.h>
 
 #include "SDL3/SDL.h"
 #include "SDL3_image/SDL_image.h"
+#include "core/resource/font.hpp"
+#include "impl/clay_canvas_renderer.hpp"
 #include "offscreen_video.hpp"
 #include "server/rendering/api/vulkan/vulkan_platform.hpp"
 #include "server/rendering/rendering_server.hpp"
@@ -341,6 +347,84 @@ TEST_CASE("letterbox bars use the border color and clip the canvas", "[rendering
 
     server.viewportFree(viewport);
     server.canvasFree(canvas);
+    REQUIRE(vulkan.validationErrors() == 0);
+}
+
+TEST_CASE("a Clay layout matches its golden image", "[rendering][vulkan][golden][ui]")
+{
+    VulkanServer vulkan;
+    REQUIRE_VULKAN_SERVER(vulkan);
+
+    RenderingServer &server = RenderingServer::Instance();
+    std::ifstream file("assets/fonts/Nunito/Nunito.ttf", std::ios::binary);
+    const std::vector<char> chars{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
+    REQUIRE_FALSE(chars.empty());
+    atmo::core::resource::Font font(server.fontCreate(std::as_bytes(std::span(chars)), "Nunito"));
+    REQUIRE(font.rid().isValid());
+    const TextureRid checker = server.texture2dCreate({ .size = { 16, 16 } }, Checker(16, 4));
+
+    const std::uint32_t memory_size = Clay_MinMemorySize();
+    void *memory = std::malloc(memory_size);
+    Clay_Context *previous = Clay_GetCurrentContext();
+    Clay_Initialize(Clay_CreateArenaWithCapacityAndMemory(memory_size, memory), { float(width), float(height) }, {});
+    Clay_SetMeasureTextFunction(atmo::impl::ClayMeasureText, nullptr);
+
+    const auto open = [](const Clay_ElementDeclaration &declaration) {
+        Clay__OpenElement();
+        Clay__ConfigureOpenElement(declaration);
+    };
+
+    Clay_BeginLayout();
+    open(
+        {
+            .id = CLAY_ID("Root"),
+            .layout = { .sizing = { CLAY_SIZING_GROW(0), CLAY_SIZING_GROW(0) },
+                        .padding = { 6, 6, 6, 6 },
+                        .childGap = 6,
+                        .layoutDirection = CLAY_TOP_TO_BOTTOM },
+            .backgroundColor = { 30, 34, 42, 255 },
+        });
+    open(
+        {
+            .id = CLAY_ID("Button"),
+            .layout = { .sizing = { CLAY_SIZING_FIXED(84), CLAY_SIZING_FIXED(30) }, .childAlignment = { CLAY_ALIGN_X_CENTER, CLAY_ALIGN_Y_CENTER } },
+            .backgroundColor = { 59, 130, 246, 255 },
+            .cornerRadius = { 10, 10, 10, 10 },
+            .border = { .color = { 255, 255, 255, 255 }, .width = { 2, 2, 2, 2, 0 } },
+        });
+    CLAY_TEXT(CLAY_STRING("Atmo"), CLAY_TEXT_CONFIG({ .userData = &font, .textColor = { 255, 255, 255, 255 }, .fontSize = 16 }));
+    Clay__CloseElement();
+    open(
+        {
+            .id = CLAY_ID("Clip"),
+            .layout = { .sizing = { CLAY_SIZING_FIXED(64), CLAY_SIZING_FIXED(30) } },
+            .backgroundColor = { 200, 60, 60, 255 },
+            .clip = { .horizontal = true, .vertical = true },
+        });
+    open(
+        {
+            .id = CLAY_ID("Image"),
+            .layout = { .sizing = { CLAY_SIZING_FIXED(48), CLAY_SIZING_FIXED(48) } },
+            .image = { .imageData = const_cast<TextureRid *>(&checker) },
+        });
+    Clay__CloseElement();
+    Clay__CloseElement();
+    Clay__CloseElement();
+    const Clay_RenderCommandArray commands = Clay_EndLayout();
+
+    CanvasCommandWriter writer;
+    atmo::impl::ClayRenderCommands(commands, writer, 1.0f);
+    REQUIRE(writer.size() == 8);
+    Clay_SetCurrentContext(previous);
+    std::free(memory);
+
+    const Image image = vulkan.render([&writer](RenderingServer &target, CanvasRid canvas) {
+        const CanvasItemRid item = target.canvasItemCreate(canvas);
+        target.canvasItemSetCommands(item, std::move(writer));
+    });
+
+    CheckGolden(image, "ui_basic");
+    server.textureFree(checker);
     REQUIRE(vulkan.validationErrors() == 0);
 }
 

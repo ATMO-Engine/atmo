@@ -156,6 +156,7 @@ namespace atmo::server::rendering
         std::uint32_t max_push_constant_size = 0;
         std::uint32_t frames_in_flight = 1;
         bool presentation = false;
+        bool software_device = false;
     };
 
     struct Region2i {

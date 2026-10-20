@@ -95,6 +95,36 @@ namespace atmo::server::rendering
         bool repeat = false;
     };
 
+    struct RectStyle {
+        std::array<float, 4> corner_radii{};
+        std::array<float, 4> border_widths{};
+        ColorRgba border_color = white;
+
+        [[nodiscard]] constexpr bool isPlain() const noexcept
+        {
+            for (std::size_t i = 0; i < 4; ++i)
+                if (corner_radii[i] > 0.0f || border_widths[i] > 0.0f)
+                    return false;
+            return true;
+        }
+    };
+
+    struct FontStyle {
+        bool bold = false;
+        bool italic = false;
+
+        constexpr bool operator==(const FontStyle &) const noexcept = default;
+    };
+
+    struct TextOptions {
+        core::types::Vector2 position{ 0.0f, 0.0f };
+        float size = 16.0f;
+        FontStyle style;
+        ColorRgba color = white;
+        float wrap_width = 0.0f;
+        float raster_scale = 1.0f;
+    };
+
     struct Texture2dDesc {
         core::types::Vector2i size{};
         std::string debug_name;
@@ -119,6 +149,7 @@ namespace atmo::server::rendering
         Null,
         Vulkan,
         Metal,
+        D3D12,
     };
 
     enum class ShaderTarget : std::uint8_t {
@@ -136,7 +167,6 @@ namespace atmo::server::rendering
         std::optional<PlatformKind> platform;
         bool inline_commands = false;
         bool render_thread = true;
-        bool legacy_sdl_renderer = true;
         bool gpu_validation = false;
     };
 

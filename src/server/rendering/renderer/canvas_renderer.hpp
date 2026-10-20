@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -21,6 +22,9 @@ namespace atmo::server::rendering
             std::array<float, 4> uv_max;
             ColorRgba color;
             std::array<std::uint32_t, 4> resources;
+            std::array<float, 4> corner_radii;
+            std::array<float, 4> border_widths;
+            ColorRgba border_color;
         };
 
         struct alignas(16) Vertex {
@@ -50,9 +54,11 @@ namespace atmo::server::rendering
         [[nodiscard]] bool isAvailable() const noexcept;
 
         void beginFrame();
-        std::size_t prepare(
-            CanvasStorage &storage, CanvasRid canvas, const Affine2d &view, core::types::Vector2i target_size, FrameStats &stats,
-            const std::optional<Region2i> &content = std::nullopt, const ColorRgba &content_color = white);
+        std::size_t beginJob(
+            core::types::Vector2i target_size, FrameStats &stats, const std::optional<Region2i> &content = std::nullopt,
+            const ColorRgba &content_color = white);
+        void addCanvas(std::size_t job, CanvasStorage &storage, CanvasRid canvas, const Affine2d &view, bool clip_to_content, FrameStats &stats);
+        void endJob(std::size_t job, FrameStats &stats);
         void upload();
         void record(std::size_t job, CommandList &list, TextureFormat format);
 
@@ -62,6 +68,9 @@ namespace atmo::server::rendering
     private:
         struct Job {
             core::types::Vector2i target_size{};
+            Region2i full;
+            Region2i content;
+            bool ready = false;
             std::vector<Batch> batches;
             std::vector<TextureHandle> sampled;
         };
@@ -86,7 +95,7 @@ namespace atmo::server::rendering
 
         void pushQuad(
             Job &job, const Affine2d &transform, std::array<float, 4> uv, const ColorRgba &color, std::uint32_t texture, std::uint32_t sampler,
-            const Region2i &scissor, FrameStats &stats);
+            const Region2i &scissor, FrameStats &stats, const RectStyle *style = nullptr, core::types::Vector2 size = {});
         void pushTriangles(Job &job, std::span<const std::array<float, 4>> positions_uv, std::span<const ColorRgba> colors, const Region2i &scissor);
 
         RenderingPlatform &m_platform;
@@ -99,6 +108,8 @@ namespace atmo::server::rendering
         std::vector<GpuBuffer> m_vertex_buffers;
 
         std::vector<Job> m_jobs;
+        std::vector<Region2i> m_clips;
+        std::unordered_set<std::uint32_t> m_sampled;
         std::vector<Instance> m_instances;
         std::vector<Vertex> m_vertices;
         std::uint64_t m_frame = 0;

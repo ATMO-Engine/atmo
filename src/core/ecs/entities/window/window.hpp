@@ -4,7 +4,6 @@
 #include <optional>
 #include <string>
 
-#include "SDL3/SDL_render.h"
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -20,8 +19,9 @@ namespace atmo::core::components
         types::Vector2i size;
         types::Vector2 dpi_scale;
         server::rendering::WindowRid rid;
-        SDL_Window *window = nullptr;
-        ClaySdL3RendererData renderer_data{};
+        server::rendering::CanvasRid ui_canvas;
+        server::rendering::CanvasItemRid ui_item;
+        Clay_Context *clay_context = nullptr;
         Clay_Arena clay_arena{};
         std::optional<std::function<void()>> close_callback;
         bool headless = false;
@@ -59,14 +59,11 @@ namespace atmo::core::ecs::entities
 
         types::Vector2 getDPIScale() const noexcept;
 
-        SDL_Renderer *getRenderer() const noexcept;
-
         void onClose(std::function<void()> callback);
 
         void primeScrollContainers();
 
     private:
-        void beginDraw(components::Window &window);
         void draw(components::Window &window);
 
         Clay_ElementId getIdForEntity(const Entity &e);

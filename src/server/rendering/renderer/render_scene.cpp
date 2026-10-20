@@ -1,7 +1,9 @@
 #include "render_scene.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <exception>
+#include <iterator>
 #include <stdexcept>
 
 #include "spdlog/spdlog.h"
@@ -128,6 +130,22 @@ namespace atmo::server::rendering
             target->canvas = canvas;
     }
 
+    void RenderScene::viewportAttachCanvas(ViewportRid rid, CanvasRid canvas, int layer)
+    {
+        Viewport *target = viewport(rid);
+        if (!target)
+            return;
+        std::erase_if(target->layers, [canvas](const CanvasLayer &entry) { return entry.canvas == canvas; });
+        auto position = std::ranges::upper_bound(target->layers, layer, {}, &CanvasLayer::layer);
+        target->layers.insert(position, { .canvas = canvas, .layer = layer });
+    }
+
+    void RenderScene::viewportDetachCanvas(ViewportRid rid, CanvasRid canvas)
+    {
+        if (Viewport *target = viewport(rid))
+            std::erase_if(target->layers, [canvas](const CanvasLayer &entry) { return entry.canvas == canvas; });
+    }
+
     void RenderScene::viewportSetCanvasTransform(ViewportRid rid, const Affine2d &transform)
     {
         if (Viewport *target = viewport(rid))
@@ -173,11 +191,18 @@ namespace atmo::server::rendering
                 Region2i{ .x = left, .y = top, .width = static_cast<int>(std::lround(max.x)) - left, .height = static_cast<int>(std::lround(max.y)) - top };
         }
 
+        const std::size_t job = m_canvas.beginJob(size, stats, content, target.clear);
+        auto layer = target.layers.begin();
+        for (; layer != target.layers.end() && layer->layer < 0; ++layer) m_canvas.addCanvas(job, m_storage, layer->canvas, to_pixels, false, stats);
+        m_canvas.addCanvas(job, m_storage, target.canvas, to_pixels * target.transform, true, stats);
+        for (; layer != target.layers.end(); ++layer) m_canvas.addCanvas(job, m_storage, layer->canvas, to_pixels, false, stats);
+        m_canvas.endJob(job, stats);
+
         m_passes.push_back(
             {
                 .name = std::move(name),
                 .attachment = { .texture = attachment, .load = LoadOp::Clear, .store = StoreOp::Store, .clear_color = content ? target.border : target.clear },
-                .job = m_canvas.prepare(m_storage, target.canvas, to_pixels * target.transform, size, stats, content, target.clear),
+                .job = job,
                 .format = format,
             });
     }
@@ -302,6 +327,23 @@ namespace atmo::server::rendering
     {
         if (CanvasItemData *data = item(rid))
             data->commands.push_back(std::move(command));
+    }
+
+    void RenderScene::canvasItemAddCommands(CanvasItemRid rid, std::vector<CanvasCommand> commands)
+    {
+        CanvasItemData *data = item(rid);
+        if (!data)
+            return;
+        if (data->commands.empty())
+            data->commands = std::move(commands);
+        else
+            data->commands.insert(data->commands.end(), std::make_move_iterator(commands.begin()), std::make_move_iterator(commands.end()));
+    }
+
+    void RenderScene::canvasItemSetCommands(CanvasItemRid rid, std::vector<CanvasCommand> commands)
+    {
+        if (CanvasItemData *data = item(rid))
+            data->commands = std::move(commands);
     }
 
     void RenderScene::canvasItemFree(CanvasItemRid rid)

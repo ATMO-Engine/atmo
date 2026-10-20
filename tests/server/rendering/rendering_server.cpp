@@ -15,7 +15,7 @@ using namespace atmo::server::rendering;
 namespace
 {
     struct Server {
-        explicit Server(RenderingSettings settings = { .render_thread = false, .legacy_sdl_renderer = false })
+        explicit Server(RenderingSettings settings = { .platform = PlatformKind::Null, .render_thread = false })
         {
             REQUIRE(RenderingServer::Instance().init(settings));
         }
@@ -88,7 +88,7 @@ TEST_CASE("window swapchains follow the command queue", "[rendering][server][win
     WindowRid window = server->windowCreate({ .title = "test", .size = { 320, 200 } });
     REQUIRE(window.isValid());
     REQUIRE(server->windowIsAlive(window));
-    REQUIRE(server->legacySdlWindow(window) != nullptr);
+    REQUIRE(server->windowGetSdlWindow(window) != nullptr);
     REQUIRE(server->windowGetSize(window).x == 320);
     REQUIRE(server->windowGetSize(window).y == 200);
 
@@ -112,7 +112,7 @@ TEST_CASE("inline mode creates swapchains immediately", "[rendering][server][win
     if (!video.available)
         SKIP("SDL offscreen video driver unavailable: " << SDL_GetError());
 
-    Server server({ .inline_commands = true, .render_thread = false, .legacy_sdl_renderer = false });
+    Server server({ .platform = PlatformKind::Null, .inline_commands = true, .render_thread = false });
 
     WindowRid window = server->windowCreate({ .title = "test", .size = { 128, 128 } });
     REQUIRE(window.isValid());
@@ -138,7 +138,7 @@ TEST_CASE("stale window RIDs are rejected", "[rendering][server][window]")
 
     REQUIRE_FALSE(server->windowSetTitle(first, "stale"));
     REQUIRE_FALSE(server->windowSetSize(first, { 32, 32 }));
-    REQUIRE(server->legacySdlWindow(first) == nullptr);
+    REQUIRE(server->windowGetSdlWindow(first) == nullptr);
     server->windowFree(first);
 
     REQUIRE(server->windowIsAlive(second));
@@ -252,14 +252,16 @@ TEST_CASE("each presentable window is cleared and presented once per frame", "[r
     REQUIRE(server.null().presentCount() == 4);
 }
 
-TEST_CASE("the legacy renderer is only offered when the platform does not present", "[rendering][server]")
+TEST_CASE("the SDL window handle is only given for live windows", "[rendering][server][window]")
 {
-    {
-        Server server({ .render_thread = false, .legacy_sdl_renderer = true });
-        REQUIRE(server->legacyRendererEnabled());
-    }
-    {
-        Server server({ .render_thread = false, .legacy_sdl_renderer = false });
-        REQUIRE_FALSE(server->legacyRendererEnabled());
-    }
+    OffscreenVideo video;
+    if (!video.available)
+        SKIP("SDL offscreen video driver unavailable: " << SDL_GetError());
+
+    Server server;
+
+    const WindowRid window = server->windowCreate({ .title = "handle", .size = { 32, 32 } });
+    REQUIRE(server->windowGetSdlWindow(window) != nullptr);
+    server->windowFree(window);
+    REQUIRE(server->windowGetSdlWindow(window) == nullptr);
 }

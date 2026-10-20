@@ -1,21 +1,19 @@
 #include "editor_scene_context.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
 
-#include "SDL3/SDL_pixels.h"
-#include "SDL3/SDL_render.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/scene/scene.hpp"
-#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
-#include "core/resource/resource_manager.hpp"
 #include "glaze/glaze.hpp"
 #include "glaze/json/prettify.hpp"
 #include "project/project_manager.hpp"
@@ -24,27 +22,22 @@
 
 namespace atmo::editor
 {
+    namespace
+    {
+        constexpr int overlay_z_index = 1 << 21;
+    } // namespace
+
     EditorSceneContext::~EditorSceneContext()
     {
-        releaseGpuTextures();
-        destroyRenderTexture();
-
         auto &rendering_server = server::rendering::RenderingServer::Instance();
+        rendering_server.canvasItemFree(m_overlay);
         rendering_server.viewportFree(m_viewport);
         rendering_server.canvasFree(m_canvas);
     }
 
-    void EditorSceneContext::releaseGpuTextures()
+    void EditorSceneContext::init(core::types::Vector2 dpi_scale)
     {
-        m_world.each<core::components::UIImage>([](core::components::UIImage &image) { image.texture = nullptr; });
-
-        if (m_renderer)
-            core::resource::ResourceManager::GetInstance().releaseRenderer(m_renderer);
-    }
-
-    void EditorSceneContext::init(SDL_Renderer *renderer)
-    {
-        m_renderer = renderer;
+        m_dpi_scale = dpi_scale;
         m_width = project::ProjectManager::GetSettings().window.size.x;
         m_height = project::ProjectManager::GetSettings().window.size.y;
 
@@ -53,23 +46,22 @@ namespace atmo::editor
 
         core::components::register_core_components(m_world);
 
-        createRenderTexture(m_width, m_height);
-
         auto &rendering_server = server::rendering::RenderingServer::Instance();
         m_canvas = rendering_server.canvasCreate();
         m_viewport = rendering_server.viewportCreate();
-        rendering_server.viewportSetSize(m_viewport, { m_width, m_height });
+        m_overlay = rendering_server.canvasItemCreate(m_canvas);
+        rendering_server.canvasItemSetZIndex(m_overlay, overlay_z_index);
         rendering_server.viewportSetCanvas(m_viewport, m_canvas);
         rendering_server.viewportSetClearColor(m_viewport, project::ProjectManager::GetSettings().window.background_color);
 
         m_world.set<core::components::WorldContext>({
             .is_editor_isolated = true,
-            .renderer = m_renderer,
-            .render_target = m_render_texture,
             .canvas = m_canvas,
             .viewport = m_viewport,
             .viewport_size = { static_cast<float>(m_width), static_cast<float>(m_height) },
+            .viewport_dpi = m_dpi_scale,
         });
+        applyViewportSize();
 
         core::ecs::EntityRegistry::RegisterSystemsForWorld(&m_world);
 
@@ -88,37 +80,27 @@ namespace atmo::editor
         spdlog::debug("EditorSceneContext: initialized isolated world ({}x{})", m_width, m_height);
     }
 
-    void EditorSceneContext::tick(float delta_time, SDL_Renderer *renderer)
+    void EditorSceneContext::tick(float delta_time)
     {
-        if (!m_ready || !renderer || !m_render_texture)
+        if (!m_ready)
             return;
 
-        if (renderer != m_renderer) {
-            releaseGpuTextures();
-            m_renderer = renderer;
-            auto *ctx = m_world.try_get_mut<core::components::WorldContext>();
-            if (ctx)
-                ctx->renderer = m_renderer;
-        }
-
-        float r, g, b, a;
-        SDL_GetRenderDrawColorFloat(m_renderer, &r, &g, &b, &a);
-        SDL_BlendMode blend;
-        SDL_GetRenderDrawBlendMode(m_renderer, &blend);
-
-        SDL_SetRenderTarget(m_renderer, m_render_texture);
-        SDL_Color bg_color = project::ProjectManager::GetSettings().window.background_color.toInt<SDL_Color>();
-        SDL_SetRenderDrawColor(m_renderer, bg_color.r, bg_color.g, bg_color.b, 255);
-        SDL_RenderClear(m_renderer);
-
         m_world.progress(delta_time);
-
         drawOverlays();
+    }
 
-        SDL_SetRenderTarget(m_renderer, nullptr);
+    void EditorSceneContext::applyViewportSize()
+    {
+        const core::types::Vector2i pixels{
+            std::max(1, static_cast<int>(std::lround(static_cast<float>(m_width) * m_dpi_scale.x))),
+            std::max(1, static_cast<int>(std::lround(static_cast<float>(m_height) * m_dpi_scale.y))),
+        };
+        server::rendering::RenderingServer::Instance().viewportSetSize(m_viewport, pixels);
 
-        SDL_SetRenderDrawColorFloat(m_renderer, r, g, b, a);
-        SDL_SetRenderDrawBlendMode(m_renderer, blend);
+        if (auto *ctx = m_world.try_get_mut<core::components::WorldContext>()) {
+            ctx->viewport_size = { static_cast<float>(m_width), static_cast<float>(m_height) };
+            ctx->viewport_dpi = m_dpi_scale;
+        }
     }
 
     void EditorSceneContext::resize(int width, int height)
@@ -130,31 +112,20 @@ namespace atmo::editor
 
         m_width = width;
         m_height = height;
-        destroyRenderTexture();
-        createRenderTexture(width, height);
-
-        server::rendering::RenderingServer::Instance().viewportSetSize(m_viewport, { width, height });
-
-        auto *ctx = m_world.try_get_mut<core::components::WorldContext>();
-        if (ctx) {
-            ctx->render_target = m_render_texture;
-            ctx->viewport_size = { static_cast<float>(width), static_cast<float>(height) };
-        }
+        applyViewportSize();
     }
 
-    void EditorSceneContext::createRenderTexture(int width, int height)
+    void EditorSceneContext::setDpiScale(core::types::Vector2 dpi_scale)
     {
-        m_render_texture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, width, height);
-        if (!m_render_texture)
-            spdlog::error("EditorSceneContext: SDL_CreateTexture failed: {}", SDL_GetError());
+        if (dpi_scale.x == m_dpi_scale.x && dpi_scale.y == m_dpi_scale.y)
+            return;
+        m_dpi_scale = dpi_scale;
+        applyViewportSize();
     }
 
-    void EditorSceneContext::destroyRenderTexture()
+    server::rendering::TextureRid EditorSceneContext::getViewportTexture() const
     {
-        if (m_render_texture) {
-            SDL_DestroyTexture(m_render_texture);
-            m_render_texture = nullptr;
-        }
+        return server::rendering::RenderingServer::Instance().viewportGetTexture(m_viewport);
     }
 
     std::string EditorSceneContext::saveSceneToJson() const
@@ -243,34 +214,21 @@ namespace atmo::editor
 
     void EditorSceneContext::drawOverlays()
     {
-        if (!m_renderer)
-            return;
-
-        const float z = m_cam_zoom;
-        const auto &cam_pos = m_cam_position;
-        const float hw = static_cast<float>(m_width) * 0.5f;
-        const float hh = static_cast<float>(m_height) * 0.5f;
-
-        // Screen-space position of the world origin (0, 0).
-        const float ox = -cam_pos.x * z + hw;
-        const float oy = -cam_pos.y * z + hh;
-
-        SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
-
-        // Canvas bounds — outline of the game window size from project settings.
+        const float pixel = 1.0f / m_cam_zoom;
+        const core::types::Vector2 top_left = screenToWorld({ 0.0f, 0.0f });
+        const core::types::Vector2 bottom_right = screenToWorld({ static_cast<float>(m_width), static_cast<float>(m_height) });
         const auto &win_size = project::ProjectManager::GetSettings().window.size;
-        SDL_FRect canvas{ ox, oy, static_cast<float>(win_size.x) * z, static_cast<float>(win_size.y) * z };
-        SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 120);
-        SDL_RenderRect(m_renderer, &canvas);
+        const float window_w = static_cast<float>(win_size.x);
+        const float window_h = static_cast<float>(win_size.y);
 
-        // X axis — red horizontal line at world y = 0.
-        SDL_SetRenderDrawColor(m_renderer, 220, 60, 60, 200);
-        SDL_RenderLine(m_renderer, 0.f, oy, static_cast<float>(m_width), oy);
+        const std::array<core::types::Vector2, 4> bounds{ { { 0.0f, 0.0f }, { window_w, 0.0f }, { window_w, window_h }, { 0.0f, window_h } } };
+        const std::array<core::types::Vector2, 2> x_axis{ { { top_left.x, 0.0f }, { bottom_right.x, 0.0f } } };
+        const std::array<core::types::Vector2, 2> y_axis{ { { 0.0f, top_left.y }, { 0.0f, bottom_right.y } } };
 
-        // Y axis — green vertical line at world x = 0.
-        SDL_SetRenderDrawColor(m_renderer, 60, 200, 60, 200);
-        SDL_RenderLine(m_renderer, ox, 0.f, ox, static_cast<float>(m_height));
-
-        SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_NONE);
+        server::rendering::CanvasCommandWriter writer;
+        writer.addPolyline(bounds, core::types::Color(1.0f, 1.0f, 1.0f, 120.0f / 255.0f), pixel, true);
+        writer.addPolyline(x_axis, core::types::Color(220.0f / 255.0f, 60.0f / 255.0f, 60.0f / 255.0f, 200.0f / 255.0f), pixel);
+        writer.addPolyline(y_axis, core::types::Color(60.0f / 255.0f, 200.0f / 255.0f, 60.0f / 255.0f, 200.0f / 255.0f), pixel);
+        server::rendering::RenderingServer::Instance().canvasItemSetCommands(m_overlay, std::move(writer));
     }
 } // namespace atmo::editor

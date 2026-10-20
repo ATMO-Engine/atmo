@@ -3,49 +3,16 @@
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
-#include <variant>
 #include <vector>
 
 #include "core/types.hpp"
+#include "server/rendering/canvas_commands.hpp"
 #include "server/rendering/platform/rendering_platform.hpp"
 #include "server/rendering/rid.hpp"
 #include "server/rendering/types.hpp"
 
 namespace atmo::server::rendering
 {
-    struct CanvasRectCommand {
-        Rect2 rect;
-        ColorRgba color = white;
-    };
-
-    struct CanvasTextureRectCommand {
-        Rect2 rect;
-        TextureRid texture;
-        TextureRectOptions options;
-    };
-
-    struct CanvasPolygonCommand {
-        std::vector<core::types::Vector2> points;
-        std::vector<ColorRgba> colors;
-    };
-
-    struct CanvasPolylineCommand {
-        std::vector<core::types::Vector2> points;
-        ColorRgba color = white;
-        float width = 1.0f;
-        bool closed = false;
-    };
-
-    struct CanvasClipPushCommand {
-        Rect2 rect;
-    };
-
-    struct CanvasClipPopCommand {
-    };
-
-    using CanvasCommand =
-        std::variant<CanvasRectCommand, CanvasTextureRectCommand, CanvasPolygonCommand, CanvasPolylineCommand, CanvasClipPushCommand, CanvasClipPopCommand>;
-
     struct CanvasItemData {
         CanvasRid canvas;
         CanvasItemRid parent;

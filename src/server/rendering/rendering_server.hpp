@@ -7,6 +7,7 @@
 #include <optional>
 #include <source_location>
 #include <span>
+#include <string>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
@@ -14,7 +15,10 @@
 #include <vector>
 
 #include "SDL3/SDL_video.h"
+
+struct TTF_Font;
 #include "core/types.hpp"
+#include "server/rendering/canvas_commands.hpp"
 #include "server/rendering/command_queue.hpp"
 #include "server/rendering/platform/rendering_platform.hpp"
 #include "server/rendering/render_thread.hpp"
@@ -26,6 +30,7 @@
 namespace atmo::server::rendering
 {
     class RenderScene;
+    class FontSystem;
 
     class RenderingServer
     {
@@ -57,6 +62,7 @@ namespace atmo::server::rendering
         [[nodiscard]] core::types::Vector2i windowGetSize(WindowRid window) const;
         [[nodiscard]] core::types::Vector2 windowGetDpiScale(WindowRid window) const;
         [[nodiscard]] ViewportRid windowGetViewport(WindowRid window) const;
+        [[nodiscard]] SDL_Window *windowGetSdlWindow(WindowRid window) const;
 
         TextureRid texture2dCreate(const Texture2dDesc &desc, std::span<const std::byte> pixels);
         void texture2dUpdate(TextureRid texture, const Region2i &region, std::span<const std::byte> pixels);
@@ -67,6 +73,8 @@ namespace atmo::server::rendering
         ViewportRid viewportCreate();
         void viewportSetSize(ViewportRid viewport, core::types::Vector2i size);
         void viewportSetCanvas(ViewportRid viewport, CanvasRid canvas);
+        void viewportAttachCanvas(ViewportRid viewport, CanvasRid canvas, int layer);
+        void viewportDetachCanvas(ViewportRid viewport, CanvasRid canvas);
         void viewportSetCanvasTransform(ViewportRid viewport, const Affine2d &transform);
         void viewportSetClearColor(ViewportRid viewport, const core::types::Color &color);
         void viewportSetActive(ViewportRid viewport, bool active);
@@ -86,17 +94,25 @@ namespace atmo::server::rendering
         void canvasItemSetVisible(CanvasItemRid item, bool visible);
         void canvasItemSetModulate(CanvasItemRid item, const core::types::Color &color);
         void canvasItemClear(CanvasItemRid item);
-        void canvasItemAddRect(CanvasItemRid item, const Rect2 &rect, const core::types::Color &color);
+        void canvasItemAddRect(CanvasItemRid item, const Rect2 &rect, const core::types::Color &color, const RectStyle &style = {});
         void canvasItemAddTextureRect(CanvasItemRid item, const Rect2 &rect, TextureRid texture, const TextureRectOptions &options = {});
         void canvasItemAddPolygon(CanvasItemRid item, std::span<const core::types::Vector2> points, std::span<const core::types::Color> colors);
         void canvasItemAddPolyline(
             CanvasItemRid item, std::span<const core::types::Vector2> points, const core::types::Color &color, float width = 1.0f, bool closed = false);
+        void canvasItemAddText(CanvasItemRid item, FontRid font, std::string_view utf8, const TextOptions &options);
+        void canvasItemAddCommands(CanvasItemRid item, CanvasCommandWriter &&writer);
+        void canvasItemSetCommands(CanvasItemRid item, CanvasCommandWriter &&writer);
         void canvasItemPushClip(CanvasItemRid item, const Rect2 &clip);
         void canvasItemPopClip(CanvasItemRid item);
         void canvasItemFree(CanvasItemRid item);
 
-        [[nodiscard]] bool legacyRendererEnabled() const noexcept;
-        [[nodiscard]] SDL_Window *legacySdlWindow(WindowRid window) const;
+        FontRid fontCreate(std::span<const std::byte> data, std::string_view debug_name = {});
+        void fontFree(FontRid font);
+        [[nodiscard]] bool fontIsAlive(FontRid font) const;
+        [[nodiscard]] core::types::Vector2 fontMeasureText(FontRid font, std::string_view utf8, float size, FontStyle style = {}, float wrap_width = 0.0f);
+        [[nodiscard]] float fontGetLineHeight(FontRid font, float size, FontStyle style = {});
+        [[nodiscard]] TTF_Font *fontGetTtfFont(FontRid font, float size, FontStyle style = {}, float raster_scale = 1.0f);
+        [[nodiscard]] FontSystem &fonts();
 
         [[nodiscard]] RenderingPlatform &platform();
         [[nodiscard]] std::size_t pendingCommandCount() const noexcept;
@@ -118,6 +134,7 @@ namespace atmo::server::rendering
 
         std::unique_ptr<RenderingPlatform> m_platform;
         std::unique_ptr<RenderScene> m_scene;
+        std::unique_ptr<FontSystem> m_fonts;
         WindowSystem m_windows;
         CommandQueue m_commands;
         RenderThread m_render_thread;
@@ -143,7 +160,6 @@ namespace atmo::server::rendering
         std::uint64_t m_submitted_frames = 0;
         std::uint64_t m_completed_frames = 0;
         std::thread::id m_main_thread;
-        bool m_legacy_renderer = true;
         bool m_initialized = false;
     };
 } // namespace atmo::server::rendering

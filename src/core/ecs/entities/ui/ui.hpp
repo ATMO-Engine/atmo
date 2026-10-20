@@ -44,8 +44,8 @@ namespace atmo::core::ecs::entities
             return "UI";
         }
 
-        void internalDraw(ClaySdL3RendererData *data);
-        virtual void draw(ClaySdL3RendererData *data);
+        void internalDraw();
+        virtual void draw();
 
         std::shared_ptr<entities::Window> getWindow() const;
 

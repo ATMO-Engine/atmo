@@ -34,6 +34,8 @@ namespace atmo::server::rendering
         void viewportCreate(ViewportRid rid, TextureRid texture);
         void viewportSetSize(ViewportRid rid, core::types::Vector2i size);
         void viewportSetCanvas(ViewportRid rid, CanvasRid canvas);
+        void viewportAttachCanvas(ViewportRid rid, CanvasRid canvas, int layer);
+        void viewportDetachCanvas(ViewportRid rid, CanvasRid canvas);
         void viewportSetCanvasTransform(ViewportRid rid, const Affine2d &transform);
         void viewportSetClearColor(ViewportRid rid, const ColorRgba &color);
         void viewportSetActive(ViewportRid rid, bool active);
@@ -56,6 +58,8 @@ namespace atmo::server::rendering
         void canvasItemSetModulate(CanvasItemRid rid, const ColorRgba &color);
         void canvasItemClear(CanvasItemRid rid);
         void canvasItemAddCommand(CanvasItemRid rid, CanvasCommand command);
+        void canvasItemAddCommands(CanvasItemRid rid, std::vector<CanvasCommand> commands);
+        void canvasItemSetCommands(CanvasItemRid rid, std::vector<CanvasCommand> commands);
         void canvasItemFree(CanvasItemRid rid);
 
         void render(FrameStats &stats);
@@ -66,9 +70,15 @@ namespace atmo::server::rendering
         [[nodiscard]] const CanvasRenderer &canvasRenderer() const noexcept;
 
     private:
+        struct CanvasLayer {
+            CanvasRid canvas;
+            int layer = 0;
+        };
+
         struct Viewport {
             core::types::Vector2i size{};
             CanvasRid canvas;
+            std::vector<CanvasLayer> layers;
             Affine2d transform;
             ColorRgba clear{ 0.0f, 0.0f, 0.0f, 1.0f };
             ColorRgba border{ 0.0f, 0.0f, 0.0f, 1.0f };

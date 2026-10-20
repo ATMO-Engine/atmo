@@ -10,16 +10,11 @@
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "impl/profiler.hpp"
 #include "server/rendering/renderer/render_scene.hpp"
+#include "server/rendering/text/font_system.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::server::rendering
 {
-#if defined(__APPLE__)
-    static constexpr SDL_WindowFlags legacy_renderer_window_flags = SDL_WINDOW_METAL;
-#else
-    static constexpr SDL_WindowFlags legacy_renderer_window_flags = SDL_WINDOW_VULKAN;
-#endif
-
     namespace
     {
         ColorRgba ToRgba(const core::types::Color &color) noexcept
@@ -65,7 +60,6 @@ namespace atmo::server::rendering
         }
 
         m_main_thread = std::this_thread::get_id();
-        m_legacy_renderer = settings.legacy_sdl_renderer && !m_platform->caps().presentation;
         m_scene = std::make_unique<RenderScene>(*m_platform);
         m_commands.setMode(settings.inline_commands ? CommandQueue::Mode::Inline : CommandQueue::Mode::Deferred);
         m_submitted_frames = 0;
@@ -73,6 +67,7 @@ namespace atmo::server::rendering
         m_stats = {};
         m_render_stats = {};
         m_initialized = true;
+        m_fonts = std::make_unique<FontSystem>(*this);
 
         if (settings.render_thread && !settings.inline_commands)
             m_render_thread.start([this](CommandQueue::Batch &batch) { renderFrame(&batch); });
@@ -90,6 +85,8 @@ namespace atmo::server::rendering
         if (!m_initialized)
             return;
         assertMainThread();
+
+        m_fonts.reset();
 
         if (m_render_thread.running()) {
             m_render_thread.wait();
@@ -223,6 +220,8 @@ namespace atmo::server::rendering
         assertMainThread();
         ATMO_PROFILE_SCOPE_N("RenderingServer::sync");
 
+        m_fonts->flush();
+
         if (m_render_thread.running()) {
             m_render_thread.wait();
             completeFrames();
@@ -266,11 +265,7 @@ namespace atmo::server::rendering
 
         WindowRid window = m_window_rids.allocate();
 
-        SDL_WindowFlags flags = m_platform->windowFlags();
-        if (m_legacy_renderer)
-            flags |= legacy_renderer_window_flags;
-
-        if (!m_windows.create(window, desc, flags, UsesMetalView(*m_platform))) {
+        if (!m_windows.create(window, desc, m_platform->windowFlags(), UsesMetalView(*m_platform))) {
             m_window_rids.release(window);
             return {};
         }
@@ -362,6 +357,12 @@ namespace atmo::server::rendering
         assertMainThread();
         auto it = m_window_viewports.find(window.raw());
         return it == m_window_viewports.end() || !m_window_rids.isAlive(window) ? ViewportRid{} : it->second;
+    }
+
+    SDL_Window *RenderingServer::windowGetSdlWindow(WindowRid window) const
+    {
+        assertMainThread();
+        return m_window_rids.isAlive(window) ? m_windows.sdlWindow(window) : nullptr;
     }
 
     TextureRid RenderingServer::texture2dCreate(const Texture2dDesc &desc, std::span<const std::byte> pixels)
@@ -476,6 +477,18 @@ namespace atmo::server::rendering
     {
         if (alive(m_viewport_rids, viewport, "viewportSetCanvas"))
             enqueue([this, viewport, canvas] { m_scene->viewportSetCanvas(viewport, canvas); });
+    }
+
+    void RenderingServer::viewportAttachCanvas(ViewportRid viewport, CanvasRid canvas, int layer)
+    {
+        if (alive(m_viewport_rids, viewport, "viewportAttachCanvas"))
+            enqueue([this, viewport, canvas, layer] { m_scene->viewportAttachCanvas(viewport, canvas, layer); });
+    }
+
+    void RenderingServer::viewportDetachCanvas(ViewportRid viewport, CanvasRid canvas)
+    {
+        if (alive(m_viewport_rids, viewport, "viewportDetachCanvas"))
+            enqueue([this, viewport, canvas] { m_scene->viewportDetachCanvas(viewport, canvas); });
     }
 
     void RenderingServer::viewportSetCanvasTransform(ViewportRid viewport, const Affine2d &transform)
@@ -621,10 +634,12 @@ namespace atmo::server::rendering
             enqueue([this, item] { m_scene->canvasItemClear(item); });
     }
 
-    void RenderingServer::canvasItemAddRect(CanvasItemRid item, const Rect2 &rect, const core::types::Color &color)
+    void RenderingServer::canvasItemAddRect(CanvasItemRid item, const Rect2 &rect, const core::types::Color &color, const RectStyle &style)
     {
         if (alive(m_canvas_item_rids, item, "canvasItemAddRect"))
-            enqueue([this, item, command = CanvasRectCommand{ .rect = rect, .color = ToRgba(color) }] { m_scene->canvasItemAddCommand(item, command); });
+            enqueue([this, item, command = CanvasRectCommand{ .rect = rect, .color = ToRgba(color), .style = style }] {
+                m_scene->canvasItemAddCommand(item, command);
+            });
     }
 
     void RenderingServer::canvasItemAddTextureRect(CanvasItemRid item, const Rect2 &rect, TextureRid texture, const TextureRectOptions &options)
@@ -656,6 +671,28 @@ namespace atmo::server::rendering
         enqueue([this, item, command = std::move(command)]() mutable { m_scene->canvasItemAddCommand(item, std::move(command)); });
     }
 
+    void RenderingServer::canvasItemAddText(CanvasItemRid item, FontRid font, std::string_view utf8, const TextOptions &options)
+    {
+        if (!alive(m_canvas_item_rids, item, "canvasItemAddText"))
+            return;
+        CanvasCommandWriter writer;
+        writer.addText(font, utf8, options);
+        canvasItemAddCommands(item, std::move(writer));
+    }
+
+    void RenderingServer::canvasItemAddCommands(CanvasItemRid item, CanvasCommandWriter &&writer)
+    {
+        if (!alive(m_canvas_item_rids, item, "canvasItemAddCommands") || writer.empty())
+            return;
+        enqueue([this, item, commands = writer.take()]() mutable { m_scene->canvasItemAddCommands(item, std::move(commands)); });
+    }
+
+    void RenderingServer::canvasItemSetCommands(CanvasItemRid item, CanvasCommandWriter &&writer)
+    {
+        if (alive(m_canvas_item_rids, item, "canvasItemSetCommands"))
+            enqueue([this, item, commands = writer.take()]() mutable { m_scene->canvasItemSetCommands(item, std::move(commands)); });
+    }
+
     void RenderingServer::canvasItemPushClip(CanvasItemRid item, const Rect2 &clip)
     {
         if (alive(m_canvas_item_rids, item, "canvasItemPushClip"))
@@ -680,15 +717,63 @@ namespace atmo::server::rendering
         enqueue([this, item] { m_scene->canvasItemFree(item); });
     }
 
-    bool RenderingServer::legacyRendererEnabled() const noexcept
+    FontRid RenderingServer::fontCreate(std::span<const std::byte> data, std::string_view debug_name)
     {
-        return m_initialized && m_legacy_renderer;
+        if (!m_initialized) {
+            spdlog::error("fontCreate called before RenderingServer::init");
+            return {};
+        }
+        assertMainThread();
+        return m_fonts->create(data, debug_name);
     }
 
-    SDL_Window *RenderingServer::legacySdlWindow(WindowRid window) const
+    void RenderingServer::fontFree(FontRid font)
     {
+        if (!m_initialized || !font.isValid())
+            return;
         assertMainThread();
-        return m_windows.sdlWindow(window);
+        if (!m_fonts->isAlive(font)) {
+            spdlog::warn("fontFree: font RID {:#x} is not alive", font.raw());
+            return;
+        }
+        m_fonts->free(font);
+    }
+
+    bool RenderingServer::fontIsAlive(FontRid font) const
+    {
+        return m_initialized && m_fonts->isAlive(font);
+    }
+
+    core::types::Vector2 RenderingServer::fontMeasureText(FontRid font, std::string_view utf8, float size, FontStyle style, float wrap_width)
+    {
+        if (!m_initialized)
+            return { 0.0f, 0.0f };
+        assertMainThread();
+        return m_fonts->measure(font, utf8, size, style, wrap_width);
+    }
+
+    float RenderingServer::fontGetLineHeight(FontRid font, float size, FontStyle style)
+    {
+        if (!m_initialized)
+            return 0.0f;
+        assertMainThread();
+        return m_fonts->lineHeight(font, size, style);
+    }
+
+    TTF_Font *RenderingServer::fontGetTtfFont(FontRid font, float size, FontStyle style, float raster_scale)
+    {
+        if (!m_initialized)
+            return nullptr;
+        assertMainThread();
+        return m_fonts->face(font, size, style, raster_scale);
+    }
+
+    FontSystem &RenderingServer::fonts()
+    {
+        if (!m_fonts)
+            throw std::logic_error("RenderingServer is not initialized");
+        assertMainThread();
+        return *m_fonts;
     }
 
     RenderingPlatform &RenderingServer::platform()

@@ -223,8 +223,6 @@ TEST_CASE("the RenderingServer drives windows on the Vulkan platform", "[renderi
     if (server.platformKind() != PlatformKind::Vulkan)
         SKIP("No Vulkan 1.3 device with the required features");
 
-    REQUIRE_FALSE(server.legacyRendererEnabled());
-
     WindowRid window = server.windowCreate({ .title = "server", .size = { 96, 64 } });
     REQUIRE(window.isValid());
     for (int frame = 0; frame < 3; ++frame) server.sync();

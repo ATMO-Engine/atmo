@@ -33,14 +33,11 @@ namespace atmo::editor
         m_root_handle = container.getHandle();
 
         flecs::entity root = container.getHandle().world().lookup("_Root");
-        SDL_Renderer *renderer = nullptr;
-        if (root.is_valid() && root.has<core::components::Window>()) {
-            auto window = root.get_ref<core::components::Window>();
-            if (window)
-                renderer = window->renderer_data.renderer;
-        }
+        core::types::Vector2 dpi_scale{ 1.0f, 1.0f };
+        if (root.is_valid() && root.has<core::components::Window>())
+            dpi_scale = root.get<core::components::Window>().dpi_scale;
         m_scene_ctx = std::make_unique<EditorSceneContext>();
-        m_scene_ctx->init(renderer);
+        m_scene_ctx->init(dpi_scale);
 
         if (m_scene_ctx && m_scene_ctx->isReady()) {
             auto viewport_image = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
@@ -60,24 +57,18 @@ namespace atmo::editor
 
         core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>(
             [this, ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](core::event::events::ProgressTickEvent *evt) {
-                SDL_Renderer *renderer = nullptr;
                 if (handle.is_valid() && handle.has<core::components::Window>()) {
-                    auto window = handle.get_ref<core::components::Window>();
-                    if (window) {
-                        renderer = window->renderer_data.renderer;
+                    ctx->setDpiScale(handle.get<core::components::Window>().dpi_scale);
 
-                        if (vp_img.is_valid() && vp_img.has<core::components::UIImage>()) {
-                            auto img = vp_img.get_ref<core::components::UIImage>();
-                            const int w = static_cast<int>(img->rendered_size[0]);
-                            const int h = static_cast<int>(img->rendered_size[1]);
-                            if (w > 0 && h > 0) {
-                                ctx->resize(w, h);
-                                img->raw_texture = ctx->getViewportTexture();
-                            }
-                        }
-
-                        ctx->tick(evt->delta_time, renderer);
+                    if (vp_img.is_valid() && vp_img.has<core::components::UIImage>()) {
+                        const auto &img = vp_img.get<core::components::UIImage>();
+                        const int w = static_cast<int>(img.rendered_size.x);
+                        const int h = static_cast<int>(img.rendered_size.y);
+                        if (w > 0 && h > 0)
+                            ctx->resize(w, h);
                     }
+
+                    ctx->tick(evt->delta_time);
                 }
 
                 auto [scroll, scroll_dt] = core::InputManager::GetScrollDelta("ui_scroll");

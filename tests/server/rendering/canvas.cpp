@@ -16,7 +16,7 @@ using atmo::core::types::Vector2;
 namespace
 {
     struct CanvasFixture {
-        explicit CanvasFixture(RenderingSettings settings = { .render_thread = false, .legacy_sdl_renderer = false })
+        explicit CanvasFixture(RenderingSettings settings = { .platform = PlatformKind::Null, .render_thread = false })
         {
             REQUIRE(server.init(settings));
             canvas = server.canvasCreate();
@@ -202,7 +202,7 @@ TEST_CASE("texture readback reaches the callback after a frame", "[rendering][ca
 {
     for (bool threaded : { false, true }) {
         CAPTURE(threaded);
-        CanvasFixture f({ .render_thread = threaded, .legacy_sdl_renderer = false });
+        CanvasFixture f({ .platform = PlatformKind::Null, .render_thread = threaded });
         REQUIRE(f.server.renderThreadActive() == threaded);
 
         std::vector<std::byte> pixels(2 * 2 * 4);
@@ -222,7 +222,7 @@ TEST_CASE("texture readback reaches the callback after a frame", "[rendering][ca
 
 TEST_CASE("the render thread runs frames one behind the main thread", "[rendering][canvas][thread]")
 {
-    CanvasFixture f({ .render_thread = true, .legacy_sdl_renderer = false });
+    CanvasFixture f({ .platform = PlatformKind::Null, .render_thread = true });
     REQUIRE(f.server.renderThreadActive());
 
     std::vector<CanvasItemRid> items;

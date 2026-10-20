@@ -5,6 +5,7 @@
 #include "SDL3/SDL_stdinc.h"
 #include "core/resource/resource_manager.hpp"
 #include "core/text/utf8.hpp"
+#include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
@@ -13,57 +14,49 @@ namespace atmo::core::ecs::entities
     {
         if (m_text)
             TTF_DestroyText(m_text);
-        if (m_font)
-            TTF_CloseFont(m_font);
     }
 
     bool TtfTextLayout::setFont(const std::string &font_path, float point_size, float dpi_x, float dpi_y)
     {
-        if (font_path != m_font_path || !m_font) {
-            if (m_text) {
-                TTF_DestroyText(m_text);
-                m_text = nullptr;
-                m_engine = nullptr;
-            }
-            if (m_font) {
-                TTF_CloseFont(m_font);
-                m_font = nullptr;
-            }
-            m_resource.reset();
+        if (font_path != m_font_path || !m_resource) {
             m_font_path = font_path;
             m_point_size = 0.0f;
-
+            m_resource.reset();
             try {
-                m_resource = resource::ResourceManager::GetInstance().getResource<TTF_Font>(font_path);
+                m_resource = resource::ResourceManager::GetInstance().getResource<resource::Font>(font_path);
             } catch (const std::exception &e) {
                 spdlog::error("TtfTextLayout: failed to load font '{}': {}", font_path, e.what());
             }
-            if (!m_resource)
-                return false;
+        }
+        if (!m_resource)
+            return false;
 
-            m_font = TTF_CopyFont(m_resource.get());
-            if (!m_font) {
-                spdlog::error("TtfTextLayout: TTF_CopyFont failed: {}", SDL_GetError());
-                return false;
-            }
-            TTF_SetFontStyle(m_font, TTF_STYLE_NORMAL);
+        if (m_font && point_size == m_point_size && dpi_x == m_dpi_x && dpi_y == m_dpi_y)
+            return true;
 
-            m_text = TTF_CreateText(nullptr, m_font, m_string.data(), m_string.size());
-            if (!m_text) {
-                spdlog::error("TtfTextLayout: TTF_CreateText failed: {}", SDL_GetError());
-                return false;
-            }
-            TTF_SetTextWrapWidth(m_text, m_wrap_width);
-            TTF_SetTextWrapWhitespaceVisible(m_text, true);
+        TTF_Font *face = server::rendering::RenderingServer::Instance().fontGetTtfFont(m_resource->rid(), point_size, {}, dpi_y / 96.0f);
+        if (!face)
+            return false;
+        m_point_size = point_size;
+        m_dpi_x = dpi_x;
+        m_dpi_y = dpi_y;
+        if (face == m_font && m_text)
+            return true;
+        m_font = face;
+
+        if (m_text) {
+            if (!TTF_SetTextFont(m_text, m_font))
+                spdlog::error("TtfTextLayout: TTF_SetTextFont failed: {}", SDL_GetError());
+            return true;
         }
 
-        if (point_size != m_point_size || dpi_x != m_dpi_x || dpi_y != m_dpi_y) {
-            if (!TTF_SetFontSizeDPI(m_font, point_size, static_cast<int>(dpi_x), static_cast<int>(dpi_y)))
-                spdlog::error("TtfTextLayout: TTF_SetFontSizeDPI failed: {}", SDL_GetError());
-            m_point_size = point_size;
-            m_dpi_x = dpi_x;
-            m_dpi_y = dpi_y;
+        m_text = TTF_CreateText(nullptr, m_font, m_string.data(), m_string.size());
+        if (!m_text) {
+            spdlog::error("TtfTextLayout: TTF_CreateText failed: {}", SDL_GetError());
+            return false;
         }
+        TTF_SetTextWrapWidth(m_text, m_wrap_width);
+        TTF_SetTextWrapWhitespaceVisible(m_text, true);
         return true;
     }
 
@@ -186,15 +179,10 @@ namespace atmo::core::ecs::entities
         return p;
     }
 
-    void TtfTextLayout::draw(TTF_TextEngine *engine, float x, float y, SDL_Color color)
+    void TtfTextLayout::draw(server::rendering::CanvasCommandWriter &writer, float x, float y, const core::types::Color &color, float raster_scale) const
     {
-        if (!m_text || m_string.empty())
+        if (!m_text || m_string.empty() || raster_scale <= 0.0f)
             return;
-        if (m_engine != engine) {
-            TTF_SetTextEngine(m_text, engine);
-            m_engine = engine;
-        }
-        TTF_SetTextColor(m_text, color.r, color.g, color.b, color.a);
-        TTF_DrawRendererText(m_text, x, y);
+        writer.addTtfText(m_text, { x / raster_scale, y / raster_scale }, color, raster_scale);
     }
 } // namespace atmo::core::ecs::entities

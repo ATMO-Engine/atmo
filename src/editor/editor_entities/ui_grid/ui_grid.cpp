@@ -285,7 +285,7 @@ namespace atmo::core::ecs::entities
         return UIRect::buildDecl();
     }
 
-    void UIGrid::draw(ClaySdL3RendererData *) {}
+    void UIGrid::draw() {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIGrid)

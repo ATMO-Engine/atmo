@@ -105,6 +105,7 @@ namespace atmo::server::rendering
         m_caps.max_texture_size = m_properties.limits.maxImageDimension2D;
         m_caps.max_push_constant_size = push_constant_size;
         m_caps.frames_in_flight = frames_in_flight;
+        m_caps.software_device = m_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU;
         m_initialized = true;
 
         spdlog::info(

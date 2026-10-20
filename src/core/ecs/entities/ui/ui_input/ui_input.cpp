@@ -16,6 +16,7 @@
 #include "core/text/utf8.hpp"
 #include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
+#include "server/rendering/rendering_server.hpp"
 
 namespace atmo::core::ecs::entities
 {
@@ -37,10 +38,10 @@ namespace atmo::core::ecs::entities
         float dpi_x = 1.0f;
         float dpi_y = 1.0f;
 
-        SDL_Color text_color{};
-        SDL_Color placeholder_color{};
-        SDL_Color caret_color{};
-        SDL_Color selection_color{};
+        types::Color text_color = types::Color::BLACK;
+        types::Color placeholder_color = types::Color::BLACK;
+        types::Color caret_color = types::Color::BLACK;
+        types::Color selection_color = types::Color::BLACK;
         std::string placeholder;
 
         bool focused = false;
@@ -77,10 +78,15 @@ namespace atmo::core::ecs::entities
             return editor.options().multiline;
         }
 
-        void render(ClaySdL3RendererData *data, const SDL_FRect &rect, float scale_x, float scale_y) override
+        void render(server::rendering::CanvasCommandWriter &writer, const server::rendering::Rect2 &bounds, float raster_scale) override
         {
-            dpi_x = scale_x;
-            dpi_y = scale_y;
+            const float scale = raster_scale > 0.0f ? raster_scale : 1.0f;
+            const SDL_FRect rect{ bounds.position.x * scale, bounds.position.y * scale, bounds.size.x * scale, bounds.size.y * scale };
+            const auto fill = [&writer, scale](const SDL_FRect &pixels, const types::Color &color) {
+                writer.addRect({ { pixels.x / scale, pixels.y / scale }, { pixels.w / scale, pixels.h / scale } }, color);
+            };
+            dpi_x = scale;
+            dpi_y = scale;
             if (!ensureFont())
                 return;
 
@@ -95,7 +101,7 @@ namespace atmo::core::ecs::entities
             const std::size_t caret_display = editor.toDisplayOffset(primary.head);
 
             TtfTextLayout *drawn = &layout;
-            SDL_Color color = text_color;
+            types::Color color = text_color;
             text::CaretRect caret = layout.caretRect(caret_display);
             std::vector<SDL_FRect> underline;
 
@@ -135,55 +141,29 @@ namespace atmo::core::ecs::entities
             const float ox = rect.x - scroll_x;
             const float oy = rect.y + text_offset_y - scroll_y;
 
-            SDL_Renderer *renderer = data->renderer;
-            SDL_Rect previous_clip;
-            const bool had_clip = SDL_RenderClipEnabled(renderer);
-            if (had_clip)
-                SDL_GetRenderClipRect(renderer, &previous_clip);
-
-            SDL_Rect own_clip{ static_cast<int>(std::floor(rect.x)),
-                               static_cast<int>(std::floor(rect.y)),
-                               static_cast<int>(std::ceil(rect.w)),
-                               static_cast<int>(std::ceil(rect.h)) };
-            SDL_Rect clip = own_clip;
-            if (had_clip && !SDL_GetRectIntersection(&previous_clip, &own_clip, &clip))
-                clip = { 0, 0, 0, 0 };
-            SDL_SetRenderClipRect(renderer, &clip);
+            writer.pushClip(bounds);
 
             if (focused && preedit.text.empty() && !editor.showsPlaceholder()) {
-                SDL_SetRenderDrawColor(renderer, selection_color.r, selection_color.g, selection_color.b, selection_color.a);
                 for (const auto &sel : editor.selections()) {
                     if (sel.empty())
                         continue;
                     for (auto r : layout.rangeRects(editor.toDisplayOffset(sel.min()), editor.toDisplayOffset(sel.max()))) {
                         r.x += ox;
                         r.y += oy;
-                        SDL_RenderFillRect(renderer, &r);
+                        fill(r, selection_color);
                     }
                 }
             }
 
-            drawn->draw(data->text_engine, ox, oy, color);
+            drawn->draw(writer, ox, oy, color, scale);
 
-            if (!underline.empty()) {
-                SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
-                for (const auto &r : underline) {
-                    SDL_FRect line{ ox + r.x, oy + r.y + r.h - caret_width, r.w, caret_width };
-                    SDL_RenderFillRect(renderer, &line);
-                }
-            }
+            for (const auto &r : underline) fill({ ox + r.x, oy + r.y + r.h - caret_width, r.w, caret_width }, text_color);
 
             const bool blink_on = ((SDL_GetTicks() - activity_ms) / BLINK_PERIOD_MS) % 2 == 0;
-            if (focused && !editor.options().read_only && blink_on) {
-                SDL_SetRenderDrawColor(renderer, caret_color.r, caret_color.g, caret_color.b, caret_color.a);
-                SDL_FRect caret_rect{ std::round(ox + caret.x), oy + caret.y, caret_width, caret.height };
-                SDL_RenderFillRect(renderer, &caret_rect);
-            }
+            if (focused && !editor.options().read_only && blink_on)
+                fill({ std::round(ox + caret.x), oy + caret.y, caret_width, caret.height }, caret_color);
 
-            if (had_clip)
-                SDL_SetRenderClipRect(renderer, &previous_clip);
-            else
-                SDL_SetRenderClipRect(renderer, nullptr);
+            writer.popClip();
 
             ime_rect = { static_cast<int>((ox + caret.x) / dpi_x),
                          static_cast<int>((oy + caret.y) / dpi_y),
@@ -194,9 +174,9 @@ namespace atmo::core::ecs::entities
 
     namespace
     {
-        SDL_Color ToSdl(const types::Color &color, const types::Color &modulate)
+        types::Color Modulated(const types::Color &color, const types::Color &modulate)
         {
-            return (color * modulate).toInt<SDL_Color>();
+            return color * modulate;
         }
     } // namespace
 
@@ -312,7 +292,7 @@ namespace atmo::core::ecs::entities
 
         SDL_Window *sdl_window = nullptr;
         if (auto window = getWindow())
-            sdl_window = window->getComponent<components::Window>().window;
+            sdl_window = server::rendering::RenderingServer::Instance().windowGetSdlWindow(window->getComponent<components::Window>().rid);
 
         flecs::entity handle = p_handle;
         auto with_input = [handle](auto &&fn) {
@@ -485,7 +465,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIInput::draw(ClaySdL3RendererData *data)
+    void UIInput::draw()
     {
         auto &st = state();
         const auto &ui = getComponent<components::UI>();
@@ -509,10 +489,10 @@ namespace atmo::core::ecs::entities
             st.editor.options().max_length = comp.max_length;
             st.font_path = comp.font_path;
             st.font_size = comp.font_size;
-            st.text_color = ToSdl(comp.text_color, ui.modulate);
-            st.placeholder_color = ToSdl(comp.placeholder_color, ui.modulate);
-            st.caret_color = ToSdl(comp.caret_color, ui.modulate);
-            st.selection_color = ToSdl(comp.selection_color, ui.modulate);
+            st.text_color = Modulated(comp.text_color, ui.modulate);
+            st.placeholder_color = Modulated(comp.placeholder_color, ui.modulate);
+            st.caret_color = Modulated(comp.caret_color, ui.modulate);
+            st.selection_color = Modulated(comp.selection_color, ui.modulate);
             st.placeholder = locale::LocaleManager::GetTranslation(comp.placeholder);
         }
 
@@ -531,7 +511,8 @@ namespace atmo::core::ecs::entities
 
         if (st.focused && (st.ime_rect.x != st.sent_ime_rect.x || st.ime_rect.y != st.sent_ime_rect.y || st.ime_rect.h != st.sent_ime_rect.h)) {
             if (auto window = getWindow()) {
-                InputManager::SetTextInputArea(window->getComponent<components::Window>().window, st.ime_rect, 0);
+                InputManager::SetTextInputArea(
+                    server::rendering::RenderingServer::Instance().windowGetSdlWindow(window->getComponent<components::Window>().rid), st.ime_rect, 0);
                 st.sent_ime_rect = st.ime_rect;
             }
         }

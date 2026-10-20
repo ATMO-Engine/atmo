@@ -71,9 +71,9 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UICheckBox::draw(ClaySdL3RendererData *data)
+    void UICheckBox::draw()
     {
-        UIButton::draw(data);
+        UIButton::draw();
     }
 } // namespace atmo::core::ecs::entities
 

@@ -132,31 +132,36 @@ TEST_CASE("the test pattern releases everything it creates", "[rendering][platfo
 
 TEST_CASE("platform names round-trip", "[rendering][platform]")
 {
-    for (PlatformKind kind : { PlatformKind::Null, PlatformKind::Vulkan, PlatformKind::Metal }) REQUIRE(ParsePlatformKind(PlatformKindName(kind)) == kind);
+    for (PlatformKind kind : { PlatformKind::Null, PlatformKind::Vulkan, PlatformKind::Metal, PlatformKind::D3D12 })
+        REQUIRE(ParsePlatformKind(PlatformKindName(kind)) == kind);
     REQUIRE_FALSE(ParsePlatformKind("opengl").has_value());
 }
 
-TEST_CASE("automatic selection prefers Metal on macOS", "[rendering][platform]")
+TEST_CASE("automatic selection follows the native API of each OS", "[rendering][platform]")
 {
     std::span<const PlatformKind> order = AutomaticPlatformOrder();
-    REQUIRE_FALSE(order.empty());
+    REQUIRE(order.size() >= 2);
     REQUIRE(order.back() == PlatformKind::Null);
+    REQUIRE(std::ranges::find(order, PlatformKind::Vulkan) != order.end());
 #if defined(__APPLE__)
     REQUIRE(order.front() == PlatformKind::Metal);
+    REQUIRE(std::ranges::find(order, PlatformKind::D3D12) == order.end());
+#elif defined(_WIN32)
+    REQUIRE(order.front() == PlatformKind::D3D12);
+#else
+    REQUIRE(order.front() == PlatformKind::Vulkan);
 #endif
-    REQUIRE(std::ranges::find(order, PlatformKind::Vulkan) == order.end());
 }
 
 TEST_CASE("an unavailable platform falls back to automatic selection", "[rendering][platform]")
 {
     auto automatic = CreatePlatform({});
     REQUIRE(automatic);
-    REQUIRE(automatic->kind() == PlatformKind::Null);
     automatic->shutdown();
 
-    auto fallback = CreatePlatform({ .platform = PlatformKind::Metal });
+    auto fallback = CreatePlatform({ .platform = PlatformKind::D3D12 });
     REQUIRE(fallback);
-    REQUIRE(fallback->kind() == PlatformKind::Null);
+    REQUIRE(fallback->kind() != PlatformKind::D3D12);
     fallback->shutdown();
 
     auto explicit_null = CreatePlatform({ .platform = PlatformKind::Null });

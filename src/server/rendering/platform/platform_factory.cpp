@@ -20,13 +20,15 @@ namespace atmo::server::rendering
                 return "vulkan";
             case PlatformKind::Metal:
                 return "metal";
+            case PlatformKind::D3D12:
+                return "d3d12";
         }
         return "unknown";
     }
 
     std::optional<PlatformKind> ParsePlatformKind(std::string_view name) noexcept
     {
-        for (PlatformKind kind : { PlatformKind::Null, PlatformKind::Vulkan, PlatformKind::Metal })
+        for (PlatformKind kind : { PlatformKind::Null, PlatformKind::Vulkan, PlatformKind::Metal, PlatformKind::D3D12 })
             if (name == PlatformKindName(kind))
                 return kind;
         return std::nullopt;
@@ -69,6 +71,7 @@ namespace atmo::server::rendering
                 return nullptr;
 #endif
             case PlatformKind::Metal:
+            case PlatformKind::D3D12:
                 ReportUnbuilt(kind, requested);
                 return nullptr;
         }
@@ -95,9 +98,11 @@ namespace atmo::server::rendering
     std::span<const PlatformKind> AutomaticPlatformOrder() noexcept
     {
 #if defined(__APPLE__)
-        static constexpr std::array order{ PlatformKind::Metal, PlatformKind::Null };
+        static constexpr std::array order{ PlatformKind::Metal, PlatformKind::Vulkan, PlatformKind::Null };
+#elif defined(_WIN32)
+        static constexpr std::array order{ PlatformKind::D3D12, PlatformKind::Vulkan, PlatformKind::Null };
 #else
-        static constexpr std::array order{ PlatformKind::Null };
+        static constexpr std::array order{ PlatformKind::Vulkan, PlatformKind::Null };
 #endif
         return order;
     }
@@ -110,14 +115,32 @@ namespace atmo::server::rendering
             spdlog::warn("Rendering platform {} is unavailable, falling back to automatic selection", PlatformKindName(*settings.platform));
         }
 
+        std::unique_ptr<RenderingPlatform> software;
         for (PlatformKind kind : AutomaticPlatformOrder()) {
             if (settings.platform == kind)
                 continue;
-            if (auto platform = TryCreate(kind, settings, false))
+            if (kind == PlatformKind::Null && software)
+                break;
+
+            auto platform = TryCreate(kind, settings, false);
+            if (!platform) {
+                spdlog::debug("Rendering platform {} is unavailable", PlatformKindName(kind));
+                continue;
+            }
+            if (!platform->caps().software_device) {
+                if (software)
+                    software->shutdown();
                 return platform;
-            spdlog::debug("Rendering platform {} is unavailable", PlatformKindName(kind));
+            }
+
+            spdlog::info(
+                "Rendering platform {} only found a software device ({}), trying the next platform first", platform->name(), platform->caps().device_name);
+            if (software)
+                platform->shutdown();
+            else
+                software = std::move(platform);
         }
 
-        return nullptr;
+        return software;
     }
 } // namespace atmo::server::rendering

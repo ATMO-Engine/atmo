@@ -52,6 +52,6 @@ namespace atmo::core::ecs::entities
         float getValue() const;
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
     };
 } // namespace atmo::core::ecs::entities

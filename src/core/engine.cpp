@@ -171,7 +171,8 @@ namespace atmo::core
                             .arg_manager = args::ArgManager::Instance(),
                             .entity_registry = ecs::EntityRegistry::Instance(),
                             .subresource_registry = resource::SubResourceRegistry::Instance(),
-                            .meta_registry = atmo::meta::MetaRegistry::Instance() };
+                            .meta_registry = atmo::meta::MetaRegistry::Instance(),
+                            .rendering_server = server::rendering::RenderingServer::Instance() };
 
         for (auto &addon_pair : project::ProjectManager::GetSettings().addons.addons) {
             if (!addon_pair.second)
@@ -206,8 +207,8 @@ namespace atmo::core
 
         ArgManager::AddArgument("--rendering-platform")
             .help(
-                "Rendering platform to use: metal, vulkan or null. The default is metal on macOS and null elsewhere; an unavailable platform falls back to "
-                "the default.")
+                "Rendering platform to use: metal, d3d12, vulkan or null. By default the best one for the device is picked: metal then vulkan on macOS, "
+                "d3d12 then vulkan on Windows, vulkan on Linux, null in headless mode. An unavailable platform falls back to the default.")
             .metavar("platform");
         ArgManager::AddArgument("--render-thread")
             .defaultValue(std::string("on"))
@@ -343,6 +344,8 @@ namespace atmo::core
             rendering_settings.platform = server::rendering::ParsePlatformKind(*platform);
             if (!rendering_settings.platform)
                 spdlog::warn("Unknown rendering platform '{}', using automatic selection", *platform);
+        } else if (m_headless) {
+            rendering_settings.platform = server::rendering::PlatformKind::Null;
         }
 
         if (!server::rendering::RenderingServer::Instance().init(rendering_settings))

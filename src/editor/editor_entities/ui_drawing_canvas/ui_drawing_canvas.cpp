@@ -5,21 +5,37 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "meta/auto_register.hpp"
+#include "server/rendering/rendering_server.hpp"
 
 namespace atmo::core::ecs::entities
 {
+    namespace
+    {
+        class DrawingCanvasRenderable : public ClayCustomRenderable
+        {
+        public:
+            explicit DrawingCanvasRenderable(flecs::entity handle) : m_handle(handle) {}
+
+            void render(server::rendering::CanvasCommandWriter &writer, const server::rendering::Rect2 &rect, float) override
+            {
+                if (m_handle.is_alive() && m_handle.has<components::UIDrawingCanvas>())
+                    UIDrawingCanvas(m_handle).render(writer, rect);
+            }
+
+        private:
+            flecs::entity m_handle;
+        };
+    } // namespace
+
     void UIDrawingCanvas::RegisterSystems(flecs::world *world)
     {
         world->observer<components::UIDrawingCanvas>().event(flecs::OnRemove).each([](flecs::entity e, components::UIDrawingCanvas &comp) {
-            if (comp.drawing_texture) {
-                SDL_DestroyTexture(comp.drawing_texture);
-                comp.drawing_texture = nullptr;
-            }
-
-            if (comp.checkboard_texture) {
-                SDL_DestroyTexture(comp.checkboard_texture);
-                comp.checkboard_texture = nullptr;
-            }
+            auto &server = server::rendering::RenderingServer::Instance();
+            server.textureFree(comp.drawing_texture);
+            server.textureFree(comp.checkboard_texture);
+            comp.drawing_texture = {};
+            comp.checkboard_texture = {};
+            comp.m_renderable.reset();
         });
     }
 
@@ -27,68 +43,46 @@ namespace atmo::core::ecs::entities
     {
         UI::initialize();
         setComponent<components::UIDrawingCanvas>({});
+        getComponentMutable<components::UIDrawingCanvas>().m_renderable = std::make_shared<DrawingCanvasRenderable>(p_handle);
         createSignal<const core::types::Vector2i &>("New Dimensions");
     }
 
-    void UIDrawingCanvas::render(SDL_Renderer *renderer)
+    void UIDrawingCanvas::render(server::rendering::CanvasCommandWriter &writer, const server::rendering::Rect2 &rect)
     {
-        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        int w = (int)comp.bounds.width;
-        int h = (int)comp.bounds.height;
-        if (w <= 0 || h <= 0) {
+        const auto &comp = getComponent<components::UIDrawingCanvas>();
+        if (rect.size.x <= 0.0f || rect.size.y <= 0.0f)
             return;
-        }
 
-        if (!comp.checkboard_texture) {
-            return;
-        }
-
-        if (!comp.display_texture || comp.display_texture_size.x != w || comp.display_texture_size.y != h) {
-            if (comp.display_texture)
-                SDL_DestroyTexture(comp.display_texture);
-
-            comp.display_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
-            if (!comp.display_texture)
-                return;
-            SDL_SetTextureScaleMode(comp.display_texture, SDL_SCALEMODE_NEAREST);
-            SDL_SetTextureBlendMode(comp.display_texture, SDL_BLENDMODE_BLEND);
-            comp.display_texture_size = { w, h };
-        }
-
-        SDL_FRect localRect = comp.cached_texture_rect;
-        localRect.x -= comp.bounds.x;
-        localRect.y -= comp.bounds.y;
-
-        SDL_SetRenderTarget(renderer, comp.display_texture);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        SDL_RenderClear(renderer);
-
+        const server::rendering::Rect2 texture_rect{ { comp.cached_texture_rect.x, comp.cached_texture_rect.y },
+                                                     { comp.cached_texture_rect.w, comp.cached_texture_rect.h } };
+        writer.pushClip(rect);
         if (!comp.preview) {
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
-            SDL_FRect fillRect = { 0, 0, comp.bounds.width, comp.bounds.height };
-            SDL_RenderFillRect(renderer, &fillRect);
-            SDL_RenderTexture(renderer, comp.checkboard_texture, nullptr, &localRect);
+            writer.addRect(rect, core::types::Color(64.0f / 255.0f, 64.0f / 255.0f, 64.0f / 255.0f, 1.0f));
+            if (comp.checkboard_texture.isValid())
+                writer.addTextureRect(
+                    texture_rect,
+                    comp.checkboard_texture,
+                    {
+                        .source =
+                            server::rendering::Rect2{ { 0.0f, 0.0f }, { static_cast<float>(comp.texture_size.x), static_cast<float>(comp.texture_size.y) } },
+                        .filter = server::rendering::TextureFilter::Nearest,
+                        .repeat = true,
+                    });
         }
-        SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &localRect);
-
-        SDL_SetRenderTarget(renderer, nullptr);
+        if (comp.drawing_texture.isValid())
+            writer.addTextureRect(texture_rect, comp.drawing_texture, { .filter = server::rendering::TextureFilter::Nearest });
+        writer.popClip();
     }
 
     Clay_ElementDeclaration UIDrawingCanvas::buildDecl()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        auto windowEntity = getWindow();
-        SDL_Renderer *renderer = windowEntity ? windowEntity->getComponentMutable<core::components::Window>().renderer_data.renderer : nullptr;
-
-        if (renderer) {
+        if (server::rendering::RenderingServer::Instance().isInitialized()) {
             if (comp.texture_dirty)
-                flushPixelsToTexture(renderer);
-            if (!comp.checkboard_texture)
+                flushPixelsToTexture();
+            if (!comp.checkboard_texture.isValid())
                 rebuildCheckboard();
-            render(renderer);
         }
 
         Clay_ElementDeclaration d{ .id = CLAY_ID("DrawingCanvas"),
@@ -96,9 +90,7 @@ namespace atmo::core::ecs::entities
                                                    .width = CLAY_SIZING_PERCENT(comp.canvas_size.x),
                                                    .height = CLAY_SIZING_PERCENT(comp.canvas_size.y),
                                                } } };
-
-        if (comp.display_texture)
-            d.image = { .imageData = comp.display_texture };
+        d.custom.customData = comp.m_renderable.get();
 
         return d;
     }
@@ -106,51 +98,26 @@ namespace atmo::core::ecs::entities
     void UIDrawingCanvas::rebuildCheckboard()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-
-        auto windowEntity = getWindow();
-        if (!windowEntity) {
+        auto &server = server::rendering::RenderingServer::Instance();
+        if (comp.checkboard_texture.isValid() || !server.isInitialized())
             return;
-        }
 
-        auto window = windowEntity->getComponentMutable<core::components::Window>();
-        SDL_Renderer *renderer = window.renderer_data.renderer;
-        if (!renderer) {
-            return;
-        }
-
-        int w = comp.texture_size.x;
-        int h = comp.texture_size.y;
-
-        if (w <= 0 || h <= 0) {
-            return;
-        }
-
-        if (comp.checkboard_texture) {
-            SDL_DestroyTexture(comp.checkboard_texture);
-        }
-
-        comp.checkboard_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
-
-        if (!comp.checkboard_texture) {
+        const std::byte dark{ 180 };
+        const std::byte light{ 230 };
+        const std::byte opaque{ 255 };
+        const std::array<std::byte, 16> pixels{ dark, dark, dark, opaque, light, light, light, opaque, light, light, light, opaque, dark, dark, dark, opaque };
+        comp.checkboard_texture = server.texture2dCreate({ .size = { 2, 2 }, .debug_name = "drawing canvas checkerboard" }, pixels);
+        if (!comp.checkboard_texture.isValid())
             spdlog::warn("Check board load failed");
-            return;
-        }
+    }
 
-        SDL_SetTextureScaleMode(comp.checkboard_texture, SDL_SCALEMODE_NEAREST);
-        SDL_SetRenderTarget(renderer, comp.checkboard_texture);
-
-        for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                bool dark = ((x + y) % 2) == 0;
-                if (dark)
-                    SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
-                else
-                    SDL_SetRenderDrawColor(renderer, 230, 230, 230, 255);
-                SDL_RenderPoint(renderer, (float)x, (float)y);
-            }
-        }
-
-        SDL_SetRenderTarget(renderer, nullptr);
+    void UIDrawingCanvas::releaseDrawingTexture()
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+        server::rendering::RenderingServer::Instance().textureFree(comp.drawing_texture);
+        comp.drawing_texture = {};
+        comp.drawing_texture_size = { 0, 0 };
+        comp.texture_dirty = true;
     }
 
     void UIDrawingCanvas::validateAndSyncDimensions()
@@ -178,16 +145,14 @@ namespace atmo::core::ecs::entities
             rebuildCheckboard();
         }
 
-        if (comp.drawing_texture) {
-            float tw, th;
-            SDL_GetTextureSize(comp.drawing_texture, &tw, &th);
-            if ((int)tw != targetW || (int)th != targetH) {
-                spdlog::warn("canvas sync: texture SDL: {}/{} != texture_size: {}/{}, destroy current SDL texture", (int)tw, (int)th, targetW, targetH);
-                SDL_DestroyTexture(comp.drawing_texture);
-                comp.drawing_texture = nullptr;
-                comp.texture_dirty = true;
-                rebuildCheckboard();
-            }
+        if (comp.drawing_texture.isValid() && (comp.drawing_texture_size.x != targetW || comp.drawing_texture_size.y != targetH)) {
+            spdlog::warn(
+                "canvas sync: texture {}/{} != texture_size: {}/{}, recreating the texture",
+                comp.drawing_texture_size.x,
+                comp.drawing_texture_size.y,
+                targetW,
+                targetH);
+            releaseDrawingTexture();
         }
     }
 
@@ -202,10 +167,7 @@ namespace atmo::core::ecs::entities
 
         comp.texture_size = { width, heigth };
 
-        if (comp.drawing_texture) {
-            SDL_DestroyTexture(comp.drawing_texture);
-            comp.drawing_texture = nullptr;
-        }
+        releaseDrawingTexture();
 
         comp.texture_dirty = true;
         rebuildCheckboard();
@@ -218,10 +180,7 @@ namespace atmo::core::ecs::entities
         comp.image.reset(w, h);
         comp.texture_size = { w, h };
 
-        if (comp.drawing_texture) {
-            SDL_DestroyTexture(comp.drawing_texture);
-            comp.drawing_texture = nullptr;
-        }
+        releaseDrawingTexture();
         comp.texture_dirty = true;
         rebuildCheckboard();
         getSignal<const core::types::Vector2i &>("New Dimensions").emit(comp.texture_size);
@@ -361,7 +320,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIDrawingCanvas::draw(ClaySdL3RendererData *data)
+    void UIDrawingCanvas::draw()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
@@ -387,7 +346,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIDrawingCanvas::flushPixelsToTexture(SDL_Renderer *renderer)
+    void UIDrawingCanvas::flushPixelsToTexture()
     {
         validateAndSyncDimensions();
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
@@ -404,12 +363,12 @@ namespace atmo::core::ecs::entities
         if (w <= 0 || h <= 0)
             return;
 
-        if (!comp.drawing_texture) {
-            comp.drawing_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
-            if (!comp.drawing_texture)
+        auto &server = server::rendering::RenderingServer::Instance();
+        if (!comp.drawing_texture.isValid()) {
+            comp.drawing_texture = server.texture2dCreate({ .size = { w, h }, .debug_name = "drawing canvas" }, {});
+            if (!comp.drawing_texture.isValid())
                 return;
-            SDL_SetTextureScaleMode(comp.drawing_texture, SDL_SCALEMODE_NEAREST);
-            SDL_SetTextureBlendMode(comp.drawing_texture, SDL_BLENDMODE_BLEND);
+            comp.drawing_texture_size = { w, h };
         }
 
         comp.upload_buffer.resize(w * h * 4);
@@ -425,7 +384,7 @@ namespace atmo::core::ecs::entities
             }
         }
 
-        SDL_UpdateTexture(comp.drawing_texture, nullptr, comp.upload_buffer.data(), w * 4);
+        server.texture2dUpdate(comp.drawing_texture, { .width = w, .height = h }, std::as_bytes(std::span(comp.upload_buffer)));
         comp.texture_dirty = false;
     }
 
@@ -651,15 +610,6 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        auto windowEntity = getWindow();
-        if (!windowEntity)
-            return;
-
-        auto window = windowEntity->getComponentMutable<core::components::Window>();
-        SDL_Renderer *renderer = window.renderer_data.renderer;
-        if (!renderer)
-            return;
-
         std::string ext = path.substr(path.find_last_of('.') + 1);
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
@@ -751,10 +701,7 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        if (comp.drawing_texture) {
-            SDL_DestroyTexture(comp.drawing_texture);
-            comp.drawing_texture = nullptr;
-        }
+        releaseDrawingTexture();
 
         comp.texture_size = { w, h };
         getSignal<const core::types::Vector2i &>("New Dimensions").emit(comp.texture_size);

@@ -20,7 +20,7 @@ namespace
     void RunBenchmark(PlatformKind platform)
     {
         RenderingServer &server = RenderingServer::Instance();
-        REQUIRE(server.init({ .platform = platform, .legacy_sdl_renderer = false }));
+        REQUIRE(server.init({ .platform = platform }));
         if (server.platformKind() != platform) {
             server.shutdown();
             SKIP("Rendering platform unavailable");

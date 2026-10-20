@@ -96,6 +96,7 @@ rule("slang.builtin")
 
         local outdir = path.join(target:autogendir(), "rules", "slang", "shaders")
         local sourcedir = path.directory(sourcefile)
+        local shader_targets = target:extraconf("rules", "slang.builtin", "targets") or {}
         local outputs = {}
 
         batchcmds:mkdir(outdir)
@@ -109,7 +110,7 @@ rule("slang.builtin")
 
         if io.readfile(sourcefile):find("%[shader%(") then
             local slangc = path.join(project.required_package("slang"):installdir(), "bin", is_host("windows") and "slangc.exe" or "slangc")
-            for _, shader_target in ipairs(target:extraconf("rules", "slang.builtin", "targets") or {}) do
+            for _, shader_target in ipairs(shader_targets) do
                 local blob = path.join(outdir, path.basename(sourcefile) .. "." .. shader_target)
                 batchcmds:show_progress(opt.progress, "${color.build.object}compiling.slang %s (%s)", sourcefile, shader_target)
                 batchcmds:vrunv(slangc, {path(sourcefile), "-I", path(sourcedir), "-target", shader_target, "-O0", "-fvk-use-entrypoint-name", "-o", path(blob)})
@@ -122,9 +123,17 @@ rule("slang.builtin")
             return
         end
 
+        local oldest = nil
+        for _, output in ipairs(outputs) do
+            local mtime = os.isfile(output) and os.mtime(output) or 0
+            if oldest == nil or mtime < oldest then
+                oldest = mtime
+            end
+        end
+
         batchcmds:add_depfiles(os.files(path.join(sourcedir, "*.slang")))
-        batchcmds:set_depmtime(os.mtime(outputs[1]))
-        batchcmds:set_depcache(target:dependfile(outputs[1]))
+        batchcmds:set_depmtime(oldest)
+        batchcmds:set_depcache(target:dependfile(path.join(outdir, path.filename(sourcefile) .. "." .. table.concat(shader_targets, "_"))))
     end)
 rule_end()
 

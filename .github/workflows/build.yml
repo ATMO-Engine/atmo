@@ -49,6 +49,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check that src/ does not use SDL_Renderer
+        if: matrix.name == 'Linux'
+        shell: bash
+        run: |
+          if grep -rnE '\bSDL_(Renderer|Texture)\b' src; then
+            echo "::error::Draw through the RenderingServer instead of SDL_Renderer and SDL_Texture"
+            exit 1
+          fi
+
       - name: Install SDL3 build dependencies
         if: runner.os == 'Linux'
         run: |
