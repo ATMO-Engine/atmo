@@ -45,6 +45,12 @@ namespace atmo::core::ecs::entities
         }
 
         void internalDraw(ClaySdL3RendererData *data);
+
+        /**
+         * @brief
+         * Called inside PostUpdate flecs pipeline by InternalDraw
+         * @param data Renderer context of the window
+         */
         virtual void draw(ClaySdL3RendererData *data);
 
         std::shared_ptr<entities::Window> getWindow() const;
