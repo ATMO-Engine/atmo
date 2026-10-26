@@ -168,6 +168,7 @@ namespace atmo::server::rendering
         bool inline_commands = false;
         bool render_thread = true;
         bool gpu_validation = false;
+        std::string pipeline_cache_dir;
     };
 
     struct WindowDesc {

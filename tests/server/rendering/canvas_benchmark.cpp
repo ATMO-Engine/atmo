@@ -91,3 +91,11 @@ TEST_CASE("10k sprites from 50 textures on Vulkan", "[.benchmark]")
         SKIP("SDL offscreen video driver unavailable");
     RunBenchmark(PlatformKind::Vulkan);
 }
+
+TEST_CASE("10k sprites from 50 textures on Metal", "[.benchmark]")
+{
+    OffscreenVideo video;
+    if (!video.available)
+        SKIP("SDL offscreen video driver unavailable");
+    RunBenchmark(PlatformKind::Metal);
+}

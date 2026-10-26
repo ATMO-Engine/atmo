@@ -72,6 +72,24 @@ TEST_CASE("the shader compiler builds the test pattern for SPIR-V and reflects i
     REQUIRE(samplers->count == 0);
 }
 
+TEST_CASE("the shader compiler builds MSL with the Metal bindless table", "[rendering][shader]")
+{
+    const ShaderSource source{
+        .name = "test_pattern",
+        .code = std::string(reinterpret_cast<const char *>(test_pattern_source), sizeof(test_pattern_source)),
+    };
+
+    auto compiled = Compiler().compile(source, ShaderTarget::Msl);
+    REQUIRE(compiled.has_value());
+    REQUIRE(compiled->target == ShaderTarget::Msl);
+
+    const std::string msl(reinterpret_cast<const char *>(compiled->code.data()), compiled->code.size());
+    REQUIRE(msl.find("#include <metal_stdlib>") != std::string::npos);
+    REQUIRE(msl.find("[[buffer(30)]]") != std::string::npos);
+    REQUIRE(msl.find("[[buffer(0)]]") != std::string::npos);
+    REQUIRE(compiled->layout.entry_points.size() == 2);
+}
+
 TEST_CASE("shader compile errors come back as diagnostics", "[rendering][shader]")
 {
     const ShaderSource source{
@@ -108,6 +126,18 @@ TEST_CASE("the built-in SPIR-V test pattern is embedded", "[rendering][shader]")
     REQUIRE(blob->code.size() % 4 == 0);
     REQUIRE(FirstWord({ blob->code.begin(), blob->code.end() }) == spirv_magic);
     REQUIRE(reinterpret_cast<std::uintptr_t>(blob->code.data()) % 4 == 0);
+}
+#endif
+
+#if defined(ATMO_RENDERING_METAL)
+TEST_CASE("the built-in MSL shaders are embedded", "[rendering][shader]")
+{
+    for (BuiltinShader shader : { BuiltinShader::TestPattern, BuiltinShader::Canvas }) {
+        std::optional<ShaderBlob> blob = BuiltinShaderBlob(shader, ShaderTarget::Msl);
+        REQUIRE(blob.has_value());
+        const std::string_view msl(reinterpret_cast<const char *>(blob->code.data()), blob->code.size());
+        REQUIRE(msl.find("[[buffer(30)]]") != std::string_view::npos);
+    }
 }
 #endif
 

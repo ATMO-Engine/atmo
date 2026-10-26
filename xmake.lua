@@ -73,6 +73,14 @@ option("rendering_vulkan")
     end)
 option_end()
 
+option("rendering_metal")
+    set_showmenu(true)
+    set_description("Build the Metal RenderingPlatform (default: on on macOS)")
+    on_check(function (option)
+        option:enable(is_plat("macosx"))
+    end)
+option_end()
+
 local VULKAN_SDK_VERSION = "1.4.335+0"
 
 add_requires("slang v2026.20", { system = false, configs = { shared = false, asan = false, slangc = true, dxil = false, slang_llvm_flavor = "DISABLE" } })
@@ -84,6 +92,10 @@ if has_config("rendering_vulkan") then
     if is_plat("macosx") then
         add_requires("moltenvk v1.4.2", { system = false, configs = { asan = false } })
     end
+end
+
+if has_config("rendering_metal") then
+    add_requires("metal-cpp 26", { system = false })
 end
 
 rule("slang.builtin")
@@ -113,7 +125,11 @@ rule("slang.builtin")
             for _, shader_target in ipairs(shader_targets) do
                 local blob = path.join(outdir, path.basename(sourcefile) .. "." .. shader_target)
                 batchcmds:show_progress(opt.progress, "${color.build.object}compiling.slang %s (%s)", sourcefile, shader_target)
-                batchcmds:vrunv(slangc, {path(sourcefile), "-I", path(sourcedir), "-target", shader_target, "-O0", "-fvk-use-entrypoint-name", "-o", path(blob)})
+                local args = {path(sourcefile), "-I", path(sourcedir), "-target", shader_target, "-O0", "-fvk-use-entrypoint-name", "-o", path(blob)}
+                if shader_target == "metal" then
+                    table.insert(args, "-DATMO_TARGET_METAL")
+                end
+                batchcmds:vrunv(slangc, args)
                 batchcmds:vlua("cli.binutils.bin2c", {"-i", path(blob), "-o", path(blob .. ".h"), "--nozeroend"})
                 table.insert(outputs, blob .. ".h")
             end
@@ -204,6 +220,13 @@ function rendering(opt)
         end
     else
         remove_files("src/server/rendering/api/vulkan/**.cpp")
+    end
+    if has_config("rendering_metal") then
+        table.insert(shader_targets, "metal")
+        add_packages("metal-cpp")
+        add_defines("ATMO_RENDERING_METAL")
+    else
+        remove_files("src/server/rendering/api/metal/**.cpp")
     end
 
     add_rules("slang.builtin", { targets = shader_targets, embed_sources = opt.shader_compiler })

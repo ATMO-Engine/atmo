@@ -1,4 +1,6 @@
-#if defined(ATMO_RENDERING_VULKAN)
+#include "gpu_platforms.hpp"
+
+#if defined(ATMO_GPU_PLATFORMS)
 
 #include <algorithm>
 #include <array>
@@ -7,6 +9,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <iterator>
@@ -15,104 +18,26 @@
 #include <string>
 #include <vector>
 
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <clay.h>
 
 #include "SDL3/SDL.h"
 #include "SDL3_image/SDL_image.h"
 #include "core/resource/font.hpp"
+#include "gpu_server.hpp"
 #include "impl/clay_canvas_renderer.hpp"
 #include "offscreen_video.hpp"
-#include "server/rendering/api/vulkan/vulkan_platform.hpp"
 #include "server/rendering/rendering_server.hpp"
 
 using namespace atmo::server::rendering;
 using atmo::core::types::Color;
 using atmo::core::types::Vector2;
 
+using namespace gpu_test;
+
 namespace
 {
-    constexpr int width = 128;
-    constexpr int height = 96;
-    const Color clear_color{ 0.08f, 0.09f, 0.11f, 1.0f };
-
-    struct Image {
-        int width = 0;
-        int height = 0;
-        std::vector<std::uint8_t> rgba;
-
-        [[nodiscard]] const std::uint8_t *pixel(int x, int y) const
-        {
-            return rgba.data() + ((static_cast<std::size_t>(y) * width) + x) * 4;
-        }
-    };
-
-    struct Comparison {
-        std::size_t differing = 0;
-        int max_difference = 0;
-    };
-
-    Comparison Compare(const Image &a, const Image &b, int tolerance)
-    {
-        Comparison result;
-        for (int y = 0; y < a.height; ++y) {
-            for (int x = 0; x < a.width; ++x) {
-                int worst = 0;
-                for (int c = 0; c < 3; ++c) worst = std::max(worst, std::abs(int(a.pixel(x, y)[c]) - int(b.pixel(x, y)[c])));
-                result.max_difference = std::max(result.max_difference, worst);
-                if (worst > tolerance)
-                    ++result.differing;
-            }
-        }
-        return result;
-    }
-
-    bool SavePng(const Image &image, const std::filesystem::path &path)
-    {
-        std::filesystem::create_directories(path.parent_path());
-        SDL_Surface *surface =
-            SDL_CreateSurfaceFrom(image.width, image.height, SDL_PIXELFORMAT_RGBA32, const_cast<std::uint8_t *>(image.rgba.data()), image.width * 4);
-        const bool saved = surface && IMG_SavePNG(surface, path.string().c_str());
-        SDL_DestroySurface(surface);
-        return saved;
-    }
-
-    std::optional<Image> LoadPng(const std::filesystem::path &path)
-    {
-        SDL_Surface *loaded = IMG_Load(path.string().c_str());
-        if (!loaded)
-            return std::nullopt;
-        SDL_Surface *surface = SDL_ConvertSurface(loaded, SDL_PIXELFORMAT_RGBA32);
-        SDL_DestroySurface(loaded);
-        if (!surface)
-            return std::nullopt;
-
-        Image image{ .width = surface->w, .height = surface->h, .rgba = std::vector<std::uint8_t>(static_cast<std::size_t>(surface->w * surface->h * 4)) };
-        for (int y = 0; y < surface->h; ++y)
-            std::memcpy(
-                image.rgba.data() + (static_cast<std::size_t>(y) * surface->w * 4),
-                static_cast<const std::uint8_t *>(surface->pixels) + (static_cast<std::size_t>(y) * surface->pitch),
-                static_cast<std::size_t>(surface->w) * 4);
-        SDL_DestroySurface(surface);
-        return image;
-    }
-
-    std::vector<std::byte> Checker(int size, int cell)
-    {
-        std::vector<std::byte> pixels(static_cast<std::size_t>(size * size * 4));
-        for (int y = 0; y < size; ++y) {
-            for (int x = 0; x < size; ++x) {
-                const bool light = ((x / cell) + (y / cell)) % 2 == 0;
-                std::byte *p = pixels.data() + ((static_cast<std::size_t>(y) * size) + x) * 4;
-                p[0] = std::byte{ static_cast<std::uint8_t>(light ? 0xF2 : 0x2E) };
-                p[1] = std::byte{ static_cast<std::uint8_t>(light ? 0xA6 : 0x6F) };
-                p[2] = std::byte{ static_cast<std::uint8_t>(light ? 0x3B : 0xB5) };
-                p[3] = std::byte{ 0xFF };
-            }
-        }
-        return pixels;
-    }
-
     struct Sprite {
         Vector2 position;
         float rotation;
@@ -129,93 +54,15 @@ namespace
     const Vector2 camera_position{ 60.0f, 50.0f };
     constexpr int sprite_size = 16;
 
-    struct VulkanServer {
-        VulkanServer()
-        {
-            if (!video.available)
-                return;
-            REQUIRE(RenderingServer::Instance().init({ .platform = PlatformKind::Vulkan, .gpu_validation = true }));
-            ready = RenderingServer::Instance().platformKind() == PlatformKind::Vulkan;
-        }
-
-        ~VulkanServer()
-        {
-            RenderingServer::Instance().shutdown();
-        }
-
-        Image render(const std::function<void(RenderingServer &, CanvasRid)> &build, const Affine2d &view = {})
-        {
-            RenderingServer &server = RenderingServer::Instance();
-            CanvasRid canvas = server.canvasCreate();
-            ViewportRid viewport = server.viewportCreate();
-            server.viewportSetSize(viewport, { width, height });
-            server.viewportSetCanvas(viewport, canvas);
-            server.viewportSetClearColor(viewport, clear_color);
-            server.viewportSetCanvasTransform(viewport, view);
-            build(server, canvas);
-
-            std::optional<TextureData> data;
-            server.textureRequestData(server.viewportGetTexture(viewport), [&data](TextureData result) { data = std::move(result); });
-            server.sync();
-            server.waitIdle();
-            REQUIRE(data.has_value());
-            REQUIRE(data->pixels.size() == static_cast<std::size_t>(width * height * 4));
-
-            server.viewportFree(viewport);
-            server.canvasFree(canvas);
-
-            Image image{ .width = width, .height = height, .rgba = std::vector<std::uint8_t>(data->pixels.size()) };
-            std::memcpy(image.rgba.data(), data->pixels.data(), data->pixels.size());
-            return image;
-        }
-
-        [[nodiscard]] std::uint32_t validationErrors()
-        {
-            return dynamic_cast<VulkanPlatform &>(RenderingServer::Instance().platform()).validationErrorCount();
-        }
-
-        OffscreenVideo video;
-        bool ready = false;
-    };
-
-#define REQUIRE_VULKAN_SERVER(fixture)                                          \
-    do {                                                                        \
-        if (!(fixture).video.available)                                         \
-            SKIP("SDL offscreen video driver unavailable: " << SDL_GetError()); \
-        if (!(fixture).ready)                                                   \
-            SKIP("No Vulkan 1.3 device with the required features");            \
-    } while (false)
-
-    void CheckGolden(const Image &actual, const std::string &name)
-    {
-        const std::filesystem::path golden = std::filesystem::path("tests") / "golden" / (name + ".png");
-        if (std::getenv("ATMO_UPDATE_GOLDENS")) {
-            REQUIRE(SavePng(actual, golden));
-            WARN("Updated golden image " << golden.string());
-            return;
-        }
-
-        std::optional<Image> expected = LoadPng(golden);
-        REQUIRE(expected.has_value());
-        REQUIRE(expected->width == actual.width);
-        REQUIRE(expected->height == actual.height);
-
-        const Comparison comparison = Compare(actual, *expected, 8);
-        const std::size_t budget = static_cast<std::size_t>(actual.width * actual.height) / 200;
-        if (comparison.differing > budget)
-            SavePng(actual, std::filesystem::path("build") / "golden" / (name + ".actual.png"));
-        CAPTURE(comparison.differing, comparison.max_difference, budget);
-        REQUIRE(comparison.differing <= budget);
-    }
 } // namespace
 
-TEST_CASE("the canvas renderer matches its golden image", "[rendering][vulkan][golden]")
+TEMPLATE_TEST_CASE("the canvas renderer matches its golden image", "[rendering][gpu][golden]", ATMO_GPU_PLATFORMS)
 {
-    VulkanServer vulkan;
-    REQUIRE_VULKAN_SERVER(vulkan);
+    GpuServer<TestType> gpu;
+    REQUIRE_GPU_SERVER(gpu);
 
     TextureRid checker;
-    const Image image = vulkan.render([&checker](RenderingServer &server, CanvasRid canvas) {
+    const Image image = gpu.render([&checker](RenderingServer &server, CanvasRid canvas) {
         checker = server.texture2dCreate({ .size = { 16, 16 } }, Checker(16, 4));
 
         CanvasItemRid background = server.canvasItemCreate(canvas);
@@ -240,15 +87,15 @@ TEST_CASE("the canvas renderer matches its golden image", "[rendering][vulkan][g
         server.canvasItemPopClip(clipped);
     });
 
-    CheckGolden(image, "canvas_basic");
+    CheckGolden(image, "canvas_basic", GpuPlatformTraits<TestType>::kind);
     RenderingServer::Instance().textureFree(checker);
-    REQUIRE(vulkan.validationErrors() == 0);
+    REQUIRE(gpu.validationErrors() == 0);
 }
 
-TEST_CASE("sprites land where the SDL_Renderer path drew them", "[rendering][vulkan][parity]")
+TEMPLATE_TEST_CASE("sprites land where the SDL_Renderer path drew them", "[rendering][gpu][parity]", ATMO_GPU_PLATFORMS)
 {
-    VulkanServer vulkan;
-    REQUIRE_VULKAN_SERVER(vulkan);
+    GpuServer<TestType> gpu;
+    REQUIRE_GPU_SERVER(gpu);
 
     const std::vector<std::byte> pixels = Checker(sprite_size, 4);
 
@@ -289,7 +136,7 @@ TEST_CASE("sprites land where the SDL_Renderer path drew them", "[rendering][vul
         Affine2d::Translation({ -camera_position.x, -camera_position.y });
 
     TextureRid sprite_texture;
-    const Image actual = vulkan.render(
+    const Image actual = gpu.render(
         [&](RenderingServer &server, CanvasRid canvas) {
             sprite_texture = server.texture2dCreate({ .size = { sprite_size, sprite_size } }, pixels);
             for (const Sprite &sprite : sprites) {
@@ -311,13 +158,13 @@ TEST_CASE("sprites land where the SDL_Renderer path drew them", "[rendering][vul
     REQUIRE(comparison.differing <= budget);
 
     RenderingServer::Instance().textureFree(sprite_texture);
-    REQUIRE(vulkan.validationErrors() == 0);
+    REQUIRE(gpu.validationErrors() == 0);
 }
 
-TEST_CASE("letterbox bars use the border color and clip the canvas", "[rendering][vulkan]")
+TEMPLATE_TEST_CASE("letterbox bars use the border color and clip the canvas", "[rendering][gpu]", ATMO_GPU_PLATFORMS)
 {
-    VulkanServer vulkan;
-    REQUIRE_VULKAN_SERVER(vulkan);
+    GpuServer<TestType> gpu;
+    REQUIRE_GPU_SERVER(gpu);
 
     RenderingServer &server = RenderingServer::Instance();
     CanvasRid canvas = server.canvasCreate();
@@ -347,13 +194,58 @@ TEST_CASE("letterbox bars use the border color and clip the canvas", "[rendering
 
     server.viewportFree(viewport);
     server.canvasFree(canvas);
-    REQUIRE(vulkan.validationErrors() == 0);
+    REQUIRE(gpu.validationErrors() == 0);
 }
 
-TEST_CASE("a Clay layout matches its golden image", "[rendering][vulkan][golden][ui]")
+TEMPLATE_TEST_CASE("a viewport samples another viewport rendered in the same frame", "[rendering][gpu]", ATMO_GPU_PLATFORMS)
 {
-    VulkanServer vulkan;
-    REQUIRE_VULKAN_SERVER(vulkan);
+    GpuServer<TestType> gpu;
+    REQUIRE_GPU_SERVER(gpu);
+
+    RenderingServer &server = RenderingServer::Instance();
+    CanvasRid source_canvas = server.canvasCreate();
+    ViewportRid source = server.viewportCreate();
+    server.viewportSetSize(source, { width, height });
+    server.viewportSetCanvas(source, source_canvas);
+    server.viewportSetClearColor(source, Color(0.0f, 0.0f, 0.0f, 1.0f));
+    CanvasItemRid fill = server.canvasItemCreate(source_canvas);
+
+    CanvasRid target_canvas = server.canvasCreate();
+    ViewportRid target = server.viewportCreate();
+    server.viewportSetSize(target, { width, height });
+    server.viewportSetCanvas(target, target_canvas);
+    CanvasItemRid copy = server.canvasItemCreate(target_canvas);
+    server.canvasItemAddTextureRect(
+        copy, { { 0.0f, 0.0f }, { float(width), float(height) } }, server.viewportGetTexture(source), { .filter = TextureFilter::Nearest });
+
+    const std::array colors{ Color(1.0f, 0.0f, 0.0f, 1.0f), Color(0.0f, 1.0f, 0.0f, 1.0f), Color(0.0f, 0.0f, 1.0f, 1.0f), Color(1.0f, 1.0f, 1.0f, 1.0f) };
+    for (const Color &color : colors) {
+        server.canvasItemClear(fill);
+        server.canvasItemAddRect(fill, { { 0.0f, 0.0f }, { float(width), float(height) } }, color);
+
+        std::optional<TextureData> data;
+        server.textureRequestData(server.viewportGetTexture(target), [&data](TextureData result) { data = std::move(result); });
+        server.sync();
+        server.waitIdle();
+        REQUIRE(data.has_value());
+
+        const std::size_t center = ((static_cast<std::size_t>(height / 2) * width) + (width / 2)) * 4;
+        const std::array<int, 3> actual{ int(data->pixels[center]), int(data->pixels[center + 1]), int(data->pixels[center + 2]) };
+        const std::array<int, 3> expected{ int(color.r * 255.0f), int(color.g * 255.0f), int(color.b * 255.0f) };
+        REQUIRE(actual == expected);
+    }
+
+    server.viewportFree(target);
+    server.canvasFree(target_canvas);
+    server.viewportFree(source);
+    server.canvasFree(source_canvas);
+    REQUIRE(gpu.validationErrors() == 0);
+}
+
+TEMPLATE_TEST_CASE("a Clay layout matches its golden image", "[rendering][gpu][golden][ui]", ATMO_GPU_PLATFORMS)
+{
+    GpuServer<TestType> gpu;
+    REQUIRE_GPU_SERVER(gpu);
 
     RenderingServer &server = RenderingServer::Instance();
     std::ifstream file("assets/fonts/Nunito/Nunito.ttf", std::ios::binary);
@@ -418,14 +310,14 @@ TEST_CASE("a Clay layout matches its golden image", "[rendering][vulkan][golden]
     Clay_SetCurrentContext(previous);
     std::free(memory);
 
-    const Image image = vulkan.render([&writer](RenderingServer &target, CanvasRid canvas) {
+    const Image image = gpu.render([&writer](RenderingServer &target, CanvasRid canvas) {
         const CanvasItemRid item = target.canvasItemCreate(canvas);
         target.canvasItemSetCommands(item, std::move(writer));
     });
 
-    CheckGolden(image, "ui_basic");
+    CheckGolden(image, "ui_basic", GpuPlatformTraits<TestType>::kind);
     server.textureFree(checker);
-    REQUIRE(vulkan.validationErrors() == 0);
+    REQUIRE(gpu.validationErrors() == 0);
 }
 
 #endif

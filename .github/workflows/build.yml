@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
     paths-ignore: ["**.md", "LICENSE", "THIRD_PARTY_LICENSES"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -148,6 +149,28 @@ jobs:
           path: build/.build_cache
           key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
 
+      - name: Install the Vulkan loader and lavapipe
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          VULKAN_RUNTIME_VERSION: "1.4.335.0"
+          VULKAN_RUNTIME_SHA256: 4f856da356ffb1c16fbfc792cae70f6e6873680e6b62bc132b9d7131cbc97fe2
+          MESA_VERSION: "26.2.4"
+          MESA_SHA256: 351fc8c8b695878ffb3eaa044b3ead08672a48b1a045e3c3e3975811df0f6695
+        run: |
+          temp="$(cygpath -u "$RUNNER_TEMP")"
+          cd "$temp"
+          curl -sSfL -o vulkan-runtime.zip "https://sdk.lunarg.com/sdk/download/${VULKAN_RUNTIME_VERSION}/windows/VulkanRT-X64-${VULKAN_RUNTIME_VERSION}-Components.zip"
+          curl -sSfL -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/${MESA_VERSION}/mesa3d-${MESA_VERSION}-release-msvc.7z"
+          echo "${VULKAN_RUNTIME_SHA256}  vulkan-runtime.zip" | sha256sum -c -
+          echo "${MESA_SHA256}  mesa.7z" | sha256sum -c -
+          7z x -y -ovulkan-runtime vulkan-runtime.zip > /dev/null
+          7z x -y -omesa mesa.7z > /dev/null
+          mkdir -p vulkan
+          cp vulkan-runtime/*/x64/vulkan-1.dll mesa/x64/vulkan_lvp.dll mesa/x64/lvp_icd.x86_64.json vulkan/
+          echo "SDL_VULKAN_LIBRARY=$(cygpath -w "$temp/vulkan/vulkan-1.dll")" >> "$GITHUB_ENV"
+          echo "VK_DRIVER_FILES=$(cygpath -w "$temp/vulkan/lvp_icd.x86_64.json")" >> "$GITHUB_ENV"
+
       - name: Allow ThreadSanitizer memory mappings
         if: matrix.variant == 'tsan'
         run: sudo sysctl vm.mmap_rnd_bits=28
@@ -155,6 +178,12 @@ jobs:
       - name: Run unit tests
         if: ${{ !matrix.test-args }}
         run: xmake test -v
+
+      - name: Run Metal tests without residency sets
+        if: runner.os == 'macOS'
+        env:
+          ATMO_METAL_RESIDENCY_SETS: "0"
+        run: ./build/atmo-test "[gpu],[metal]"
 
       - name: Run selected unit tests
         if: matrix.test-args

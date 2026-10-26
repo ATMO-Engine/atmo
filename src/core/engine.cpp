@@ -5,8 +5,10 @@
 #include <string>
 
 #include "SDL3/SDL_error.h"
+#include "SDL3/SDL_filesystem.h"
 #include "SDL3/SDL_hints.h"
 #include "SDL3/SDL_keycode.h"
+#include "SDL3/SDL_messagebox.h"
 #include "SDL3/SDL_scancode.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "args/arg_manager.hpp"
@@ -20,6 +22,7 @@
 #include "core/event/event_registry.hpp"
 #include "core/event/events/progress_tick_event/progress_tick_event.hpp"
 #include "core/input/input_manager.hpp"
+#include "core/resource/shader.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
@@ -207,8 +210,8 @@ namespace atmo::core
 
         ArgManager::AddArgument("--rendering-platform")
             .help(
-                "Rendering platform to use: metal, d3d12, vulkan or null. By default the best one for the device is picked: metal then vulkan on macOS, "
-                "d3d12 then vulkan on Windows, vulkan on Linux, null in headless mode. An unavailable platform falls back to the default.")
+                "Rendering platform to use: metal, vulkan or null (d3d12 is not built yet). By default the best one for the device is picked: metal then "
+                "vulkan on macOS, vulkan on Windows and Linux, null in headless mode. An unavailable platform falls back to the default.")
             .metavar("platform");
         ArgManager::AddArgument("--render-thread")
             .defaultValue(std::string("on"))
@@ -311,6 +314,14 @@ namespace atmo::core
         return 0;
     }
 
+    static constexpr const char *no_gpu_message =
+#if defined(__APPLE__)
+        "No supported graphics device was found.\n\nAtmo needs a Mac that supports Metal 3 (macOS 13 or later).";
+#else
+        "No supported graphics device was found.\n\nAtmo needs a graphics card and driver with Vulkan 1.3 support. Installing the latest driver from the "
+        "graphics card vendor usually fixes this.";
+#endif
+
     int Engine::init()
     {
         if (int ret = initLogger(); ret != 0)
@@ -347,9 +358,22 @@ namespace atmo::core
         } else if (m_headless) {
             rendering_settings.platform = server::rendering::PlatformKind::Null;
         }
+        if (!m_headless) {
+            if (char *pref_path = SDL_GetPrefPath("Atmo", "Atmo")) {
+                rendering_settings.pipeline_cache_dir = std::string(pref_path) + "pipeline-cache";
+                SDL_free(pref_path);
+            }
+        }
 
         if (!server::rendering::RenderingServer::Instance().init(rendering_settings))
             return 1;
+
+        if (!m_headless && rendering_settings.platform != server::rendering::PlatformKind::Null &&
+            server::rendering::RenderingServer::Instance().platformKind() == server::rendering::PlatformKind::Null) {
+            spdlog::critical("No GPU rendering platform could be initialized");
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Atmo cannot start", no_gpu_message, nullptr);
+            return 1;
+        }
 
         m_ecs.reset();
 
@@ -446,6 +470,9 @@ namespace atmo::core
         while (m_ecs.progress(deltaTime)) {
             ATMO_PROFILE_FRAME();
             server::rendering::RenderingServer::Instance().sync();
+#if !defined(ATMO_EXPORT)
+            core::resource::Shader::ReloadChanged();
+#endif
 
             if (!m_running.load()) {
                 m_ecs.stop();

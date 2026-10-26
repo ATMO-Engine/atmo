@@ -10,6 +10,7 @@ namespace atmo::server::rendering
     enum class BuiltinShader : std::uint8_t {
         TestPattern,
         Canvas,
+        Post,
     };
 
     [[nodiscard]] std::optional<ShaderBlob> BuiltinShaderBlob(BuiltinShader shader, ShaderTarget target) noexcept;

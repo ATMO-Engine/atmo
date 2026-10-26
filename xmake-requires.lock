@@ -113,6 +113,12 @@
             },
             version = "0.689"
         },
+        ["metal-cpp 26#f56260b5"] = {
+            repo = {
+                url = "deps"
+            },
+            version = "26"
+        },
         ["miniz#f56260b5"] = {
             repo = {
                 branch = "master",

@@ -2,11 +2,13 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "core/types.hpp"
 #include "server/rendering/canvas_commands.hpp"
+#include "server/rendering/material_types.hpp"
 #include "server/rendering/platform/rendering_platform.hpp"
 #include "server/rendering/rid.hpp"
 #include "server/rendering/types.hpp"
@@ -22,6 +24,8 @@ namespace atmo::server::rendering
         bool visible = true;
         std::uint64_t order = 0;
         std::size_t slot = 0;
+        MaterialRid material;
+        ColorRgba custom{};
         std::vector<CanvasCommand> commands;
 
         std::uint64_t cache_frame = 0;
@@ -41,10 +45,24 @@ namespace atmo::server::rendering
         core::types::Vector2i size{};
     };
 
+    struct ShaderEntry {
+        std::string name;
+        ShaderKind kind = ShaderKind::Canvas;
+        std::string entry_point;
+        ShaderModuleHandle module;
+    };
+
+    struct MaterialEntry {
+        ShaderRid shader;
+        MaterialData data;
+    };
+
     struct CanvasStorage {
         std::unordered_map<std::uint32_t, CanvasData> canvases;
         std::unordered_map<std::uint32_t, CanvasItemData> items;
         std::unordered_map<std::uint32_t, TextureEntry> textures;
+        std::unordered_map<std::uint32_t, ShaderEntry> shaders;
+        std::unordered_map<std::uint32_t, MaterialEntry> materials;
         std::uint64_t next_order = 1;
     };
 } // namespace atmo::server::rendering

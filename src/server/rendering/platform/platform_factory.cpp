@@ -5,6 +5,9 @@
 #include "server/rendering/api/null/null_platform.hpp"
 #include "spdlog/spdlog.h"
 
+#if defined(ATMO_RENDERING_METAL)
+#include "server/rendering/api/metal/metal_platform.hpp"
+#endif
 #if defined(ATMO_RENDERING_VULKAN)
 #include "server/rendering/api/vulkan/vulkan_platform.hpp"
 #endif
@@ -71,6 +74,12 @@ namespace atmo::server::rendering
                 return nullptr;
 #endif
             case PlatformKind::Metal:
+#if defined(ATMO_RENDERING_METAL)
+                return std::make_unique<MetalPlatform>();
+#else
+                ReportUnbuilt(kind, requested);
+                return nullptr;
+#endif
             case PlatformKind::D3D12:
                 ReportUnbuilt(kind, requested);
                 return nullptr;
@@ -99,8 +108,6 @@ namespace atmo::server::rendering
     {
 #if defined(__APPLE__)
         static constexpr std::array order{ PlatformKind::Metal, PlatformKind::Vulkan, PlatformKind::Null };
-#elif defined(_WIN32)
-        static constexpr std::array order{ PlatformKind::D3D12, PlatformKind::Vulkan, PlatformKind::Null };
 #else
         static constexpr std::array order{ PlatformKind::Vulkan, PlatformKind::Null };
 #endif

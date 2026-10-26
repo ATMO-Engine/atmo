@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -20,6 +21,7 @@ struct TTF_Font;
 #include "core/types.hpp"
 #include "server/rendering/canvas_commands.hpp"
 #include "server/rendering/command_queue.hpp"
+#include "server/rendering/material_types.hpp"
 #include "server/rendering/platform/rendering_platform.hpp"
 #include "server/rendering/render_thread.hpp"
 #include "server/rendering/rid.hpp"
@@ -80,6 +82,7 @@ namespace atmo::server::rendering
         void viewportSetActive(ViewportRid viewport, bool active);
         void viewportSetContentRect(ViewportRid viewport, const std::optional<Rect2> &rect);
         void viewportSetBorderColor(ViewportRid viewport, const core::types::Color &color);
+        void viewportSetPostProcess(ViewportRid viewport, std::span<const MaterialRid> materials);
         [[nodiscard]] TextureRid viewportGetTexture(ViewportRid viewport) const;
         [[nodiscard]] core::types::Vector2i viewportGetSize(ViewportRid viewport) const;
         void viewportFree(ViewportRid viewport);
@@ -93,6 +96,8 @@ namespace atmo::server::rendering
         void canvasItemSetZIndex(CanvasItemRid item, int z_index);
         void canvasItemSetVisible(CanvasItemRid item, bool visible);
         void canvasItemSetModulate(CanvasItemRid item, const core::types::Color &color);
+        void canvasItemSetMaterial(CanvasItemRid item, MaterialRid material);
+        void canvasItemSetCustom(CanvasItemRid item, const core::types::Vector4 &custom);
         void canvasItemClear(CanvasItemRid item);
         void canvasItemAddRect(CanvasItemRid item, const Rect2 &rect, const core::types::Color &color, const RectStyle &style = {});
         void canvasItemAddTextureRect(CanvasItemRid item, const Rect2 &rect, TextureRid texture, const TextureRectOptions &options = {});
@@ -105,6 +110,19 @@ namespace atmo::server::rendering
         void canvasItemPushClip(CanvasItemRid item, const Rect2 &clip);
         void canvasItemPopClip(CanvasItemRid item);
         void canvasItemFree(CanvasItemRid item);
+
+        [[nodiscard]] ShaderTarget shaderTarget() const;
+        ShaderRid shaderCreate(ShaderDesc desc);
+        void shaderUpdate(ShaderRid shader, ShaderDesc desc);
+        void shaderFree(ShaderRid shader);
+        [[nodiscard]] const ShaderParamLayout *shaderGetLayout(ShaderRid shader) const;
+        [[nodiscard]] std::optional<ShaderKind> shaderGetKind(ShaderRid shader) const;
+
+        MaterialRid materialCreate(ShaderRid shader);
+        bool materialSetParam(MaterialRid material, std::string_view name, const ShaderValue &value);
+        [[nodiscard]] std::optional<ShaderValue> materialGetParam(MaterialRid material, std::string_view name) const;
+        [[nodiscard]] ShaderRid materialGetShader(MaterialRid material) const;
+        void materialFree(MaterialRid material);
 
         FontRid fontCreate(std::span<const std::byte> data, std::string_view debug_name = {});
         void fontFree(FontRid font);
@@ -122,6 +140,7 @@ namespace atmo::server::rendering
         RenderingServer();
 
         void assertMainThread() const;
+        void uploadMaterial(MaterialRid material);
         void renderFrame(CommandQueue::Batch *batch);
         void completeFrames();
 
@@ -144,6 +163,24 @@ namespace atmo::server::rendering
         RidAllocator<RidKind::Texture> m_texture_rids;
         RidAllocator<RidKind::Canvas> m_canvas_rids;
         RidAllocator<RidKind::CanvasItem> m_canvas_item_rids;
+        RidAllocator<RidKind::Shader> m_shader_rids;
+        RidAllocator<RidKind::Material> m_material_rids;
+
+        struct ShaderMirror {
+            std::string name;
+            ShaderKind kind = ShaderKind::Canvas;
+            ShaderParamLayout layout;
+        };
+
+        struct MaterialMirror {
+            MaterialRid self;
+            ShaderRid shader;
+            std::vector<std::pair<std::string, ShaderValue>> values;
+        };
+
+        std::unordered_map<std::uint32_t, ShaderMirror> m_shaders;
+        std::unordered_map<std::uint32_t, MaterialMirror> m_materials;
+        std::chrono::steady_clock::time_point m_start_time;
 
         std::unordered_map<std::uint32_t, ViewportRid> m_window_viewports;
         std::unordered_map<std::uint32_t, core::types::Vector2i> m_texture_sizes;

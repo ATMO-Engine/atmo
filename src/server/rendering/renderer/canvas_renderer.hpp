@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -25,12 +26,14 @@ namespace atmo::server::rendering
             std::array<float, 4> corner_radii;
             std::array<float, 4> border_widths;
             ColorRgba border_color;
+            ColorRgba custom;
         };
 
         struct alignas(16) Vertex {
             std::array<float, 4> position_uv;
             ColorRgba color;
             std::array<std::uint32_t, 4> resources;
+            ColorRgba custom;
         };
 
         enum class BatchKind : std::uint8_t {
@@ -43,6 +46,19 @@ namespace atmo::server::rendering
             std::uint32_t first = 0;
             std::uint32_t count = 0;
             Region2i scissor;
+            MaterialRid material;
+            ShaderRid shader;
+            std::uint32_t material_offset = 0;
+            Affine2d canvas_from_pixels;
+        };
+
+        struct PostDraw {
+            TextureHandle source;
+            MaterialRid material;
+            ShaderRid shader;
+            std::uint32_t material_offset = 0;
+            Region2i content;
+            core::types::Vector2i target_size{};
         };
 
         explicit CanvasRenderer(RenderingPlatform &platform);
@@ -60,7 +76,14 @@ namespace atmo::server::rendering
         void addCanvas(std::size_t job, CanvasStorage &storage, CanvasRid canvas, const Affine2d &view, bool clip_to_content, FrameStats &stats);
         void endJob(std::size_t job, FrameStats &stats);
         void upload();
-        void record(std::size_t job, CommandList &list, TextureFormat format);
+        void record(std::size_t job, CommandList &list, TextureFormat format, const CanvasStorage &storage);
+
+        void setTime(float seconds) noexcept;
+        [[nodiscard]] std::optional<PostDraw> preparePost(
+            CanvasStorage &storage, MaterialRid material, TextureHandle source, const Region2i &content, core::types::Vector2i target_size,
+            std::vector<TextureHandle> &sampled);
+        void recordPost(const PostDraw &draw, CommandList &list, TextureFormat format, const CanvasStorage &storage);
+        void releaseShader(ShaderRid shader) noexcept;
 
         [[nodiscard]] const std::vector<TextureHandle> &sampledTextures(std::size_t job) const;
         [[nodiscard]] const std::vector<Batch> &batches(std::size_t job) const;
@@ -80,6 +103,27 @@ namespace atmo::server::rendering
             PipelineHandle mesh;
         };
 
+        struct MaterialPipelines {
+            std::uint32_t shader = 0;
+            TextureFormat format = TextureFormat::Undefined;
+            ShaderKind kind = ShaderKind::Canvas;
+            PipelineHandle quads;
+            PipelineHandle mesh;
+            PipelineHandle post;
+        };
+
+        struct MaterialSlot {
+            std::uint32_t offset = 0;
+            ShaderRid shader;
+            std::vector<TextureHandle> textures;
+        };
+
+        struct ItemMaterial {
+            MaterialRid material;
+            ShaderRid shader;
+            std::uint32_t offset = 0;
+        };
+
         struct GpuBuffer {
             BufferHandle handle;
             std::size_t capacity = 0;
@@ -88,6 +132,8 @@ namespace atmo::server::rendering
         bool ensureResources();
         void release() noexcept;
         Pipelines pipelinesFor(TextureFormat format);
+        const MaterialPipelines *materialPipelinesFor(ShaderRid shader, TextureFormat format, const CanvasStorage &storage);
+        const MaterialSlot *materialSlot(CanvasStorage &storage, MaterialRid material, ShaderKind kind);
         SamplerHandle samplerFor(TextureFilter filter, bool repeat) const;
         void resolveGlobal(CanvasStorage &storage, CanvasItemData &item);
         void sortCanvas(CanvasStorage &storage, CanvasData &canvas);
@@ -97,21 +143,32 @@ namespace atmo::server::rendering
             Job &job, const Affine2d &transform, std::array<float, 4> uv, const ColorRgba &color, std::uint32_t texture, std::uint32_t sampler,
             const Region2i &scissor, FrameStats &stats, const RectStyle *style = nullptr, core::types::Vector2 size = {});
         void pushTriangles(Job &job, std::span<const std::array<float, 4>> positions_uv, std::span<const ColorRgba> colors, const Region2i &scissor);
+        bool extendsLast(const Job &job, BatchKind kind, std::uint32_t first, const Region2i &scissor) const noexcept;
+        void pushBatch(Job &job, BatchKind kind, std::uint32_t first, std::uint32_t count, const Region2i &scissor);
 
         RenderingPlatform &m_platform;
         ShaderModuleHandle m_module;
+        ShaderModuleHandle m_post_module;
         TextureHandle m_white;
         BufferHandle m_quad_indices;
         std::array<SamplerHandle, 4> m_samplers{};
         std::vector<std::pair<TextureFormat, Pipelines>> m_pipelines;
         std::vector<GpuBuffer> m_instance_buffers;
         std::vector<GpuBuffer> m_vertex_buffers;
+        std::vector<GpuBuffer> m_material_buffers;
+        std::vector<MaterialPipelines> m_material_pipelines;
 
         std::vector<Job> m_jobs;
         std::vector<Region2i> m_clips;
         std::unordered_set<std::uint32_t> m_sampled;
         std::vector<Instance> m_instances;
         std::vector<Vertex> m_vertices;
+        std::vector<std::byte> m_material_bytes;
+        std::unordered_map<std::uint32_t, MaterialSlot> m_material_slots;
+        ItemMaterial m_item_material;
+        ColorRgba m_item_custom{};
+        Affine2d m_canvas_from_pixels;
+        float m_time = 0.0f;
         std::uint64_t m_frame = 0;
         std::uint32_t m_white_index = 0;
         bool m_ready = false;

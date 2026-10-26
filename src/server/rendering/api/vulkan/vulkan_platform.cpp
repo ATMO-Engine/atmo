@@ -2,7 +2,10 @@
 
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
 #include <format>
+#include <fstream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 
@@ -27,6 +30,7 @@ namespace atmo::server::rendering
         constexpr std::uint32_t max_bindless_samplers = 64;
         constexpr std::uint32_t max_bindless_buffers = 4096;
         constexpr const char *validation_layer = "VK_LAYER_KHRONOS_validation";
+        constexpr const char *pipeline_cache_file = "vulkan-pipelines.bin";
         constexpr const char *portability_subset_extension = "VK_KHR_portability_subset";
 
         bool Contains(const std::vector<VkExtensionProperties> &extensions, std::string_view name)
@@ -84,6 +88,7 @@ namespace atmo::server::rendering
         createAllocator();
         createBindlessTable();
         createFrames();
+        openPipelineCache(settings);
         m_command_list = std::make_unique<vulkan::VulkanCommandList>(*this);
 
 #if defined(ATMO_PROFILER_TRACY)
@@ -519,6 +524,72 @@ namespace atmo::server::rendering
         }
     }
 
+    void VulkanPlatform::openPipelineCache(const RenderingSettings &settings)
+    {
+        std::vector<char> data;
+        m_pipeline_cache_loaded = false;
+        if (!settings.pipeline_cache_dir.empty()) {
+            std::error_code error;
+            std::filesystem::create_directories(settings.pipeline_cache_dir, error);
+            m_pipeline_cache_path = std::filesystem::path(settings.pipeline_cache_dir) / pipeline_cache_file;
+
+            std::ifstream in(m_pipeline_cache_path, std::ios::binary);
+            if (in.is_open())
+                data.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+
+            VkPipelineCacheHeaderVersionOne header{};
+            if (data.size() >= sizeof(header))
+                std::memcpy(&header, data.data(), sizeof(header));
+            const bool compatible = data.size() >= sizeof(header) && header.headerSize >= sizeof(header) &&
+                header.headerVersion == VK_PIPELINE_CACHE_HEADER_VERSION_ONE && header.vendorID == m_properties.vendorID &&
+                header.deviceID == m_properties.deviceID && std::memcmp(header.pipelineCacheUUID, m_properties.pipelineCacheUUID, VK_UUID_SIZE) == 0;
+            if (!data.empty() && !compatible) {
+                spdlog::info("Discarding the Vulkan pipeline cache {}: it was written by another device or driver", m_pipeline_cache_path.string());
+                data.clear();
+            }
+        }
+
+        const VkPipelineCacheCreateInfo info{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+            .initialDataSize = data.size(),
+            .pInitialData = data.empty() ? nullptr : data.data(),
+        };
+        if (vkCreatePipelineCache(m_device, &info, nullptr, &m_pipeline_cache) != VK_SUCCESS) {
+            const VkPipelineCacheCreateInfo empty{ .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
+            Check(vkCreatePipelineCache(m_device, &empty, nullptr, &m_pipeline_cache), "vkCreatePipelineCache");
+            data.clear();
+        }
+        m_pipeline_cache_loaded = !data.empty();
+    }
+
+    void VulkanPlatform::savePipelineCache() noexcept
+    {
+        if (!m_pipeline_cache || m_pipeline_cache_path.empty())
+            return;
+
+        std::size_t size = 0;
+        if (vkGetPipelineCacheData(m_device, m_pipeline_cache, &size, nullptr) != VK_SUCCESS || size == 0)
+            return;
+        std::vector<char> data(size);
+        if (vkGetPipelineCacheData(m_device, m_pipeline_cache, &size, data.data()) != VK_SUCCESS)
+            return;
+
+        std::ofstream out(m_pipeline_cache_path, std::ios::binary | std::ios::trunc);
+        out.write(data.data(), static_cast<std::streamsize>(size));
+        if (!out.good())
+            spdlog::warn("Failed to save the Vulkan pipeline cache {}", m_pipeline_cache_path.string());
+    }
+
+    const std::filesystem::path &VulkanPlatform::pipelineCachePath() const noexcept
+    {
+        return m_pipeline_cache_path;
+    }
+
+    bool VulkanPlatform::pipelineCacheLoaded() const noexcept
+    {
+        return m_pipeline_cache_loaded;
+    }
+
     void VulkanPlatform::shutdown()
     {
         if (m_device) {
@@ -551,6 +622,10 @@ namespace atmo::server::rendering
             m_pipelines.clear();
             m_modules.clear();
             m_samplers.clear();
+            savePipelineCache();
+            if (m_pipeline_cache)
+                vkDestroyPipelineCache(m_device, m_pipeline_cache, nullptr);
+            m_pipeline_cache = VK_NULL_HANDLE;
             m_textures.clear();
             m_buffers.clear();
 
@@ -1105,7 +1180,7 @@ namespace atmo::server::rendering
         };
 
         VkPipeline pipeline = VK_NULL_HANDLE;
-        Check(vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline), "vkCreateGraphicsPipelines");
+        Check(vkCreateGraphicsPipelines(m_device, m_pipeline_cache, 1, &info, nullptr, &pipeline), "vkCreateGraphicsPipelines");
         setDebugName(VK_OBJECT_TYPE_PIPELINE, reinterpret_cast<std::uint64_t>(pipeline), desc.debug_name);
         return m_pipelines.insert(pipeline);
     }

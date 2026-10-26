@@ -34,6 +34,33 @@ namespace atmo::core::ecs::entities
             if (sprite.m_texture)
                 sprite.texture_size = { static_cast<float>(sprite.m_texture->size().x), static_cast<float>(sprite.m_texture->size().y) };
         }
+        void LoadMaterial(components::Sprite2d &sprite)
+        {
+            sprite.prev_material_path = sprite.material_path;
+            sprite.m_material = nullptr;
+            if (sprite.material_path.empty())
+                return;
+
+            try {
+                sprite.m_material = resource::ResourceManager::GetInstance().getResource<resource::Material>(sprite.material_path);
+            } catch (const std::exception &e) {
+                spdlog::error("Failed to open material for sprite: {}", e.what());
+                return;
+            }
+            if (sprite.m_material && sprite.m_material->kind() == server::rendering::ShaderKind::Viewport)
+                spdlog::warn("Material {} is a post-processing material; sprites need an atmo::ICanvasMaterial", sprite.material_path);
+        }
+
+        bool SameColor(const types::Color &a, const types::Color &b)
+        {
+            return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+        }
+
+        bool SameVector(const types::Vector4 &a, const types::Vector4 &b)
+        {
+            return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
+        }
+
         server::rendering::TextureFilter ProjectTextureFilter()
         {
             const std::string &name = project::ProjectManager::GetSettings().rendering.texture_filter;
@@ -53,6 +80,8 @@ namespace atmo::core::ecs::entities
         world->system<components::Sprite2d>("Sprite2d_Sync").kind(flecs::PreUpdate).each([](flecs::entity, components::Sprite2d &sprite) {
             if (sprite.texture_path != sprite.prev_texture_path)
                 LoadTexture(sprite);
+            if (sprite.material_path != sprite.prev_material_path)
+                LoadMaterial(sprite);
         });
 
         world->system<components::Sprite2d, const components::Transform2d>("Sprite2d_Draw")
@@ -67,7 +96,24 @@ namespace atmo::core::ecs::entities
                     sprite.m_item = server.canvasItemCreate(ctx->canvas);
                     sprite.m_transform = {};
                     server.canvasItemSetTransform(sprite.m_item, sprite.m_transform);
+                    sprite.m_material_rid = {};
+                    sprite.m_modulate = types::Color::WHITE;
+                    sprite.m_custom = {};
                     sprite.m_dirty = true;
+                }
+
+                const server::rendering::MaterialRid material = sprite.m_material ? sprite.m_material->rid() : server::rendering::MaterialRid{};
+                if (material != sprite.m_material_rid) {
+                    sprite.m_material_rid = material;
+                    server.canvasItemSetMaterial(sprite.m_item, material);
+                }
+                if (!SameColor(sprite.modulate, sprite.m_modulate)) {
+                    sprite.m_modulate = sprite.modulate;
+                    server.canvasItemSetModulate(sprite.m_item, sprite.modulate);
+                }
+                if (!SameVector(sprite.custom, sprite.m_custom)) {
+                    sprite.m_custom = sprite.custom;
+                    server.canvasItemSetCustom(sprite.m_item, sprite.custom);
                 }
 
                 if (sprite.m_dirty) {
@@ -92,6 +138,7 @@ namespace atmo::core::ecs::entities
             server::rendering::RenderingServer::Instance().canvasItemFree(sprite.m_item);
             sprite.m_item = {};
             sprite.m_texture = nullptr;
+            sprite.m_material = nullptr;
         });
     }
 
@@ -121,6 +168,45 @@ namespace atmo::core::ecs::entities
     {
         auto sprite = p_handle.get_ref<components::Sprite2d>();
         return sprite->texture_path;
+    }
+
+    void Sprite2d::setMaterialPath(const std::string &path)
+    {
+        auto sprite = p_handle.get_ref<components::Sprite2d>();
+        sprite->material_path = path;
+        LoadMaterial(*sprite.get());
+    }
+
+    std::string_view Sprite2d::getMaterialPath() const noexcept
+    {
+        auto sprite = p_handle.get_ref<components::Sprite2d>();
+        return sprite->material_path;
+    }
+
+    std::shared_ptr<resource::Material> Sprite2d::getMaterial() const
+    {
+        auto sprite = p_handle.get_ref<components::Sprite2d>();
+        return sprite->m_material;
+    }
+
+    void Sprite2d::setModulate(const types::Color &modulate)
+    {
+        p_handle.get_ref<components::Sprite2d>()->modulate = modulate;
+    }
+
+    types::Color Sprite2d::getModulate() const noexcept
+    {
+        return p_handle.get_ref<components::Sprite2d>()->modulate;
+    }
+
+    void Sprite2d::setCustom(const types::Vector4 &custom)
+    {
+        p_handle.get_ref<components::Sprite2d>()->custom = custom;
+    }
+
+    types::Vector4 Sprite2d::getCustom() const noexcept
+    {
+        return p_handle.get_ref<components::Sprite2d>()->custom;
     }
 
     types::Vector2 Sprite2d::getTextureSize() const noexcept

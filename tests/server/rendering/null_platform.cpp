@@ -137,17 +137,15 @@ TEST_CASE("platform names round-trip", "[rendering][platform]")
     REQUIRE_FALSE(ParsePlatformKind("opengl").has_value());
 }
 
-TEST_CASE("automatic selection follows the native API of each OS", "[rendering][platform]")
+TEST_CASE("automatic selection prefers Metal on macOS and Vulkan elsewhere", "[rendering][platform]")
 {
     std::span<const PlatformKind> order = AutomaticPlatformOrder();
     REQUIRE(order.size() >= 2);
     REQUIRE(order.back() == PlatformKind::Null);
     REQUIRE(std::ranges::find(order, PlatformKind::Vulkan) != order.end());
+    REQUIRE(std::ranges::find(order, PlatformKind::D3D12) == order.end());
 #if defined(__APPLE__)
     REQUIRE(order.front() == PlatformKind::Metal);
-    REQUIRE(std::ranges::find(order, PlatformKind::D3D12) == order.end());
-#elif defined(_WIN32)
-    REQUIRE(order.front() == PlatformKind::D3D12);
 #else
     REQUIRE(order.front() == PlatformKind::Vulkan);
 #endif

@@ -41,6 +41,7 @@ namespace atmo::server::rendering
         void viewportSetActive(ViewportRid rid, bool active);
         void viewportSetContentRect(ViewportRid rid, const std::optional<Rect2> &rect);
         void viewportSetBorderColor(ViewportRid rid, const ColorRgba &color);
+        void viewportSetPostProcess(ViewportRid rid, std::vector<MaterialRid> materials);
         void viewportFree(ViewportRid rid);
 
         void windowAttach(WindowRid rid, ViewportRid viewport, const NativeWindow &window, core::types::Vector2i pixel_size, core::types::Vector2 dpi_scale);
@@ -56,11 +57,19 @@ namespace atmo::server::rendering
         void canvasItemSetZIndex(CanvasItemRid rid, int z_index);
         void canvasItemSetVisible(CanvasItemRid rid, bool visible);
         void canvasItemSetModulate(CanvasItemRid rid, const ColorRgba &color);
+        void canvasItemSetMaterial(CanvasItemRid rid, MaterialRid material);
+        void canvasItemSetCustom(CanvasItemRid rid, const ColorRgba &custom);
         void canvasItemClear(CanvasItemRid rid);
         void canvasItemAddCommand(CanvasItemRid rid, CanvasCommand command);
         void canvasItemAddCommands(CanvasItemRid rid, std::vector<CanvasCommand> commands);
         void canvasItemSetCommands(CanvasItemRid rid, std::vector<CanvasCommand> commands);
         void canvasItemFree(CanvasItemRid rid);
+
+        void shaderCreate(ShaderRid rid, const ShaderDesc &desc);
+        void shaderFree(ShaderRid rid);
+        void materialSetData(MaterialRid rid, ShaderRid shader, MaterialData data);
+        void materialFree(MaterialRid rid);
+        void setTime(float seconds) noexcept;
 
         void render(FrameStats &stats);
         std::vector<std::pair<std::uint64_t, TextureData>> processReadbacks();
@@ -85,6 +94,8 @@ namespace atmo::server::rendering
             std::optional<Rect2> content;
             TextureRid texture;
             bool active = true;
+            std::vector<MaterialRid> post;
+            std::vector<TextureEntry> post_targets;
         };
 
         struct Window {
@@ -96,7 +107,10 @@ namespace atmo::server::rendering
         struct Pass {
             std::string name;
             ColorAttachment attachment;
-            std::size_t job = 0;
+            std::optional<std::size_t> job;
+            std::optional<CanvasRenderer::PostDraw> post;
+            std::optional<std::size_t> overlay;
+            std::vector<TextureHandle> sampled;
             TextureFormat format = TextureFormat::Undefined;
         };
 
@@ -105,8 +119,10 @@ namespace atmo::server::rendering
         void destroyTexture(TextureEntry &entry) noexcept;
         void resizeViewportTarget(Viewport &viewport);
         void addPass(
-            std::string name, const Viewport &target, TextureHandle attachment, core::types::Vector2i size, const Affine2d &to_pixels, TextureFormat format,
+            std::string name, Viewport &target, TextureHandle attachment, core::types::Vector2i size, const Affine2d &to_pixels, TextureFormat format,
             FrameStats &stats);
+        void ensurePostTargets(Viewport &target, std::size_t count, core::types::Vector2i size);
+        void destroyShaderModule(ShaderEntry &entry) noexcept;
 
         RenderingPlatform &m_platform;
         CanvasStorage m_storage;

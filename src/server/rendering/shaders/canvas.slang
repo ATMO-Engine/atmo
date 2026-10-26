@@ -10,6 +10,7 @@ struct CanvasInstance
     float4 corner_radii;
     float4 border_widths;
     float4 border_color;
+    float4 custom;
 };
 
 struct CanvasVertex
@@ -17,29 +18,42 @@ struct CanvasVertex
     float4 position_uv;
     float4 color;
     uint4 resources;
+    float4 custom;
 };
 
-struct CanvasConstants
+public struct CanvasConstants
 {
-    float2 target_size;
-    uint buffer_index;
-    uint first_element;
+    public float2 target_size;
+    public uint buffer_index;
+    public uint first_element;
+    public float4 canvas_basis;
+    public float2 canvas_origin;
+    public float time;
+    public uint material_buffer;
+    public uint material_offset;
 };
 
 [[vk::push_constant]]
-ConstantBuffer<CanvasConstants> constants;
+public ConstantBuffer<CanvasConstants> constants;
 
-struct CanvasVaryings
+public struct CanvasVaryings
 {
-    float4 position : SV_Position;
-    float2 uv : TEXCOORD0;
-    float4 color : COLOR0;
-    nointerpolation uint4 resources : TEXCOORD1;
-    float4 local_size : TEXCOORD2;
-    nointerpolation float4 corner_radii : TEXCOORD3;
-    nointerpolation float4 border_widths : TEXCOORD4;
-    nointerpolation float4 border_color : TEXCOORD5;
+    public float4 position : SV_Position;
+    public float2 uv : TEXCOORD0;
+    public float4 color : COLOR0;
+    public nointerpolation uint4 resources : TEXCOORD1;
+    public float4 local_size : TEXCOORD2;
+    public nointerpolation float4 corner_radii : TEXCOORD3;
+    public nointerpolation float4 border_widths : TEXCOORD4;
+    public nointerpolation float4 border_color : TEXCOORD5;
+    public nointerpolation float4 custom : TEXCOORD6;
+    public float2 canvas_position : TEXCOORD7;
 };
+
+float2 pixelToCanvas(float2 pixel)
+{
+    return constants.canvas_origin + pixel.x * constants.canvas_basis.xy + pixel.y * constants.canvas_basis.zw;
+}
 
 static const uint styled_flag = 1;
 
@@ -66,6 +80,8 @@ CanvasVaryings quadVertexMain(uint vertex: SV_VertexID, uint instance: SV_Instan
     output.corner_radii = item.corner_radii;
     output.border_widths = item.border_widths;
     output.border_color = item.border_color;
+    output.custom = item.custom;
+    output.canvas_position = pixelToCanvas(pixel);
     return output;
 }
 
@@ -83,13 +99,13 @@ CanvasVaryings meshVertexMain(uint vertex: SV_VertexID)
     output.corner_radii = float4(0.0, 0.0, 0.0, 0.0);
     output.border_widths = float4(0.0, 0.0, 0.0, 0.0);
     output.border_color = float4(0.0, 0.0, 0.0, 0.0);
+    output.custom = point.custom;
+    output.canvas_position = pixelToCanvas(point.position_uv.xy);
     return output;
 }
 
-[shader("fragment")]
-float4 canvasFragmentMain(CanvasVaryings input) : SV_Target
+float4 shadeCanvas(CanvasVaryings input, float4 fill)
 {
-    float4 fill = atmo::sampleBindless(input.resources.x, input.resources.y, input.uv) * input.color;
     float2 local_step = fwidth(input.local_size.xy);
     if ((input.resources.z & styled_flag) == 0)
         return fill;
@@ -119,4 +135,26 @@ float4 canvasFragmentMain(CanvasVaryings input) : SV_Target
 
     color.a *= outer;
     return color;
+}
+
+[shader("fragment")]
+float4 canvasFragmentMain(CanvasVaryings input) : SV_Target
+{
+    return shadeCanvas(input, atmo::sampleBindless(input.resources.x, input.resources.y, input.uv) * input.color);
+}
+
+public float4 canvasMaterialFragment<M : atmo::ICanvasMaterial>(CanvasVaryings input)
+{
+    atmo::setFrameTime(constants.time);
+    M material = atmo::loadBindlessBytes<M>(constants.material_buffer, constants.material_offset);
+
+    atmo::CanvasFragment fragment;
+    fragment.uv = input.uv;
+    fragment.color = input.color;
+    fragment.position = input.canvas_position;
+    fragment.screen_position = input.position.xy;
+    fragment.custom = input.custom;
+    fragment.image.index = input.resources.x;
+    fragment.image.sampler_index = input.resources.y;
+    return shadeCanvas(input, material.fragment(fragment));
 }

@@ -31,6 +31,22 @@ namespace atmo::server::rendering
 
         for (auto &[raw, entry] : m_storage.textures) destroyTexture(entry);
         m_storage.textures.clear();
+        for (auto &[raw, target] : m_viewports)
+            for (TextureEntry &entry : target.post_targets) destroyTexture(entry);
+        for (auto &[raw, entry] : m_storage.shaders) destroyShaderModule(entry);
+        m_storage.shaders.clear();
+    }
+
+    void RenderScene::destroyShaderModule(ShaderEntry &entry) noexcept
+    {
+        if (!entry.module.isValid())
+            return;
+        try {
+            m_platform.destroy(entry.module);
+        } catch (const std::exception &e) {
+            spdlog::error("Failed to destroy a shader module: {}", e.what());
+        }
+        entry.module = {};
     }
 
     void RenderScene::destroyTexture(TextureEntry &entry) noexcept
@@ -176,8 +192,28 @@ namespace atmo::server::rendering
             target->border = color;
     }
 
+    void RenderScene::viewportSetPostProcess(ViewportRid rid, std::vector<MaterialRid> materials)
+    {
+        if (Viewport *target = viewport(rid))
+            target->post = std::move(materials);
+    }
+
+    void RenderScene::ensurePostTargets(Viewport &target, std::size_t count, core::types::Vector2i size)
+    {
+        if (target.post_targets.size() > count)
+            for (std::size_t i = count; i < target.post_targets.size(); ++i) destroyTexture(target.post_targets[i]);
+        target.post_targets.resize(count);
+        for (TextureEntry &entry : target.post_targets) {
+            if (entry.handle.isValid() && entry.size.x == size.x && entry.size.y == size.y)
+                continue;
+            destroyTexture(entry);
+            entry.size = size;
+            entry.handle = m_platform.textureCreate({ .size = size, .format = TextureFormat::Rgba8Unorm, .usage = target_usage, .debug_name = "post process" });
+        }
+    }
+
     void RenderScene::addPass(
-        std::string name, const Viewport &target, TextureHandle attachment, core::types::Vector2i size, const Affine2d &to_pixels, TextureFormat format,
+        std::string name, Viewport &target, TextureHandle attachment, core::types::Vector2i size, const Affine2d &to_pixels, TextureFormat format,
         FrameStats &stats)
     {
         std::optional<Region2i> content;
@@ -191,20 +227,66 @@ namespace atmo::server::rendering
                 Region2i{ .x = left, .y = top, .width = static_cast<int>(std::lround(max.x)) - left, .height = static_cast<int>(std::lround(max.y)) - top };
         }
 
+        const ColorRgba clear = content ? target.border : target.clear;
+        const Region2i full{ .width = size.x, .height = size.y };
+        std::vector<CanvasRenderer::PostDraw> draws;
+        std::vector<std::vector<TextureHandle>> draw_sampled;
+        if (!target.post.empty() && size.x > 0 && size.y > 0) {
+            ensurePostTargets(target, target.post.size(), size);
+            for (MaterialRid material : target.post) {
+                std::vector<TextureHandle> sampled;
+                const TextureHandle source = target.post_targets[draws.size()].handle;
+                if (auto draw = m_canvas.preparePost(m_storage, material, source, content.value_or(full), size, sampled)) {
+                    draws.push_back(*draw);
+                    draw_sampled.push_back(std::move(sampled));
+                }
+            }
+        }
+
         const std::size_t job = m_canvas.beginJob(size, stats, content, target.clear);
         auto layer = target.layers.begin();
         for (; layer != target.layers.end() && layer->layer < 0; ++layer) m_canvas.addCanvas(job, m_storage, layer->canvas, to_pixels, false, stats);
         m_canvas.addCanvas(job, m_storage, target.canvas, to_pixels * target.transform, true, stats);
-        for (; layer != target.layers.end(); ++layer) m_canvas.addCanvas(job, m_storage, layer->canvas, to_pixels, false, stats);
-        m_canvas.endJob(job, stats);
 
+        if (draws.empty()) {
+            for (; layer != target.layers.end(); ++layer) m_canvas.addCanvas(job, m_storage, layer->canvas, to_pixels, false, stats);
+            m_canvas.endJob(job, stats);
+            m_passes.push_back(
+                {
+                    .name = std::move(name),
+                    .attachment = { .texture = attachment, .load = LoadOp::Clear, .store = StoreOp::Store, .clear_color = clear },
+                    .job = job,
+                    .format = format,
+                });
+            return;
+        }
+        m_canvas.endJob(job, stats);
         m_passes.push_back(
             {
-                .name = std::move(name),
-                .attachment = { .texture = attachment, .load = LoadOp::Clear, .store = StoreOp::Store, .clear_color = content ? target.border : target.clear },
+                .name = name + " world",
+                .attachment = { .texture = draws.front().source, .load = LoadOp::Clear, .store = StoreOp::Store, .clear_color = clear },
                 .job = job,
-                .format = format,
+                .format = TextureFormat::Rgba8Unorm,
             });
+
+        for (std::size_t i = 0; i < draws.size(); ++i) {
+            const bool last = i + 1 == draws.size();
+            Pass pass{
+                .name = name + " post process",
+                .attachment = { .texture = last ? attachment : draws[i + 1].source, .load = LoadOp::Clear, .store = StoreOp::Store, .clear_color = clear },
+                .post = draws[i],
+                .sampled = std::move(draw_sampled[i]),
+                .format = last ? format : TextureFormat::Rgba8Unorm,
+            };
+            ++stats.draw_calls;
+            if (last) {
+                const std::size_t overlay = m_canvas.beginJob(size, stats);
+                for (; layer != target.layers.end(); ++layer) m_canvas.addCanvas(overlay, m_storage, layer->canvas, to_pixels, false, stats);
+                m_canvas.endJob(overlay, stats);
+                pass.overlay = overlay;
+            }
+            m_passes.push_back(std::move(pass));
+        }
     }
 
     void RenderScene::viewportFree(ViewportRid rid)
@@ -214,6 +296,7 @@ namespace atmo::server::rendering
             return;
         if (it->second.texture.isValid())
             textureFree(it->second.texture);
+        for (TextureEntry &entry : it->second.post_targets) destroyTexture(entry);
         m_viewports.erase(it);
     }
 
@@ -317,6 +400,71 @@ namespace atmo::server::rendering
             data->modulate = color;
     }
 
+    void RenderScene::canvasItemSetMaterial(CanvasItemRid rid, MaterialRid material)
+    {
+        if (CanvasItemData *data = item(rid))
+            data->material = material;
+    }
+
+    void RenderScene::canvasItemSetCustom(CanvasItemRid rid, const ColorRgba &custom)
+    {
+        if (CanvasItemData *data = item(rid))
+            data->custom = custom;
+    }
+
+    void RenderScene::shaderCreate(ShaderRid rid, const ShaderDesc &desc)
+    {
+        m_canvas.releaseShader(rid);
+        ShaderEntry &entry = m_storage.shaders[rid.raw()];
+        destroyShaderModule(entry);
+        entry.name = desc.name;
+        entry.kind = desc.kind;
+        entry.entry_point = desc.entry_point;
+
+        const ShaderTarget target = m_platform.shaderTarget();
+        std::span<const std::byte> code;
+        if (target != ShaderTarget::None) {
+            const ShaderCode *compiled = desc.codeFor(target);
+            if (!compiled) {
+                spdlog::warn("Shader '{}' has no code for the {} platform; items using it are drawn without it", desc.name, m_platform.name());
+                return;
+            }
+            code = compiled->code;
+        }
+
+        try {
+            entry.module = m_platform.shaderModuleCreate({ .target = target, .code = code, .debug_name = desc.name });
+        } catch (const std::exception &e) {
+            spdlog::error("Shader '{}' could not be created: {}", desc.name, e.what());
+            entry.module = {};
+        }
+    }
+
+    void RenderScene::shaderFree(ShaderRid rid)
+    {
+        auto it = m_storage.shaders.find(rid.raw());
+        if (it == m_storage.shaders.end())
+            return;
+        m_canvas.releaseShader(rid);
+        destroyShaderModule(it->second);
+        m_storage.shaders.erase(it);
+    }
+
+    void RenderScene::materialSetData(MaterialRid rid, ShaderRid shader, MaterialData data)
+    {
+        m_storage.materials[rid.raw()] = { .shader = shader, .data = std::move(data) };
+    }
+
+    void RenderScene::materialFree(MaterialRid rid)
+    {
+        m_storage.materials.erase(rid.raw());
+    }
+
+    void RenderScene::setTime(float seconds) noexcept
+    {
+        m_canvas.setTime(seconds);
+    }
+
     void RenderScene::canvasItemClear(CanvasItemRid rid)
     {
         if (CanvasItemData *data = item(rid))
@@ -384,7 +532,7 @@ namespace atmo::server::rendering
         }
 
         for (auto &[raw, window] : m_windows) {
-            const Viewport *target = viewport(window.viewport);
+            Viewport *target = viewport(window.viewport);
             if (!target || !target->active)
                 continue;
             const TextureHandle image = m_platform.swapchainAcquire(window.swapchain);
@@ -408,12 +556,24 @@ namespace atmo::server::rendering
 
         m_canvas.upload();
         CommandList &list = m_platform.commandListAcquire(QueueType::Graphics);
-        for (const Pass &pass : m_passes) {
-            std::vector<TextureHandle> sampled = m_canvas.sampledTextures(pass.job);
+        for (Pass &pass : m_passes) {
+            std::vector<TextureHandle> sampled = std::move(pass.sampled);
+            for (const std::optional<std::size_t> &job : { pass.job, pass.overlay })
+                if (job)
+                    for (TextureHandle texture : m_canvas.sampledTextures(*job))
+                        if (std::ranges::find(sampled, texture) == sampled.end())
+                            sampled.push_back(texture);
             std::erase(sampled, pass.attachment.texture);
             m_graph.addPass(
                 { .name = pass.name, .color_attachments = { pass.attachment }, .sampled = std::move(sampled) },
-                [this, job = pass.job, format = pass.format](CommandList &commands) { m_canvas.record(job, commands, format); });
+                [this, job = pass.job, post = pass.post, overlay = pass.overlay, format = pass.format](CommandList &commands) {
+                    if (post)
+                        m_canvas.recordPost(*post, commands, format, m_storage);
+                    if (job)
+                        m_canvas.record(*job, commands, format, m_storage);
+                    if (overlay)
+                        m_canvas.record(*overlay, commands, format, m_storage);
+                });
         }
         m_graph.execute(list);
 

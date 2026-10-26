@@ -64,6 +64,7 @@ namespace atmo::server::rendering
         m_commands.setMode(settings.inline_commands ? CommandQueue::Mode::Inline : CommandQueue::Mode::Deferred);
         m_submitted_frames = 0;
         m_completed_frames = 0;
+        m_start_time = std::chrono::steady_clock::now();
         m_stats = {};
         m_render_stats = {};
         m_initialized = true;
@@ -108,6 +109,8 @@ namespace atmo::server::rendering
         m_texture_sizes.clear();
         m_viewport_textures.clear();
         m_viewport_sizes.clear();
+        m_shaders.clear();
+        m_materials.clear();
         m_readback_callbacks.clear();
         {
             std::scoped_lock lock(m_completion_mutex);
@@ -221,6 +224,7 @@ namespace atmo::server::rendering
         ATMO_PROFILE_SCOPE_N("RenderingServer::sync");
 
         m_fonts->flush();
+        enqueue([this, seconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - m_start_time).count()] { m_scene->setTime(seconds); });
 
         if (m_render_thread.running()) {
             m_render_thread.wait();
@@ -521,6 +525,17 @@ namespace atmo::server::rendering
             enqueue([this, viewport, color = ToRgba(color)] { m_scene->viewportSetBorderColor(viewport, color); });
     }
 
+    void RenderingServer::viewportSetPostProcess(ViewportRid viewport, std::span<const MaterialRid> materials)
+    {
+        if (!alive(m_viewport_rids, viewport, "viewportSetPostProcess"))
+            return;
+        std::vector<MaterialRid> chain;
+        for (MaterialRid material : materials)
+            if (alive(m_material_rids, material, "viewportSetPostProcess"))
+                chain.push_back(material);
+        enqueue([this, viewport, chain = std::move(chain)] { m_scene->viewportSetPostProcess(viewport, chain); });
+    }
+
     TextureRid RenderingServer::viewportGetTexture(ViewportRid viewport) const
     {
         assertMainThread();
@@ -626,6 +641,173 @@ namespace atmo::server::rendering
     {
         if (alive(m_canvas_item_rids, item, "canvasItemSetModulate"))
             enqueue([this, item, color = ToRgba(color)] { m_scene->canvasItemSetModulate(item, color); });
+    }
+
+    void RenderingServer::canvasItemSetMaterial(CanvasItemRid item, MaterialRid material)
+    {
+        if (!alive(m_canvas_item_rids, item, "canvasItemSetMaterial"))
+            return;
+        if (material.isValid() && !alive(m_material_rids, material, "canvasItemSetMaterial"))
+            material = {};
+        enqueue([this, item, material] { m_scene->canvasItemSetMaterial(item, material); });
+    }
+
+    void RenderingServer::canvasItemSetCustom(CanvasItemRid item, const core::types::Vector4 &custom)
+    {
+        if (alive(m_canvas_item_rids, item, "canvasItemSetCustom"))
+            enqueue([this, item, custom = ColorRgba{ custom.x, custom.y, custom.z, custom.w }] { m_scene->canvasItemSetCustom(item, custom); });
+    }
+
+    ShaderTarget RenderingServer::shaderTarget() const
+    {
+        return m_platform ? m_platform->shaderTarget() : ShaderTarget::None;
+    }
+
+    ShaderRid RenderingServer::shaderCreate(ShaderDesc desc)
+    {
+        if (!m_initialized) {
+            spdlog::error("shaderCreate called before RenderingServer::init");
+            return {};
+        }
+        assertMainThread();
+
+        const ShaderRid shader = m_shader_rids.allocate();
+        m_shaders[shader.raw()] = { .name = desc.name, .kind = desc.kind, .layout = desc.layout };
+        enqueue([this, shader, desc = std::move(desc)] { m_scene->shaderCreate(shader, desc); });
+        return shader;
+    }
+
+    void RenderingServer::shaderUpdate(ShaderRid shader, ShaderDesc desc)
+    {
+        if (!alive(m_shader_rids, shader, "shaderUpdate"))
+            return;
+
+        m_shaders[shader.raw()] = { .name = desc.name, .kind = desc.kind, .layout = desc.layout };
+        enqueue([this, shader, desc = std::move(desc)] { m_scene->shaderCreate(shader, desc); });
+        for (auto &[raw, material] : m_materials)
+            if (material.shader == shader)
+                uploadMaterial(material.self);
+    }
+
+    void RenderingServer::shaderFree(ShaderRid shader)
+    {
+        if (!m_initialized || !shader.isValid())
+            return;
+        assertMainThread();
+        if (!m_shader_rids.release(shader)) {
+            spdlog::warn("shaderFree: shader RID {:#x} is not alive", shader.raw());
+            return;
+        }
+        m_shaders.erase(shader.raw());
+        enqueue([this, shader] { m_scene->shaderFree(shader); });
+    }
+
+    const ShaderParamLayout *RenderingServer::shaderGetLayout(ShaderRid shader) const
+    {
+        assertMainThread();
+        auto it = m_shaders.find(shader.raw());
+        return it == m_shaders.end() || !m_shader_rids.isAlive(shader) ? nullptr : &it->second.layout;
+    }
+
+    std::optional<ShaderKind> RenderingServer::shaderGetKind(ShaderRid shader) const
+    {
+        assertMainThread();
+        auto it = m_shaders.find(shader.raw());
+        if (it == m_shaders.end() || !m_shader_rids.isAlive(shader))
+            return std::nullopt;
+        return it->second.kind;
+    }
+
+    MaterialRid RenderingServer::materialCreate(ShaderRid shader)
+    {
+        if (!alive(m_shader_rids, shader, "materialCreate"))
+            return {};
+
+        const MaterialRid material = m_material_rids.allocate();
+        m_materials[material.raw()] = { .self = material, .shader = shader };
+        uploadMaterial(material);
+        return material;
+    }
+
+    void RenderingServer::uploadMaterial(MaterialRid material)
+    {
+        const MaterialMirror &mirror = m_materials.at(material.raw());
+        auto shader = m_shaders.find(mirror.shader.raw());
+        if (shader == m_shaders.end())
+            return;
+
+        const ShaderParamLayout &layout = shader->second.layout;
+        MaterialData data{ .bytes = std::vector<std::byte>(layout.size) };
+        for (const ShaderParam &param : layout.params) {
+            if (param.type == ShaderParamType::Texture)
+                WriteShaderValue(param, MaterialTexture{}, data);
+            else if (param.type == ShaderParamType::Color)
+                WriteShaderValue(param, white, data);
+        }
+        for (const auto &[name, value] : mirror.values)
+            if (const ShaderParam *param = layout.find(name))
+                WriteShaderValue(*param, value, data);
+
+        enqueue([this, material, shader = mirror.shader, data = std::move(data)] { m_scene->materialSetData(material, shader, data); });
+    }
+
+    bool RenderingServer::materialSetParam(MaterialRid material, std::string_view name, const ShaderValue &value)
+    {
+        if (!alive(m_material_rids, material, "materialSetParam"))
+            return false;
+
+        MaterialMirror &mirror = m_materials.at(material.raw());
+        const ShaderMirror &shader = m_shaders.at(mirror.shader.raw());
+        const ShaderParam *param = shader.layout.find(name);
+        if (!param) {
+            spdlog::warn("materialSetParam: shader '{}' has no parameter '{}'", shader.name, name);
+            return false;
+        }
+        MaterialData probe{ .bytes = std::vector<std::byte>(shader.layout.size) };
+        if (!WriteShaderValue(*param, value, probe)) {
+            spdlog::warn("materialSetParam: parameter '{}' of shader '{}' expects a {} value", name, shader.name, ShaderParamTypeName(param->type));
+            return false;
+        }
+
+        auto it = std::ranges::find(mirror.values, name, &std::pair<std::string, ShaderValue>::first);
+        if (it != mirror.values.end())
+            it->second = value;
+        else
+            mirror.values.emplace_back(std::string(name), value);
+        uploadMaterial(material);
+        return true;
+    }
+
+    std::optional<ShaderValue> RenderingServer::materialGetParam(MaterialRid material, std::string_view name) const
+    {
+        assertMainThread();
+        auto it = m_materials.find(material.raw());
+        if (it == m_materials.end() || !m_material_rids.isAlive(material))
+            return std::nullopt;
+        auto value = std::ranges::find(it->second.values, name, &std::pair<std::string, ShaderValue>::first);
+        if (value == it->second.values.end())
+            return std::nullopt;
+        return value->second;
+    }
+
+    ShaderRid RenderingServer::materialGetShader(MaterialRid material) const
+    {
+        assertMainThread();
+        auto it = m_materials.find(material.raw());
+        return it == m_materials.end() || !m_material_rids.isAlive(material) ? ShaderRid{} : it->second.shader;
+    }
+
+    void RenderingServer::materialFree(MaterialRid material)
+    {
+        if (!m_initialized || !material.isValid())
+            return;
+        assertMainThread();
+        if (!m_material_rids.release(material)) {
+            spdlog::warn("materialFree: material RID {:#x} is not alive", material.raw());
+            return;
+        }
+        m_materials.erase(material.raw());
+        enqueue([this, material] { m_scene->materialFree(material); });
     }
 
     void RenderingServer::canvasItemClear(CanvasItemRid item)

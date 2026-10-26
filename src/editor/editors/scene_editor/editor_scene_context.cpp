@@ -73,7 +73,11 @@ namespace atmo::editor
         m_scene = std::static_pointer_cast<core::ecs::entities::Scene>(scene);
 
         m_world.system("EditorViewportCamera_UpdateWorldState").kind(flecs::PreUpdate).run([this](flecs::iter &it) {
-            it.world().set<core::components::WorldCameraState>({ .has_camera = true, .zoom = m_cam_zoom, .position = m_cam_position });
+            const auto *scene_camera = it.world().try_get<core::components::WorldCameraState>();
+            std::vector<server::rendering::MaterialRid> post =
+                scene_camera && scene_camera->has_camera ? scene_camera->post_process : std::vector<server::rendering::MaterialRid>{};
+            it.world().set<core::components::WorldCameraState>(
+                { .has_camera = true, .zoom = m_cam_zoom, .position = m_cam_position, .post_process = std::move(post) });
         });
 
         m_ready = true;

@@ -4,9 +4,11 @@
 #include <cstdint>
 #include <expected>
 #include <memory>
+#include <span>
 #include <string>
 #include <vector>
 
+#include "server/rendering/material_types.hpp"
 #include "server/rendering/platform/rendering_platform.hpp"
 
 namespace atmo::server::rendering
@@ -51,6 +53,13 @@ namespace atmo::server::rendering
         std::string name;
         std::string path;
         std::string code;
+        std::vector<std::string> search_paths;
+    };
+
+    struct CompiledMaterial {
+        std::string type_name;
+        ShaderDesc desc;
+        std::string diagnostics;
     };
 
     class ShaderCompiler
@@ -65,6 +74,7 @@ namespace atmo::server::rendering
         [[nodiscard]] static bool Supports(ShaderTarget target) noexcept;
 
         [[nodiscard]] std::expected<CompiledShader, std::string> compile(const ShaderSource &source, ShaderTarget target);
+        [[nodiscard]] std::expected<CompiledMaterial, std::string> compileMaterial(const ShaderSource &source, std::span<const ShaderTarget> targets);
 
     private:
         struct Impl;

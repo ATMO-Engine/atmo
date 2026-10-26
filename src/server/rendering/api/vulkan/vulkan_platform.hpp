@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
@@ -79,6 +80,8 @@ namespace atmo::server::rendering
         [[nodiscard]] bool validationEnabled() const noexcept;
         [[nodiscard]] std::uint32_t validationErrorCount() const noexcept;
         [[nodiscard]] std::uint32_t validationWarningCount() const noexcept;
+        [[nodiscard]] const std::filesystem::path &pipelineCachePath() const noexcept;
+        [[nodiscard]] bool pipelineCacheLoaded() const noexcept;
 
     private:
         friend class vulkan::VulkanCommandList;
@@ -159,6 +162,8 @@ namespace atmo::server::rendering
         void createBindlessTable();
         void createFrames();
         void destroyFrames() noexcept;
+        void openPipelineCache(const RenderingSettings &settings);
+        void savePipelineCache() noexcept;
 
         Frame &prepareFrame(std::uint64_t number);
         VkCommandBuffer transferCommands();
@@ -194,6 +199,9 @@ namespace atmo::server::rendering
         std::uint32_t m_queue_family = 0;
         VkQueue m_queue = VK_NULL_HANDLE;
         VmaAllocator m_allocator = VK_NULL_HANDLE;
+        VkPipelineCache m_pipeline_cache = VK_NULL_HANDLE;
+        std::filesystem::path m_pipeline_cache_path;
+        bool m_pipeline_cache_loaded = false;
 
         VkDescriptorSetLayout m_bindless_layout = VK_NULL_HANDLE;
         VkDescriptorPool m_bindless_pool = VK_NULL_HANDLE;

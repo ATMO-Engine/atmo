@@ -6,25 +6,56 @@
 
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
+#include "core/resource/resource_manager.hpp"
 #include "meta/auto_register.hpp"
 #include "server/rendering/rendering_server.hpp"
 
 namespace atmo::core::ecs::entities
 {
+    namespace
+    {
+        void LoadPostProcess(components::CameraData &cam)
+        {
+            cam.m_loaded_post_process = cam.post_process;
+            cam.m_post_materials.clear();
+            for (const std::string &path : cam.post_process) {
+                if (path.empty())
+                    continue;
+                try {
+                    auto material = resource::ResourceManager::GetInstance().getResource<resource::Material>(path);
+                    if (material && material->kind() != server::rendering::ShaderKind::Viewport) {
+                        spdlog::warn("Camera post-process material {} needs an atmo::IViewportMaterial shader", path);
+                        continue;
+                    }
+                    cam.m_post_materials.push_back(std::move(material));
+                } catch (const std::exception &e) {
+                    spdlog::error("Failed to open post-process material: {}", e.what());
+                }
+            }
+        }
+    } // namespace
+
     void Camera2d::RegisterSystems(flecs::world *world)
     {
         world->component<components::WorldCameraState>();
+        world->component<components::WorldPostProcessState>();
 
         world->system("Camera2d_ResetWorldState").kind(flecs::OnLoad).run([](flecs::iter &it) {
             it.world().set<components::WorldCameraState>({ .has_camera = false });
         });
 
-        world->system<const components::CameraData, const components::Transform2d>("Camera2d_UpdateWorldState")
+        world->system<components::CameraData, const components::Transform2d>("Camera2d_UpdateWorldState")
             .kind(flecs::PreUpdate)
-            .each([](flecs::entity e, const components::CameraData &cam, const components::Transform2d &t) {
+            .each([](flecs::entity e, components::CameraData &cam, const components::Transform2d &t) {
+                if (cam.post_process != cam.m_loaded_post_process)
+                    LoadPostProcess(cam);
                 if (!cam.is_active)
                     return;
-                e.world().set<components::WorldCameraState>({ .has_camera = true, .zoom = cam.zoom, .position = t.position });
+                std::vector<server::rendering::MaterialRid> post;
+                for (const auto &material : cam.m_post_materials)
+                    if (server::rendering::MaterialRid rid = material ? material->rid() : server::rendering::MaterialRid{}; rid.isValid())
+                        post.push_back(rid);
+                e.world().set<components::WorldCameraState>({ .has_camera = true, .zoom = cam.zoom, .position = t.position, .post_process = std::move(post) });
             });
 
         world->system("Camera2d_ApplyView").kind(flecs::OnValidate).run([](flecs::iter &it) {
@@ -60,6 +91,13 @@ namespace atmo::core::ecs::entities
             server.viewportSetCanvasTransform(
                 ctx->viewport, ctx->is_editor_isolated ? server::rendering::Affine2d::Scaling(ctx->viewport_dpi) * view.transform : view.transform);
             server.viewportSetContentRect(ctx->viewport, view.content);
+
+            const std::vector<server::rendering::MaterialRid> post = camera_state ? camera_state->post_process : std::vector<server::rendering::MaterialRid>{};
+            const auto *applied = it.world().try_get<components::WorldPostProcessState>();
+            if (!applied || applied->applied != post || applied->viewport != ctx->viewport) {
+                server.viewportSetPostProcess(ctx->viewport, post);
+                it.world().set<components::WorldPostProcessState>({ .applied = post, .viewport = ctx->viewport });
+            }
         });
 
         world->observer<components::CameraData>("Camera2d_EnforceUnique").event(flecs::OnSet).each([](flecs::entity e, components::CameraData &cam) {
@@ -100,6 +138,18 @@ namespace atmo::core::ecs::entities
     {
         auto cam = p_handle.get_ref<components::CameraData>();
         return cam->is_active;
+    }
+
+    void Camera2d::setPostProcess(const std::vector<std::string> &materials)
+    {
+        auto cam = p_handle.get_ref<components::CameraData>();
+        cam->post_process = materials;
+    }
+
+    const std::vector<std::string> &Camera2d::getPostProcess() const
+    {
+        auto cam = p_handle.get_ref<components::CameraData>();
+        return cam->post_process;
     }
 } // namespace atmo::core::ecs::entities
 
