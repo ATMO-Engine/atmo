@@ -3,10 +3,10 @@ name: build
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore: ["**.md", "LICENSE", "THIRD_PARTY_LICENSES"]
+    paths-ignore: ["**.md", "docs/**", "LICENSE", "THIRD_PARTY_LICENSES"]
   push:
     branches: [main]
-    paths-ignore: ["**.md", "LICENSE", "THIRD_PARTY_LICENSES"]
+    paths-ignore: ["**.md", "docs/**", "LICENSE", "THIRD_PARTY_LICENSES"]
   workflow_dispatch:
 
 concurrency:

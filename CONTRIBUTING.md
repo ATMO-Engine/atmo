@@ -13,6 +13,7 @@ This document provides guidelines to help you contribute effectively.
 - [Coding Guidelines](#coding-guidelines)
 - [Formatting](#formatting)
 - [Testing](#testing)
+- [Documentation](#documentation)
 - [Translations](#translations)
 - [Pull Requests](#pull-requests)
 - [Commit Messages](#commit-messages)
@@ -57,7 +58,7 @@ When proposing a feature, please include:
 ## Development Setup
 
 For full setup instructions, see the documentation:
-https://docs.atmo-engine.com/set-up
+https://docs.atmo-engine.com/latest/getting-started/building-from-source
 
 ### Prerequisites
 
@@ -86,7 +87,7 @@ xmake
 ```
 
 The first build downloads and builds the third-party libraries through xmake's package manager. There are no submodules to initialize.
-If you change a dependency version in `xmake.lua`, commit the updated `xmake-requires.lock` with it. See the Dependencies section of the README.
+If you change a dependency version in `xmake.lua`, commit the updated `xmake-requires.lock` with it. See [Third-party dependencies](https://docs.atmo-engine.com/latest/getting-started/building-from-source#dependencies) in the documentation.
 
 Build Configurations
 
@@ -302,6 +303,17 @@ This will:
 Make sure:
 - All tests pass before submitting a pull request
 - No new warnings or errors are introduced
+
+
+## Documentation
+
+The guides and manual of the [documentation site](https://docs.atmo-engine.com) live in [`docs/`](docs/), and are published from each engine version.
+
+- When a pull request changes behavior described in `docs/en/`, update those pages in the same pull request
+- Public APIs are documented with Doxygen comments in the source; the site generates the C++ API reference from them
+- The `docs` workflow checks the pages' formatting and fails on broken references, such as a link to a class that was renamed
+
+See [`docs/README.md`](docs/README.md) for how to write and preview pages.
 
 
 ## Translations
