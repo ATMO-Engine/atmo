@@ -77,6 +77,7 @@ namespace atmo::editor
         void makeToolbar(core::ecs::entities::UI container);
 
         std::shared_ptr<Editor> activeEditor() const;
+        void closeEditor(const std::shared_ptr<Editor> &editor);
 
         void handleSave();
         void handleSaveAs();
@@ -99,6 +100,7 @@ namespace atmo::editor
         std::shared_ptr<core::ecs::entities::UIRect> m_topbar;
         std::shared_ptr<core::ecs::entities::UIRect> m_toolbar;
         std::optional<std::size_t> m_active_editor_index;
+        std::weak_ptr<Editor> m_editor_before_close;
         std::shared_ptr<core::ecs::entities::UIButton> m_play_btn;
         std::shared_ptr<core::ecs::entities::UIImage> m_play_btn_icon;
         std::optional<ChildProcess> m_play_process;

@@ -28,6 +28,12 @@
 
 namespace atmo::editor
 {
+    TextureEditor::~TextureEditor()
+    {
+        if (m_tick_callback != 0)
+            core::event::EventRegistry::RemoveCallBack<core::event::events::ProgressTickEvent>(m_tick_callback);
+    }
+
     void TextureEditor::init(atmo::core::ecs::entities::UI &container)
     {
         m_root_handle = container.getHandle();
@@ -55,7 +61,7 @@ namespace atmo::editor
             spdlog::error("Couldn't create scene viewport");
         }
 
-        core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>(
+        m_tick_callback = core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>(
             [this, ctx = m_scene_ctx.get(), handle = root, vp_img = m_viewport_image](core::event::events::ProgressTickEvent *evt) {
                 if (handle.is_valid() && handle.has<core::components::Window>()) {
                     ctx->setDpiScale(handle.get<core::components::Window>().dpi_scale);

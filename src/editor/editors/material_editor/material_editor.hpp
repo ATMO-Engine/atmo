@@ -71,11 +71,14 @@ namespace atmo::editor
 
         void setMaterial(std::shared_ptr<core::resource::Material> material);
         void rebuildParams();
+        void addParamRow(core::ecs::entities::UI &container, const server::rendering::ShaderParam &param, ParamSlot &slot);
         void syncParams();
         void updatePreview();
-        void createPreview(core::types::Vector2 dpi_scale);
+        void resizePreview();
+        void createPreview();
         void destroyPreview() noexcept;
         void setStatus(const std::string &text);
+        void updateInfo();
 
         std::shared_ptr<core::resource::Material> m_material;
         std::shared_ptr<core::resource::Shader> m_shown_shader;
@@ -83,9 +86,12 @@ namespace atmo::editor
         std::vector<std::unique_ptr<ParamSlot>> m_slots;
 
         flecs::entity m_root_handle;
+        flecs::entity m_window;
         flecs::entity m_params_container;
         flecs::entity m_shader_input;
+        flecs::entity m_info_label;
         flecs::entity m_status_label;
+        flecs::entity m_preview_image;
         std::uint32_t m_tick_callback = 0;
         bool m_has_tick_callback = false;
 
@@ -93,8 +99,11 @@ namespace atmo::editor
         server::rendering::CanvasRid m_preview_canvas;
         server::rendering::CanvasItemRid m_preview_background;
         server::rendering::CanvasItemRid m_preview_item;
-        server::rendering::TextureRid m_preview_checker;
+        server::rendering::TextureRid m_preview_grid;
+        server::rendering::TextureRid m_preview_sample;
         server::rendering::MaterialRid m_preview_material;
+        core::types::Vector2 m_preview_size;
+        core::types::Vector2 m_preview_dpi;
         bool m_preview_post = false;
     };
 } // namespace atmo::editor
