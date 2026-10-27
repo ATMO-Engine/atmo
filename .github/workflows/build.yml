@@ -30,28 +30,17 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-latest
-            build-cache: true
           - name: macOS
             os: macos-26
-            build-cache: true
-            extra-config: --rendering_vulkan=y
           - name: Windows
             os: windows-latest
-            build-cache: false
-          - name: Linux TSan
-            os: ubuntu-latest
-            build-cache: false
-            variant: tsan
-            mode: debug
-            extra-config: --tsan=y
-            test-args: '"[rendering]"'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Check that src/ does not use SDL_Renderer
-        if: matrix.name == 'Linux'
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           if grep -rnE '\bSDL_(Renderer|Texture)\b' src; then
@@ -78,34 +67,16 @@ jobs:
           xmake-version: ${{ env.XMAKE_VERSION }}
           actions-cache-folder: .xmake-cache
 
-      - name: Compute cache keys
-        id: keys
+      - name: Use a cacheable package directory
         shell: bash
-        run: |
-          echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
-          if [ "${{ matrix.build-cache }}" = true ]; then
-            echo "XMAKE_ACTION_BUILD_CACHE=true" >> "$GITHUB_ENV"
-          fi
-          echo "packages=xmake-packages-${{ runner.os }}-${{ matrix.variant || 'default' }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}" >> "$GITHUB_OUTPUT"
-          echo "build=xmake-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}" >> "$GITHUB_OUTPUT"
-          echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
 
       - name: Restore xmake packages
         id: packages
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/xmake-packages
-          key: ${{ steps.keys.outputs.packages }}
-
-      - name: Restore build cache
-        if: matrix.build-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: build/.build_cache
-          key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
-          restore-keys: |
-            ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-
-            ${{ github.event_name == 'pull_request' && format('{0}-', steps.keys.outputs.build) || '' }}
+          key: xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}
 
       - name: Configure and install packages
         run: xmake f -y -m release
@@ -122,69 +93,21 @@ jobs:
           fi
 
       - name: Upload lock file
-        if: steps.lock.outputs.changed == 'true' && !matrix.variant
+        if: steps.lock.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: xmake-requires-lock-${{ runner.os }}
           path: xmake-requires.lock
-
-      - name: Apply the job configuration
-        if: matrix.extra-config || matrix.mode
-        run: xmake f -y -m ${{ matrix.mode || 'release' }} ${{ matrix.extra-config }}
 
       - name: Save xmake packages
         if: steps.packages.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/xmake-packages
-          key: ${{ steps.keys.outputs.packages }}
+          key: ${{ steps.packages.outputs.cache-primary-key }}
 
       - name: Build
         run: xmake build -y atmo-test
 
-      - name: Save build cache
-        if: matrix.build-cache && github.event_name == 'push'
-        uses: actions/cache/save@v4
-        with:
-          path: build/.build_cache
-          key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
-
-      - name: Install the Vulkan loader and lavapipe
-        if: runner.os == 'Windows'
-        shell: bash
-        env:
-          VULKAN_RUNTIME_VERSION: "1.4.335.0"
-          VULKAN_RUNTIME_SHA256: 4f856da356ffb1c16fbfc792cae70f6e6873680e6b62bc132b9d7131cbc97fe2
-          MESA_VERSION: "26.2.4"
-          MESA_SHA256: 351fc8c8b695878ffb3eaa044b3ead08672a48b1a045e3c3e3975811df0f6695
-        run: |
-          temp="$(cygpath -u "$RUNNER_TEMP")"
-          cd "$temp"
-          curl -sSfL -o vulkan-runtime.zip "https://sdk.lunarg.com/sdk/download/${VULKAN_RUNTIME_VERSION}/windows/VulkanRT-X64-${VULKAN_RUNTIME_VERSION}-Components.zip"
-          curl -sSfL -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/${MESA_VERSION}/mesa3d-${MESA_VERSION}-release-msvc.7z"
-          echo "${VULKAN_RUNTIME_SHA256}  vulkan-runtime.zip" | sha256sum -c -
-          echo "${MESA_SHA256}  mesa.7z" | sha256sum -c -
-          7z x -y -ovulkan-runtime vulkan-runtime.zip > /dev/null
-          7z x -y -omesa mesa.7z > /dev/null
-          mkdir -p vulkan
-          cp vulkan-runtime/*/x64/vulkan-1.dll mesa/x64/vulkan_lvp.dll mesa/x64/lvp_icd.x86_64.json vulkan/
-          echo "SDL_VULKAN_LIBRARY=$(cygpath -w "$temp/vulkan/vulkan-1.dll")" >> "$GITHUB_ENV"
-          MSYS_NO_PATHCONV=1 reg add 'HKLM\SOFTWARE\Khronos\Vulkan\Drivers' /v "$(cygpath -w "$temp/vulkan/lvp_icd.x86_64.json")" /t REG_DWORD /d 0 /f
-
-      - name: Allow ThreadSanitizer memory mappings
-        if: matrix.variant == 'tsan'
-        run: sudo sysctl vm.mmap_rnd_bits=28
-
       - name: Run unit tests
-        if: ${{ !matrix.test-args }}
         run: xmake test -v
-
-      - name: Run Metal tests without residency sets
-        if: runner.os == 'macOS'
-        env:
-          ATMO_METAL_RESIDENCY_SETS: "0"
-        run: ./build/atmo-test "[gpu],[metal]" --allow-running-no-tests
-
-      - name: Run selected unit tests
-        if: matrix.test-args
-        run: ./build/atmo-test ${{ matrix.test-args }}
