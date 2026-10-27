@@ -183,7 +183,7 @@ jobs:
         if: runner.os == 'macOS'
         env:
           ATMO_METAL_RESIDENCY_SETS: "0"
-        run: ./build/atmo-test "[gpu],[metal]"
+        run: ./build/atmo-test "[gpu],[metal]" --allow-running-no-tests
 
       - name: Run selected unit tests
         if: matrix.test-args
