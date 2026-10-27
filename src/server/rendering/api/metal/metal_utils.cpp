@@ -2,6 +2,8 @@
 
 #include <format>
 
+#include "metal_device_support.hpp"
+
 namespace atmo::server::rendering::metal
 {
     MetalError::MetalError(std::string_view call, const NS::Error *error) : std::runtime_error(std::format("{} failed: {}", call, ErrorString(error))) {}
@@ -154,5 +156,30 @@ namespace atmo::server::rendering::metal
                 attachment->setDestinationAlphaBlendFactor(MTL::BlendFactorOne);
                 break;
         }
+    }
+
+    std::optional<std::string> BindlessSupportError(MTL::Device *device)
+    {
+        const std::string name = device->name() ? device->name()->utf8String() : "the Metal device";
+        if (!device->supportsFamily(MTL::GPUFamilyMetal3))
+            return std::format("{} does not support Metal 3", name);
+        if (device->argumentBuffersSupport() != MTL::ArgumentBuffersTier2)
+            return std::format("{} does not support tier 2 argument buffers", name);
+        return std::nullopt;
+    }
+
+    std::optional<std::string> DeviceSupportError(std::string_view device_name)
+    {
+        NS::SharedPtr<NS::AutoreleasePool> pool = NS::TransferPtr(NS::AutoreleasePool::alloc()->init());
+        NS::SharedPtr<NS::Array> devices = NS::TransferPtr(MTL::CopyAllDevices());
+        for (NS::UInteger i = 0; devices && i < devices->count(); ++i) {
+            MTL::Device *device = devices->object<MTL::Device>(i);
+            if (device->name() && device_name == device->name()->utf8String())
+                return BindlessSupportError(device);
+        }
+        NS::SharedPtr<MTL::Device> fallback = NS::TransferPtr(MTL::CreateSystemDefaultDevice());
+        if (!fallback)
+            return std::string("No Metal device is available");
+        return BindlessSupportError(fallback.get());
     }
 } // namespace atmo::server::rendering::metal

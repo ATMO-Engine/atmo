@@ -16,6 +16,10 @@
 #include "spdlog/spdlog.h"
 #include "vulkan_utils.hpp"
 
+#if defined(ATMO_RENDERING_METAL)
+#include "server/rendering/api/metal/metal_device_support.hpp"
+#endif
+
 #if defined(ATMO_PROFILER_TRACY)
 #include <tracy/TracyVulkan.hpp>
 #endif
@@ -263,6 +267,18 @@ namespace atmo::server::rendering
                 spdlog::debug("Skipping {}: missing dynamic rendering, synchronization2 or descriptor indexing", properties.deviceName);
                 continue;
             }
+
+#if defined(ATMO_RENDERING_METAL)
+            VkPhysicalDeviceDriverProperties driver{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES };
+            VkPhysicalDeviceProperties2 properties2{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &driver };
+            vkGetPhysicalDeviceProperties2(device, &properties2);
+            if (driver.driverID == VK_DRIVER_ID_MOLTENVK) {
+                if (auto error = metal::DeviceSupportError(properties.deviceName)) {
+                    spdlog::info("Skipping {}: {}", properties.deviceName, *error);
+                    continue;
+                }
+            }
+#endif
 
             std::uint32_t extension_count = 0;
             Check(vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr), "vkEnumerateDeviceExtensionProperties");

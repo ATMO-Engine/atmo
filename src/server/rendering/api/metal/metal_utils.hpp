@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -28,4 +29,5 @@ namespace atmo::server::rendering::metal
     [[nodiscard]] MTL::LoadAction ToMtlLoadAction(LoadOp op) noexcept;
     [[nodiscard]] MTL::StoreAction ToMtlStoreAction(StoreOp op) noexcept;
     void ApplyBlend(MTL::RenderPipelineColorAttachmentDescriptor *attachment, BlendMode mode) noexcept;
+    [[nodiscard]] std::optional<std::string> BindlessSupportError(MTL::Device *device);
 } // namespace atmo::server::rendering::metal

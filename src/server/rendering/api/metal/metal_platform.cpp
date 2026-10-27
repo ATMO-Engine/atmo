@@ -132,14 +132,8 @@ namespace atmo::server::rendering
             return false;
         }
 
-        const std::string device_name = m_device->name() ? m_device->name()->utf8String() : "the Metal device";
-        if (!m_device->supportsFamily(MTL::GPUFamilyMetal3)) {
-            spdlog::error("{} does not support Metal 3", device_name);
-            m_device.reset();
-            return false;
-        }
-        if (m_device->argumentBuffersSupport() != MTL::ArgumentBuffersTier2) {
-            spdlog::error("{} does not support tier 2 argument buffers", device_name);
+        if (auto error = metal::BindlessSupportError(m_device.get())) {
+            spdlog::error("{}", *error);
             m_device.reset();
             return false;
         }

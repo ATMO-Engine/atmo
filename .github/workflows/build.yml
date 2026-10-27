@@ -169,7 +169,7 @@ jobs:
           mkdir -p vulkan
           cp vulkan-runtime/*/x64/vulkan-1.dll mesa/x64/vulkan_lvp.dll mesa/x64/lvp_icd.x86_64.json vulkan/
           echo "SDL_VULKAN_LIBRARY=$(cygpath -w "$temp/vulkan/vulkan-1.dll")" >> "$GITHUB_ENV"
-          echo "VK_DRIVER_FILES=$(cygpath -w "$temp/vulkan/lvp_icd.x86_64.json")" >> "$GITHUB_ENV"
+          MSYS_NO_PATHCONV=1 reg add 'HKLM\SOFTWARE\Khronos\Vulkan\Drivers' /v "$(cygpath -w "$temp/vulkan/lvp_icd.x86_64.json")" /t REG_DWORD /d 0 /f
 
       - name: Allow ThreadSanitizer memory mappings
         if: matrix.variant == 'tsan'

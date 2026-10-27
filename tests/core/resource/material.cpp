@@ -85,7 +85,7 @@ public float4 boost(float4 color, float amount)
 
         [[nodiscard]] std::string path(const std::string &relative) const
         {
-            return (root / relative).string();
+            return (root / relative).generic_string();
         }
 
         std::filesystem::path root;

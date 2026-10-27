@@ -740,13 +740,13 @@ namespace atmo::server::rendering
         MaterialData data{ .bytes = std::vector<std::byte>(layout.size) };
         for (const ShaderParam &param : layout.params) {
             if (param.type == ShaderParamType::Texture)
-                WriteShaderValue(param, MaterialTexture{}, data);
+                static_cast<void>(WriteShaderValue(param, MaterialTexture{}, data));
             else if (param.type == ShaderParamType::Color)
-                WriteShaderValue(param, white, data);
+                static_cast<void>(WriteShaderValue(param, white, data));
         }
         for (const auto &[name, value] : mirror.values)
             if (const ShaderParam *param = layout.find(name))
-                WriteShaderValue(*param, value, data);
+                static_cast<void>(WriteShaderValue(*param, value, data));
 
         enqueue([this, material, shader = mirror.shader, data = std::move(data)] { m_scene->materialSetData(material, shader, data); });
     }

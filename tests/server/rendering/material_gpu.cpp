@@ -306,7 +306,7 @@ TEMPLATE_TEST_CASE("sprites and cameras apply their materials, modulate and cust
     const auto write = [&root](const std::string &name, const std::string &content) {
         std::ofstream out(root / name, std::ios::binary | std::ios::trunc);
         out << content;
-        return (root / name).string();
+        return (root / name).generic_string();
     };
 
     Image white{ .width = 16, .height = 16, .rgba = std::vector<std::uint8_t>(16 * 16 * 4, 0xFF) };
