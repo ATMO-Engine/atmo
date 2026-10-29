@@ -1,5 +1,7 @@
 #include "editor_manager.hpp"
+#include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <vector>
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -230,16 +232,24 @@ namespace atmo::editor
                 auto &btn_rect = editor_select->getComponentMutable<core::components::UIRect>();
                 if (new_state) {
                     btn_rect.color = core::types::Color("#E3ECF8");
-                    for (auto &child : editor_select->getChildren()) child.getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+                    for (auto &child : editor_select->getChildren(true)) child.getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
                     m_active_editor_index = index;
                 } else {
                     btn_rect.color = core::types::Color::TRANSPARENT_COL;
-                    auto childs = editor_select->getChildren();
-                    for (auto &child : editor_select->getChildren()) child.getComponentMutable<core::components::UI>().modulate = core::types::Color("94A3B8");
+                    for (auto &child : editor_select->getChildren(true))
+                        child.getComponentMutable<core::components::UI>().modulate = core::types::Color("94A3B8");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
                 }
             });
+            auto close_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            close_btn->getComponentMutable<core::components::UIRect>().color = core::types::Color::TRANSPARENT_COL;
+            auto &close_btn_layout = close_btn->getComponentMutable<core::components::Layout>();
+            close_btn_layout.padding = {};
+            close_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            close_btn->setParent(*editor_select);
+            close_btn->swap(editor_select->getChildren()[0]);
+
             auto editor_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
             editor_icon->getComponentMutable<core::components::UIImage>().texture_path = editor->iconPath();
             editor_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
@@ -248,8 +258,24 @@ namespace atmo::editor
             editor_icon_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
             editor_icon_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             editor_icon_layout.aspect_ratio = { 1.0f, 1.0f };
-            editor_icon->setParent(*editor_select);
-            editor_icon->swap(editor_select->getChildren()[0]);
+            editor_icon->setParent(*close_btn);
+
+            const flecs::entity icon_handle = editor_icon->getHandle();
+            close_btn->getSignal<>("MouseEntered").connect([icon_handle]() {
+                if (icon_handle.is_alive())
+                    core::ecs::entities::UIImage(icon_handle).setTexturePath("project://assets/icons/x.svg");
+            });
+            close_btn->getSignal<>("MouseExited").connect([icon_handle, icon_path = std::string(editor->iconPath())]() {
+                if (icon_handle.is_alive())
+                    core::ecs::entities::UIImage(icon_handle).setTexturePath(icon_path);
+            });
+            close_btn->getSignal<>("Pressed").connect([this]() { m_editor_before_close = activeEditor(); });
+            close_btn->getSignal<>("Released").connect([this, target = std::weak_ptr<Editor>(editor)]() {
+                core::SignalQueue::Enqueue([this, target]() {
+                    if (auto editor = target.lock())
+                        closeEditor(editor);
+                });
+            });
             index++;
         }
 
@@ -481,6 +507,36 @@ namespace atmo::editor
         description->setParent(*open_editor_btn);
 
         return *open_editor_btn;
+    }
+
+    void EditorManager::closeEditor(const std::shared_ptr<Editor> &editor)
+    {
+        auto it = std::find(m_editors.begin(), m_editors.end(), editor);
+        if (it == m_editors.end())
+            return;
+        const auto index = static_cast<std::size_t>(it - m_editors.begin());
+
+        std::optional<std::size_t> next;
+        const std::shared_ptr<Editor> previous = std::exchange(m_editor_before_close, {}).lock();
+        if (previous && previous != editor) {
+            auto previous_it = std::find(m_editors.begin(), m_editors.end(), previous);
+            if (previous_it != m_editors.end())
+                next = static_cast<std::size_t>(previous_it - m_editors.begin());
+        }
+
+        m_editor_containers[index]->destroy();
+        m_editor_containers.erase(m_editor_containers.begin() + static_cast<std::ptrdiff_t>(index));
+        m_editors.erase(it);
+
+        if (next && *next > index)
+            --*next;
+        if (!next && !m_editors.empty())
+            next = std::min(index, m_editors.size() - 1);
+        m_active_editor_index.reset();
+
+        updateTopBar();
+        if (next)
+            static_cast<core::ecs::entities::UIButton>(m_topbar->getChildren()[*next]).press();
     }
 
     std::shared_ptr<Editor> EditorManager::activeEditor() const

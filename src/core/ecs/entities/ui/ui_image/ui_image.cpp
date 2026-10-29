@@ -1,33 +1,36 @@
 #include "ui_image.hpp"
-#include "SDL3/SDL_render.h"
-#include "core/ecs/entities/window/window.hpp"
 #include "core/resource/resource_manager.hpp"
+#include "meta/auto_register.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
     void UIImage::RegisterSystems(flecs::world *world)
     {
-        world->system<components::UIImage>("UIImage_sync").kind(flecs::PreUpdate).each([](flecs::entity e, components::UIImage &image) {
+        world->system<components::UIImage>("UIImage_sync").kind(flecs::PreUpdate).each([](flecs::entity, components::UIImage &image) {
             if (image.texture_path == image.old_texture_path)
                 return;
 
             image.old_texture_path = image.texture_path;
             image.texture = nullptr;
+            image.natural_width = 0.0f;
+            image.natural_height = 0.0f;
 
             if (image.texture_path.empty())
                 return;
 
-            auto window = UIImage(e).getWindow();
-            SDL_Renderer *renderer = window ? window->getRenderer() : nullptr;
-            if (!renderer)
-                return;
-
-            image.texture = atmo::core::resource::ResourceManager::GetInstance().getResource<SDL_Texture>(image.texture_path, renderer);
-            if (image.texture)
-                SDL_GetTextureSize(image.texture.get(), &image.natural_width, &image.natural_height);
+            try {
+                image.texture = resource::ResourceManager::GetInstance().getResource<resource::Texture2d>(image.texture_path);
+            } catch (const std::exception &e) {
+                spdlog::error("UIImage: {}", e.what());
+            }
+            if (image.texture) {
+                image.natural_width = static_cast<float>(image.texture->size().x);
+                image.natural_height = static_cast<float>(image.texture->size().y);
+            }
         });
 
-        world->observer<components::UIImage>("UIImage_remove").event(flecs::OnRemove).each([](flecs::entity /*e*/, components::UIImage &image) {
+        world->observer<components::UIImage>("UIImage_remove").event(flecs::OnRemove).each([](flecs::entity, components::UIImage &image) {
             image.texture = nullptr;
         });
     }
@@ -48,19 +51,21 @@ namespace atmo::core::ecs::entities
         auto &img = getComponentMutable<components::UIImage>();
 
         d.userData = &img;
-        if (img.raw_texture) {
+        if (img.raw_texture.isValid()) {
+            img.m_drawn_texture = img.raw_texture;
             d.backgroundColor = getComponent<components::UI>().modulate.toFloat<Clay_Color>(255);
-            d.image = { .imageData = img.raw_texture };
+            d.image = { .imageData = &img.m_drawn_texture };
             d.layout.sizing.width = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
             d.layout.sizing.height = { .size = { .minMax = { .min = 0.0f, .max = 0.0f } }, .type = CLAY__SIZING_TYPE_GROW };
             return d;
         }
 
+        img.m_drawn_texture = img.texture ? img.texture->rid() : server::rendering::TextureRid{};
         if (!img.texture)
             return d;
 
         d.backgroundColor = getComponent<components::UI>().modulate.toFloat<Clay_Color>(255);
-        d.image = { .imageData = img.texture.get() };
+        d.image = { .imageData = &img.m_drawn_texture };
 
         auto &w = d.layout.sizing.width;
         auto &h = d.layout.sizing.height;
@@ -75,7 +80,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIImage::draw(ClaySdL3RendererData *data) {}
+    void UIImage::draw() {}
 
     void UIImage::setTexturePath(const std::string &path)
     {

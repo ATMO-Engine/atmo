@@ -55,7 +55,7 @@ namespace atmo::core::ecs::entities
         std::string getSelectedItem() const;
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
 
     private:
         void rebuild();

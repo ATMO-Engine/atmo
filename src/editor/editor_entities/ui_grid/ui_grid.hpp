@@ -86,7 +86,7 @@ namespace atmo::core::ecs::entities
         void refresh();
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
 
     private:
         static void SetRowHeaderWidth(core::components::Layout &lay);

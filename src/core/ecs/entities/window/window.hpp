@@ -4,19 +4,13 @@
 #include <optional>
 #include <string>
 
-#include "SDL3/SDL_render.h"
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
 #include "impl/clay_types.hpp"
 #include "meta/meta.hpp"
-
-#if defined(__APPLE__)
-#define RENDERING_PLATFORM SDL_WINDOW_METAL
-#else
-#define RENDERING_PLATFORM SDL_WINDOW_VULKAN
-#endif
+#include "server/rendering/rid.hpp"
 
 namespace atmo::core::components
 {
@@ -24,8 +18,10 @@ namespace atmo::core::components
         std::string title;
         types::Vector2i size;
         types::Vector2 dpi_scale;
-        SDL_Window *window = nullptr;
-        ClaySdL3RendererData renderer_data{};
+        server::rendering::WindowRid rid;
+        server::rendering::CanvasRid ui_canvas;
+        server::rendering::CanvasItemRid ui_item;
+        Clay_Context *clay_context = nullptr;
         Clay_Arena clay_arena{};
         std::optional<std::function<void()>> close_callback;
         bool headless = false;
@@ -63,17 +59,12 @@ namespace atmo::core::ecs::entities
 
         types::Vector2 getDPIScale() const noexcept;
 
-        SDL_Renderer *getRenderer() const noexcept;
-
         void onClose(std::function<void()> callback);
 
         void primeScrollContainers();
 
     private:
-        void pollEvents(float deltaTime);
-        void beginDraw(components::Window &window);
         void draw(components::Window &window);
-        void updateDPI(components::Window &window);
 
         Clay_ElementId getIdForEntity(const Entity &e);
         Clay_ElementDeclaration buildDecl(const Entity &e);

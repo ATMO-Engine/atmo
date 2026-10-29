@@ -31,6 +31,16 @@
       "texture_editor": {
         "name": "Texture Editor",
         "description": "Create and edit textures by drawing, layering, and animating 2D artwork."
+      },
+      "material_editor": {
+        "name": "Material Editor",
+        "description": "Create and edit materials by choosing a shader and tuning its parameters with a live preview.",
+        "shader": "Shader",
+        "parameters": "Parameters",
+        "no_shader": "Choose a .slang shader to edit its parameters.",
+        "no_parameters": "This shader has no parameters.",
+        "canvas_material": "Canvas material, applied to sprites",
+        "viewport_material": "Post-processing material, applied to a camera"
       }
     },
     "create_new_entity": "Create new entity",

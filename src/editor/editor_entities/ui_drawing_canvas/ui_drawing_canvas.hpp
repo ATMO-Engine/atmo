@@ -4,10 +4,14 @@
 #include <format>
 #include <string>
 #include <unordered_set>
+#include "SDL3/SDL_rect.h"
+#include "SDL3/SDL_surface.h"
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/types.hpp"
 #include "editor/editors/texture_editor/atmo_format.hpp"
+#include "impl/clay_types.hpp"
+#include "server/rendering/rid.hpp"
 
 namespace atmo::core::components
 {
@@ -25,16 +29,16 @@ namespace atmo::core::components
         };
 
         Clay_BoundingBox bounds = {};
-        SDL_Texture *display_texture = nullptr;
-        core::types::Vector2i display_texture_size = { 0, 0 };
 
         atmo::image::extension::AtmoFormat image;
         std::vector<uint8_t> upload_buffer;
         uint32_t current_stroke_id = 0;
         std::unordered_set<uint32_t> painted_pixels;
 
-        SDL_Texture *drawing_texture = nullptr;
-        SDL_Texture *checkboard_texture = nullptr;
+        server::rendering::TextureRid drawing_texture;
+        core::types::Vector2i drawing_texture_size = { 0, 0 };
+        server::rendering::TextureRid checkboard_texture;
+        std::shared_ptr<ClayCustomRenderable> m_renderable;
         bool texture_dirty = true;
 
         std::string file_path;
@@ -77,6 +81,8 @@ namespace atmo::core::ecs::entities
     class UIDrawingCanvas : public EntityRegistry::Registrable<UIDrawingCanvas, UI>
     {
     public:
+        void render(server::rendering::CanvasCommandWriter &writer, const server::rendering::Rect2 &rect);
+
         using EntityRegistry::Registrable<UIDrawingCanvas, UI>::Registrable;
 
         /**
@@ -123,7 +129,7 @@ namespace atmo::core::ecs::entities
         }
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
 
         atmo::core::types::Vector2 screenToCanvas(atmo::core::types::Vector2 screenPos) const;
         atmo::core::types::Vector2 canvasToScreen(atmo::core::types::Vector2i canvasPos) const;
@@ -197,8 +203,8 @@ namespace atmo::core::ecs::entities
         void handleZoom(const atmo::core::types::Vector2 &mousePosInScreen);
         void handlePan(const atmo::core::types::Vector2 &mousePosInScreen);
         void handleDrawing(const atmo::core::types::Vector2 &mousePosInScreen, const atmo::core::types::Vector2 &mousePosInCanvas);
-        void render(SDL_Renderer *renderer);
-        void flushPixelsToTexture(SDL_Renderer *renderer);
+        void flushPixelsToTexture();
+        void releaseDrawingTexture();
 
         void clampOffset(components::UIDrawingCanvas &comp);
     };

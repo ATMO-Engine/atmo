@@ -30,7 +30,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIPopup::draw(ClaySdL3RendererData *data) {}
+    void UIPopup::draw() {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIPopup);

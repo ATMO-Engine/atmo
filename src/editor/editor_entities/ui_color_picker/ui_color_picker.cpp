@@ -89,8 +89,8 @@ namespace atmo::core::ecs::entities
         auto color_preview_background = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &color_preview_background_layout = color_preview_background->getComponentMutable<core::components::Layout>();
         color_preview_background_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        color_preview_background_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        color_preview_background_layout.height.size = 0.1f;
+        color_preview_background_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        color_preview_background_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
         auto &color_preview_background_rect = color_preview_background->getComponentMutable<core::components::UIRect>();
         color_preview_background_rect.corner_radius.top_left = 5.0f;
         color_preview_background_rect.corner_radius.top_right = 5.0f;
@@ -317,7 +317,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIColorPicker::draw(ClaySdL3RendererData *data)
+    void UIColorPicker::draw()
     {
         auto &comp = getComponentMutable<core::components::UIColorPicker>();
         getSignal<types::Color>("Update preview").emit(comp.current_color);

@@ -28,7 +28,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIPanel::draw(ClaySdL3RendererData *data) {}
+    void UIPanel::draw() {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIPanel);

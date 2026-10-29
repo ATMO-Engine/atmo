@@ -6,14 +6,17 @@
 #include <vector>
 #include "SDL3/SDL_rect.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "core/resource/font.hpp"
 #include "core/text/text_layout.hpp"
+#include "core/types.hpp"
+#include "server/rendering/canvas_commands.hpp"
 
 namespace atmo::core::ecs::entities
 {
     /**
      * @brief `TextLayout` backed by an SDL_ttf `TTF_Text`. Units are pixels.
      *
-     * Owns a private copy of the font so its size/DPI is not shared with labels using the same font resource.
+     * The font face comes from the RenderingServer (one face per size and DPI), so it is never resized under other users.
      */
     class TtfTextLayout : public text::TextLayout
     {
@@ -44,8 +47,8 @@ namespace atmo::core::ecs::entities
         [[nodiscard]] std::vector<SDL_FRect> rangeRects(std::size_t start, std::size_t end) const;
         [[nodiscard]] SDL_Point size() const;
 
-        /// Draws the text at (x, y) in pixels. The renderer text engine is bound on first use.
-        void draw(TTF_TextEngine *engine, float x, float y, SDL_Color color);
+        /// Draws the text at (x, y) in pixels into a canvas whose units are `raster_scale` pixels.
+        void draw(server::rendering::CanvasCommandWriter &writer, float x, float y, const core::types::Color &color, float raster_scale) const;
 
         [[nodiscard]] bool valid() const noexcept
         {
@@ -57,10 +60,9 @@ namespace atmo::core::ecs::entities
         }
 
     private:
-        std::shared_ptr<TTF_Font> m_resource;
+        std::shared_ptr<resource::Font> m_resource;
         TTF_Font *m_font = nullptr;
         TTF_Text *m_text = nullptr;
-        TTF_TextEngine *m_engine = nullptr;
 
         std::string m_font_path;
         float m_point_size = 0.0f;

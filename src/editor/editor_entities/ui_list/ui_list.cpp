@@ -162,7 +162,7 @@ namespace atmo::core::ecs::entities
         return UIRect::buildDecl();
     }
 
-    void UIList::draw(ClaySdL3RendererData *) {}
+    void UIList::draw() {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIList)

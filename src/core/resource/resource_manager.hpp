@@ -6,8 +6,6 @@
 #include <unordered_map>
 #include <utility>
 
-#include "SDL3/SDL_render.h"
-
 #include "core/resource/resource_key.hpp"
 #include "core/resource/resource_loader_registry.hpp"
 
@@ -21,21 +19,10 @@ namespace atmo::core::resource
         ResourceManager(const ResourceManager &) = delete;
         ResourceManager &operator=(const ResourceManager &) = delete;
 
-        template <typename T>
-            requires(!GpuResource<T>::value)
-        std::shared_ptr<T> getResource(const std::string &path)
+        template <typename T> std::shared_ptr<T> getResource(const std::string &path)
         {
             return getOrLoad<T>(path, path);
         }
-
-        template <typename T>
-            requires GpuResource<T>::value
-        std::shared_ptr<T> getResource(const std::string &path, SDL_Renderer *renderer)
-        {
-            return getOrLoad<T>(std::make_pair(path, renderer), path, renderer);
-        }
-
-        void releaseRenderer(SDL_Renderer *renderer);
 
     private:
         ResourceManager() = default;
@@ -61,12 +48,6 @@ namespace atmo::core::resource
         template <typename T> static std::shared_ptr<T> LoadWithLoader(const std::string &path)
         {
             return ResourceLoaderRegistry::Instance().getOrCreateLoader<T>()->load(path);
-        }
-
-        template <typename T> static std::shared_ptr<T> LoadWithLoader(const std::string &path, SDL_Renderer *renderer)
-        {
-            auto *loader = static_cast<ContextualResource<T, SDL_Renderer *> *>(ResourceLoaderRegistry::Instance().getOrCreateLoader<T>());
-            return loader->loadWithContext(path, renderer);
         }
 
         template <typename T, typename... LoadArgs> std::shared_ptr<T> getOrLoad(const typename ResourceKey<T>::type &key, LoadArgs &&...loadArgs)

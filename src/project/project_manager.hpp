@@ -1,11 +1,15 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <cstring>
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <functional>
 #include <glaze/glaze.hpp>
+#include <iterator>
 #include <set>
 #include <spdlog/spdlog.h>
 #include <string_view>
@@ -123,6 +127,24 @@ namespace atmo
 #endif
 
 #if !defined(ATMO_EXPORT)
+            struct GeneratedFile {
+                std::string path;
+                std::vector<std::byte> data;
+            };
+
+            using ExportProcessor = std::function<std::vector<GeneratedFile>(const std::filesystem::path &project_root)>;
+
+            static void RegisterExportProcessor(ExportProcessor processor)
+            {
+                ExportProcessors().push_back(std::move(processor));
+            }
+
+            static std::vector<ExportProcessor> &ExportProcessors()
+            {
+                static std::vector<ExportProcessor> processors;
+                return processors;
+            }
+
             static std::set<std::filesystem::path> GetFilesToPack(const std::vector<std::string> &entries)
             {
                 std::set<std::filesystem::path> out;
@@ -150,7 +172,8 @@ namespace atmo
              * @brief Generates a packed .pck file from the current project directory. This file may get appended to an atmo or atmo-export executable.
              *
              */
-            static void GeneratePackedFile(std::string_view output_path = std::string_view(), const std::vector<std::string> &files = {})
+            static void GeneratePackedFile(
+                std::string_view output_path = std::string_view(), const std::vector<std::string> &files = {}, const std::vector<GeneratedFile> &generated = {})
             {
                 std::string path = output_path.empty()
                     ? std::format("{}.{}.{}", Instance().m_settings.app.project_name, Instance().m_settings.app.project_version.toString(), ATMO_PACKED_EXT)
@@ -180,6 +203,15 @@ namespace atmo
                     in.close();
                 }
 
+                const std::size_t file_entries = entries.size();
+                for (const GeneratedFile &file : generated) {
+                    FileSystem::PackedEntry packed_entry;
+                    packed_entry.path = file.path;
+                    packed_entry.offset = 0;
+                    packed_entry.size = static_cast<std::uint64_t>(file.data.size());
+                    entries.push_back(packed_entry);
+                }
+
                 std::uint64_t current_offset = 0;
                 for (auto &entry : entries) {
                     entry.offset = current_offset;
@@ -200,7 +232,13 @@ namespace atmo
                     out.write(reinterpret_cast<const char *>(&entry.offset), sizeof(std::uint64_t));
                     out.write(reinterpret_cast<const char *>(&entry.size), sizeof(std::uint64_t));
                 }
-                for (const auto &entry : entries) {
+                for (std::size_t i = 0; i < entries.size(); ++i) {
+                    const auto &entry = entries[i];
+                    if (i >= file_entries) {
+                        const GeneratedFile &file = generated[i - file_entries];
+                        out.write(reinterpret_cast<const char *>(file.data.data()), static_cast<std::streamsize>(file.data.size()));
+                        continue;
+                    }
                     std::ifstream in(entry.path, std::ios::binary);
                     if (!in.is_open()) {
                         spdlog::warn("Failed to open file for packing data: {}", entry.path);
@@ -257,7 +295,12 @@ namespace atmo
                     std::vector<std::string> entries;
                     for (const auto &top : std::filesystem::directory_iterator(std::filesystem::current_path()))
                         entries.push_back(top.path().filename().string());
-                    GeneratePackedFile(temp_pck.string(), entries);
+                    std::vector<GeneratedFile> generated;
+                    for (const ExportProcessor &processor : ExportProcessors()) {
+                        std::vector<GeneratedFile> files = processor(Instance().m_project_root);
+                        std::ranges::move(files, std::back_inserter(generated));
+                    }
+                    GeneratePackedFile(temp_pck.string(), entries, generated);
                 } catch (const std::exception &e) {
                     spdlog::error("Failed to pack project for export: {}", e.what());
                     ok = false;

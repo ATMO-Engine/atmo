@@ -1,10 +1,8 @@
 #include "body_2d.hpp"
 #include <cmath>
 #include "SDL3/SDL_rect.h"
-#include "SDL3/SDL_render.h"
 #include "box2d/box2d.h"
 #include "core/ecs/components.hpp"
-#include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
@@ -151,47 +149,6 @@ namespace atmo::core::ecs::entities
 
         b2AABB aabb = b2Body_ComputeAABB(body_data->body_id);
         return { aabb.lowerBound.x, aabb.lowerBound.y, aabb.upperBound.x - aabb.lowerBound.x, aabb.upperBound.y - aabb.lowerBound.y };
-    }
-
-    void Body2d::DebugRenderRectangleShape(SDL_Renderer *renderer, types::Vector2 center, types::Vector2 size, float angle)
-    {
-        static constexpr SDL_FColor outlineColor = { 0.18f, 0.93f, 1.0f, 1.0f };
-        static constexpr SDL_FColor insideColor = { 0.18f, 0.93f, 1.0f, 0.25f };
-
-        float rad = angle * common::math::PI / 180.0f;
-        float cosA = std::cos(rad);
-        float sinA = std::sin(rad);
-
-        float hw = size.x / 2.0f;
-        float hh = size.y / 2.0f;
-
-        SDL_FPoint local[4] = { { -hw, -hh }, { hw, -hh }, { hw, hh }, { -hw, hh } };
-
-        SDL_Vertex fillVerts[4];
-        SDL_FPoint worldPoints[4];
-
-        for (int i = 0; i < 4; i++) {
-            float x = local[i].x;
-            float y = local[i].y;
-
-            float rx = x * cosA - y * sinA;
-            float ry = x * sinA + y * cosA;
-
-            worldPoints[i].x = center.x + rx;
-            worldPoints[i].y = center.y + ry;
-
-            fillVerts[i].position = worldPoints[i];
-            fillVerts[i].color = insideColor;
-            fillVerts[i].tex_coord = { 0, 0 };
-        }
-
-        // ---- Filled rectangle ----
-        int indices[6] = { 0, 1, 2, 2, 3, 0 };
-        SDL_RenderGeometry(renderer, nullptr, fillVerts, 4, indices, 6);
-
-        // ---- Outline ----
-        SDL_SetRenderDrawColor(renderer, outlineColor.r * 255, outlineColor.g * 255, outlineColor.b * 255, outlineColor.a * 255);
-        SDL_RenderLines(renderer, worldPoints, 4);
     }
 } // namespace atmo::core::ecs::entities
 

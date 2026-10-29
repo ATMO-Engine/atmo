@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <memory>
 #include <string>
 
@@ -17,6 +19,8 @@ namespace atmo::editor
     {
     public:
         using EditorRegistry::Registrable<SceneEditor, Editor>::Registrable;
+
+        ~SceneEditor() override;
 
         static constexpr std::string_view LocalName()
         {
@@ -66,6 +70,7 @@ namespace atmo::editor
         }
 
     private:
+        std::uint32_t m_tick_callback = 0;
         flecs::entity m_selected_entity;
         flecs::entity m_viewport_image;
         std::unique_ptr<EditorSceneContext> m_scene_ctx;

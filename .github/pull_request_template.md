@@ -53,4 +53,4 @@ Examples: [fix] crashes on png load / [add] tracy profiler integration
 - [ ] Code is formatted with `clang-format` and has no new `clang-tidy` warnings
 - [ ] Public APIs are documented following the Doxygen convention
 - [ ] No new dependency was added without prior discussion
-- [ ] Documentation has been updated if needed
+- [ ] Pages in `docs/` are updated if behavior they describe changed

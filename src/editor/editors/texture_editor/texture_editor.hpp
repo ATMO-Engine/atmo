@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "editor/editor_registry.hpp"
 #include "editor/editors/editor.hpp"
 #include "editor/editors/scene_editor/editor_scene_context.hpp"
@@ -10,6 +12,8 @@ namespace atmo::editor
     {
     public:
         using EditorRegistry::Registrable<TextureEditor, Editor>::Registrable;
+
+        ~TextureEditor() override;
 
         static constexpr std::string_view LocalName()
         {
@@ -43,6 +47,7 @@ namespace atmo::editor
         void load() override;
 
     private:
+        std::uint32_t m_tick_callback = 0;
         void refreshTimeline();
         void refreshAllLayerVisible();
 
