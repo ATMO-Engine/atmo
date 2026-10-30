@@ -32,7 +32,6 @@ namespace atmo::editor
     void ShowOpenFileDialog(FileDialogCallback callback, const std::string &default_location, std::span<const SDL_DialogFileFilter> filters)
     {
         auto *userdata = new FileDialogCallback(std::move(callback));
-        SDL_ShowOpenFileDialog(
-            &HandleFileDialogResult, userdata, nullptr, filters.data(), static_cast<int>(filters.size()), default_location.c_str(), false);
+        SDL_ShowOpenFileDialog(&HandleFileDialogResult, userdata, nullptr, filters.data(), static_cast<int>(filters.size()), default_location.c_str(), false);
     }
 } // namespace atmo::editor

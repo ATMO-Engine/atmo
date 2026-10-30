@@ -12,8 +12,7 @@ namespace atmo::core::ecs
     static std::string UniqueChildName(const entities::Entity &parent, const std::string &name)
     {
         std::string candidate = name;
-        for (int i = 2; parent.getHandle().lookup(candidate.c_str()).is_valid(); ++i)
-            candidate = std::format("{}_{}", name, i);
+        for (int i = 2; parent.getHandle().lookup(candidate.c_str()).is_valid(); ++i) candidate = std::format("{}_{}", name, i);
         return candidate;
     }
 

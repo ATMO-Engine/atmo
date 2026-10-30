@@ -622,7 +622,8 @@ namespace atmo::editor
         core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container)
     {
         auto entity_handle = entity.getHandle();
-        auto [child_container, child_UI, title_label, add_child_btn, load_prefab_btn, save_prefab_btn, close_create_entity_btn] = createTreeEntity(entity, parent);
+        auto [child_container, child_UI, title_label, add_child_btn, load_prefab_btn, save_prefab_btn, close_create_entity_btn] =
+            createTreeEntity(entity, parent);
 
         auto wrapped = core::ecs::EntityRegistry::Wrap(child_UI);
         auto ui = dynamic_cast<core::ecs::entities::UIFoldableTreeItem *>(wrapped.get());
@@ -680,10 +681,9 @@ namespace atmo::editor
                 static constexpr SDL_DialogFileFilter filters[] = { { "Prefab", "prefab" } };
 
                 ShowOpenFileDialog(
-                    [entity](const std::string &path) {
-                        core::SignalQueue::Enqueue([entity, path]() { core::ecs::Prefab::Instantiate(path, entity); });
-                    },
-                    project::ProjectManager::GetCurrentProjectPath().string(), filters);
+                    [entity](const std::string &path) { core::SignalQueue::Enqueue([entity, path]() { core::ecs::Prefab::Instantiate(path, entity); }); },
+                    project::ProjectManager::GetCurrentProjectPath().string(),
+                    filters);
             });
         });
 
@@ -703,7 +703,8 @@ namespace atmo::editor
                         prefab_file.write(prefab_data.c_str(), prefab_data.size());
                         spdlog::info("Saved prefab to {}", prefab_path.string());
                     },
-                    project::ProjectManager::GetCurrentProjectPath().string(), filters);
+                    project::ProjectManager::GetCurrentProjectPath().string(),
+                    filters);
             });
         });
 
