@@ -18,6 +18,7 @@
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "editor/editor_registry.hpp"
 #include "editor/editors/scene_editor/scene_editor.hpp"
+#include "editor/file_dialog.hpp"
 #include "editor/inspector_utils.hpp"
 #include "flecs/addons/cpp/entity.hpp"
 #include "glaze/json/prettify.hpp"
@@ -30,7 +31,6 @@
 
 #if !defined(ATMO_EXPORT)
 
-#include "SDL3/SDL_dialog.h"
 #include "SDL3/SDL_keycode.h"
 #include "core/ecs/ecs.hpp"
 #include "core/ecs/entities/entity.hpp"
@@ -485,24 +485,6 @@ namespace atmo::editor
         return nullptr;
     }
 
-    static void HandleFileDialogResult(void *userdata, const char *const *filelist, int /*filter*/)
-    {
-        std::unique_ptr<std::function<void(const std::string &)>> callback(static_cast<std::function<void(const std::string &)> *>(userdata));
-
-        if (!filelist) {
-            spdlog::error("File dialog error: {}", SDL_GetError());
-            return;
-        }
-        if (!filelist[0])
-            return;
-
-        try {
-            (*callback)(filelist[0]);
-        } catch (const std::exception &e) {
-            spdlog::error("File dialog action failed: {}", e.what());
-        }
-    }
-
     void EditorManager::handleSave()
     {
         auto editor = activeEditor();
@@ -524,8 +506,7 @@ namespace atmo::editor
         if (!editor)
             return;
 
-        auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->saveAs(path); });
-        SDL_ShowSaveFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, m_project_path.c_str());
+        ShowSaveFileDialog([editor](const std::string &path) { editor->saveAs(path); }, m_project_path);
     }
 
     void EditorManager::handleOpen()
@@ -534,8 +515,7 @@ namespace atmo::editor
         if (!editor)
             return;
 
-        auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->open(path); });
-        SDL_ShowOpenFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, m_project_path.c_str(), false);
+        ShowOpenFileDialog([editor](const std::string &path) { editor->open(path); }, m_project_path);
     }
 
     std::shared_ptr<core::ecs::entities::UIFoldableTreeItem> EditorManager::makeSettingsSection(core::ecs::entities::UI &body, const std::string &title)
