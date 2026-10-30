@@ -41,7 +41,7 @@ namespace atmo::core::ecs::entities
         types::Color getColor() const;
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
 
     private:
         void setupRow(const std::string &label, const std::string &rowName);

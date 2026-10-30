@@ -1,5 +1,7 @@
 #include "editor_manager.hpp"
+#include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <vector>
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -13,6 +15,8 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/progress_tick_event/progress_tick_event.hpp"
+#include "core/input/focus_manager.hpp"
+#include "core/text/keymap.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
@@ -85,7 +89,7 @@ namespace atmo::editor
                 .id = "atmo.commands.edit.undo",
                 .category = "atmo.commands.edit.category",
                 .shortcut = Shortcut{ SDLK_Z, PRIMARY_MOD },
-                .action = [] {},
+                .action = [] { core::FocusManager::DispatchEditAction({ core::text::EditCommand::Undo }); },
             });
 
         m_commands.registerCommand(
@@ -93,7 +97,7 @@ namespace atmo::editor
                 .id = "atmo.commands.edit.redo",
                 .category = "atmo.commands.edit.category",
                 .shortcut = Shortcut{ SDLK_Z, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
-                .action = [] {},
+                .action = [] { core::FocusManager::DispatchEditAction({ core::text::EditCommand::Redo }); },
             });
 
         m_commands.registerCommand(
@@ -128,6 +132,9 @@ namespace atmo::editor
         core::event::EventRegistry::SetCallBack<core::event::events::InputEvent>([this](core::event::events::InputEvent *event) {
             const SDL_Event &sdl_event = event->sdl_event;
             if (sdl_event.type != SDL_EVENT_KEY_DOWN || sdl_event.key.repeat)
+                return;
+
+            if (core::FocusManager::HasTextFocus() && core::text::Keymap::Lookup(sdl_event.key.key, static_cast<SDL_Keymod>(sdl_event.key.mod)))
                 return;
 
             const Command *cmd = m_commands.findByShortcut(sdl_event.key.key, static_cast<SDL_Keymod>(sdl_event.key.mod));
@@ -225,16 +232,24 @@ namespace atmo::editor
                 auto &btn_rect = editor_select->getComponentMutable<core::components::UIRect>();
                 if (new_state) {
                     btn_rect.color = core::types::Color("#E3ECF8");
-                    for (auto &child : editor_select->getChildren()) child.getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+                    for (auto &child : editor_select->getChildren(true)) child.getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = true;
                     m_active_editor_index = index;
                 } else {
                     btn_rect.color = core::types::Color::TRANSPARENT_COL;
-                    auto childs = editor_select->getChildren();
-                    for (auto &child : editor_select->getChildren()) child.getComponentMutable<core::components::UI>().modulate = core::types::Color("94A3B8");
+                    for (auto &child : editor_select->getChildren(true))
+                        child.getComponentMutable<core::components::UI>().modulate = core::types::Color("94A3B8");
                     m_editor_containers[index]->getComponentMutable<core::components::UI>().visible = false;
                 }
             });
+            auto close_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            close_btn->getComponentMutable<core::components::UIRect>().color = core::types::Color::TRANSPARENT_COL;
+            auto &close_btn_layout = close_btn->getComponentMutable<core::components::Layout>();
+            close_btn_layout.padding = {};
+            close_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+            close_btn->setParent(*editor_select);
+            close_btn->swap(editor_select->getChildren()[0]);
+
             auto editor_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
             editor_icon->getComponentMutable<core::components::UIImage>().texture_path = editor->iconPath();
             editor_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
@@ -243,8 +258,24 @@ namespace atmo::editor
             editor_icon_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
             editor_icon_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
             editor_icon_layout.aspect_ratio = { 1.0f, 1.0f };
-            editor_icon->setParent(*editor_select);
-            editor_icon->swap(editor_select->getChildren()[0]);
+            editor_icon->setParent(*close_btn);
+
+            const flecs::entity icon_handle = editor_icon->getHandle();
+            close_btn->getSignal<>("MouseEntered").connect([icon_handle]() {
+                if (icon_handle.is_alive())
+                    core::ecs::entities::UIImage(icon_handle).setTexturePath("project://assets/icons/x.svg");
+            });
+            close_btn->getSignal<>("MouseExited").connect([icon_handle, icon_path = std::string(editor->iconPath())]() {
+                if (icon_handle.is_alive())
+                    core::ecs::entities::UIImage(icon_handle).setTexturePath(icon_path);
+            });
+            close_btn->getSignal<>("Pressed").connect([this]() { m_editor_before_close = activeEditor(); });
+            close_btn->getSignal<>("Released").connect([this, target = std::weak_ptr<Editor>(editor)]() {
+                core::SignalQueue::Enqueue([this, target]() {
+                    if (auto editor = target.lock())
+                        closeEditor(editor);
+                });
+            });
             index++;
         }
 
@@ -476,6 +507,36 @@ namespace atmo::editor
         description->setParent(*open_editor_btn);
 
         return *open_editor_btn;
+    }
+
+    void EditorManager::closeEditor(const std::shared_ptr<Editor> &editor)
+    {
+        auto it = std::find(m_editors.begin(), m_editors.end(), editor);
+        if (it == m_editors.end())
+            return;
+        const auto index = static_cast<std::size_t>(it - m_editors.begin());
+
+        std::optional<std::size_t> next;
+        const std::shared_ptr<Editor> previous = std::exchange(m_editor_before_close, {}).lock();
+        if (previous && previous != editor) {
+            auto previous_it = std::find(m_editors.begin(), m_editors.end(), previous);
+            if (previous_it != m_editors.end())
+                next = static_cast<std::size_t>(previous_it - m_editors.begin());
+        }
+
+        m_editor_containers[index]->destroy();
+        m_editor_containers.erase(m_editor_containers.begin() + static_cast<std::ptrdiff_t>(index));
+        m_editors.erase(it);
+
+        if (next && *next > index)
+            --*next;
+        if (!next && !m_editors.empty())
+            next = std::min(index, m_editors.size() - 1);
+        m_active_editor_index.reset();
+
+        updateTopBar();
+        if (next)
+            static_cast<core::ecs::entities::UIButton>(m_topbar->getChildren()[*next]).press();
     }
 
     std::shared_ptr<Editor> EditorManager::activeEditor() const

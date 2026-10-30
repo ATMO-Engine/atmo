@@ -126,7 +126,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIButton::draw(ClaySdL3RendererData *data)
+    void UIButton::draw()
     {
         auto &btnComp = getComponentMutable<core::components::UIButton>();
         intptr_t id = static_cast<intptr_t>(getID());

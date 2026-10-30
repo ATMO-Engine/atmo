@@ -57,22 +57,8 @@ namespace atmo::core::ecs::entities
         input_rect_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
         input_rect_layout.width.size = 0.1f;
 
-        auto &input_entity_comp = numberInput->getComponentMutable<core::components::UIInput>();
-        input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
-        input_entity_comp.input_data = "1.0";
-
-        auto button = UIButton(numberInput->getChildren()[0]);
-        if (!button.getHandle().is_alive()) {
-            return;
-        }
-        auto label = UILabel(button.getChildren()[0]);
-        if (!label.getHandle().is_alive()) {
-            return;
-        }
-        numberInput->validateInput();
-        auto &nbInput_comp = numberInput->getComponentMutable<core::components::UIInput>();
-        nbInput_comp.input_data = std::format("{:g}", 1.0f);
-        label.setText(nbInput_comp.input_data);
+        numberInput->getComponentMutable<core::components::UIInput>().input_type = atmo::core::components::UIInput::InputType::Float;
+        numberInput->setNumber(1.0f);
 
         numberInput->rename(rowName + "input");
         numberInput->setParent(*color_panel);
@@ -103,8 +89,8 @@ namespace atmo::core::ecs::entities
         auto color_preview_background = core::ecs::EntityRegistry::Create<UIRect>("Entity::UI::UIRect");
         auto &color_preview_background_layout = color_preview_background->getComponentMutable<core::components::Layout>();
         color_preview_background_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-        color_preview_background_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::PERCENT;
-        color_preview_background_layout.height.size = 0.1f;
+        color_preview_background_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        color_preview_background_layout.height.size = core::components::Layout::SizingAxis::MinMax{ 20.0f, 20.0f };
         auto &color_preview_background_rect = color_preview_background->getComponentMutable<core::components::UIRect>();
         color_preview_background_rect.corner_radius.top_left = 5.0f;
         color_preview_background_rect.corner_radius.top_right = 5.0f;
@@ -331,7 +317,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIColorPicker::draw(ClaySdL3RendererData *data)
+    void UIColorPicker::draw()
     {
         auto &comp = getComponentMutable<core::components::UIColorPicker>();
         getSignal<types::Color>("Update preview").emit(comp.current_color);

@@ -4,10 +4,8 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include "SDL3/SDL_pixels.h"
-#include "SDL3/SDL_render.h"
-#include "SDL3_ttf/SDL_ttf.h"
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/resource/font.hpp"
 #include "core/types.hpp"
 #include "meta/field_descriptor.hpp"
 #include "meta/meta.hpp"
@@ -27,18 +25,6 @@ namespace atmo::core::components
             ALIGN_RIGHT
         };
 
-        struct TextRenderCache {
-            TTF_Text *ttf_text = nullptr;
-            SDL_Texture *texture = nullptr;
-            bool dirty = true;
-            bool engine_bound = false;
-
-            SDL_Color last_color = {};
-            uint16_t last_font_size = 0;
-            float last_dpi_x = 0.f;
-            float last_dpi_y = 0.f;
-        };
-
         std::string text;
         std::uint16_t font_size = 24;
         std::string font_path = "project://assets/fonts/Nunito/Nunito.ttf";
@@ -50,13 +36,8 @@ namespace atmo::core::components
         WrapMode wrap_mode = WrapMode::WRAP_WORDS;
         TextAlignment text_alignment = TextAlignment::ALIGN_LEFT;
 
-        std::shared_ptr<TTF_Font> m_res;
-        std::unique_ptr<TextRenderCache> m_render_cache;
-
-        std::string m_prev_text;
-        std::string m_prev_font_path;
-        uint16_t m_prev_font_size = 0;
-        int m_prev_font_style = -1;
+        std::shared_ptr<resource::Font> m_font;
+        std::string m_loaded_font_path;
     };
 } // namespace atmo::core::components
 
@@ -114,6 +95,6 @@ namespace atmo::core::ecs::entities
         void setTextAlignment(components::UILabel::TextAlignment alignment);
         components::UILabel::TextAlignment getTextAlignment() const noexcept;
 
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
     };
 } // namespace atmo::core::ecs::entities

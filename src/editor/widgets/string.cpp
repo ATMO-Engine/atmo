@@ -9,17 +9,16 @@ std::optional<atmo::core::ecs::entities::Entity> createStringWidget(atmo::core::
 {
     auto text_input_entity = atmo::core::ecs::EntityRegistry::Create<atmo::core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
     auto &input_entity_comp = text_input_entity->getComponentMutable<atmo::core::components::UIInput>();
-    auto &text_input_entity_comp = text_input_entity->getComponentMutable<atmo::core::components::UITextInput>();
+    input_entity_comp.read_only = field.read_only;
+    text_input_entity->setPlaceholder(field.label ? field.label : field.name);
 
     if (value) {
-        if (text_input_entity_comp.value.empty())
-            text_input_entity_comp.value = "Write a label";
-        else
-            field.get(value, &text_input_entity_comp.value);
+        std::string current;
+        field.get(value, &current);
+        text_input_entity->setValue(current);
     }
 
     text_input_entity->getSignal<std::string>("StringValueChanged").connect([value, field](std::string val) { field.set(value, &val); });
-    text_input_entity->getSignal<std::string>("StringValueChanged").emit(text_input_entity_comp.value);
 
     return *text_input_entity;
 }

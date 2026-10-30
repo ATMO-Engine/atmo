@@ -100,7 +100,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UISlider::draw(ClaySdL3RendererData *data)
+    void UISlider::draw()
     {
         auto &comp = getComponentMutable<components::UISlider>();
 

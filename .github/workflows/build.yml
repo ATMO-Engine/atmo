@@ -3,10 +3,11 @@ name: build
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore: ["**.md", "LICENSE", "THIRD_PARTY_LICENSES"]
+    paths-ignore: ["**.md", "docs/**", "LICENSE", "THIRD_PARTY_LICENSES"]
   push:
     branches: [main]
-    paths-ignore: ["**.md", "LICENSE", "THIRD_PARTY_LICENSES"]
+    paths-ignore: ["**.md", "docs/**", "LICENSE", "THIRD_PARTY_LICENSES"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,26 +23,30 @@ jobs:
   build:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: Linux
             os: ubuntu-latest
-            build-cache: true
           - name: macOS
             os: macos-26
-            build-cache: true
           - name: Windows
             os: windows-latest
-            build-cache: false
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
+
+      - name: Check that src/ does not use SDL_Renderer
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if grep -rnE '\bSDL_(Renderer|Texture)\b' src; then
+            echo "::error::Draw through the RenderingServer instead of SDL_Renderer and SDL_Texture"
+            exit 1
+          fi
 
       - name: Install SDL3 build dependencies
         if: runner.os == 'Linux'
@@ -53,7 +58,8 @@ jobs:
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
             libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
             libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
-            libpipewire-0.3-dev libwayland-dev libxinerama-dev
+            libpipewire-0.3-dev libwayland-dev libxinerama-dev \
+            libvulkan1 mesa-vulkan-drivers vulkan-validationlayers
 
       - name: Setup Xmake
         uses: xmake-io/github-action-setup-xmake@v1
@@ -61,54 +67,47 @@ jobs:
           xmake-version: ${{ env.XMAKE_VERSION }}
           actions-cache-folder: .xmake-cache
 
-      - name: Compute cache keys
-        id: keys
+      - name: Use a cacheable package directory
         shell: bash
-        run: |
-          echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
-          if [ "${{ matrix.build-cache }}" = true ]; then
-            echo "XMAKE_ACTION_BUILD_CACHE=true" >> "$GITHUB_ENV"
-          fi
-          echo "packages=xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua') }}-$(git rev-parse HEAD:submodules)" >> "$GITHUB_OUTPUT"
-          echo "build=xmake-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}" >> "$GITHUB_OUTPUT"
-          echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
 
       - name: Restore xmake packages
         id: packages
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/xmake-packages
-          key: ${{ steps.keys.outputs.packages }}
-
-      - name: Restore build cache
-        if: matrix.build-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: build/.build_cache
-          key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
-          restore-keys: |
-            ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-
-            ${{ github.event_name == 'pull_request' && format('{0}-', steps.keys.outputs.build) || '' }}
+          key: xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}
 
       - name: Configure and install packages
         run: xmake f -y -m release
+
+      - name: Check lock file
+        id: lock
+        shell: bash
+        run: |
+          if git diff --quiet -- xmake-requires.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::xmake-requires.lock has no entries for this platform yet. Download the xmake-requires-lock-${{ runner.os }} artifact and commit it."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload lock file
+        if: steps.lock.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: xmake-requires-lock-${{ runner.os }}
+          path: xmake-requires.lock
 
       - name: Save xmake packages
         if: steps.packages.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/xmake-packages
-          key: ${{ steps.keys.outputs.packages }}
+          key: ${{ steps.packages.outputs.cache-primary-key }}
 
       - name: Build
         run: xmake build -y atmo-test
-
-      - name: Save build cache
-        if: matrix.build-cache && github.event_name == 'push'
-        uses: actions/cache/save@v4
-        with:
-          path: build/.build_cache
-          key: ${{ steps.keys.outputs.build }}-${{ steps.keys.outputs.day }}-${{ github.sha }}
 
       - name: Run unit tests
         run: xmake test -v

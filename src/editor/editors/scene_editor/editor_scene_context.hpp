@@ -3,9 +3,9 @@
 #include <memory>
 #include <string>
 
-#include "SDL3/SDL_render.h"
 #include "core/types.hpp"
 #include "flecs.h"
+#include "server/rendering/rid.hpp"
 
 namespace atmo::core::ecs::entities
 {
@@ -24,34 +24,33 @@ namespace atmo::editor
         EditorSceneContext &operator=(const EditorSceneContext &) = delete;
 
         /**
-         * @brief Initialize the isolated world and off-screen render texture.
+         * @brief Initialize the isolated world and its offscreen viewport.
          *        Must be called before tick(). WorldContext singleton is set before RegisterSystems,
          *        so physics systems are skipped automatically.
          *
-         * @param renderer  SDL_Renderer borrowed from the main Window (non-owning).
+         * @param dpi_scale Pixels per logical unit of the window showing the viewport.
          */
-        void init(SDL_Renderer *renderer);
+        void init(core::types::Vector2 dpi_scale);
 
         /**
-         * @brief Advance the isolated world by delta_time.
-         *        @p renderer is the current, validated SDL_Renderer from the main Window.
-         *        The caller must verify the renderer is still alive before calling tick().
+         * @brief Advance the isolated world by delta_time and rebuild the overlays.
          */
-        void tick(float delta_time, SDL_Renderer *renderer);
+        void tick(float delta_time);
 
         /**
-         * @brief Resize the off-screen texture. Does nothing if size is unchanged.
+         * @brief Resize the viewport, in logical units. Does nothing if size is unchanged.
          */
         void resize(int width, int height);
 
         /**
-         * @brief Returns the off-screen SDL_Texture that receives the isolated world's rendering.
-         *        The caller must NOT destroy this texture.
+         * @brief Sets the window's pixel scale; the viewport texture is rendered at size * dpi_scale pixels.
          */
-        SDL_Texture *getViewportTexture() const
-        {
-            return m_render_texture;
-        }
+        void setDpiScale(core::types::Vector2 dpi_scale);
+
+        /**
+         * @brief Returns the viewport's texture, stable for the lifetime of the context. Show it in a UIImage.
+         */
+        server::rendering::TextureRid getViewportTexture() const;
 
         /**
          * @brief Returns true after init() has succeeded.
@@ -122,14 +121,14 @@ namespace atmo::editor
         core::types::Vector2 worldToScreen(core::types::Vector2 world) const;
 
     private:
-        void createRenderTexture(int width, int height);
-        void destroyRenderTexture();
+        void applyViewportSize();
         void drawOverlays();
-        void releaseGpuTextures();
 
         flecs::world m_world;
-        SDL_Texture *m_render_texture = nullptr;
-        SDL_Renderer *m_renderer = nullptr;
+        server::rendering::CanvasRid m_canvas;
+        server::rendering::ViewportRid m_viewport;
+        server::rendering::CanvasItemRid m_overlay;
+        core::types::Vector2 m_dpi_scale{ 1.0f, 1.0f };
         std::shared_ptr<core::ecs::entities::Scene> m_scene;
         core::types::Vector2 m_cam_position{ 0.0f, 0.0f };
         float m_cam_zoom = 1.0f;

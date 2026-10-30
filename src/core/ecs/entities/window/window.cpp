@@ -1,35 +1,21 @@
-#include "SDL3/SDL_error.h"
-#include "SDL3/SDL_render.h"
-#include "SDL3/SDL_video.h"
-#include "SDL3_ttf/SDL_ttf.h"
-#include "core/ecs/world_context.hpp"
-
-#include <cstdint>
-#include "core/args/arg_manager.hpp"
-#include "core/ecs/components.hpp"
-#include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
-#include "core/ecs/entities/scene/scene.hpp"
-#include "core/ecs/entities/ui/ui.hpp"
-#include "core/ecs/entities/ui/ui_image/ui_image.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
-#include "core/ecs/entity_registry.hpp"
-#include "core/event/events/sdl_event/input_event/input_event.hpp"
-#include "core/input/input_manager.hpp"
-#include "core/resource/resource_manager.hpp"
-#include "core/types.hpp"
-#include "impl/clay_types.hpp"
-#include "locale/locale_manager.hpp"
-#include "meta/auto_register.hpp"
-#include "project/project_manager.hpp"
-#include "spdlog/spdlog.h"
 #include "window.hpp"
 
-#include "core/event/event_registry.hpp"
+#include "SDL3/SDL_stdinc.h"
+#include "core/args/arg_manager.hpp"
+#include "core/ecs/components.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
+#include "core/ecs/entity_registry.hpp"
+#include "core/ecs/world_context.hpp"
+#include "core/input/input_manager.hpp"
+#include "core/types.hpp"
+#include "impl/clay_canvas_renderer.hpp"
+#include "meta/auto_register.hpp"
+#include "project/project_manager.hpp"
+#include "server/rendering/rendering_server.hpp"
+#include "spdlog/spdlog.h"
 
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
-
-void SDL_Clay_RenderClayCommands(ClaySdL3RendererData *rendererData, Clay_RenderCommandArray *rcommands, const atmo::core::types::Vector2 &dpi_scale);
 
 namespace atmo::core::ecs::entities
 {
@@ -39,11 +25,7 @@ namespace atmo::core::ecs::entities
         if (ctx && ctx->is_editor_isolated)
             return;
 
-        world->system<components::Window>("PollEvents").kind(flecs::PreUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
-            entities::Window entity(it.entity(i));
-            entity.pollEvents(it.delta_time());
-            entity.beginDraw(window);
-        });
+        world->system("PollEvents").kind(flecs::PreUpdate).run([](flecs::iter &it) { server::rendering::RenderingServer::Instance().pollEvents(); });
 
         world->system<components::Window>("Draw").kind(flecs::PostUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
             entities::Window entity(it.entity(i));
@@ -51,36 +33,26 @@ namespace atmo::core::ecs::entities
         });
 
         world->observer<components::Window>().event(flecs::OnRemove).each([](flecs::entity e, components::Window &window) {
-            // Release every strong GPU-texture owner in this world before the renderer that created them is destroyed.
-            e.world().each<components::UILabel>([](components::UILabel &label) {
-                if (label.m_render_cache && label.m_render_cache->texture) {
-                    SDL_DestroyTexture(label.m_render_cache->texture);
-                    label.m_render_cache->texture = nullptr;
-                }
-            });
-            e.world().each<components::Sprite2d>([](components::Sprite2d &sprite) {
-                sprite.m_texture = nullptr;
-                sprite.m_texture_renderer = nullptr;
-            });
-            e.world().each<components::UIImage>([](components::UIImage &image) { image.texture = nullptr; });
-
-            if (window.renderer_data.renderer) {
-                resource::ResourceManager::GetInstance().releaseRenderer(window.renderer_data.renderer);
-                SDL_DestroyRenderer(window.renderer_data.renderer);
-                window.renderer_data.renderer = nullptr;
+            auto &rendering_server = server::rendering::RenderingServer::Instance();
+            if (auto *ctx = e.world().try_get_mut<components::WorldContext>();
+                ctx && ctx->viewport.isValid() && ctx->viewport == rendering_server.windowGetViewport(window.rid)) {
+                rendering_server.canvasFree(ctx->canvas);
+                ctx->canvas = {};
+                ctx->viewport = {};
             }
 
-            if (window.window) {
-                SDL_DestroyWindow(window.window);
-                window.window = nullptr;
-            }
+            rendering_server.canvasItemFree(window.ui_item);
+            rendering_server.canvasFree(window.ui_canvas);
+            rendering_server.windowFree(window.rid);
+            window.ui_item = {};
+            window.ui_canvas = {};
+            window.rid = {};
 
-            if (window.renderer_data.text_engine) {
-                TTF_DestroyRendererTextEngine(window.renderer_data.text_engine);
-                window.renderer_data.text_engine = nullptr;
-            }
-
+            if (window.clay_context && Clay_GetCurrentContext() == window.clay_context)
+                Clay_SetCurrentContext(nullptr);
+            window.clay_context = nullptr;
             SDL_free(window.clay_arena.memory);
+            window.clay_arena = {};
 
             if (window.close_callback.has_value()) {
                 window.close_callback.value()();
@@ -88,25 +60,17 @@ namespace atmo::core::ecs::entities
         });
     }
 
-    static Clay_Dimensions measureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *data)
+    static void RefreshWorldViewport(flecs::entity handle)
     {
-        auto *cache = static_cast<components::UILabel::TextRenderCache *>(config->userData);
-        if (!cache || !cache->ttf_text)
-            return Clay_Dimensions{ 0.0f, 0.0f };
+        auto &rendering_server = server::rendering::RenderingServer::Instance();
+        const auto *window = handle.try_get<components::Window>();
+        auto *ctx = handle.world().try_get_mut<components::WorldContext>();
+        if (!window || !ctx || !ctx->viewport.isValid() || ctx->viewport != rendering_server.windowGetViewport(window->rid))
+            return;
 
-        auto *renderer = static_cast<SDL_Renderer *>(data);
-        SDL_Window *sdl_win = renderer ? SDL_GetRenderWindow(renderer) : nullptr;
-        const float scale = sdl_win ? SDL_GetWindowDisplayScale(sdl_win) : 1.0f;
-
-        int width, height;
-        TTF_Font *font = TTF_GetTextFont(cache->ttf_text);
-        TTF_SetFontSizeDPI(font, config->fontSize, static_cast<unsigned int>(scale * 96), static_cast<unsigned int>(scale * 96));
-
-        if (!TTF_GetStringSize(font, text.chars, text.length, &width, &height)) {
-            spdlog::error("Failed to measure text: {}", SDL_GetError());
-        }
-
-        return Clay_Dimensions{ static_cast<float>(width), static_cast<float>(height) };
+        const types::Vector2i size = rendering_server.windowGetSize(window->rid);
+        ctx->viewport_size = { static_cast<float>(size.x), static_cast<float>(size.y) };
+        ctx->viewport_dpi = rendering_server.windowGetDpiScale(window->rid);
     }
 
     void Window::initialize()
@@ -116,44 +80,68 @@ namespace atmo::core::ecs::entities
         setComponent<components::Window>({ "Atmo Engine", project::ProjectManager::GetSettings().window.size });
         auto &window = getComponentMutable<components::Window>();
 
-        static constexpr SDL_WindowFlags flags = SDL_WINDOW_HIGH_PIXEL_DENSITY | RENDERING_PLATFORM;
+        if (args::ArgManager::Get<bool>("--headless")) {
+            window.headless = true;
+            return;
+        }
 
-        if (args::ArgManager::Get<bool>("--headless") == false &&
-            SDL_CreateWindowAndRenderer(window.title.c_str(), window.size.x, window.size.y, flags, &window.window, &window.renderer_data.renderer)) {
-            updateDPI(window);
-            SDL_SetWindowResizable(window.window, true);
+        auto &rendering_server = server::rendering::RenderingServer::Instance();
+        window.rid = rendering_server.windowCreate({ .title = window.title, .size = window.size });
+        if (!window.rid.isValid()) {
+            spdlog::error("Failed to create window");
+            return;
+        }
 
-            window.renderer_data.text_engine = TTF_CreateRendererTextEngine(window.renderer_data.renderer);
-            if (!window.renderer_data.text_engine) {
-                spdlog::error("Failed to create text engine from renderer: {}", SDL_GetError());
-                return;
+        window.dpi_scale = rendering_server.windowGetDpiScale(window.rid);
+
+        const server::rendering::ViewportRid viewport = rendering_server.windowGetViewport(window.rid);
+        rendering_server.viewportSetClearColor(viewport, project::ProjectManager::GetSettings().window.background_color);
+        rendering_server.viewportSetBorderColor(viewport, project::ProjectManager::GetSettings().window.letterbox_color);
+        if (auto *ctx = p_handle.world().try_get_mut<components::WorldContext>(); ctx && !ctx->is_editor_isolated && !ctx->canvas.isValid()) {
+            ctx->canvas = rendering_server.canvasCreate();
+            ctx->viewport = viewport;
+            ctx->viewport_size = { static_cast<float>(window.size.x), static_cast<float>(window.size.y) };
+            ctx->viewport_dpi = window.dpi_scale;
+            rendering_server.viewportSetCanvas(viewport, ctx->canvas);
+        }
+        window.ui_canvas = rendering_server.canvasCreate();
+        window.ui_item = rendering_server.canvasItemCreate(window.ui_canvas);
+        rendering_server.viewportAttachCanvas(viewport, window.ui_canvas, 1);
+        rendering_server.windowSetEventCallback(window.rid, [handle = p_handle](const server::rendering::WindowEvent &event) {
+            switch (event.type) {
+                case server::rendering::WindowEventType::QuitRequested:
+                    handle.destruct();
+                    break;
+                case server::rendering::WindowEventType::Resized:
+                    {
+                        entities::Window entity(handle);
+                        if (Clay_Context *context = entity.getComponent<components::Window>().clay_context) {
+                            Clay_SetCurrentContext(context);
+                            Clay_SetLayoutDimensions({ static_cast<float>(event.size.x), static_cast<float>(event.size.y) });
+                        }
+                        RefreshWorldViewport(handle);
+                        break;
+                    }
+                case server::rendering::WindowEventType::DisplayScaleChanged:
+                    {
+                        entities::Window entity(handle);
+                        auto &component = entity.getComponentMutable<components::Window>();
+                        component.dpi_scale = server::rendering::RenderingServer::Instance().windowGetDpiScale(component.rid);
+                        RefreshWorldViewport(handle);
+                        break;
+                    }
             }
+        });
 
-            auto totalMemSize = Clay_MinMemorySize();
-            window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
+        auto totalMemSize = Clay_MinMemorySize();
+        window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
 
+        window.clay_context =
             Clay_Initialize(window.clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
                                 spdlog::error("Clay error: {}", errorData.errorText.chars);
                             } });
 
-            Clay_SetMeasureTextFunction(measureText, &window.dpi_scale);
-        } else if (args::ArgManager::Get<bool>("--headless") == false) {
-            spdlog::error("Failed to create window and renderer: {}", SDL_GetError());
-        } else {
-            window.headless = true;
-        }
-    }
-
-    void Window::updateDPI(components::Window &window)
-    {
-        int windowW, windowH;
-        SDL_GetWindowSize(window.window, &windowW, &windowH);
-
-        int pixelW, pixelH;
-        SDL_GetWindowSizeInPixels(window.window, &pixelW, &pixelH);
-
-        window.dpi_scale.x = (float)pixelW / windowW;
-        window.dpi_scale.y = (float)pixelH / windowH;
+        Clay_SetMeasureTextFunction(impl::ClayMeasureText, nullptr);
     }
 
     bool Window::setTitle(const std::string &name)
@@ -163,24 +151,19 @@ namespace atmo::core::ecs::entities
         if (window->headless)
             return false;
 
-        if (SDL_SetWindowTitle(window->window, name.c_str())) {
-            window->title = name;
-            return true;
-        } else {
-            spdlog::error("Failed to set window title: {}", SDL_GetError());
+        if (!server::rendering::RenderingServer::Instance().windowSetTitle(window->rid, name))
             return false;
-        }
+
+        window->title = name;
+        return true;
     }
 
     void Window::setSize(const core::types::Vector2i &size)
     {
         auto window = p_handle.get_ref<components::Window>();
 
-        if (SDL_SetWindowSize(window->window, size.x, size.y)) {
+        if (server::rendering::RenderingServer::Instance().windowSetSize(window->rid, size))
             window->size = size;
-        } else {
-            spdlog::error("Failed to set window size: {}", SDL_GetError());
-        }
     }
 
     types::Vector2 Window::getDPIScale() const noexcept
@@ -192,48 +175,15 @@ namespace atmo::core::ecs::entities
     {
         auto window = p_handle.get_ref<components::Window>();
 
-        if (!SDL_RaiseWindow(window->window)) {
-            spdlog::error("Failed to focus window: {}", SDL_GetError());
-        }
-    }
-
-    void Window::pollEvents(float deltaTime)
-    {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_EVENT_QUIT:
-                    p_handle.destruct();
-                    break;
-                case SDL_EVENT_WINDOW_RESIZED:
-                    Clay_SetLayoutDimensions({ (float)event.window.data1, (float)event.window.data2 });
-                    break;
-                case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
-                    updateDPI(getComponentMutable<components::Window>());
-                    break;
-                default:
-                    auto default_event = atmo::core::event::EventRegistry::Create<atmo::core::event::events::InputEvent>("Event::SDLEvent::InputEvent");
-                    default_event->sdl_event = event;
-                    atmo::core::event::EventRegistry::Dispatch(default_event);
-                    break;
-            };
-        }
-    }
-
-    void Window::beginDraw(components::Window &window)
-    {
-        static const types::Color &clear_color = project::ProjectManager::GetSettings().window.background_color;
-        static std::array<std::uint8_t, 4> clear_color_sdl = clear_color.toInt<std::array<std::uint8_t, 4>>();
-
-        SDL_SetRenderDrawColor(window.renderer_data.renderer, clear_color_sdl[0], clear_color_sdl[1], clear_color_sdl[2], clear_color_sdl[3]);
-        SDL_RenderClear(window.renderer_data.renderer);
-        SDL_SetRenderDrawBlendMode(window.renderer_data.renderer, SDL_BLENDMODE_BLEND);
+        server::rendering::RenderingServer::Instance().windowFocus(window->rid);
     }
 
     void Window::draw(components::Window &window)
     {
-        if (window.headless)
+        if (window.headless || !window.clay_context)
             return;
+
+        Clay_SetCurrentContext(window.clay_context);
 
         bool clickState = false;
         auto pos = core::InputManager::GetMousePosition();
@@ -252,18 +202,13 @@ namespace atmo::core::ecs::entities
             auto wrapped = EntityRegistry::Wrap(child);
             auto *ui = dynamic_cast<entities::UI *>(wrapped.get());
             if (ui && !child.getParent().hasComponent<components::UI>())
-                ui->internalDraw(&window.renderer_data);
+                ui->internalDraw();
         }
-        auto clayCommands = Clay_EndLayout();
+        const Clay_RenderCommandArray commands = Clay_EndLayout();
 
-        SDL_Clay_RenderClayCommands(&window.renderer_data, &clayCommands, window.dpi_scale);
-
-        SDL_RenderPresent(window.renderer_data.renderer);
-    }
-
-    SDL_Renderer *Window::getRenderer() const noexcept
-    {
-        return getComponent<components::Window>().renderer_data.renderer;
+        server::rendering::CanvasCommandWriter writer;
+        impl::ClayRenderCommands(commands, writer, window.dpi_scale.x);
+        server::rendering::RenderingServer::Instance().canvasItemSetCommands(window.ui_item, std::move(writer));
     }
 
     void Window::onClose(std::function<void()> callback)
@@ -275,6 +220,8 @@ namespace atmo::core::ecs::entities
     // TODO: remove once Clay is replaced with an in-house UI system.
     void Window::primeScrollContainers()
     {
+        if (Clay_Context *context = getComponent<components::Window>().clay_context)
+            Clay_SetCurrentContext(context);
         Clay_UpdateScrollContainers(true, { 0.0f, 0.0001f }, 0.0f);
     }
 } // namespace atmo::core::ecs::entities

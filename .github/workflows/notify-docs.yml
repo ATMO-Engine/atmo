@@ -2,7 +2,7 @@ name: notify-docs
 
 on:
   workflow_run:
-    workflows: [build]
+    workflows: [build, docs]
     types: [completed]
     branches: [main]
   release:
