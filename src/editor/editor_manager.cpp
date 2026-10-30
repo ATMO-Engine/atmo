@@ -586,7 +586,8 @@ namespace atmo::editor
             return;
 
         auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->saveAs(path); });
-        SDL_ShowSaveFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, m_project_path.c_str());
+        const std::string default_location = (std::filesystem::path(m_project_path) / "").string();
+        SDL_ShowSaveFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, default_location.c_str());
     }
 
     void EditorManager::handleOpen()
@@ -596,7 +597,8 @@ namespace atmo::editor
             return;
 
         auto *callback = new std::function<void(const std::string &)>([editor](const std::string &path) { editor->open(path); });
-        SDL_ShowOpenFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, m_project_path.c_str(), false);
+        const std::string default_location = (std::filesystem::path(m_project_path) / "").string();
+        SDL_ShowOpenFileDialog(&HandleFileDialogResult, callback, nullptr, nullptr, 0, default_location.c_str(), false);
     }
 
     std::shared_ptr<core::ecs::entities::UIFoldableTreeItem> EditorManager::makeSettingsSection(core::ecs::entities::UI &body, const std::string &title)

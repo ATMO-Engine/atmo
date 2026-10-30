@@ -231,7 +231,7 @@ namespace atmo::project
                                 if (!entry.is_regular_file())
                                     continue;
                                 auto rel = std::filesystem::relative(entry.path(), root_override).generic_string();
-                                if (common::Utils::GlobMatch(relative_path.string(), rel) && seen.insert(rel).second)
+                                if (common::Utils::GlobMatch(relative_path.generic_string(), rel) && seen.insert(rel).second)
                                     results.push_back(rel);
                             }
                         }
@@ -271,7 +271,7 @@ namespace atmo::project
                         if (!entry.is_regular_file())
                             continue;
                         auto rel = std::filesystem::relative(entry.path(), user_dir);
-                        if (common::Utils::GlobMatch(relative_path.string(), rel.string()))
+                        if (common::Utils::GlobMatch(relative_path.generic_string(), rel.generic_string()))
                             results.push_back(entry.path().string());
                     }
                 } else {
@@ -290,7 +290,7 @@ namespace atmo::project
                 for (const auto &entry : std::filesystem::recursive_directory_iterator(base_dir)) {
                     if (!entry.is_regular_file())
                         continue;
-                    if (common::Utils::GlobMatch(full_path.string(), entry.path().string()))
+                    if (common::Utils::GlobMatch(full_path.generic_string(), entry.path().generic_string()))
                         results.push_back(entry.path().string());
                 }
             } else {
