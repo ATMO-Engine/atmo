@@ -6,6 +6,7 @@
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entities/script.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
 #include "core/resource/resource.hpp"
@@ -29,6 +30,38 @@ namespace atmo::core::ecs::entities
                 signal.second = nullptr;
             }
         });
+
+        world->observer<components::Script>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Script &script) {
+            if (script.physics_event_id != 0) {
+                event::EventRegistry::RemoveCallBack<event::events::PhysicsProgressTickEvent>(script.physics_event_id);
+                script.physics_event_id = 0;
+            }
+
+            if (script.instance != nullptr) {
+                script.instance->destroy();
+                delete script.instance;
+                script.instance = nullptr;
+            }
+
+            script.m_res = nullptr;
+        });
+
+        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
+        if (ctx && ctx->is_editor_isolated) {
+            world->system<components::Script>("Script_compile_editor").kind(flecs::OnUpdate).each([](flecs::entity e, components::Script &script) {
+                if (script.script_path.empty() || script.script_path == script.prev_script_path)
+                    return;
+
+                script.prev_script_path = script.script_path;
+
+                try {
+                    script.m_res = resource::ResourceManager::GetInstance().getResource<resource::Bytecode>(script.script_path);
+                } catch (std::exception &ex) {
+                    spdlog::error("Compilation error in script of entity {}: {}", e.name().c_str(), ex.what());
+                }
+            });
+            return;
+        }
 
         world->system<components::Script>().kind(flecs::OnUpdate).each([&](flecs::entity e, components::Script &script) {
             if (script.script_path.empty() || script.script_path == script.prev_script_path)
@@ -70,21 +103,6 @@ namespace atmo::core::ecs::entities
             float dt = e.world().delta_time();
 
             script.instance->update(dt);
-        });
-
-        world->observer<components::Script>("Script_remove").event(flecs::OnRemove).each([](flecs::entity e, components::Script &script) {
-            if (script.physics_event_id != 0) {
-                event::EventRegistry::RemoveCallBack<event::events::PhysicsProgressTickEvent>(script.physics_event_id);
-                script.physics_event_id = 0;
-            }
-
-            if (script.instance != nullptr) {
-                script.instance->destroy();
-                delete script.instance;
-                script.instance = nullptr;
-            }
-
-            script.m_res = nullptr;
         });
     }
 

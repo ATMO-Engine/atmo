@@ -8,15 +8,13 @@
 
 namespace atmo::meta
 {
-    template <typename T> struct IsStdVector : std::false_type {
-    };
+    template <typename T> struct IsStdVector : std::false_type {};
 
     template <typename T, typename A> struct IsStdVector<std::vector<T, A>> : std::true_type {
         using element_type = T;
     };
 
-    template <typename T> struct IsSharedPtr : std::false_type {
-    };
+    template <typename T> struct IsSharedPtr : std::false_type {};
 
     template <typename T> struct IsSharedPtr<std::shared_ptr<T>> : std::true_type {
         using pointee = T;

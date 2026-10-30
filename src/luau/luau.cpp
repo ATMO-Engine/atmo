@@ -1,5 +1,6 @@
 #include "luau.hpp"
 #include "bindings/bindings_input.hpp"
+#include "bindings/bindings_prefab.hpp"
 #include "ctre.hpp"
 #include "lua.h"
 #include "luacode.h"
@@ -162,6 +163,7 @@ namespace atmo
                 p_L,
                 [](lua_State *L) -> int {
                     InputBindings::RegisterType(L);
+                    PrefabBindings::RegisterType(L);
                     LuauRegistry::Instance().registerAll(L);
                     return 0;
                 },
