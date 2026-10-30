@@ -285,6 +285,14 @@
             },
             version = "1.12.1"
         },
+        ["miniz#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "e96d4103633e161d259aa307e02a4d0842207651",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "3.1.1"
+        },
         ["ninja#f56260b5"] = {
             repo = {
                 branch = "master",
@@ -317,6 +325,12 @@
             },
             version = "3.14.3"
         },
+        ["slang v2026.20#4fdec6db"] = {
+            repo = {
+                url = "deps"
+            },
+            version = "v2026.20"
+        },
         ["spdlog v1.15.3#f56260b5"] = {
             repo = {
                 branch = "master",
@@ -324,6 +338,30 @@
                 url = "https://gitlab.com/tboox/xmake-repo.git"
             },
             version = "v1.15.3"
+        },
+        ["volk 1.4.335+0#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "e96d4103633e161d259aa307e02a4d0842207651",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "1.4.335+0"
+        },
+        ["vulkan-headers 1.4.335+0#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "e96d4103633e161d259aa307e02a4d0842207651",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "1.4.335+0"
+        },
+        ["vulkan-memory-allocator v3.4.0#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "e96d4103633e161d259aa307e02a4d0842207651",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "v3.4.0"
         },
         ["zlib#f56260b5"] = {
             repo = {
