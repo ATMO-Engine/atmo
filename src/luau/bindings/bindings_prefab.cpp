@@ -31,9 +31,8 @@ namespace atmo::luau
             lua_getref(L, callback->getRef());
 
             flecs::entity handle = root->getHandle();
-            if (!LuauRegistry::Instance().pushEntity(
-                    L, handle)) { // pushes the root as the userdata of its most specific bound type     | stack: [..., cb, root]
-                lua_pop(L, 1);    // no binding found, nothing was pushed: drop the callback             | stack: [...]
+            if (!LuauRegistry::Instance().pushEntity(L, handle)) {
+                lua_pop(L, 1);
                 return;
             }
 
