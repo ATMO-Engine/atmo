@@ -32,4 +32,14 @@ function PhysicsUpdate(deltaTime)
         jump = false;
         this:applyLinearImpulse(Vector2(0, -1000))
     end
+    local x = 0
+    if right then
+        right = false
+        x = x + 100
+    end
+    if left then
+        left = false
+        x = x - 100
+    end
+    this:applyLinearImpulse(Vector2(x, 0))
 end

@@ -80,13 +80,8 @@ namespace atmo::editor
         void saveSceneToFile(const std::string &path) const;
 
         /**
-         * @brief Load a scene from a JSON string into the isolated world.
-         *        Destroys existing scene children first.
-         */
-        void loadSceneFromJson(const std::string &json);
-
-        /**
-         * @brief Load a scene from a file path on disk.
+         * @brief Load a .ascn scene file into the isolated world's scene.
+         *        Destroys existing scene children first. Prefab files are refused.
          */
         void loadSceneFromFile(const std::string &path);
 
