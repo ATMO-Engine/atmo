@@ -1,5 +1,6 @@
 #include "entity.hpp"
 #include <algorithm>
+#include <format>
 #include <iterator>
 #include <memory>
 #include "core/ecs/components.hpp"
@@ -256,6 +257,13 @@ namespace atmo::core::ecs::entities
         }
 
         return {};
+    }
+
+    std::string Entity::uniqueChildName(std::string_view name) const
+    {
+        std::string candidate(name);
+        for (int i = 2; p_handle.lookup(candidate.c_str()).is_valid(); ++i) candidate = std::format("{}_{}", name, i);
+        return candidate;
     }
 
     void Entity::destroy()

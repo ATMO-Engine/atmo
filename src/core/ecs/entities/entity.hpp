@@ -227,6 +227,14 @@ namespace atmo::core::ecs::entities
         Entity findChildRecursive(std::string_view name) const;
 
         /**
+         * @brief Get a name that no child of this entity has yet: @p name, or "<name>_2", "<name>_3", ...
+         *
+         * @param name Wanted name.
+         * @return std::string A name that can be given to a new child of this entity.
+         */
+        std::string uniqueChildName(std::string_view name) const;
+
+        /**
          * @brief Set the parent of this entity. Emits "child_added" on @p parent.
          *
          * @param parent Parent entity to set for this entity.

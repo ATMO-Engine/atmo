@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include "core/ecs/entities/entity.hpp"
-#include "core/ecs/prefab.hpp"
+#include "core/scene/scene_loader.hpp"
 #include "luau/bindings/EntityLuauRegistry.hpp"
 #include "luau/bindings/entity/bindings_entity.hpp"
 #include "luau/luau.hpp"
@@ -23,7 +23,7 @@ namespace atmo::luau
         }
 
         core::SignalQueue::Enqueue([path = std::move(path), parent = *parent, callback]() {
-            auto root = core::ecs::Prefab::Instantiate(path, parent);
+            auto root = core::scene::SceneLoader::InstantiatePrefab(path, parent);
             if (!root || callback->getRef() == LUA_NOREF)
                 return;
 

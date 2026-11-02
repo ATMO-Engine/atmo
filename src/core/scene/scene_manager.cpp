@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "core/ecs/components.hpp"
 #include "core/ecs/entity_registry.hpp"
+#include "core/scene/scene_loader.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo
@@ -15,17 +16,22 @@ namespace atmo
                 m_world = world;
             }
 
-            std::shared_ptr<ecs::entities::Scene> SceneManager::loadSceneFromFile(std::string_view file_path)
+            std::shared_ptr<ecs::entities::Scene> SceneManager::loadSceneFromFile(std::string_view file_path, std::string &scene_name)
             {
-                auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
-                scene->initFromFile(file_path);
+                auto scene = SceneLoader::InstantiateScene(file_path, *m_world, scene_name);
+                if (!scene)
+                    return ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
 
                 return scene;
             }
 
             void SceneManager::loadSingleton(std::string_view file_path)
             {
-                auto singleton = loadSceneFromFile(file_path);
+                std::string scene_name;
+                auto singleton = loadSceneFromFile(file_path, scene_name);
+                if (!scene_name.empty())
+                    singleton->rename(scene_name);
+
                 m_singletons.push_back(singleton);
             }
 
@@ -62,9 +68,13 @@ namespace atmo
 
             void SceneManager::changeSceneToFile(std::string_view file_path)
             {
-                auto scene = loadSceneFromFile(file_path);
+                std::string scene_name;
+                auto scene = loadSceneFromFile(file_path, scene_name);
 
                 changeScene(scene);
+
+                if (!scene_name.empty())
+                    scene->rename(scene_name);
             }
         } // namespace scene
     } // namespace core

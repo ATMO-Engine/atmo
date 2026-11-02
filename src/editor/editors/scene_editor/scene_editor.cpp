@@ -17,13 +17,13 @@
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
-#include "core/ecs/prefab.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/progress_tick_event/progress_tick_event.hpp"
 #include "core/input/input_manager.hpp"
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
+#include "core/scene/scene_loader.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
@@ -160,6 +160,12 @@ namespace atmo::editor
 
     void SceneEditor::save()
     {
+        std::filesystem::path scene_path(*p_file_path);
+        if (scene_path.extension() != ".ascn") {
+            scene_path += ".ascn";
+            p_file_path = scene_path.string();
+        }
+
         project::File scene_file = project::FileSystem::OpenFile(*p_file_path, std::ios::out);
         auto scene_data = glz::write<glz::opts{ .prettify = true }>(m_scene_ctx->getScene()->serialize()).value();
         scene_file.write(scene_data.c_str(), scene_data.size());
@@ -170,8 +176,7 @@ namespace atmo::editor
         if (!p_file_path)
             return;
 
-        project::File scene_file = project::FileSystem::OpenFile(*p_file_path, std::ios::in);
-        m_scene_ctx->loadSceneFromJson(scene_file.readAll());
+        m_scene_ctx->loadSceneFromFile(*p_file_path);
     }
 
     void entityComponentFoldableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
@@ -675,10 +680,12 @@ namespace atmo::editor
 
         load_prefab_btn.getSignal<>("Released").connect([entity]() {
             core::SignalQueue::Enqueue([entity]() {
-                static constexpr SDL_DialogFileFilter filters[] = { { "Prefab", "prefab" } };
+                static constexpr SDL_DialogFileFilter filters[] = { { "Prefab", "ascn" } };
 
                 ShowOpenFileDialog(
-                    [entity](const std::string &path) { core::SignalQueue::Enqueue([entity, path]() { core::ecs::Prefab::Instantiate(path, entity); }); },
+                    [entity](const std::string &path) {
+                        core::SignalQueue::Enqueue([entity, path]() { core::scene::SceneLoader::InstantiatePrefab(path, entity); });
+                    },
                     project::ProjectManager::GetCurrentProjectPath().string(),
                     filters);
             });
@@ -688,13 +695,13 @@ namespace atmo::editor
             auto prefab_data = glz::write<glz::opts{ .prettify = true }>(entity.serialize()).value();
 
             core::SignalQueue::Enqueue([prefab_data = std::move(prefab_data)]() mutable {
-                static constexpr SDL_DialogFileFilter filters[] = { { "Prefab", "prefab" } };
+                static constexpr SDL_DialogFileFilter filters[] = { { "Prefab", "ascn" } };
 
                 ShowSaveFileDialog(
                     [prefab_data = std::move(prefab_data)](const std::string &path) {
                         std::filesystem::path prefab_path(path);
-                        if (prefab_path.extension() != ".prefab")
-                            prefab_path += ".prefab";
+                        if (prefab_path.extension() != ".ascn")
+                            prefab_path += ".ascn";
 
                         project::File prefab_file = project::FileSystem::OpenFile(prefab_path.string(), std::ios::out);
                         prefab_file.write(prefab_data.c_str(), prefab_data.size());

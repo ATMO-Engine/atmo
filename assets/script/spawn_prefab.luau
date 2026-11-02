@@ -1,9 +1,9 @@
 -- Spawns a prefab every SPAWN_INTERVAL seconds, next to this entity.
 --
 -- Setup: attach this script to an entity that has a Transform2d, and set PREFAB_PATH
--- to a .prefab file saved from the scene editor.
+-- to a .ascn file saved from the scene editor.
 
-local PREFAB_PATH = "project://assets/prefabs/enemy.prefab"
+local PREFAB_PATH = "project://assets/prefabs/enemy.ascn"
 local SPAWN_INTERVAL = 10
 local SPAWN_RADIUS = 200
 
