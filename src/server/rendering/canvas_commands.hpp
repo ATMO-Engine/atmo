@@ -58,7 +58,8 @@ namespace atmo::server::rendering
         Rect2 rect;
     };
 
-    struct CanvasClipPopCommand {};
+    struct CanvasClipPopCommand {
+    };
 
     using CanvasCommand = std::variant<
         CanvasRectCommand, CanvasTextureRectCommand, CanvasGlyphRunCommand, CanvasPolygonCommand, CanvasPolylineCommand, CanvasTransformCommand,
