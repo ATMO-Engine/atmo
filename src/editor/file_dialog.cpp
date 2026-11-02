@@ -1,6 +1,8 @@
 #include "file_dialog.hpp"
 #include <exception>
+#include <filesystem>
 #include <memory>
+#include <system_error>
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
@@ -23,15 +25,25 @@ namespace atmo::editor
         }
     }
 
+    static std::string DialogLocation(const std::string &default_location)
+    {
+        std::error_code ec;
+        if (std::filesystem::is_directory(default_location, ec))
+            return (std::filesystem::path(default_location) / "").string();
+        return default_location;
+    }
+
     void ShowSaveFileDialog(FileDialogCallback callback, const std::string &default_location, std::span<const SDL_DialogFileFilter> filters)
     {
         auto *userdata = new FileDialogCallback(std::move(callback));
-        SDL_ShowSaveFileDialog(&HandleFileDialogResult, userdata, nullptr, filters.data(), static_cast<int>(filters.size()), default_location.c_str());
+        const std::string location = DialogLocation(default_location);
+        SDL_ShowSaveFileDialog(&HandleFileDialogResult, userdata, nullptr, filters.data(), static_cast<int>(filters.size()), location.c_str());
     }
 
     void ShowOpenFileDialog(FileDialogCallback callback, const std::string &default_location, std::span<const SDL_DialogFileFilter> filters)
     {
         auto *userdata = new FileDialogCallback(std::move(callback));
-        SDL_ShowOpenFileDialog(&HandleFileDialogResult, userdata, nullptr, filters.data(), static_cast<int>(filters.size()), default_location.c_str(), false);
+        const std::string location = DialogLocation(default_location);
+        SDL_ShowOpenFileDialog(&HandleFileDialogResult, userdata, nullptr, filters.data(), static_cast<int>(filters.size()), location.c_str(), false);
     }
 } // namespace atmo::editor
