@@ -1,6 +1,5 @@
 #include "scene.hpp"
 
-#include "SDL3/SDL_render.h"
 #include "box2d/box2d.h"
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
@@ -16,18 +15,19 @@
 #include "project/file.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::core::ecs::entities
 {
     b2DebugDraw Scene::m_debug_draw{ b2DefaultDebugDraw() };
-    b2DebugDraw Scene::m_editor_debug_draw{ b2DefaultDebugDraw() };
-    static EditorDebugContext s_editor_debug_ctx;
-
+    static constexpr int debug_draw_z_index = 1 << 20;
 
     void Scene::RegisterSystems(flecs::world *world)
     {
         SetupDebugDraw(&m_debug_draw);
+
+        world->component<components::DebugDraw2d>();
 
         world->observer<components::Scene>("Scene_Destroy2dPhysicsWorld").event(flecs::OnRemove).each([](flecs::entity e, components::Scene &scene) {
             if (b2World_IsValid(scene.world_id)) {
@@ -35,34 +35,35 @@ namespace atmo::core::ecs::entities
             }
         });
 
-        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
-        const bool is_isolated = ctx && ctx->is_editor_isolated;
+        world->observer<components::DebugDraw2d>("Scene_FreeDebugDraw2d").event(flecs::OnRemove).each([](flecs::entity, components::DebugDraw2d &debug) {
+            server::rendering::RenderingServer::Instance().canvasItemFree(debug.item);
+            debug.item = {};
+        });
 
-        if (is_isolated) {
-            spdlog::debug("Scene::RegisterSystems: skipping physics simulation for editor-isolated world");
-
-            if (atmo::project::ProjectManager::GetSettings().debug.draw_physics_debug) {
-                SetupEditorDebugDraw(&m_editor_debug_draw);
-                world->system<components::Scene>("Body2d_DebugDrawShapes_Editor").kind(flecs::OnValidate).each([](flecs::entity e, components::Scene &scene) {
-                    const auto *wctx = e.world().try_get<components::WorldContext>();
-                    const auto *cam = e.world().try_get<components::WorldCameraState>();
-                    if (!wctx || !wctx->renderer)
+        if (atmo::project::ProjectManager::GetSettings().debug.draw_physics_debug) {
+            world->system<components::Scene, components::DebugDraw2d>("Scene_DebugDraw2d")
+                .kind(flecs::OnValidate)
+                .each([](flecs::entity e, components::Scene &scene, components::DebugDraw2d &debug) {
+                    const auto *ctx = e.world().try_get<components::WorldContext>();
+                    if (!ctx || !ctx->canvas.isValid() || !b2World_IsValid(scene.world_id))
                         return;
 
-                    int vp_w = 0, vp_h = 0;
-                    SDL_GetCurrentRenderOutputSize(wctx->renderer, &vp_w, &vp_h);
+                    auto &server = server::rendering::RenderingServer::Instance();
+                    if (!debug.item.isValid()) {
+                        debug.item = server.canvasItemCreate(ctx->canvas);
+                        server.canvasItemSetZIndex(debug.item, debug_draw_z_index);
+                    }
 
-                    const float zoom = (cam && cam->has_camera) ? cam->zoom : 1.0f;
-                    const float px = static_cast<float>(vp_w) * 0.5f - (cam && cam->has_camera ? cam->position.x * zoom : 0.0f);
-                    const float py = static_cast<float>(vp_h) * 0.5f - (cam && cam->has_camera ? cam->position.y * zoom : 0.0f);
-
-                    s_editor_debug_ctx = { wctx->renderer, zoom, { px, py } };
-                    m_editor_debug_draw.context = &s_editor_debug_ctx;
-
-                    if (b2World_IsValid(scene.world_id))
-                        b2World_Draw(scene.world_id, &m_editor_debug_draw);
+                    server.canvasItemClear(debug.item);
+                    b2DebugDraw draw = m_debug_draw;
+                    draw.context = &debug.item;
+                    b2World_Draw(scene.world_id, &draw);
                 });
-            }
+        }
+
+        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
+        if (ctx && ctx->is_editor_isolated) {
+            spdlog::debug("Scene::RegisterSystems: skipping physics simulation for editor-isolated world");
             return;
         }
 
@@ -92,18 +93,6 @@ namespace atmo::core::ecs::entities
                     event::EventRegistry::Dispatch(evt);
                 }
             });
-
-        if (atmo::project::ProjectManager::GetSettings().debug.draw_physics_debug) {
-            world->system<components::Scene, components::Window>("Body2d_DebugDrawShapes")
-                .kind(flecs::OnValidate)
-                .term_at(1)
-                .up()
-                .each([&](flecs::iter &it, size_t i, components::Scene &scene, components::Window &window) {
-                    m_debug_draw.context = &window;
-
-                    b2World_Draw(scene.world_id, &m_debug_draw);
-                });
-        }
     }
 
     void *enqueueTask(b2TaskCallback *task, int itemCount, int minRange, void *taskContext, void *userContext)
@@ -138,6 +127,7 @@ namespace atmo::core::ecs::entities
         Entity::initialize();
 
         setComponent<components::Scene>({});
+        setComponent<components::DebugDraw2d>({});
         auto scene = p_handle.get_ref<components::Scene>();
 
         b2WorldDef worldDef = b2DefaultWorldDef();

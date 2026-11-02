@@ -5,6 +5,7 @@
 namespace atmo::core::components
 {
     struct UITextInput {
+        /// Last committed value. Writing it updates the displayed text unless the input is being edited.
         std::string value;
         std::string prev_value;
     };
@@ -12,6 +13,9 @@ namespace atmo::core::components
 
 namespace atmo::core::ecs::entities
 {
+    /**
+     * @brief Single-line string input. Emits `StringValueChanged(std::string)` when an edited value is committed.
+     */
     class UITextInput : public EntityRegistry::Registrable<UITextInput, UIInput>
     {
     public:
@@ -21,9 +25,8 @@ namespace atmo::core::ecs::entities
 
         void initialize();
 
-        virtual void validateInput() override;
-
-        virtual void clear() override;
+        void commit() override;
+        void clear() override;
 
         void setValue(const std::string &value);
 
@@ -31,8 +34,5 @@ namespace atmo::core::ecs::entities
         {
             return "UITextInput";
         }
-
-        Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
     };
 } // namespace atmo::core::ecs::entities

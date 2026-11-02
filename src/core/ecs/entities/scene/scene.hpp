@@ -1,27 +1,22 @@
 #pragma once
 
-#include "SDL3/SDL_render.h"
 #include "box2d/box2d.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/types.hpp"
 #include "meta/meta.hpp"
-
-// Context passed to editor-specific Box2D debug-draw callbacks.
-// Carries the renderer and the camera transform (zoom + screen-space world origin).
-struct EditorDebugContext {
-    SDL_Renderer *renderer = nullptr;
-    float zoom = 1.0f;
-    atmo::core::types::Vector2 pan{ 0.0f, 0.0f };
-};
-
+#include "server/rendering/rid.hpp"
 
 namespace atmo::core::components
 {
     struct Scene {
         bool singleton{ false };
         b2WorldId world_id{ b2_nullWorldId };
+    };
+
+    struct DebugDraw2d {
+        server::rendering::CanvasItemRid item;
     };
 } // namespace atmo::core::components
 
@@ -67,9 +62,7 @@ namespace atmo::core::ecs::entities
 
     private:
         static void SetupDebugDraw(b2DebugDraw *debugDraw);
-        static void SetupEditorDebugDraw(b2DebugDraw *debugDraw);
 
         static b2DebugDraw m_debug_draw;
-        static b2DebugDraw m_editor_debug_draw;
     };
 } // namespace atmo::core::ecs::entities

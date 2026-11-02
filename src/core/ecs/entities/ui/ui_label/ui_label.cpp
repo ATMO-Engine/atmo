@@ -1,11 +1,10 @@
 #include "ui_label.hpp"
-#include "SDL3/SDL_error.h"
-#include "SDL3_ttf/SDL_ttf.h"
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/resource/resource_manager.hpp"
 #include "core/types.hpp"
+#include "impl/clay_types.hpp"
 #include "locale/locale_manager.hpp"
 #include "meta/auto_register.hpp"
 #include "spdlog/spdlog.h"
@@ -14,90 +13,24 @@ namespace atmo::core::ecs::entities
 {
     void UILabel::RegisterSystems(flecs::world *world)
     {
-        world->system<components::UILabel>("UILabel_sync").kind(flecs::PreUpdate).each([](flecs::entity e, components::UILabel &label) {
-            if (!label.m_render_cache) {
-                label.m_render_cache = std::make_unique<components::UILabel::TextRenderCache>();
-                label.m_prev_font_path = "";
-                label.m_prev_font_size = 0;
-                label.m_prev_font_style = -1;
-            }
-
-            bool font_changed = (label.font_path != label.m_prev_font_path);
-            if (font_changed) {
-                if (label.m_render_cache->ttf_text) {
-                    TTF_DestroyText(label.m_render_cache->ttf_text);
-                    label.m_render_cache->ttf_text = nullptr;
-                    label.m_render_cache->engine_bound = false;
-                }
-                label.m_res = nullptr;
-
-                if (!label.font_path.empty()) {
-                    label.m_res = resource::ResourceManager::GetInstance().getResource<TTF_Font>(label.font_path);
-                    if (label.m_res) {
-                        label.m_render_cache->ttf_text = TTF_CreateText(nullptr, label.m_res.get(), label.text.c_str(), label.text.size());
-                        label.m_render_cache->dirty = true;
-                    }
-                }
-
-                label.m_prev_font_path = label.font_path;
-                label.m_prev_text = label.text;
-                label.m_prev_font_size = 0;
-                label.m_prev_font_style = -1;
-            }
-
-            if (!label.m_render_cache->ttf_text)
+        world->system<components::UILabel>("UILabel_sync").kind(flecs::PreUpdate).each([](flecs::entity, components::UILabel &label) {
+            if (label.font_path == label.m_loaded_font_path)
                 return;
 
-            if (label.text != label.m_prev_text) {
-                if (!TTF_SetTextString(label.m_render_cache->ttf_text, label.text.c_str(), label.text.size()))
-                    spdlog::error("UILabel_sync: TTF_SetTextString failed: {}", SDL_GetError());
-                label.m_prev_text = label.text;
-                label.m_render_cache->dirty = true;
-            }
+            label.m_loaded_font_path = label.font_path;
+            label.m_font = nullptr;
+            if (label.font_path.empty())
+                return;
 
-            if (label.font_size != label.m_prev_font_size) {
-                TTF_Font *font = TTF_GetTextFont(label.m_render_cache->ttf_text);
-                if (font) {
-                    auto window = UILabel(e).getWindow();
-                    float dpi_x = 96.0f, dpi_y = 96.0f;
-                    if (window) {
-                        auto size = window->getDPIScale();
-                        dpi_x = size.x * 96.0f;
-                        dpi_y = size.y * 96.0f;
-                    }
-                    TTF_SetFontSizeDPI(font, label.font_size, dpi_x, dpi_y);
-                }
-                label.m_prev_font_size = label.font_size;
-                label.m_render_cache->dirty = true;
-            }
-
-            int desired_style = TTF_STYLE_NORMAL;
-            if (label.font_bold)
-                desired_style |= TTF_STYLE_BOLD;
-            if (label.font_italic)
-                desired_style |= TTF_STYLE_ITALIC;
-
-            if (desired_style != label.m_prev_font_style) {
-                TTF_Font *font = TTF_GetTextFont(label.m_render_cache->ttf_text);
-                if (font)
-                    TTF_SetFontStyle(font, desired_style);
-                label.m_prev_font_style = desired_style;
-                label.m_render_cache->dirty = true;
+            try {
+                label.m_font = resource::ResourceManager::GetInstance().getResource<resource::Font>(label.font_path);
+            } catch (const std::exception &e) {
+                spdlog::error("UILabel: {}", e.what());
             }
         });
 
-        world->observer<components::UILabel>("UILabel_remove").event(flecs::OnRemove).each([](flecs::entity /*e*/, components::UILabel &label) {
-            if (label.m_render_cache) {
-                if (label.m_render_cache->texture) {
-                    SDL_DestroyTexture(label.m_render_cache->texture);
-                    label.m_render_cache->texture = nullptr;
-                }
-                if (label.m_render_cache->ttf_text) {
-                    TTF_DestroyText(label.m_render_cache->ttf_text);
-                    label.m_render_cache->ttf_text = nullptr;
-                }
-            }
-            label.m_res = nullptr;
+        world->observer<components::UILabel>("UILabel_remove").event(flecs::OnRemove).each([](flecs::entity, components::UILabel &label) {
+            label.m_font = nullptr;
         });
     }
 
@@ -105,9 +38,7 @@ namespace atmo::core::ecs::entities
     {
         UI::initialize();
 
-        components::UILabel comp{};
-        comp.m_render_cache = std::make_unique<components::UILabel::TextRenderCache>();
-        setComponent<components::UILabel>(std::move(comp));
+        setComponent<components::UILabel>({});
     }
 
     void UILabel::setFontPath(const std::string &path)
@@ -190,25 +121,22 @@ namespace atmo::core::ecs::entities
         return getComponent<components::UILabel>().text_alignment;
     }
 
-    void UILabel::draw(ClaySdL3RendererData *data)
+    void UILabel::draw()
     {
         const auto &ui = getComponent<components::UI>();
         const auto &label = getComponent<components::UILabel>();
 
-        if (!label.m_render_cache || !label.m_render_cache->ttf_text)
+        if (!label.m_font)
             return;
 
-        if (!label.m_render_cache->engine_bound) {
-            TTF_SetTextEngine(label.m_render_cache->ttf_text, data->text_engine);
-            label.m_render_cache->engine_bound = true;
-        }
-
+        const std::uint16_t font_flags = (label.font_bold ? clay_font_flags::bold : 0) | (label.font_italic ? clay_font_flags::italic : 0);
         Clay_String str = Clay_String{ .isStaticallyAllocated = false, .length = static_cast<int32_t>(label.text.size()), .chars = label.text.data() };
         CLAY_TEXT(
             str,
             CLAY_TEXT_CONFIG(
-                { .userData = static_cast<void *>(label.m_render_cache.get()),
+                { .userData = static_cast<void *>(label.m_font.get()),
                   .textColor = (types::Color::WHITE * ui.modulate).toFloat<Clay_Color>(255),
+                  .fontId = font_flags,
                   .fontSize = static_cast<uint16_t>(label.font_size),
                   .letterSpacing = label.letter_spacing,
                   .lineHeight = label.line_height,

@@ -14,6 +14,7 @@
 #include "impl/romver.hpp"
 #include "meta/meta_registry.hpp"
 #include "project/project_settings.hpp"
+#include "server/rendering/rendering_server.hpp"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -95,6 +96,7 @@ namespace atmo::addon
         core::ecs::EntityRegistry &entity_registry;
         core::resource::SubResourceRegistry &subresource_registry;
         meta::MetaRegistry &meta_registry;
+        server::rendering::RenderingServer &rendering_server;
     };
 
     class Addon

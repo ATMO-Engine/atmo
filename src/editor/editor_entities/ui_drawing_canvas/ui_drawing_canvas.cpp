@@ -1,26 +1,41 @@
 #include "ui_drawing_canvas.hpp"
 #include "SDL3_image/SDL_image.h"
 #include "common/math.hpp"
-#include "core/ecs/components.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/input/input_manager.hpp"
 #include "meta/auto_register.hpp"
+#include "server/rendering/rendering_server.hpp"
 
 namespace atmo::core::ecs::entities
 {
+    namespace
+    {
+        class DrawingCanvasRenderable : public ClayCustomRenderable
+        {
+        public:
+            explicit DrawingCanvasRenderable(flecs::entity handle) : m_handle(handle) {}
+
+            void render(server::rendering::CanvasCommandWriter &writer, const server::rendering::Rect2 &rect, float) override
+            {
+                if (m_handle.is_alive() && m_handle.has<components::UIDrawingCanvas>())
+                    UIDrawingCanvas(m_handle).render(writer, rect);
+            }
+
+        private:
+            flecs::entity m_handle;
+        };
+    } // namespace
+
     void UIDrawingCanvas::RegisterSystems(flecs::world *world)
     {
         world->observer<components::UIDrawingCanvas>().event(flecs::OnRemove).each([](flecs::entity e, components::UIDrawingCanvas &comp) {
-            if (comp.drawing_texture) {
-                SDL_DestroyTexture(comp.drawing_texture);
-                comp.drawing_texture = nullptr;
-            }
-
-            if (comp.checkboard_texture) {
-                SDL_DestroyTexture(comp.checkboard_texture);
-                comp.checkboard_texture = nullptr;
-            }
+            auto &server = server::rendering::RenderingServer::Instance();
+            server.textureFree(comp.drawing_texture);
+            server.textureFree(comp.checkboard_texture);
+            comp.drawing_texture = {};
+            comp.checkboard_texture = {};
+            comp.m_renderable.reset();
         });
     }
 
@@ -28,68 +43,46 @@ namespace atmo::core::ecs::entities
     {
         UI::initialize();
         setComponent<components::UIDrawingCanvas>({});
+        getComponentMutable<components::UIDrawingCanvas>().m_renderable = std::make_shared<DrawingCanvasRenderable>(p_handle);
         createSignal<const core::types::Vector2i &>("New Dimensions");
     }
 
-    void UIDrawingCanvas::render(SDL_Renderer *renderer)
+    void UIDrawingCanvas::render(server::rendering::CanvasCommandWriter &writer, const server::rendering::Rect2 &rect)
     {
-        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        int w = (int)comp.bounds.width;
-        int h = (int)comp.bounds.height;
-        if (w <= 0 || h <= 0) {
+        const auto &comp = getComponent<components::UIDrawingCanvas>();
+        if (rect.size.x <= 0.0f || rect.size.y <= 0.0f)
             return;
-        }
 
-        if (!comp.checkboard_texture) {
-            return;
-        }
-
-        if (!comp.display_texture || comp.display_texture_size.x != w || comp.display_texture_size.y != h) {
-            if (comp.display_texture)
-                SDL_DestroyTexture(comp.display_texture);
-
-            comp.display_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
-            if (!comp.display_texture)
-                return;
-            SDL_SetTextureScaleMode(comp.display_texture, SDL_SCALEMODE_NEAREST);
-            SDL_SetTextureBlendMode(comp.display_texture, SDL_BLENDMODE_BLEND);
-            comp.display_texture_size = { w, h };
-        }
-
-        SDL_FRect localRect = comp.cached_texture_rect;
-        localRect.x -= comp.bounds.x;
-        localRect.y -= comp.bounds.y;
-
-        SDL_SetRenderTarget(renderer, comp.display_texture);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        SDL_RenderClear(renderer);
-
+        const server::rendering::Rect2 texture_rect{ { comp.cached_texture_rect.x, comp.cached_texture_rect.y },
+                                                     { comp.cached_texture_rect.w, comp.cached_texture_rect.h } };
+        writer.pushClip(rect);
         if (!comp.preview) {
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
-            SDL_FRect fillRect = { 0, 0, comp.bounds.width, comp.bounds.height };
-            SDL_RenderFillRect(renderer, &fillRect);
-            SDL_RenderTexture(renderer, comp.checkboard_texture, nullptr, &localRect);
+            writer.addRect(rect, core::types::Color(64.0f / 255.0f, 64.0f / 255.0f, 64.0f / 255.0f, 1.0f));
+            if (comp.checkboard_texture.isValid())
+                writer.addTextureRect(
+                    texture_rect,
+                    comp.checkboard_texture,
+                    {
+                        .source =
+                            server::rendering::Rect2{ { 0.0f, 0.0f }, { static_cast<float>(comp.texture_size.x), static_cast<float>(comp.texture_size.y) } },
+                        .filter = server::rendering::TextureFilter::Nearest,
+                        .repeat = true,
+                    });
         }
-        SDL_RenderTexture(renderer, comp.drawing_texture, nullptr, &localRect);
-
-        SDL_SetRenderTarget(renderer, nullptr);
+        if (comp.drawing_texture.isValid())
+            writer.addTextureRect(texture_rect, comp.drawing_texture, { .filter = server::rendering::TextureFilter::Nearest });
+        writer.popClip();
     }
 
     Clay_ElementDeclaration UIDrawingCanvas::buildDecl()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        auto windowEntity = getWindow();
-        SDL_Renderer *renderer = windowEntity ? windowEntity->getComponentMutable<core::components::Window>().renderer_data.renderer : nullptr;
-
-        if (renderer) {
+        if (server::rendering::RenderingServer::Instance().isInitialized()) {
             if (comp.texture_dirty)
-                flushPixelsToTexture(renderer);
-            if (!comp.checkboard_texture)
+                flushPixelsToTexture();
+            if (!comp.checkboard_texture.isValid())
                 rebuildCheckboard();
-            render(renderer);
         }
 
         Clay_ElementDeclaration d{ .id = CLAY_ID("DrawingCanvas"),
@@ -97,9 +90,7 @@ namespace atmo::core::ecs::entities
                                                    .width = CLAY_SIZING_PERCENT(comp.canvas_size.x),
                                                    .height = CLAY_SIZING_PERCENT(comp.canvas_size.y),
                                                } } };
-
-        if (comp.display_texture)
-            d.image = { .imageData = comp.display_texture };
+        d.custom.customData = comp.m_renderable.get();
 
         return d;
     }
@@ -107,51 +98,26 @@ namespace atmo::core::ecs::entities
     void UIDrawingCanvas::rebuildCheckboard()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-
-        auto windowEntity = getWindow();
-        if (!windowEntity) {
+        auto &server = server::rendering::RenderingServer::Instance();
+        if (comp.checkboard_texture.isValid() || !server.isInitialized())
             return;
-        }
 
-        auto window = windowEntity->getComponentMutable<core::components::Window>();
-        SDL_Renderer *renderer = window.renderer_data.renderer;
-        if (!renderer) {
-            return;
-        }
-
-        int w = comp.texture_size.x;
-        int h = comp.texture_size.y;
-
-        if (w <= 0 || h <= 0) {
-            return;
-        }
-
-        if (comp.checkboard_texture) {
-            SDL_DestroyTexture(comp.checkboard_texture);
-        }
-
-        comp.checkboard_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
-
-        if (!comp.checkboard_texture) {
+        const std::byte dark{ 180 };
+        const std::byte light{ 230 };
+        const std::byte opaque{ 255 };
+        const std::array<std::byte, 16> pixels{ dark, dark, dark, opaque, light, light, light, opaque, light, light, light, opaque, dark, dark, dark, opaque };
+        comp.checkboard_texture = server.texture2dCreate({ .size = { 2, 2 }, .debug_name = "drawing canvas checkerboard" }, pixels);
+        if (!comp.checkboard_texture.isValid())
             spdlog::warn("Check board load failed");
-            return;
-        }
+    }
 
-        SDL_SetTextureScaleMode(comp.checkboard_texture, SDL_SCALEMODE_NEAREST);
-        SDL_SetRenderTarget(renderer, comp.checkboard_texture);
-
-        for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                bool dark = ((x + y) % 2) == 0;
-                if (dark)
-                    SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
-                else
-                    SDL_SetRenderDrawColor(renderer, 230, 230, 230, 255);
-                SDL_RenderPoint(renderer, (float)x, (float)y);
-            }
-        }
-
-        SDL_SetRenderTarget(renderer, nullptr);
+    void UIDrawingCanvas::releaseDrawingTexture()
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+        server::rendering::RenderingServer::Instance().textureFree(comp.drawing_texture);
+        comp.drawing_texture = {};
+        comp.drawing_texture_size = { 0, 0 };
+        comp.texture_dirty = true;
     }
 
     void UIDrawingCanvas::validateAndSyncDimensions()
@@ -164,33 +130,29 @@ namespace atmo::core::ecs::entities
         int targetW = comp.texture_size.x;
         int targetH = comp.texture_size.y;
 
-        int pixelH = (int)comp.pixels.size();
-        int pixelW = pixelH > 0 ? (int)comp.pixels[0].size() : 0;
+        int pixelW = comp.image.width();
+        int pixelH = comp.image.height();
 
-        const atmo::core::types::Color TRANSPARENT_COL{ 0.0f, 0.0f, 0.0f, 0.0f };
-
-        if (pixelH != targetH || pixelW != targetW) {
+        if (!comp.image.currentFrame()) {
+            spdlog::warn("canvas sync: no frame, creating a blank {}/{} one", targetW, targetH);
+            comp.image.reset(targetW, targetH);
+            comp.texture_dirty = true;
+            rebuildCheckboard();
+        } else if (pixelH != targetH || pixelW != targetW) {
             spdlog::warn("canvas sync: FrameBuffer: {}/{} != texture_size: {}/{}, syncing", pixelW, pixelH, targetW, targetH);
-            comp.pixels.resize(targetH, std::vector<atmo::core::types::Color>(targetW, TRANSPARENT_COL));
-
-            for (int y = 0; y < targetH; ++y) {
-                auto &row = comp.pixels[y];
-                row.resize(targetW, TRANSPARENT_COL);
-            }
+            comp.image.resizeFrame(targetW, targetH);
             comp.texture_dirty = true;
             rebuildCheckboard();
         }
 
-        if (comp.drawing_texture) {
-            float tw, th;
-            SDL_GetTextureSize(comp.drawing_texture, &tw, &th);
-            if ((int)tw != targetW || (int)th != targetH) {
-                spdlog::warn("canvas sync: texture SDL: {}/{} != texture_size: {}/{}, destroy current SDL texture", (int)tw, (int)th, targetW, targetH);
-                SDL_DestroyTexture(comp.drawing_texture);
-                comp.drawing_texture = nullptr;
-                comp.texture_dirty = true;
-                rebuildCheckboard();
-            }
+        if (comp.drawing_texture.isValid() && (comp.drawing_texture_size.x != targetW || comp.drawing_texture_size.y != targetH)) {
+            spdlog::warn(
+                "canvas sync: texture {}/{} != texture_size: {}/{}, recreating the texture",
+                comp.drawing_texture_size.x,
+                comp.drawing_texture_size.y,
+                targetW,
+                targetH);
+            releaseDrawingTexture();
         }
     }
 
@@ -198,30 +160,14 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        int oldH = (int)comp.pixels.size();
-        int oldW = oldH > 0 ? (int)comp.pixels[0].size() : 0;
-
-        if (heigth > oldH) {
-            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, { 0.0f, 0.0f, 0.0f, 0.0f }));
-        } else {
-            comp.pixels.resize(heigth, std::vector<atmo::core::types::Color>(width, { 0.0f, 0.0f, 0.0f, 0.0f }));
-        }
-
-        for (int y = 0; y < (int)comp.pixels.size(); ++y) {
-            auto &row = comp.pixels[y];
-            if (width > (int)row.size()) {
-                row.resize(width, { 0.0f, 0.0f, 0.0f, 0.0f });
-            } else {
-                row.resize(width, { 0.0f, 0.0f, 0.0f, 0.0f });
-            }
-        }
+        if (comp.image.currentFrame())
+            comp.image.resizeFrame(width, heigth);
+        else
+            comp.image.reset(width, heigth);
 
         comp.texture_size = { width, heigth };
 
-        if (comp.drawing_texture) {
-            SDL_DestroyTexture(comp.drawing_texture);
-            comp.drawing_texture = nullptr;
-        }
+        releaseDrawingTexture();
 
         comp.texture_dirty = true;
         rebuildCheckboard();
@@ -231,16 +177,19 @@ namespace atmo::core::ecs::entities
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
-        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
+        comp.image.reset(w, h);
         comp.texture_size = { w, h };
 
-        if (comp.drawing_texture) {
-            SDL_DestroyTexture(comp.drawing_texture);
-            comp.drawing_texture = nullptr;
-        }
+        releaseDrawingTexture();
         comp.texture_dirty = true;
         rebuildCheckboard();
         getSignal<const core::types::Vector2i &>("New Dimensions").emit(comp.texture_size);
+    }
+
+    std::vector<std::vector<atmo::core::types::Color>> *UIDrawingCanvas::currentFrame()
+    {
+        auto *frame = getComponentMutable<components::UIDrawingCanvas>().image.currentFrame();
+        return frame ? &frame->frame : nullptr;
     }
 
     atmo::core::types::Vector2 UIDrawingCanvas::screenToCanvas(atmo::core::types::Vector2 screenPos) const
@@ -371,7 +320,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIDrawingCanvas::draw(ClaySdL3RendererData *data)
+    void UIDrawingCanvas::draw()
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 
@@ -388,13 +337,16 @@ namespace atmo::core::ecs::entities
                 handleZoom(mousePosInScreen);
                 handlePan(mousePosInScreen);
             }
-            handleDrawing(mousePosInScreen, mousePosInCanvas);
+            if (comp.drawing_locked)
+                comp.last_paint_mouse_pos = mousePosInCanvas;
+            else
+                handleDrawing(mousePosInScreen, mousePosInCanvas);
         } else {
             comp.last_paint_mouse_pos = mousePosInCanvas;
         }
     }
 
-    void UIDrawingCanvas::flushPixelsToTexture(SDL_Renderer *renderer)
+    void UIDrawingCanvas::flushPixelsToTexture()
     {
         validateAndSyncDimensions();
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
@@ -402,23 +354,26 @@ namespace atmo::core::ecs::entities
         if (!comp.texture_dirty)
             return;
 
-        int h = (int)comp.pixels.size();
-        int w = h > 0 ? (int)comp.pixels[0].size() : 0;
+        const auto img = comp.image.renderAll();
+        const auto *pixels = &img.frame;
+
+        int h = (int)pixels->size();
+        int w = h > 0 ? (int)(*pixels)[0].size() : 0;
 
         if (w <= 0 || h <= 0)
             return;
 
-        if (!comp.drawing_texture) {
-            comp.drawing_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
-            if (!comp.drawing_texture)
+        auto &server = server::rendering::RenderingServer::Instance();
+        if (!comp.drawing_texture.isValid()) {
+            comp.drawing_texture = server.texture2dCreate({ .size = { w, h }, .debug_name = "drawing canvas" }, {});
+            if (!comp.drawing_texture.isValid())
                 return;
-            SDL_SetTextureScaleMode(comp.drawing_texture, SDL_SCALEMODE_NEAREST);
-            SDL_SetTextureBlendMode(comp.drawing_texture, SDL_BLENDMODE_BLEND);
+            comp.drawing_texture_size = { w, h };
         }
 
         comp.upload_buffer.resize(w * h * 4);
         for (int y = 0; y < h; ++y) {
-            const auto &row = comp.pixels[y];
+            const auto &row = (*pixels)[y];
             for (int x = 0; x < w; ++x) {
                 const auto &c = row[x];
                 int idx = (y * w + x) * 4;
@@ -429,7 +384,7 @@ namespace atmo::core::ecs::entities
             }
         }
 
-        SDL_UpdateTexture(comp.drawing_texture, nullptr, comp.upload_buffer.data(), w * 4);
+        server.texture2dUpdate(comp.drawing_texture, { .width = w, .height = h }, std::as_bytes(std::span(comp.upload_buffer)));
         comp.texture_dirty = false;
     }
 
@@ -481,8 +436,12 @@ namespace atmo::core::ecs::entities
         validateAndSyncDimensions();
 
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
-        int h = (int)comp.pixels.size();
-        int w = h > 0 ? (int)comp.pixels[0].size() : 0;
+        auto *pixels = currentFrame();
+        if (!pixels)
+            return;
+
+        int h = (int)pixels->size();
+        int w = h > 0 ? (int)(*pixels)[0].size() : 0;
 
         if (pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h) {
             return;
@@ -493,7 +452,7 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        auto &dst = comp.pixels[pos.y][pos.x];
+        auto &dst = (*pixels)[pos.y][pos.x];
 
         if (comp.pen == components::UIDrawingCanvas::DrawType::ERASER) {
             dst = atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -546,38 +505,93 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        int w = comp.texture_size.x;
-        int h = comp.texture_size.y;
-        if (w <= 0 || h <= 0 || comp.pixels.empty())
-            return;
+        std::string ext = std::filesystem::path(path).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-        SDL_Surface *surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA32);
+        if (ext == ".atx")
+            comp.image.save(path);
+        else
+            exportSpriteSheet(path, comp.image.layerNames());
+    }
+
+    SDL_Surface *UIDrawingCanvas::LoadRgbaSurface(const std::string &path)
+    {
+        std::string ext = path.substr(path.find_last_of('.') + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext != "bmp" && ext != "png" && ext != "jpg" && ext != "jpeg")
+            throw ImportException(path, "file format not valid, file format available: .atx, .bmp, .png, .jpg");
+
+        SDL_Surface *surface = IMG_Load(path.c_str());
         if (!surface)
-            return;
+            throw ImportException(path, SDL_GetError());
+
+        SDL_Surface *rgba = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
+        SDL_DestroySurface(surface);
+        if (!rgba)
+            throw ImportException(path, SDL_GetError());
+        return rgba;
+    }
+
+    components::UIDrawingCanvas::ExportFormat UIDrawingCanvas::FormatFromPath(const std::string &path)
+    {
+        std::string ext = path.substr(path.find_last_of('.') + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext == "bmp")
+            return components::UIDrawingCanvas::ExportFormat::BMP;
+        if (ext == "jpg" || ext == "jpeg")
+            return components::UIDrawingCanvas::ExportFormat::JPG;
+        return components::UIDrawingCanvas::ExportFormat::PNG;
+    }
+
+    bool UIDrawingCanvas::exportSpriteSheet(const std::string &path, const std::vector<std::string> &layerNames)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        const auto frames = comp.image.renderLayers(layerNames);
+        const int frameW = comp.image.width();
+        const int frameH = comp.image.height();
+        if (frames.empty() || frameW <= 0 || frameH <= 0) {
+            spdlog::warn("Export sprite sheet: nothing to export");
+            return false;
+        }
+
+        SDL_Surface *surface = SDL_CreateSurface(frameW * static_cast<int>(frames.size()), frameH, SDL_PIXELFORMAT_RGBA32);
+        if (!surface) {
+            spdlog::error("Export sprite sheet: {}", SDL_GetError());
+            return false;
+        }
 
         uint8_t *px = (uint8_t *)surface->pixels;
-        for (int y = 0; y < h; ++y)
-            for (int x = 0; x < w; ++x) {
-                const auto &c = comp.pixels[y][x];
-                int i = y * surface->pitch + x * 4;
-                px[i + 0] = (uint8_t)(c.r * 255.0f);
-                px[i + 1] = (uint8_t)(c.g * 255.0f);
-                px[i + 2] = (uint8_t)(c.b * 255.0f);
-                px[i + 3] = (uint8_t)(c.a * 255.0f);
-            }
+        for (std::size_t f = 0; f < frames.size(); ++f) {
+            const int originX = static_cast<int>(f) * frameW;
+            for (int y = 0; y < frameH && y < (int)frames[f].frame.size(); ++y)
+                for (int x = 0; x < frameW && x < (int)frames[f].frame[y].size(); ++x) {
+                    const auto &c = frames[f].frame[y][x];
+                    int i = y * surface->pitch + (originX + x) * 4;
+                    px[i + 0] = (uint8_t)(c.r * 255.0f);
+                    px[i + 1] = (uint8_t)(c.g * 255.0f);
+                    px[i + 2] = (uint8_t)(c.b * 255.0f);
+                    px[i + 3] = (uint8_t)(c.a * 255.0f);
+                }
+        }
 
-        switch (comp.format) {
+        bool saved = false;
+        switch (FormatFromPath(path)) {
             case core::components::UIDrawingCanvas::ExportFormat::PNG:
-                IMG_SavePNG(surface, path.c_str());
+                saved = IMG_SavePNG(surface, path.c_str());
                 break;
             case core::components::UIDrawingCanvas::ExportFormat::BMP:
-                SDL_SaveBMP(surface, path.c_str());
+                saved = SDL_SaveBMP(surface, path.c_str());
                 break;
             case core::components::UIDrawingCanvas::ExportFormat::JPG:
-                IMG_SaveJPG(surface, path.c_str(), 90);
+                saved = IMG_SaveJPG(surface, path.c_str(), 90);
                 break;
         }
+        if (!saved)
+            spdlog::error(R"(Export sprite sheet "{}": {})", path, SDL_GetError());
+
         SDL_DestroySurface(surface);
+        return saved;
     }
 
     void UIDrawingCanvas::importCanvas(const std::string &path)
@@ -596,77 +610,98 @@ namespace atmo::core::ecs::entities
             return;
         }
 
-        auto windowEntity = getWindow();
-        if (!windowEntity)
-            return;
-
-        auto window = windowEntity->getComponentMutable<core::components::Window>();
-        SDL_Renderer *renderer = window.renderer_data.renderer;
-        if (!renderer)
-            return;
-
         std::string ext = path.substr(path.find_last_of('.') + 1);
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-        SDL_Surface *surface = nullptr;
-
         /* temporary check. Must be reworked */
         auto fileSize = fs::file_size(path, ec);
-        if ((!ec && fileSize == 0) && (ext == "bmp" || ext == "png" || ext == "jpg" || ext == "jpeg")) {
+        if ((!ec && fileSize == 0) && (ext == "bmp" || ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "atmo")) {
             spdlog::info("Import Canvas: file {} exists but is empty, creating blank 16x16 canvas", path);
-            initPixelBuffer(16, 16);
+            initPixelBuffer(DEFAULT_TEXTURE_SIZE, DEFAULT_TEXTURE_SIZE);
             comp.file_path = path;
             return;
         }
 
-        if (ext == "bmp") {
-            comp.format = core::components::UIDrawingCanvas::ExportFormat::BMP;
-            surface = SDL_LoadBMP(path.c_str());
-        } else if (ext == "png") {
-            comp.format = core::components::UIDrawingCanvas::ExportFormat::PNG;
-            surface = IMG_Load(path.c_str());
-        } else if (ext == "jpg" || ext == "jpeg") {
-            comp.format = core::components::UIDrawingCanvas::ExportFormat::JPG;
-            surface = IMG_Load(path.c_str());
-        } else {
-            spdlog::warn("File format not valid no op, file format available: .bmp, .png, .jpg");
-            return;
-        }
-
-        comp.file_path = path;
-        if (!surface)
-            return;
-
-        SDL_Surface *rgba = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
-        SDL_DestroySurface(surface);
-        if (!rgba)
-            return;
-
-        int w = rgba->w;
-        int h = rgba->h;
-
-        if (w < 1 || w > 10000) {
-            spdlog::warn("Image width not within 1-10000 px range, clamped");
-            w = common::math::Clamp(w, 1, 10000);
-        }
-        if (h < 1 || h > 10000) {
-            spdlog::warn("Image heigth not within 1-10000 px range; clamped");
-            h = common::math::Clamp(h, 1, 10000);
-        }
-
-        comp.pixels.assign(h, std::vector<atmo::core::types::Color>(w, atmo::core::types::Color{ 0.0f, 0.0f, 0.0f, 0.0f }));
-        uint8_t *px = (uint8_t *)rgba->pixels;
-        for (int y = 0; y < h; ++y)
-            for (int x = 0; x < w; ++x) {
-                int i = y * rgba->pitch + x * 4;
-                comp.pixels[y][x] = { px[i + 0] / 255.0f, px[i + 1] / 255.0f, px[i + 2] / 255.0f, px[i + 3] / 255.0f };
+        if (ext == "atmo") {
+            atmo::image::extension::AtmoFormat loaded;
+            if (!loaded.load(path))
+                return;
+            if (loaded.width() == 0 || loaded.height() == 0) {
+                spdlog::warn("Import Canvas: {} has an empty frame size, no op", path);
+                return;
             }
-        SDL_DestroySurface(rgba);
 
-        if (comp.drawing_texture) {
-            SDL_DestroyTexture(comp.drawing_texture);
-            comp.drawing_texture = nullptr;
+            comp.image = std::move(loaded);
+            comp.file_path = path;
+            imageReloaded(comp.image.width(), comp.image.height());
+            return;
         }
+
+        try {
+            auto size = ProbeImageSize(path);
+            importSpriteSheet(path, size.x, size.y, 1);
+        } catch (const ImportException &e) {
+            spdlog::warn("Import Canvas: {}, no op", e.what());
+        }
+    }
+
+    atmo::core::types::Vector2i UIDrawingCanvas::ProbeImageSize(const std::string &path)
+    {
+        SDL_Surface *surface = LoadRgbaSurface(path);
+        atmo::core::types::Vector2i size = { surface->w, surface->h };
+        SDL_DestroySurface(surface);
+        return size;
+    }
+
+    void UIDrawingCanvas::importSpriteSheet(const std::string &path, int frameW, int frameH, int frameCount)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        if (frameW < 1 || frameW > MAX_FRAME_SIZE || frameH < 1 || frameH > MAX_FRAME_SIZE)
+            throw ImportException(path, std::format("frame size {}x{} not within 1-{} px range", frameW, frameH, MAX_FRAME_SIZE));
+        if (frameCount < 1 || frameCount > UINT8_MAX)
+            throw ImportException(path, std::format("frame count {} not within 1-{} range", frameCount, UINT8_MAX));
+
+        SDL_Surface *rgba = LoadRgbaSurface(path);
+        const int sheetW = rgba->w;
+        const int sheetH = rgba->h;
+        const int columns = sheetW / frameW;
+        const int rows = sheetH / frameH;
+        if (frameCount > columns * rows) {
+            SDL_DestroySurface(rgba);
+            throw ImportException(
+                path, std::format("a {}x{} sheet only holds {} frames of {}x{}, {} requested", sheetW, sheetH, columns * rows, frameW, frameH, frameCount));
+        }
+
+        comp.image.reset(frameW, frameH);
+        comp.image.setFrameNumber(static_cast<std::uint8_t>(frameCount));
+
+        const uint8_t *px = (const uint8_t *)rgba->pixels;
+        for (int f = 0; f < frameCount; ++f) {
+            comp.image.selectFrame(static_cast<std::uint8_t>(f));
+            auto &pixels = *currentFrame();
+            const int originX = (f % columns) * frameW;
+            const int originY = (f / columns) * frameH;
+
+            for (int y = 0; y < frameH; ++y)
+                for (int x = 0; x < frameW; ++x) {
+                    int i = (originY + y) * rgba->pitch + (originX + x) * 4;
+                    pixels[y][x] = { px[i + 0] / 255.0f, px[i + 1] / 255.0f, px[i + 2] / 255.0f, px[i + 3] / 255.0f };
+                }
+        }
+        SDL_DestroySurface(rgba);
+        comp.image.selectFrame(0);
+
+        comp.format = FormatFromPath(path);
+        comp.file_path = path;
+        imageReloaded(frameW, frameH);
+    }
+
+    void UIDrawingCanvas::imageReloaded(int w, int h)
+    {
+        auto &comp = getComponentMutable<components::UIDrawingCanvas>();
+
+        releaseDrawingTexture();
 
         comp.texture_size = { w, h };
         getSignal<const core::types::Vector2i &>("New Dimensions").emit(comp.texture_size);

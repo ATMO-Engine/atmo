@@ -37,6 +37,12 @@ namespace atmo
             ATMO_PROJECT_SETTING core::types::Color background_color = core::types::Color("#191919");
             ATMO_PROJECT_SETTING bool headless = false;
             ATMO_PROJECT_SETTING core::types::Vector2i size = core::types::Vector2i{ 1280, 720 };
+            ATMO_PROJECT_SETTING std::string stretch_mode = "disabled";
+            ATMO_PROJECT_SETTING core::types::Color letterbox_color = core::types::Color::BLACK;
+        };
+
+        struct Rendering {
+            ATMO_PROJECT_SETTING std::string texture_filter = "linear";
         };
 
         struct Singletons {
@@ -61,6 +67,7 @@ namespace atmo
             ATMO_PROJECT_SETTING App app;
             ATMO_PROJECT_SETTING Boot boot;
             ATMO_PROJECT_SETTING Window window;
+            ATMO_PROJECT_SETTING Rendering rendering;
             ATMO_PROJECT_SETTING Singletons singletons;
             ATMO_PROJECT_SETTING Engine engine;
             ATMO_PROJECT_SETTING Debug debug;
@@ -94,9 +101,16 @@ template <> struct atmo::meta::ComponentMeta<atmo::project::Window> {
     static constexpr const char *name = "ProjectSettings.Window";
     static constexpr auto fields = std::make_tuple(
         atmo::meta::field<&atmo::project::Window::background_color>("background_color"), atmo::meta::field<&atmo::project::Window::headless>("headless"),
-        atmo::meta::field<&atmo::project::Window::size>("size"));
+        atmo::meta::field<&atmo::project::Window::size>("size"), atmo::meta::field<&atmo::project::Window::stretch_mode>("stretch_mode"),
+        atmo::meta::field<&atmo::project::Window::letterbox_color>("letterbox_color"));
 };
 ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Window);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Rendering> {
+    static constexpr const char *name = "ProjectSettings.Rendering";
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::project::Rendering::texture_filter>("texture_filter"));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Rendering);
 
 template <> struct atmo::meta::ComponentMeta<atmo::project::Singletons> {
     static constexpr const char *name = "ProjectSettings.Singletons";

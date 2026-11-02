@@ -74,13 +74,14 @@ namespace atmo::editor
         create_btn_label->setParent(*create_btn);
 
         auto new_project_name_input = core::ecs::EntityRegistry::Create<core::ecs::entities::UITextInput>("Entity::UI::UIInput::UITextInput");
-        new_project_name_input->setValue("New Project Name");
-        new_project_name_input->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        new_project_name_input->setPlaceholder("New Project Name");
         new_project_name_input->setParent(*topbar);
 
         create_btn->getSignal<>("Released").connect([&engine = m_engine, window_ui_container, input_handle = new_project_name_input->getHandle()]() {
             auto input = core::ecs::entities::UITextInput(input_handle);
-            std::string project_name = input.getComponent<core::components::UITextInput>().value;
+            std::string project_name = input.getText();
+            if (project_name.empty())
+                return;
 
             try {
                 project::ProjectManager::CreateProject("user://projects/" + project_name);

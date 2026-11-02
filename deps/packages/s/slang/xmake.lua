@@ -1,0 +1,102 @@
+package("slang")
+    set_homepage("https://github.com/shader-slang/slang")
+    set_description("Making it easier to work with shaders")
+    set_license("MIT")
+
+    add_urls("https://github.com/shader-slang/slang.git")
+
+    add_versions("v2026.20", "d9ede2dd5836afc0e9586da18d9236b171d0faa8")
+    add_versions("v2026.16","bc8a0673b3831305ebb78bd3f4bb185714442771")
+    add_versions("v2026.14.1","3f3f71bbe639d93a886310a39dcfbeb26882aef5")
+    add_versions("v2026.13.1","648d55cad173eaf8989f75cc6a1c7b38685e5200")
+    add_versions("v2026.13","6c8016cbb1d7b3a78a194200fd215a2e33e1be71")
+    add_versions("v2025.11.0", "ee51fe592747fc66bd0b5757207583198068b5bd")
+    add_versions("v2025.6.3", "b9300bae08a77df6ef2efe2b62de14a13b10b9a4")
+    add_versions("v2024.1.18", "efdbb954c57b89362e390f955d45f90e59d66878")
+    add_versions("v2024.1.17", "62b7219e715bd4c0f984bcd98c9767fb6422c78f")
+
+    add_configs("embed_stdlib_source", { description = "Embed stdlib source in the binary", default = true, type = "boolean" })
+    add_configs("embed_stdlib", { description = "Build slang with an embedded version of the stdlib", default = false, type = "boolean" })
+    add_configs("full_ir_validation", { description = "Enable full IR validation (SLOW!)", default = false, type = "boolean" })
+    add_configs("gfx", { description = "Enable gfx targets", default = false, type = "boolean" })
+    add_configs("slangd", { description = "Enable language server target", default = false, type = "boolean" })
+    add_configs("slangc", { description = "Enable standalone compiler target", default = true, type = "boolean" })
+    add_configs("slangrt", { description = "Enable runtime target", default = false, type = "boolean" })
+    add_configs("slang_glslang", { description = "Enable glslang dependency and slang-glslang wrapper target", default = false, type = "boolean" })
+    add_configs("dxil", { description = "Enable generating DXIL with DXC", default = false, type = "boolean" })
+    add_configs("slang_llvm_flavor", { description = "How to get or build slang-llvm (available options: FETCH_BINARY, USE_SYSTEM_LLVM, DISABLE)", default = "DISABLE", type = "string" })
+
+    add_deps("cmake")
+    add_deps("miniz")
+
+    on_load(function (package)
+        if not package:config("shared") then
+            package:add("defines", "SLANG_STATIC")
+            package:add("links", "slang-compiler", "compiler-core", "core", "cmark-gfm", "lz4")
+            if package:is_plat("windows") then
+                package:add("syslinks", "ole32", "advapi32", "shell32")
+            elseif package:is_plat("linux") then
+                package:add("syslinks", "pthread", "dl")
+            end
+        end
+    end)
+
+    on_install("windows|x64", "macosx", "linux|x86_64", function (package)
+        io.replace("cmake/SlangTarget.cmake", [[set_property(TARGET ${target} PROPERTY SUFFIX ".dylib")]], "", {plain = true})
+        local configs = {"-DSLANG_ENABLE_TESTS=OFF", "-DSLANG_ENABLE_EXAMPLES=OFF", "-DSLANG_USE_SYSTEM_MINIZ=ON"}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
+        table.insert(configs, "-DSLANG_LIB_TYPE=" .. (package:config("shared") and "SHARED" or "STATIC"))
+        table.insert(configs, "-DSLANG_EMBED_STDLIB_SOURCE=" .. (package:config("embed_stdlib_source") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_EMBED_STDLIB=" .. (package:config("embed_stdlib") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_FULL_IR_VALIDATION=" .. (package:config("full_ir_validation") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_ASAN=" .. (package:config("asan") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_GFX=" .. (package:config("gfx") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_SLANG_RHI=" .. (package:config("gfx") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_SLANGD=" .. (package:config("slangd") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_SLANGC=" .. (package:config("slangc") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_SLANGRT=" .. (package:config("slangrt") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_ENABLE_SLANG_GLSLANG=" .. (package:config("slang_glslang") and "ON" or "OFF"))
+        table.insert(configs, "-DSLANG_SLANG_LLVM_FLAVOR=" .. package:config("slang_llvm_flavor"))
+        table.insert(configs, "-DSLANG_ENABLE_DXIL=" .. (package:config("dxil") and "ON" or "OFF"))
+
+        io.replace("CMakeLists.txt", [[find_package(Threads REQUIRED)]], [[find_package(Threads REQUIRED)
+find_package(miniz CONFIG REQUIRED)
+add_library(miniz ALIAS miniz::miniz)
+get_target_property(MINIZ_INCLUDE_DIRS miniz::miniz INTERFACE_INCLUDE_DIRECTORIES)
+include_directories(MINIZ_INCLUDE_DIRS)]], {plain = true})
+
+        local builddir = "build"
+        local cmake = import("package.tools.cmake")
+        if not package:config("slangc") then
+            -- the glsl module is always installed, but only built as a dependency of slangc
+            cmake.build(package, configs, {builddir = builddir, target = "slang-glsl-module"})
+        end
+        cmake.install(package, configs, {builddir = builddir})
+        if not package:config("shared") then
+            -- slang's static install leaves out its internal and bundled archives
+            local libdir = path.join(builddir, package:is_debug() and "Debug" or "Release", "lib")
+            local archives = {
+                [libdir] = {"compiler-core", "core"},
+                [path.join(builddir, "external", "cmark", "src")] = {"cmark-gfm"},
+                [path.join(builddir, "external", "lz4", "build", "cmake")] = {"lz4"},
+            }
+            for dir, names in pairs(archives) do
+                for _, name in ipairs(names) do
+                    os.cp(path.join(dir, package:is_plat("windows") and (name .. ".lib") or ("lib" .. name .. ".a")), package:installdir("lib"))
+                end
+            end
+        end
+        package:addenv("PATH", "bin")
+    end)
+
+    on_test(function (package)
+        assert(package:check_cxxsnippets({ test = [[
+            #include <slang-com-ptr.h>
+            #include <slang.h>
+
+            void test() {
+                Slang::ComPtr<slang::IGlobalSession> global_session;
+                slang::createGlobalSession(global_session.writeRef());
+            }
+        ]] }, {configs = {languages = "c++17"}}))
+    end)

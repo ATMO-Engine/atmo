@@ -32,7 +32,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIRect::draw(ClaySdL3RendererData *data) {}
+    void UIRect::draw() {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIRect);

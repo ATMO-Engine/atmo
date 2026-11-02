@@ -3,7 +3,6 @@
 #include "impl/romver.hpp"
 
 #include "romver.hpp"
-#include "spdlog/spdlog.h"
 
 #include <string>
 
@@ -71,22 +70,16 @@ namespace atmo::impl
         std::uint16_t major = 0;
         std::uint16_t minor = 1;
 
-        if (!parse_number(project) || ptr == end || *ptr != '.') {
-            spdlog::warn("Invalid version string '{}', default value (0.0.1) returned", version);
-            return Romver();
-        }
+        if (!parse_number(project) || ptr == end || *ptr != '.')
+            throw ParseException(version);
         ptr++;
 
-        if (!parse_number(major) || ptr == end || *ptr != '.') {
-            spdlog::warn("Invalid version string '{}', default value (0.0.1) returned", version);
-            return Romver();
-        };
+        if (!parse_number(major) || ptr == end || *ptr != '.')
+            throw ParseException(version);
         ptr++;
 
-        if (!parse_number(minor)) {
-            spdlog::warn("Invalid version string '{}', default value (0.0.1) returned", version);
-            return Romver();
-        }
+        if (!parse_number(minor))
+            throw ParseException(version);
 
         std::string pre = "";
         if (ptr < end && *ptr == '-') {

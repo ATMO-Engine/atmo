@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SDL3/SDL_render.h"
+#include "SDL3/SDL_rect.h"
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/resource/subresources/2d/shape/shape2d.hpp"
@@ -47,8 +47,6 @@ namespace atmo::core::ecs::entities
 
     private:
         static void InitBody(flecs::entity e, Body2dData &body_data);
-
-        static void DebugRenderRectangleShape(SDL_Renderer *renderer, types::Vector2 center, types::Vector2 size, float angle);
     };
 } // namespace atmo::core::ecs::entities
 

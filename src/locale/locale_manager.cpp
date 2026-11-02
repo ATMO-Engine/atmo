@@ -6,27 +6,32 @@
 #include "locale_manager.hpp"
 #include "project/file.hpp"
 #include "project/file_system.hpp"
+#include "spdlog/spdlog.h"
 
 namespace atmo::locale
 {
     LocaleManager::LocaleManager()
     {
-        std::vector<std::string> locales = atmo::project::FileSystem::SearchFiles("project://translation/*/atmo.json");
-        for (const auto &path : locales) {
-            std::string locale = path.substr(path.find("translation/") + 12);
-            locale = locale.substr(0, locale.find("/"));
-            m_available_locales.push_back(locale);
+        try {
+            std::vector<std::string> locales = atmo::project::FileSystem::SearchFiles("project://translation/*/atmo.json");
+            for (const auto &path : locales) {
+                std::string locale = path.substr(path.find("translation/") + 12);
+                locale = locale.substr(0, locale.find("/"));
+                m_available_locales.push_back(locale);
+            }
+
+            loadUserPreference();
+
+            if (m_user_preference.has_value() && hasLanguageAndCountryMatch(m_user_preference.value())) {
+                m_current_locale = m_user_preference.value();
+            } else {
+                m_current_locale = detectSystemLocale();
+            }
+
+            loadTranslations();
+        } catch (const std::exception &e) {
+            spdlog::warn("Couldn't load translations: {}", e.what());
         }
-
-        loadUserPreference();
-
-        if (m_user_preference.has_value() && hasLanguageAndCountryMatch(m_user_preference.value())) {
-            m_current_locale = m_user_preference.value();
-        } else {
-            m_current_locale = detectSystemLocale();
-        }
-
-        loadTranslations();
     }
 
     const std::string &LocaleManager::GetCurrentLocale() noexcept

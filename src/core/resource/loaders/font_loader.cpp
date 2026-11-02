@@ -1,46 +1,38 @@
 #include "font_loader.hpp"
-#include <exception>
-#include <memory>
-#include "SDL3/SDL_error.h"
-#include "SDL3_ttf/SDL_ttf.h"
 
+#include <cstddef>
+#include <vector>
+
+#include "SDL3/SDL_iostream.h"
 #include "core/resource/auto_register_loader.hpp"
-#include "core/resource/loaders/font_loader.hpp"
 #include "project/file_system.hpp"
+#include "server/rendering/rendering_server.hpp"
 
-namespace atmo
+namespace atmo::core::resource
 {
-    namespace core
+    std::shared_ptr<Font> FontLoader::load(const std::string &path)
     {
-        namespace resource
-        {
-            FontLoader::FontLoader() {}
+        auto &server = server::rendering::RenderingServer::Instance();
+        if (!server.isInitialized())
+            throw LoadException("the RenderingServer is not initialized");
 
-            FontLoader::~FontLoader() {}
+        auto file = project::FileSystem::OpenFile(path);
+        SDL_IOStream *io = file.toIOStream();
+        if (!io)
+            throw LoadException("Failed to open font " + path);
 
-            std::shared_ptr<TTF_Font> FontLoader::load(const std::string &path)
-            {
-                TTF_Font *res = nullptr;
-                try {
-                    auto file = project::FileSystem::OpenFile(path);
-                    res = TTF_OpenFontIO(file.toIOStream(), true, 24);
-                } catch (const std::exception &e) {
-                    throw e;
-                }
+        std::size_t size = 0;
+        void *data = SDL_LoadFile_IO(io, &size, true);
+        if (!data)
+            throw LoadException("Failed to read font " + path);
+        std::vector<std::byte> bytes(static_cast<std::byte *>(data), static_cast<std::byte *>(data) + size);
+        SDL_free(data);
 
-                if (!res) {
-                    throw LoadException(std::format("Failed to load font '{}': {}", path, SDL_GetError()));
-                } else {
-                    return std::shared_ptr<TTF_Font>(res, [](TTF_Font *f) {
-                        if (f) {
-                            TTF_CloseFont(f);
-                        }
-                    });
-                }
-            }
+        const server::rendering::FontRid rid = server.fontCreate(bytes, path);
+        if (!rid.isValid())
+            throw LoadException("Failed to load font " + path);
+        return std::make_shared<Font>(rid);
+    }
+} // namespace atmo::core::resource
 
-        } // namespace resource
-    } // namespace core
-} // namespace atmo
-
-ATMO_REGISTER_RESOURCE_LOADER(TTF_Font, atmo::core::resource::FontLoader, .display_name = "Font (SDL Font)", .extensions = { ".ttf", ".otf" });
+ATMO_REGISTER_RESOURCE_LOADER(atmo::core::resource::Font, atmo::core::resource::FontLoader, .display_name = "Font", .extensions = { ".ttf", ".otf" });

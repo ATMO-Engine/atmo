@@ -23,6 +23,7 @@ namespace atmo::core::ecs
     {
         m_world.reset();
         m_world.init_builtin_components();
+        components::register_core_components(m_world);
 
         m_scene_manager.setWorld(&m_world);
         EntityRegistry::SetWorld(&m_world);
@@ -32,7 +33,6 @@ namespace atmo::core::ecs
         m_world.set<flecs::Rest>({});
 #endif
 
-        components::register_core_components(m_world);
         m_world.set<components::WorldContext>({ .is_editor_isolated = false });
     }
 

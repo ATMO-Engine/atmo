@@ -1,24 +1,16 @@
 #pragma once
 
-#include <SDL3_ttf/SDL_ttf.h>
 #include <memory>
+#include <string>
 
+#include "core/resource/font.hpp"
 #include "core/resource/resource.hpp"
 
-namespace atmo
+namespace atmo::core::resource
 {
-    namespace core
+    class FontLoader : public Resource<Font>
     {
-        namespace resource
-        {
-            class FontLoader : public Resource<TTF_Font>
-            {
-            public:
-                FontLoader();
-                ~FontLoader() override;
-
-                std::shared_ptr<TTF_Font> load(const std::string &path) override;
-            };
-        } // namespace resource
-    } // namespace core
-} // namespace atmo
+    public:
+        std::shared_ptr<Font> load(const std::string &path) override;
+    };
+} // namespace atmo::core::resource

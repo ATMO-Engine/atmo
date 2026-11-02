@@ -47,7 +47,7 @@ namespace atmo::core::ecs::entities
         bool hasFocus() const;
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
 
     private:
         void rebuild();

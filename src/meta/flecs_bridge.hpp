@@ -21,6 +21,8 @@ namespace atmo::meta
             using FieldT = typename FieldDescriptor<Owner, MemberPtr>::field_type;
             if constexpr (HasComponentMeta<FieldT>) {
                 register_flecs_meta<FieldT>(world);
+            } else {
+                world.component<FieldT>();
             }
             c.template member<FieldT>(fd.name);
         }

@@ -11,8 +11,11 @@ std::optional<atmo::core::ecs::entities::Entity> createFloatWidget(atmo::core::e
     auto &float_input_entity_comp = float_input_entity->getComponentMutable<atmo::core::components::UINumberInput>();
 
     input_entity_comp.input_type = atmo::core::components::UIInput::InputType::Float;
-    if (value)
-        field.get(value, &float_input_entity_comp.value);
+    if (value) {
+        float current = 0;
+        field.get(value, &current);
+        float_input_entity_comp.value = current;
+    }
 
     float_input_entity->getSignal<float>("FloatValueChanged").connect([value, field](float val) { field.set(value, &val); });
 
@@ -22,7 +25,9 @@ std::optional<atmo::core::ecs::entities::Entity> createFloatWidget(atmo::core::e
 void updateFloatWidget(atmo::core::ecs::entities::Entity widget, void *value, const atmo::meta::FieldInfo &field)
 {
     auto &comp = widget.getComponentMutable<atmo::core::components::UINumberInput>();
-    field.get(value, &comp.value);
+    float current = 0;
+    field.get(value, &current);
+    comp.value = current;
 }
 
 ATMO_REGISTER_WIDGET("float", createFloatWidget, {}, updateFloatWidget);

@@ -1,19 +1,26 @@
 #pragma once
 
-#include "SDL3/SDL_render.h"
+#include <memory>
+#include <string>
+
 #include "core/ecs/entities/ui/ui.hpp"
+#include "core/resource/texture_2d.hpp"
+#include "server/rendering/rid.hpp"
+#include "server/rendering/types.hpp"
 
 namespace atmo::core::components
 {
     struct UIImage {
         std::string texture_path;
         std::string old_texture_path;
-        std::shared_ptr<SDL_Texture> texture;
+        std::shared_ptr<resource::Texture2d> texture;
         float natural_width = 0.0f;
         float natural_height = 0.0f;
-        SDL_Texture *raw_texture = nullptr;
-        float rendered_size[2] = { 0.f, 0.f };
+        server::rendering::TextureRid raw_texture;
+        server::rendering::TextureRid m_drawn_texture;
+        types::Vector2 rendered_size{ 0.0f, 0.0f };
         float rotation = 0.0f;
+        server::rendering::TextureFilter filter = server::rendering::TextureFilter::Linear;
     };
 } // namespace atmo::core::components
 
@@ -45,7 +52,7 @@ namespace atmo::core::ecs::entities
         void press();
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
 
         void setTexturePath(const std::string &path);
     };
