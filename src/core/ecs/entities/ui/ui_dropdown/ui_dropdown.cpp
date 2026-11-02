@@ -125,9 +125,9 @@ namespace atmo::core::ecs::entities
         event::EventRegistry::Dispatch(evt);
     }
 
-    void UIDropdown::draw(ClaySdL3RendererData *data)
+    void UIDropdown::draw()
     {
-        UIButton::draw(data);
+        UIButton::draw();
 
         auto label = getLabel();
         label.getComponentMutable<components::UI>().visible = !label.getText().empty();

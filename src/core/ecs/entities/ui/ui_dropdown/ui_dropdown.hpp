@@ -46,7 +46,7 @@ namespace atmo::core::ecs::entities
         void setText(const std::string &text);
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw(ClaySdL3RendererData *data) override;
+        void draw() override;
 
     private:
         bool isHovered();
