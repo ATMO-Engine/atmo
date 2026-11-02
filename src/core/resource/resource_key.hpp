@@ -10,8 +10,7 @@
 
 namespace atmo::core::resource
 {
-    template <typename T> struct GpuResource : std::false_type {
-    };
+    template <typename T> struct GpuResource : std::false_type {};
 
     template <typename T> struct ResourceKey {
         using type = std::string;
@@ -21,8 +20,7 @@ namespace atmo::core::resource
         using type = std::pair<std::string, SDL_Renderer *>;
     };
 
-    template <> struct GpuResource<SDL_Texture> : std::true_type {
-    };
+    template <> struct GpuResource<SDL_Texture> : std::true_type {};
 
     template <typename Key> struct ResourceKeyHash;
 

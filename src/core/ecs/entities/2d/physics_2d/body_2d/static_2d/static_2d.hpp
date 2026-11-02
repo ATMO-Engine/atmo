@@ -23,8 +23,7 @@ namespace atmo::core::ecs::entities
 
         void setBodyType() override;
 
-        struct Static2dData {
-        };
+        struct Static2dData {};
     };
 } // namespace atmo::core::ecs::entities
 

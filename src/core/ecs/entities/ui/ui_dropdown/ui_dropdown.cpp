@@ -15,9 +15,7 @@ namespace atmo::core::ecs::entities
 {
     void UIDropdown::RegisterSystems(flecs::world *world)
     {
-        world->system("UIDropdown_ResetDrawDepth").kind(flecs::PreUpdate).run([](flecs::iter &it) {
-            s_draw_depth.clear();
-        });
+        world->system("UIDropdown_ResetDrawDepth").kind(flecs::PreUpdate).run([](flecs::iter &it) { s_draw_depth.clear(); });
 
         world->observer<components::UIDropdown>("UIDropdown_remove").event(flecs::OnRemove).each([](flecs::entity, components::UIDropdown &dropdown) {
             if (dropdown.group_event_listener_id != 0)
@@ -164,9 +162,8 @@ namespace atmo::core::ecs::entities
 
         Clay_ElementData data_self = Clay_GetElementData(getComponent<components::UI>().element_id);
         if (data_self.found)
-            content.getComponentMutable<components::Layout>().floating.offest = {
-                data_self.boundingBox.x, data_self.boundingBox.y + data_self.boundingBox.height
-            };
+            content.getComponentMutable<components::Layout>().floating.offest = { data_self.boundingBox.x,
+                                                                                  data_self.boundingBox.y + data_self.boundingBox.height };
     }
 } // namespace atmo::core::ecs::entities
 

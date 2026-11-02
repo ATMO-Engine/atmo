@@ -21,8 +21,7 @@ namespace atmo::core::components
 template <> struct atmo::meta::ComponentMeta<atmo::core::components::UIDropdown> {
     static constexpr const char *name = "Dropdown";
     static constexpr const char *category = "UI";
-    static constexpr auto fields = std::make_tuple(
-        atmo::meta::field<&atmo::core::components::UIDropdown::group>("group"));
+    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::core::components::UIDropdown::group>("group"));
 };
 
 namespace atmo::core::ecs::entities
@@ -48,6 +47,7 @@ namespace atmo::core::ecs::entities
 
         Clay_ElementDeclaration buildDecl() override;
         void draw(ClaySdL3RendererData *data) override;
+
     private:
         bool isHovered();
         void dispatchGroupEvent(event::events::DropdownGroupEvent::Action action);
