@@ -19,11 +19,13 @@ namespace atmo::core::ecs::entities
     {
         world->system("UiDropdownMenu_ResetDrawDepth").kind(flecs::PreUpdate).run([](flecs::iter &it) { s_draw_depth.clear(); });
 
-        world->observer<components::UiDropdownMenu>("UiDropdownMenu_remove").event(flecs::OnRemove).each([](flecs::entity e, components::UiDropdownMenu &dropdown) {
-            if (dropdown.group_event_listener_id != 0)
-                event::EventRegistry::RemoveCallBack<event::events::DropdownGroupEvent>(dropdown.group_event_listener_id);
-            std::erase_if(s_open_child, [e](const auto &entry) { return entry.second == e.id(); });
-        });
+        world->observer<components::UiDropdownMenu>("UiDropdownMenu_remove")
+            .event(flecs::OnRemove)
+            .each([](flecs::entity e, components::UiDropdownMenu &dropdown) {
+                if (dropdown.group_event_listener_id != 0)
+                    event::EventRegistry::RemoveCallBack<event::events::DropdownGroupEvent>(dropdown.group_event_listener_id);
+                std::erase_if(s_open_child, [e](const auto &entry) { return entry.second == e.id(); });
+            });
     }
 
     void UiDropdownMenu::initialize()
@@ -136,9 +138,7 @@ namespace atmo::core::ecs::entities
         const types::Vector2 to_b = { corner_b.x - from.x, corner_b.y - from.y };
 
 
-        const auto cross = [](const types::Vector2 &u, const types::Vector2 &v) {
-            return u.x * v.y - u.y * v.x;
-        };
+        const auto cross = [](const types::Vector2 &u, const types::Vector2 &v) { return u.x * v.y - u.y * v.x; };
 
         const float side = cross(to_a, to_b);
         return cross(to_a, move) * side >= 0.0f && cross(move, to_b) * side >= 0.0f;
