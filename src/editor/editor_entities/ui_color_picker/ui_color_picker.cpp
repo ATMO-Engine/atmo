@@ -317,7 +317,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIColorPicker::draw()
+    void UIColorPicker::draw(float delta_time)
     {
         auto &comp = getComponentMutable<core::components::UIColorPicker>();
         getSignal<types::Color>("Update preview").emit(comp.current_color);

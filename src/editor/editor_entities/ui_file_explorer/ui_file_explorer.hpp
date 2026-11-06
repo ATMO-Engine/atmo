@@ -47,7 +47,7 @@ namespace atmo::core::ecs::entities
         bool hasFocus() const;
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw() override;
+        void draw(float delta_time) override;
 
     private:
         void rebuild();

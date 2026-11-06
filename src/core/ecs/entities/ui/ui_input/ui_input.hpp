@@ -110,7 +110,7 @@ namespace atmo::core::ecs::entities
         virtual void clear();
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw() override;
+        void draw(float delta_time) override;
 
     protected:
         /// Applies the component's options (multiline, filters...) to the editor. Subclasses may extend the filter.

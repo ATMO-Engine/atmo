@@ -80,7 +80,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIImage::draw() {}
+    void UIImage::draw(float delta_time) {}
 
     void UIImage::setTexturePath(const std::string &path)
     {

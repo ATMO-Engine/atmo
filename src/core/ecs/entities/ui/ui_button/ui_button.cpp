@@ -126,7 +126,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIButton::draw()
+    void UIButton::draw(float delta_time)
     {
         auto &btnComp = getComponentMutable<core::components::UIButton>();
         intptr_t id = static_cast<intptr_t>(getID());

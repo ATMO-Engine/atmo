@@ -19,6 +19,6 @@ namespace atmo::core::ecs::entities
         }
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw() override;
+        void draw(float delta_time) override;
     };
 } // namespace atmo::core::ecs::entities

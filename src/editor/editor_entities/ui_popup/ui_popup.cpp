@@ -30,7 +30,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIPopup::draw() {}
+    void UIPopup::draw(float delta_time) {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIPopup);

@@ -100,7 +100,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UISlider::draw()
+    void UISlider::draw(float delta_time)
     {
         auto &comp = getComponentMutable<components::UISlider>();
 
