@@ -1,5 +1,4 @@
 #include "ui_dropdown_menu.hpp"
-#include "SDL3/SDL_timer.h"
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -144,36 +143,37 @@ namespace atmo::core::ecs::entities
         return cross(to_a, move) * side >= 0.0f && cross(move, to_b) * side >= 0.0f;
     }
 
-    bool UiDropdownMenu::updateAim()
+    bool UiDropdownMenu::updateAim(float delta_time)
     {
         auto &dropdown = getComponentMutable<components::UiDropdownMenu>();
         const auto mouse = core::InputManager::GetMousePosition();
-        const uint64_t now = SDL_GetTicks();
 
         if (!dropdown.is_open || isHovered()) {
             dropdown.aim_sample = mouse;
-            dropdown.aim_progress_ms = now;
+            dropdown.aim_idle_time = 0.0f;
             return false;
         }
 
-        if (dropdown.aim_progress_ms == 0)
+        if (!dropdown.aim_idle_time)
             return false;
+
+        *dropdown.aim_idle_time += delta_time;
 
         const types::Vector2 move = { mouse.x - dropdown.aim_sample.x, mouse.y - dropdown.aim_sample.y };
         if (move.x * move.x + move.y * move.y < AIM_MIN_MOVE * AIM_MIN_MOVE) {
-            if (now - dropdown.aim_progress_ms <= AIM_TIMEOUT_MS)
+            if (*dropdown.aim_idle_time <= AIM_TIMEOUT)
                 return true;
-            dropdown.aim_progress_ms = 0;
+            dropdown.aim_idle_time.reset();
             return false;
         }
 
         if (!isHeadingToContent(dropdown.aim_sample, move)) {
-            dropdown.aim_progress_ms = 0;
+            dropdown.aim_idle_time.reset();
             return false;
         }
 
         dropdown.aim_sample = mouse;
-        dropdown.aim_progress_ms = now;
+        dropdown.aim_idle_time = 0.0f;
         return true;
     }
 
@@ -183,7 +183,7 @@ namespace atmo::core::ecs::entities
         if (it == s_open_child.end() || it->second == static_cast<flecs::entity_t>(getID()))
             return false;
 
-        return UiDropdownMenu(core::ecs::EntityRegistry::GetEntityFromId(it->second)).updateAim();
+        return UiDropdownMenu(core::ecs::EntityRegistry::GetEntityFromId(it->second)).updateAim(0.0f);
     }
 
     void UiDropdownMenu::dispatchGroupEvent(event::events::DropdownGroupEvent::Action action)
@@ -200,11 +200,11 @@ namespace atmo::core::ecs::entities
         event::EventRegistry::Dispatch(evt);
     }
 
-    void UiDropdownMenu::draw()
+    void UiDropdownMenu::draw(float delta_time)
     {
         const bool blocked = isBlockedBySibling();
         if (!blocked)
-            UIButton::draw();
+            UIButton::draw(delta_time);
 
         auto label = getLabel();
         label.getComponentMutable<components::UI>().visible = !label.getText().empty();
@@ -212,7 +212,7 @@ namespace atmo::core::ecs::entities
         auto &dropdown = getComponentMutable<components::UiDropdownMenu>();
         dropdown.depth = s_draw_depth[dropdown.group];
         bool is_hovered = !blocked && isHovered();
-        bool aiming = updateAim();
+        bool aiming = updateAim(delta_time);
 
         bool is_open = is_hovered || aiming || (dropdown.is_open && dropdown.group_hovered);
         dropdown.group_hovered = false;

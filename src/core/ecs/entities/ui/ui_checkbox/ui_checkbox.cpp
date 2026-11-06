@@ -71,9 +71,9 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UICheckBox::draw()
+    void UICheckBox::draw(float delta_time)
     {
-        UIButton::draw();
+        UIButton::draw(delta_time);
     }
 } // namespace atmo::core::ecs::entities
 

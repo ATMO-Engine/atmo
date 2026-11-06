@@ -480,7 +480,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIFileExplorer::draw() {}
+    void UIFileExplorer::draw(float delta_time) {}
 
     UITextInput UIFileExplorer::getAddInput() const
     {

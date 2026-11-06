@@ -32,7 +32,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIRect::draw() {}
+    void UIRect::draw(float delta_time) {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIRect);

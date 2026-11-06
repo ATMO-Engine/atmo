@@ -122,7 +122,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIFoldableTreeItem::draw()
+    void UIFoldableTreeItem::draw(float delta_time)
     {
         bool is_open = getComponentMutable<components::UIFoldableTreeItem>().open;
         auto child_container = getChildContainer();

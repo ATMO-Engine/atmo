@@ -55,7 +55,7 @@ namespace atmo::core::ecs::entities
         std::string getSelectedItem() const;
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw() override;
+        void draw(float delta_time) override;
 
     private:
         void rebuild();

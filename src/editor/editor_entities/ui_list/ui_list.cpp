@@ -162,7 +162,7 @@ namespace atmo::core::ecs::entities
         return UIRect::buildDecl();
     }
 
-    void UIList::draw() {}
+    void UIList::draw(float delta_time) {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIList)

@@ -29,7 +29,7 @@ namespace atmo::core::ecs::entities
 
         world->system<components::Window>("Draw").kind(flecs::PostUpdate).each([](flecs::iter &it, size_t i, components::Window &window) {
             entities::Window entity(it.entity(i));
-            entity.draw(window);
+            entity.draw(window, it.delta_time());
         });
 
         world->observer<components::Window>().event(flecs::OnRemove).each([](flecs::entity e, components::Window &window) {
@@ -178,7 +178,7 @@ namespace atmo::core::ecs::entities
         server::rendering::RenderingServer::Instance().windowFocus(window->rid);
     }
 
-    void Window::draw(components::Window &window)
+    void Window::draw(components::Window &window, float delta_time)
     {
         if (window.headless || !window.clay_context)
             return;
@@ -202,7 +202,7 @@ namespace atmo::core::ecs::entities
             auto wrapped = EntityRegistry::Wrap(child);
             auto *ui = dynamic_cast<entities::UI *>(wrapped.get());
             if (ui && !child.getParent().hasComponent<components::UI>())
-                ui->internalDraw();
+                ui->internalDraw(delta_time);
         }
         const Clay_RenderCommandArray commands = Clay_EndLayout();
 

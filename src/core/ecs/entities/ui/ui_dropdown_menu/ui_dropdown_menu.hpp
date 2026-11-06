@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <unordered_map>
 
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
@@ -23,7 +24,7 @@ namespace atmo::core::components
         uint32_t group_event_listener_id = 0;
 
         types::Vector2 aim_sample = { 0.0f, 0.0f };
-        uint64_t aim_progress_ms = 0;
+        std::optional<float> aim_idle_time;
     };
 } // namespace atmo::core::components
 
@@ -55,7 +56,7 @@ namespace atmo::core::ecs::entities
         void setText(const std::string &text);
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw() override;
+        void draw(float delta_time) override;
 
     private:
         bool isHovered();
@@ -70,8 +71,11 @@ namespace atmo::core::ecs::entities
          * @brief Tells if the pointer left this open dropdown and is still moving toward its content
          *
          * Can be called several times per frame, siblings call it as they may be drawn first.
+         *
+         * @param delta_time Time to add to the aim timer: the frame delta from this dropdown's own
+         * draw, 0 from its siblings so that a frame is only counted once.
          */
-        bool updateAim();
+        bool updateAim(float delta_time);
 
         /**
          * @brief Tells if the pointer is only crossing this dropdown on its way to the content of a sibling
@@ -82,6 +86,6 @@ namespace atmo::core::ecs::entities
         static inline std::unordered_map<flecs::entity_t, flecs::entity_t> s_open_child;
 
         static constexpr float AIM_MIN_MOVE = 4.0f;
-        static constexpr uint64_t AIM_TIMEOUT_MS = 150;
+        static constexpr float AIM_TIMEOUT = 0.15f;
     };
 } // namespace atmo::core::ecs::entities

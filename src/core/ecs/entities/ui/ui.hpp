@@ -44,12 +44,13 @@ namespace atmo::core::ecs::entities
             return "UI";
         }
 
-        void internalDraw();
+        void internalDraw(float delta_time);
         /**
          * @brief
          * Called inside PostUpdate flecs pipeline by InternalDraw
+         * @param delta_time Seconds elapsed since the previous frame
          */
-        virtual void draw();
+        virtual void draw(float delta_time);
 
         std::shared_ptr<entities::Window> getWindow() const;
 
