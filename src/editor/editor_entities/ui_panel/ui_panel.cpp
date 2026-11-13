@@ -28,7 +28,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIPanel::draw() {}
+    void UIPanel::draw(float delta_time) {}
 } // namespace atmo::core::ecs::entities
 
 ATMO_REGISTER_ENTITY(entities::UIPanel);

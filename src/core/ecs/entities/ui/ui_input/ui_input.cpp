@@ -3,7 +3,6 @@
 #include <cmath>
 #include <variant>
 #include "SDL3/SDL_keyboard.h"
-#include "SDL3/SDL_timer.h"
 #include "clay.h"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_input/ttf_text_layout.hpp"
@@ -24,7 +23,7 @@ namespace atmo::core::ecs::entities
     class UIInputState : public ClayCustomRenderable
     {
     public:
-        static constexpr Uint64 BLINK_PERIOD_MS = 530;
+        static constexpr float BLINK_PERIOD = 0.53f;
         static constexpr float MIN_WIDTH = 40.0f;
 
         text::TextEditor editor;
@@ -51,7 +50,7 @@ namespace atmo::core::ecs::entities
         std::string synced_text;
         std::uint64_t synced_revision = 0;
         std::uint64_t seen_state_revision = 0;
-        Uint64 activity_ms = 0;
+        float blink_time = 0.0f;
         components::UIInput::InputType configured_type = components::UIInput::InputType::Text;
         bool configured = false;
 
@@ -159,8 +158,7 @@ namespace atmo::core::ecs::entities
 
             for (const auto &r : underline) fill({ ox + r.x, oy + r.y + r.h - caret_width, r.w, caret_width }, text_color);
 
-            const bool blink_on = ((SDL_GetTicks() - activity_ms) / BLINK_PERIOD_MS) % 2 == 0;
-            if (focused && !editor.options().read_only && blink_on)
+            if (focused && !editor.options().read_only && blink_time < BLINK_PERIOD)
                 fill({ std::round(ox + caret.x), oy + caret.y, caret_width, caret.height }, caret_color);
 
             writer.popClip();
@@ -340,7 +338,7 @@ namespace atmo::core::ecs::entities
 
         st.focused = true;
         st.focus_text = st.editor.text();
-        st.activity_ms = SDL_GetTicks();
+        st.blink_time = 0.0f;
         st.sent_ime_rect = { -1, -1, -1, -1 };
         getSignal<bool>("FocusChanged").emit(true);
     }
@@ -465,7 +463,7 @@ namespace atmo::core::ecs::entities
         return d;
     }
 
-    void UIInput::draw()
+    void UIInput::draw(float delta_time)
     {
         auto &st = state();
         const auto &ui = getComponent<components::UI>();
@@ -504,9 +502,11 @@ namespace atmo::core::ecs::entities
             handleTextEvents(st);
         syncFromEditor(st);
 
+        st.blink_time = std::fmod(st.blink_time + delta_time, 2.0f * UIInputState::BLINK_PERIOD);
+
         if (st.editor.stateRevision() != st.seen_state_revision) {
             st.seen_state_revision = st.editor.stateRevision();
-            st.activity_ms = SDL_GetTicks();
+            st.blink_time = 0.0f;
         }
 
         if (st.focused && (st.ime_rect.x != st.sent_ime_rect.x || st.ime_rect.y != st.sent_ime_rect.y || st.ime_rect.h != st.sent_ime_rect.h)) {

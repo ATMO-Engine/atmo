@@ -95,6 +95,6 @@ namespace atmo::core::ecs::entities
         void setTextAlignment(components::UILabel::TextAlignment alignment);
         components::UILabel::TextAlignment getTextAlignment() const noexcept;
 
-        void draw() override;
+        void draw(float delta_time) override;
     };
 } // namespace atmo::core::ecs::entities

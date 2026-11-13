@@ -320,7 +320,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    void UIDrawingCanvas::draw()
+    void UIDrawingCanvas::draw(float delta_time)
     {
         auto &comp = getComponentMutable<components::UIDrawingCanvas>();
 

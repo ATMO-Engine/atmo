@@ -6,6 +6,7 @@
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
+#include "core/ecs/entities/ui/ui_dropdown_menu/ui_dropdown_menu.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
 #include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
@@ -351,6 +352,92 @@ namespace atmo::editor
         eraserBtn_layout.padding.left = 12;
         eraserBtn_label->setParent(*eraserBtn);
         eraserBtn->setParent(*pencilContainer);
+
+        auto createDropdownTestBtn = [](const std::string &text, bool on_hover, core::ecs::entities::Entity parent) {
+            auto btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+            auto btn_label = core::ecs::EntityRegistry::Create<core::ecs::entities::UILabel>("Entity::UI::UILabel");
+            auto &btn_rect = btn->getComponentMutable<core::components::UIRect>();
+            auto &btn_layout = btn->getComponentMutable<core::components::Layout>();
+
+            btn_label->setText(text);
+            btn_label->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+            btn_label->setFontSize(12);
+            btn_rect.color = core::types::Color::TRANSPARENT_COL;
+            btn_rect.corner_radius = { 4, 4, 4, 4 };
+            btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+            btn_layout.width.size = core::components::Layout::SizingAxis::MinMax{ 120.0f, 120.0f };
+            btn_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+            btn_label->setParent(*btn);
+            btn->setParent(parent);
+
+            auto setColor = [handle = btn->getHandle()](bool active) {
+                if (!handle.is_alive())
+                    return;
+                auto &rect = core::ecs::entities::UIRect(handle).getComponentMutable<core::components::UIRect>();
+                rect.color = active ? core::types::Color("DBEAFE") : core::types::Color::TRANSPARENT_COL;
+                rect.color.a = active ? 1.0f : 0.0f;
+            };
+
+            if (on_hover) {
+                btn->getSignal<>("MouseEntered").connect([setColor]() { setColor(true); });
+                btn->getSignal<>("MouseExited").connect([setColor]() { setColor(false); });
+            } else {
+                btn->getSignal<>("Pressed").connect([setColor]() { setColor(true); });
+                btn->getSignal<>("Released").connect([setColor]() { setColor(false); });
+                btn->getSignal<>("MouseExited").connect([setColor]() { setColor(false); });
+            }
+        };
+
+        auto dropdown = core::ecs::EntityRegistry::Create<core::ecs::entities::UiDropdownMenu>("Entity::UI::UIRect::UIButton::UiDropdownMenu");
+        auto &dropdown_rect = dropdown->getComponentMutable<core::components::UIRect>();
+        auto &dropdown_layout = dropdown->getComponentMutable<core::components::Layout>();
+
+        dropdown->getComponentMutable<core::components::UiDropdownMenu>().group = 1;
+        dropdown->setText("Dropdown");
+        dropdown->getLabel().setFontSize(12);
+        dropdown_rect.color = core::types::Color("C8C8C8");
+        dropdown_rect.color.a = 1.0f;
+        dropdown_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        dropdown_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Start;
+        dropdown_layout.padding.left = 12;
+        dropdown->setParent(*pencilContainer);
+
+        createDropdownTestBtn("Hover me", true, dropdown->getContent());
+        createDropdownTestBtn("Press me", false, dropdown->getContent());
+
+        auto subDropdownBox = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");
+        auto &subDropdownBox_rect = subDropdownBox->getComponentMutable<core::components::UIRect>();
+        auto &subDropdownBox_layout = subDropdownBox->getComponentMutable<core::components::Layout>();
+
+        subDropdownBox_rect.color = core::types::Color("E5E5E5");
+        subDropdownBox_rect.color.a = 1.0f;
+        subDropdownBox_rect.corner_radius = { 4, 4, 4, 4 };
+        subDropdownBox_layout.direction = core::components::Layout::Direction::Vertical;
+        subDropdownBox_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        subDropdownBox_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        subDropdownBox_layout.padding = { 4, 4, 4, 4 };
+        subDropdownBox_layout.child_gap = 4;
+        subDropdownBox->setParent(dropdown->getContent());
+
+        auto createSubDropdown = [&createDropdownTestBtn](const std::string &text, core::ecs::entities::Entity parent) {
+            auto subDropdown = core::ecs::EntityRegistry::Create<core::ecs::entities::UiDropdownMenu>("Entity::UI::UIRect::UIButton::UiDropdownMenu");
+            auto &subDropdown_rect = subDropdown->getComponentMutable<core::components::UIRect>();
+
+            auto &subDropdown_comp = subDropdown->getComponentMutable<core::components::UiDropdownMenu>();
+            subDropdown_comp.group = 1;
+            subDropdown_comp.open_side = core::components::UiDropdownMenu::OpenSide::RIGHT;
+            subDropdown->setText(text);
+            subDropdown->getLabel().setFontSize(12);
+            subDropdown_rect.color = core::types::Color("8C8C8C");
+            subDropdown_rect.color.a = 1.0f;
+            subDropdown->setParent(parent);
+
+            createDropdownTestBtn(text + " hover", true, subDropdown->getContent());
+            createDropdownTestBtn(text + " press", false, subDropdown->getContent());
+        };
+
+        createSubDropdown("Sub dropdown A", *subDropdownBox);
+        createSubDropdown("Sub dropdown B", *subDropdownBox);
 
 
         auto fileExplorerContainer = core::ecs::EntityRegistry::Create<core::ecs::entities::UIRect>("Entity::UI::UIRect");

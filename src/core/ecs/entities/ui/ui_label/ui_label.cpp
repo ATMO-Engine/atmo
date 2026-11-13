@@ -121,7 +121,7 @@ namespace atmo::core::ecs::entities
         return getComponent<components::UILabel>().text_alignment;
     }
 
-    void UILabel::draw()
+    void UILabel::draw(float delta_time)
     {
         const auto &ui = getComponent<components::UI>();
         const auto &label = getComponent<components::UILabel>();

@@ -129,7 +129,7 @@ namespace atmo::core::ecs::entities
         }
 
         Clay_ElementDeclaration buildDecl() override;
-        void draw() override;
+        void draw(float delta_time) override;
 
         atmo::core::types::Vector2 screenToCanvas(atmo::core::types::Vector2 screenPos) const;
         atmo::core::types::Vector2 canvasToScreen(atmo::core::types::Vector2i canvasPos) const;

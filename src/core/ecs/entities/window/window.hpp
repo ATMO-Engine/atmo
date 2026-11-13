@@ -64,7 +64,7 @@ namespace atmo::core::ecs::entities
         void primeScrollContainers();
 
     private:
-        void draw(components::Window &window);
+        void draw(components::Window &window, float delta_time);
 
         Clay_ElementId getIdForEntity(const Entity &e);
         Clay_ElementDeclaration buildDecl(const Entity &e);
