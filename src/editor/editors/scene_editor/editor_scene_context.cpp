@@ -5,7 +5,6 @@
 #include <cmath>
 #include <cstdint>
 #include <fstream>
-#include <sstream>
 
 #include "core/ecs/components.hpp"
 #include "core/ecs/entities/2d/camera_2d/camera_2d.hpp"
@@ -14,6 +13,7 @@
 #include "core/ecs/entities/scene/scene.hpp"
 #include "core/ecs/entity_registry.hpp"
 #include "core/ecs/world_context.hpp"
+#include "core/scene/scene_loader.hpp"
 #include "glaze/glaze.hpp"
 #include "glaze/json/prettify.hpp"
 #include "project/project_manager.hpp"
@@ -157,25 +157,12 @@ namespace atmo::editor
         spdlog::info("EditorSceneContext: saved scene to {}", path);
     }
 
-    void EditorSceneContext::loadSceneFromJson(const std::string &json)
+    void EditorSceneContext::loadSceneFromFile(const std::string &path)
     {
         if (!m_scene || !m_scene->isAlive())
             return;
 
-        if (!m_scene->loadFromJson(json, &m_world))
-            spdlog::error("EditorSceneContext: failed to load scene");
-    }
-
-    void EditorSceneContext::loadSceneFromFile(const std::string &path)
-    {
-        std::ifstream file(path);
-        if (!file.is_open()) {
-            spdlog::error("EditorSceneContext: cannot open file for reading: {}", path);
-            return;
-        }
-        std::ostringstream ss;
-        ss << file.rdbuf();
-        loadSceneFromJson(ss.str());
+        core::scene::SceneLoader::LoadSceneInto(path, *m_scene);
     }
 
     void EditorSceneContext::pan(core::types::Vector2 delta_screen)

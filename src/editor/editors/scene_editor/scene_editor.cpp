@@ -1,21 +1,17 @@
 #include "scene_editor.hpp"
 #include <cmath>
+#include <filesystem>
 #include <string>
 #include <utility>
 #include "SDL3/SDL_keyboard.h"
 #include "core/ecs/entities/2d/physics_2d/body_2d/dynamic_2d/dynamic_2d.hpp"
-#include "core/ecs/entities/2d/physics_2d/body_2d/kinematic_2d/kinematic_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/static_2d/static_2d.hpp"
 #include "core/ecs/entities/2d/sprite_2d/sprite_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
-#include "core/ecs/entities/scene/scene.hpp"
-#include "core/ecs/entities/script.hpp"
 #include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_foldable_tree_item/ui_foldable_tree_item.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
-#include "core/ecs/entities/ui/ui_input/ui_number_input/ui_number_input.hpp"
-#include "core/ecs/entities/ui/ui_input/ui_text_input/ui_text_input.hpp"
 #include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
@@ -27,16 +23,19 @@
 #include "core/resource/subresource_registry.hpp"
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
+#include "core/scene/scene_loader.hpp"
 #include "core/types.hpp"
 #include "editor/editor_entities/ui_panel/ui_panel.hpp"
 #include "editor/editor_entities/ui_popup/ui_popup.hpp"
 #include "editor/editor_registry.hpp"
 #include "editor/editors/editor.hpp"
+#include "editor/file_dialog.hpp"
 #include "editor/inspector_utils.hpp"
 #include "flecs/addons/cpp/mixins/id/decl.hpp"
 #include "meta/widget_registry.hpp"
 #include "project/file.hpp"
 #include "project/file_system.hpp"
+#include "project/project_manager.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
@@ -161,6 +160,12 @@ namespace atmo::editor
 
     void SceneEditor::save()
     {
+        std::filesystem::path scene_path(*p_file_path);
+        if (scene_path.extension() != ".ascn") {
+            scene_path += ".ascn";
+            p_file_path = scene_path.string();
+        }
+
         project::File scene_file = project::FileSystem::OpenFile(*p_file_path, std::ios::out);
         auto scene_data = glz::write<glz::opts{ .prettify = true }>(m_scene_ctx->getScene()->serialize()).value();
         scene_file.write(scene_data.c_str(), scene_data.size());
@@ -171,8 +176,7 @@ namespace atmo::editor
         if (!p_file_path)
             return;
 
-        project::File scene_file = project::FileSystem::OpenFile(*p_file_path, std::ios::in);
-        m_scene_ctx->loadSceneFromJson(scene_file.readAll());
+        m_scene_ctx->loadSceneFromFile(*p_file_path);
     }
 
     void entityComponentFoldableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
@@ -501,7 +505,10 @@ namespace atmo::editor
     struct TreeRowEntities {
         core::ecs::entities::Entity container;
         core::ecs::entities::Entity ui;
+        core::ecs::entities::Entity title_label;
         core::ecs::entities::Entity add_child_button;
+        core::ecs::entities::Entity load_prefab_button;
+        core::ecs::entities::Entity save_prefab_button;
         core::ecs::entities::Entity close_button;
     };
 
@@ -556,6 +563,42 @@ namespace atmo::editor
         add_child_entity_icon->setParent(*add_child_entity_btn);
         add_child_entity_btn->setParent(*child_container);
 
+        auto load_prefab_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto load_prefab_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        auto &load_prefab_btn_rect = load_prefab_btn->getComponentMutable<core::components::UIRect>();
+        load_prefab_btn_rect.color = core::types::Color::TRANSPARENT_COL;
+        auto &load_prefab_btn_layout = load_prefab_btn->getComponentMutable<core::components::Layout>();
+        load_prefab_btn->getComponentMutable<core::components::UI>().visible = true;
+        load_prefab_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        load_prefab_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        load_prefab_btn_layout.aspect_ratio = { 1.0f, 1.0f };
+        load_prefab_icon->setTexturePath("project://assets/icons/placeholder-folder-open.svg");
+        load_prefab_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        load_prefab_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        load_prefab_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        load_prefab_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        load_prefab_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        load_prefab_icon->setParent(*load_prefab_btn);
+        load_prefab_btn->setParent(*child_container);
+
+        auto save_prefab_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
+        auto save_prefab_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
+        auto &save_prefab_btn_rect = save_prefab_btn->getComponentMutable<core::components::UIRect>();
+        save_prefab_btn_rect.color = core::types::Color::TRANSPARENT_COL;
+        auto &save_prefab_btn_layout = save_prefab_btn->getComponentMutable<core::components::Layout>();
+        save_prefab_btn->getComponentMutable<core::components::UI>().visible = true;
+        save_prefab_btn_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        save_prefab_btn_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::FIT;
+        save_prefab_btn_layout.aspect_ratio = { 1.0f, 1.0f };
+        save_prefab_icon->setTexturePath("project://assets/icons/placeholder-save.svg");
+        save_prefab_icon->getComponentMutable<core::components::UI>().modulate = core::types::Color::BLACK;
+        save_prefab_icon->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        save_prefab_icon->getComponentMutable<core::components::Layout>().width.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        save_prefab_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
+        save_prefab_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 12.0f, 12.0f };
+        save_prefab_icon->setParent(*save_prefab_btn);
+        save_prefab_btn->setParent(*child_container);
+
         auto close_create_entity_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         auto close_create_entity_icon = core::ecs::EntityRegistry::Create<core::ecs::entities::UIImage>("Entity::UI::UIImage");
         auto &close_create_entity_btn_rect = close_create_entity_btn->getComponentMutable<core::components::UIRect>();
@@ -574,14 +617,15 @@ namespace atmo::editor
         close_create_entity_icon->setParent(*close_create_entity_btn);
         close_create_entity_btn->setParent(*child_container);
 
-        return { *child_container, *child_UI, *add_child_entity_btn, *close_create_entity_btn };
+        return { *child_container, *child_UI, *title_label, *add_child_entity_btn, *load_prefab_btn, *save_prefab_btn, *close_create_entity_btn };
     }
 
     void SceneEditor::sceneEntityFoldableTreeinit(
         core::ecs::entities::Entity entity, core::ecs::entities::Entity parent, core::ecs::entities::Entity component_container)
     {
         auto entity_handle = entity.getHandle();
-        auto [child_container, child_UI, add_child_btn, close_create_entity_btn] = createTreeEntity(entity, parent);
+        auto [child_container, child_UI, title_label, add_child_btn, load_prefab_btn, save_prefab_btn, close_create_entity_btn] =
+            createTreeEntity(entity, parent);
 
         auto wrapped = core::ecs::EntityRegistry::Wrap(child_UI);
         auto ui = dynamic_cast<core::ecs::entities::UIFoldableTreeItem *>(wrapped.get());
@@ -605,6 +649,11 @@ namespace atmo::editor
 
         for (auto &child : entity.getChildren()) sceneEntityFoldableTreeinit(child, ui->getChildContainer(), component_container);
 
+        entity.getSignal<std::string, std::string>("renamed").connect([title_label](const std::string &, const std::string &new_name) {
+            if (title_label.isAlive())
+                core::ecs::entities::UILabel(title_label.getHandle()).setText(new_name);
+        });
+
         entity.getSignal<core::ecs::entities::Entity>("child_added").connect([this, child_UI, component_container](core::ecs::entities::Entity child) {
             sceneEntityFoldableTreeinit(child, core::ecs::entities::UIFoldableTreeItem(child_UI).getChildContainer(), component_container);
         });
@@ -627,6 +676,40 @@ namespace atmo::editor
         add_child_btn.getSignal<>("Released").connect([add_child_btn, entity, this]() mutable {
             auto window = core::ecs::entities::UI(add_child_btn.getHandle()).getWindow()->getChildren()[0];
             core::SignalQueue::Enqueue([window, entity, this]() mutable { createNewEntitySelectionPopup(window, entity); });
+        });
+
+        load_prefab_btn.getSignal<>("Released").connect([entity]() {
+            core::SignalQueue::Enqueue([entity]() {
+                static constexpr SDL_DialogFileFilter filters[] = { { "Prefab", "ascn" } };
+
+                ShowOpenFileDialog(
+                    [entity](const std::string &path) {
+                        core::SignalQueue::Enqueue([entity, path]() { core::scene::SceneLoader::InstantiatePrefab(path, entity); });
+                    },
+                    project::ProjectManager::GetCurrentProjectPath().string(),
+                    filters);
+            });
+        });
+
+        save_prefab_btn.getSignal<>("Released").connect([entity]() mutable {
+            auto prefab_data = glz::write<glz::opts{ .prettify = true }>(entity.serialize()).value();
+
+            core::SignalQueue::Enqueue([prefab_data = std::move(prefab_data)]() mutable {
+                static constexpr SDL_DialogFileFilter filters[] = { { "Prefab", "ascn" } };
+
+                ShowSaveFileDialog(
+                    [prefab_data = std::move(prefab_data)](const std::string &path) {
+                        std::filesystem::path prefab_path(path);
+                        if (prefab_path.extension() != ".ascn")
+                            prefab_path += ".ascn";
+
+                        project::File prefab_file = project::FileSystem::OpenFile(prefab_path.string(), std::ios::out);
+                        prefab_file.write(prefab_data.c_str(), prefab_data.size());
+                        spdlog::info("Saved prefab to {}", prefab_path.string());
+                    },
+                    project::ProjectManager::GetCurrentProjectPath().string(),
+                    filters);
+            });
         });
 
         close_create_entity_btn.getSignal<>("Released").connect([entity]() mutable { core::SignalQueue::Enqueue([entity]() mutable { entity.destroy(); }); });
