@@ -80,7 +80,7 @@ namespace atmo::editor
         delete m_impl;
     }
 
-    void MacOSMenuBar::build(core::ecs::entities::Window /*window_entity*/, Commands &commands)
+    void MacOSMenuBar::build(core::ecs::entities::Window /*window_entity*/, Commands &commands, core::ecs::entities::UI /*container*/)
     {
         NSMenu *mainMenu = [[NSMenu alloc] initWithTitle:@"MainMenu"];
 

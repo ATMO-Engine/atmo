@@ -10,7 +10,7 @@ namespace atmo::editor
     class IntegratedMenuBar : public IPlatformMenuBar
     {
     public:
-        void build(core::ecs::entities::Window window_entity, Commands &commands) override;
+        void build(core::ecs::entities::Window window_entity, Commands &commands, core::ecs::entities::UI container) override;
     };
 } // namespace atmo::editor
 
