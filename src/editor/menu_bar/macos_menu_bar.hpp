@@ -13,7 +13,7 @@ namespace atmo::editor
         MacOSMenuBar();
         ~MacOSMenuBar() override;
 
-        void build(core::ecs::entities::Window window_entity, Commands &commands) override;
+        void build(core::ecs::entities::Window window_entity, Commands &commands, core::ecs::entities::UI container) override;
 
     private:
         struct Impl;
