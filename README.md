@@ -60,6 +60,11 @@ xmake
 xmake run atmo
 ```
 
+The generated binary can then be found in the build folder.
+```
+./build/atmo
+```
+
 The first build downloads and compiles every third-party library, so it takes a while; later builds reuse them.
 Linux needs a few system development packages first.
 See [Building from source](https://docs.atmo-engine.com/latest/getting-started/building-from-source) for the full setup, build options and test targets.
