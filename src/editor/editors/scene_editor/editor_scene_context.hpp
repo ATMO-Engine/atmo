@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "core/types.hpp"
@@ -115,6 +116,20 @@ namespace atmo::editor
          */
         core::types::Vector2 worldToScreen(core::types::Vector2 world) const;
 
+        void setCamera(core::types::Vector2 position, float zoom);
+
+        core::types::Vector2 cameraPosition() const
+        {
+            return m_cam_position;
+        }
+
+        float cameraZoom() const
+        {
+            return m_cam_zoom;
+        }
+
+        void setSizeOverride(std::optional<core::types::Vector2i> size);
+
     private:
         void applyViewportSize();
         void drawOverlays();
@@ -130,5 +145,6 @@ namespace atmo::editor
         bool m_ready = false;
         int m_width = 0;
         int m_height = 0;
+        std::optional<core::types::Vector2i> m_size_override;
     };
 } // namespace atmo::editor

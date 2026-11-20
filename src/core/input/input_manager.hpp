@@ -65,6 +65,9 @@ namespace atmo::core
         static bool IsJustReleased(const std::string &inputName);
         static bool IsReleased(const std::string &inputName);
 
+        static std::vector<std::string> GetInputNames(bool include_internal = false);
+        static std::vector<SDL_Event> MakeEventsForInput(const std::string &inputName, bool pressed);
+
         static std::pair<types::Vector2, types::Vector2> GetLastMouseMotion();
         static void SetMousePosition(float x, float y);
         static types::Vector2 GetMousePosition();
