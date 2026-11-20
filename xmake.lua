@@ -11,6 +11,12 @@ option("tsan")
     set_description("Build debug mode with ThreadSanitizer instead of AddressSanitizer and UBSan")
 option_end()
 
+option("coverage")
+    set_default(false)
+    set_showmenu(true)
+    set_description("Instrument atmo-test and write a coverage report to build/coverage after xmake test")
+option_end()
+
 if is_mode("debug") then
     set_symbols("debug")
     set_optimize("none")
@@ -342,6 +348,18 @@ target("atmo-test")
             "--reporter=console::out=-::colour-mode=ansi"
         }
     })
+    if has_config("coverage") then
+        set_policy("build.ccache", false)
+        on_config(function (target)
+            import("coverage").instrument(target)
+        end)
+        before_test(function (target)
+            import("coverage").prepare(target)
+        end)
+        after_test(function (target)
+            import("coverage").report(target)
+        end)
+    end
 target_end()
 
 target("atmo-export")
