@@ -76,7 +76,8 @@ namespace atmo::mcp
         ToolHandler handler;
     };
 
-    struct NoArgs {};
+    struct NoArgs {
+    };
 
     inline constexpr glz::opts strict_args_opts{ .error_on_unknown_keys = true, .error_on_missing_keys = true };
 
