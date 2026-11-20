@@ -8,6 +8,7 @@
 
 #include "core/resource/resource_key.hpp"
 #include "core/resource/resource_loader_registry.hpp"
+#include "impl/profiler.hpp"
 
 namespace atmo::core::resource
 {
@@ -28,7 +29,7 @@ namespace atmo::core::resource
         ResourceManager() = default;
 
         template <typename T> struct Store {
-            std::mutex mutex;
+            ATMO_PROFILE_LOCKABLE_N(std::mutex, mutex, "ResourceManager::Store");
             std::unordered_map<typename ResourceKey<T>::type, std::weak_ptr<T>, ResourceKeyHash<typename ResourceKey<T>::type>> entries;
         };
 
@@ -40,7 +41,7 @@ namespace atmo::core::resource
 
         template <typename T> static std::shared_ptr<T> TryGet(Store<T> &store, const typename ResourceKey<T>::type &key)
         {
-            std::lock_guard<std::mutex> lock(store.mutex);
+            std::lock_guard lock(store.mutex);
             auto it = store.entries.find(key);
             return it != store.entries.end() ? it->second.lock() : nullptr;
         }
@@ -60,7 +61,7 @@ namespace atmo::core::resource
 
             std::shared_ptr<T> loaded = LoadWithLoader<T>(std::forward<LoadArgs>(loadArgs)...);
 
-            std::lock_guard<std::mutex> lock(store.mutex);
+            std::lock_guard lock(store.mutex);
             auto [it, inserted] = store.entries.try_emplace(key, loaded);
             if (!inserted) {
                 if (std::shared_ptr<T> existing = it->second.lock()) {

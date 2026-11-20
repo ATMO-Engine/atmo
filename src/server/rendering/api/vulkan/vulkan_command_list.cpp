@@ -10,6 +10,8 @@
 #include "vulkan_platform.hpp"
 #include "vulkan_utils.hpp"
 
+#include "impl/profiler.hpp"
+
 #if defined(ATMO_PROFILER_TRACY)
 #include <tracy/TracyVulkan.hpp>
 #endif
@@ -186,6 +188,7 @@ namespace atmo::server::rendering::vulkan
         if (!m_pipeline_bound)
             throw std::logic_error("draw called without a bound pipeline");
         vkCmdDraw(m_commands, vertices, instances, first_vertex, first_instance);
+        ATMO_PROFILE_DRAW_CALL();
     }
 
     void VulkanCommandList::drawIndexed(
@@ -195,6 +198,7 @@ namespace atmo::server::rendering::vulkan
         if (!m_pipeline_bound)
             throw std::logic_error("drawIndexed called without a bound pipeline");
         vkCmdDrawIndexed(m_commands, indices, instances, first_index, vertex_offset, first_instance);
+        ATMO_PROFILE_DRAW_CALL();
     }
 
     void VulkanCommandList::debugLabelPush(std::string_view label)

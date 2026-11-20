@@ -6,6 +6,7 @@
 #include <optional>
 #include <thread>
 
+#include "impl/profiler.hpp"
 #include "server/rendering/command_queue.hpp"
 
 namespace atmo::server::rendering
@@ -33,8 +34,8 @@ namespace atmo::server::rendering
         void loop();
 
         std::thread m_thread;
-        std::mutex m_mutex;
-        std::condition_variable m_condition;
+        ATMO_PROFILE_LOCKABLE_N(std::mutex, m_mutex, "RenderThread");
+        std::condition_variable_any m_condition;
         std::optional<CommandQueue::Batch> m_pending;
         FrameFunction m_frame;
         bool m_busy = false;

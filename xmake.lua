@@ -60,7 +60,7 @@ add_requires("box2d v3.1.1", { system = false })
 add_requires("argparse v3.2", { system = false })
 add_requires("ctre v3.11.0", { system = false })
 if is_mode("debug", "profile") then
-    add_requires("tracy v0.13.1", { system = false, configs = { enforce_callstack = false } })
+    add_requires("tracy v0.15.0", { system = false, configs = { enforce_callstack = false } })
 end
 
 add_requireconfs("libsdl3_ttf.libsdl3", "libsdl3_image.libsdl3", { override = true, version = SDL_VERSION, system = false })

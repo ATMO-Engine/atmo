@@ -1,9 +1,16 @@
 #include "thread_pool.hpp"
 
 #include <algorithm>
+#include <string>
 
 namespace atmo::core
 {
+    namespace
+    {
+        constexpr const char *PlotActiveWorkers = "ThreadPool active workers";
+        constexpr const char *PlotTaskLatency = "ThreadPool task latency (ms)";
+    } // namespace
+
     TaskHandle::TaskHandle(std::shared_ptr<State> state) noexcept : m_state(std::move(state)) {}
 
     void TaskHandle::cancel() noexcept
@@ -53,6 +60,15 @@ namespace atmo::core
         m_queues.reserve(m_worker_count);
         for (std::size_t i = 0; i < m_worker_count; ++i) m_queues.push_back(std::make_unique<WorkQueue>());
 
+#if defined(ATMO_PROFILING)
+        for (std::size_t i = 0; i < m_worker_count; ++i) {
+            const std::string name = "ThreadPool::WorkQueue " + std::to_string(i);
+            ATMO_PROFILE_LOCKABLE_NAME(m_queues[i]->m_mutex, name.c_str(), name.size());
+        }
+        ATMO_PROFILE_PLOT_STEP(PlotActiveWorkers);
+        ATMO_PROFILE_PLOT(PlotActiveWorkers, std::int64_t{ 0 });
+#endif
+
         m_scheduler = std::jthread([this](std::stop_token st) { schedulerLoop(st); });
 
         m_workers.reserve(m_worker_count);
@@ -65,17 +81,17 @@ namespace atmo::core
         return pool;
     }
 
-    TaskHandle ThreadPool::submit(std::function<void()> fn)
+    TaskHandle ThreadPool::submit(std::function<void()> fn, std::source_location origin)
     {
         auto state = std::make_shared<TaskHandle::State>();
-        enqueue({ .fn = std::move(fn), .control = state, .remaining = 1, .delay = {} });
+        enqueue({ .fn = std::move(fn), .control = state, .remaining = 1, .delay = {}, .origin = origin });
         return TaskHandle(std::move(state));
     }
 
-    TaskHandle ThreadPool::repeat(std::function<void()> fn, int count, std::chrono::milliseconds delay)
+    TaskHandle ThreadPool::repeat(std::function<void()> fn, int count, std::chrono::milliseconds delay, std::source_location origin)
     {
         auto state = std::make_shared<TaskHandle::State>();
-        enqueue({ .fn = std::move(fn), .control = state, .remaining = count, .delay = delay });
+        enqueue({ .fn = std::move(fn), .control = state, .remaining = count, .delay = delay, .origin = origin });
         return TaskHandle(std::move(state));
     }
 
@@ -86,6 +102,9 @@ namespace atmo::core
 
     void ThreadPool::enqueue(TaskItem item)
     {
+#if defined(ATMO_PROFILING)
+        item.enqueued_at = std::chrono::steady_clock::now();
+#endif
         std::size_t idx = m_dispatch_idx.fetch_add(1, std::memory_order_relaxed) % m_worker_count;
         m_queues[idx]->push(std::move(item));
         m_work_cv.notify_one();
@@ -137,8 +156,35 @@ namespace atmo::core
         return std::nullopt;
     }
 
+    void ThreadPool::runTask(TaskItem &task)
+    {
+        ATMO_PROFILE_SCOPE_N_COLOR("ThreadPool::Task", profiler::color::Task);
+#if defined(ATMO_PROFILING)
+        const char *fn_name = task.origin.function_name();
+        const char *file = task.origin.file_name();
+        ATMO_PROFILE_ZONE_TEXT(fn_name, std::char_traits<char>::length(fn_name));
+        ATMO_PROFILE_ZONE_TEXT(file, std::char_traits<char>::length(file));
+        ATMO_PROFILE_ZONE_VALUE(task.origin.line());
+
+        const std::chrono::duration<double, std::milli> latency = std::chrono::steady_clock::now() - task.enqueued_at;
+        ATMO_PROFILE_PLOT(PlotTaskLatency, latency.count());
+        ATMO_PROFILE_PLOT(PlotActiveWorkers, m_active_workers.fetch_add(1, std::memory_order_relaxed) + 1);
+#endif
+
+        task.fn();
+
+#if defined(ATMO_PROFILING)
+        ATMO_PROFILE_PLOT(PlotActiveWorkers, m_active_workers.fetch_sub(1, std::memory_order_relaxed) - 1);
+#endif
+    }
+
     void ThreadPool::workerLoop(std::stop_token stoken, std::size_t idx)
     {
+#if defined(ATMO_PROFILING)
+        const std::string thread_name = "Worker " + std::to_string(idx);
+        ATMO_PROFILE_THREAD_GROUP(thread_name.c_str(), profiler::group::Workers);
+#endif
+
         while (!stoken.stop_requested()) {
             auto task = tryGetTask(idx);
 
@@ -153,7 +199,7 @@ namespace atmo::core
                 continue;
             }
 
-            task->fn();
+            runTask(*task);
 
             bool infinite = task->remaining == -1;
             bool has_more = infinite || task->remaining > 1;
@@ -173,6 +219,7 @@ namespace atmo::core
                 .control = task->control,
                 .remaining = infinite ? -1 : task->remaining - 1,
                 .delay = task->delay,
+                .origin = task->origin,
             };
 
             if (next.delay.count() > 0)
@@ -184,6 +231,8 @@ namespace atmo::core
 
     void ThreadPool::schedulerLoop(std::stop_token stoken)
     {
+        ATMO_PROFILE_THREAD_GROUP("ThreadPool Scheduler", profiler::group::Scheduler);
+
         while (!stoken.stop_requested()) {
             std::unique_lock lock(m_timer_mutex);
 

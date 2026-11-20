@@ -19,6 +19,7 @@
 
 struct TTF_Font;
 #include "core/types.hpp"
+#include "impl/profiler.hpp"
 #include "server/rendering/canvas_commands.hpp"
 #include "server/rendering/command_queue.hpp"
 #include "server/rendering/material_types.hpp"
@@ -189,7 +190,7 @@ namespace atmo::server::rendering
         std::unordered_map<std::uint64_t, std::function<void(TextureData)>> m_readback_callbacks;
         std::uint64_t m_next_readback = 1;
 
-        mutable std::mutex m_completion_mutex;
+        mutable ATMO_PROFILE_LOCKABLE_N(std::mutex, m_completion_mutex, "RenderingServer::Completion");
         std::vector<std::pair<std::uint64_t, TextureData>> m_completed_readbacks;
         FrameStats m_render_stats;
         FrameStats m_stats;

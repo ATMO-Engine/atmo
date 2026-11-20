@@ -8,6 +8,8 @@
 #include "metal_platform.hpp"
 #include "metal_utils.hpp"
 
+#include "impl/profiler.hpp"
+
 namespace atmo::server::rendering::metal
 {
     MetalCommandList::MetalCommandList(MetalPlatform &platform) : m_platform(platform) {}
@@ -209,6 +211,7 @@ namespace atmo::server::rendering::metal
         if (vertices == 0 || instances == 0)
             return;
         m_render->drawPrimitives(m_primitive, first_vertex, vertices, instances, first_instance);
+        ATMO_PROFILE_DRAW_CALL();
     }
 
     void MetalCommandList::drawIndexed(
@@ -224,6 +227,7 @@ namespace atmo::server::rendering::metal
         const std::uint64_t index_size = m_index_type == MTL::IndexTypeUInt16 ? 2 : 4;
         m_render->drawIndexedPrimitives(
             m_primitive, indices, m_index_type, m_index_buffer, m_index_offset + (first_index * index_size), instances, vertex_offset, first_instance);
+        ATMO_PROFILE_DRAW_CALL();
     }
 
     void MetalCommandList::debugLabelPush(std::string_view label)

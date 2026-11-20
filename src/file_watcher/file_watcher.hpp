@@ -6,6 +6,8 @@
 #include <mutex>
 #include <vector>
 
+#include "impl/profiler.hpp"
+
 namespace atmo
 {
     namespace file_watcher
@@ -60,7 +62,7 @@ namespace atmo
 
         std::unique_ptr<file_watcher::Backend> m_backend;
 
-        std::mutex m_pending_mutex;
+        ATMO_PROFILE_LOCKABLE_N(std::mutex, m_pending_mutex, "FileWatcher::Pending");
         std::vector<PendingChange> m_pending;
 
         FileSystemNode m_root;

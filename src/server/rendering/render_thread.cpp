@@ -23,7 +23,11 @@ namespace atmo::server::rendering
     void RenderThread::submit(CommandQueue::Batch batch)
     {
         std::unique_lock lock(m_mutex);
-        m_condition.wait(lock, [this] { return !m_busy; });
+        {
+            // Time the caller spends blocked because the previous frame is still rendering.
+            ATMO_PROFILE_SCOPE_N_COLOR("RenderThread::submit wait", profiler::color::Wait);
+            m_condition.wait(lock, [this] { return !m_busy; });
+        }
         m_pending.emplace(std::move(batch));
         m_busy = true;
         m_condition.notify_all();
@@ -31,6 +35,7 @@ namespace atmo::server::rendering
 
     void RenderThread::wait()
     {
+        ATMO_PROFILE_SCOPE_N_COLOR("RenderThread::wait", profiler::color::Wait);
         std::unique_lock lock(m_mutex);
         m_condition.wait(lock, [this] { return !m_busy; });
     }
@@ -61,7 +66,8 @@ namespace atmo::server::rendering
 
     void RenderThread::loop()
     {
-        ATMO_PROFILE_THREAD("Render");
+        ATMO_PROFILE_THREAD_GROUP("Render", profiler::group::Render);
+        ATMO_PROFILE_PLOT_STEP(profiler::PlotDrawCalls);
         for (;;) {
             CommandQueue::Batch batch;
             {
@@ -73,7 +79,13 @@ namespace atmo::server::rendering
                 m_pending.reset();
             }
 
-            m_frame(batch);
+            {
+                ATMO_PROFILE_SCOPE_N_COLOR("RenderThread::frame", profiler::color::Render);
+                m_frame(batch);
+            }
+            // Secondary frame set: render-thread frame time, independent from the main loop's FrameMark.
+            ATMO_PROFILE_FRAME_N("Render");
+            ATMO_PROFILE_DRAW_CALLS_FLUSH();
 
             {
                 std::scoped_lock lock(m_mutex);

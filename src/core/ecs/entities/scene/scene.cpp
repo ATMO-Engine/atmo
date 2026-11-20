@@ -11,6 +11,7 @@
 #include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
 #include "core/thread/thread_pool.hpp"
 #include "core/types.hpp"
+#include "impl/profiler.hpp"
 #include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
 #include "server/rendering/rendering_server.hpp"
@@ -20,6 +21,24 @@ namespace atmo::core::ecs::entities
 {
     b2DebugDraw Scene::m_debug_draw{ b2DefaultDebugDraw() };
     static constexpr int debug_draw_z_index = 1 << 20;
+
+#if defined(ATMO_PROFILING)
+    /// Feeds Box2D's own per-step timings (ms) and world counters to the profiler as plots.
+    static void PlotPhysicsStats(b2WorldId world_id)
+    {
+        const b2Profile profile = b2World_GetProfile(world_id);
+        ATMO_PROFILE_PLOT("Physics step (ms)", profile.step);
+        ATMO_PROFILE_PLOT("Physics pairs (ms)", profile.pairs);
+        ATMO_PROFILE_PLOT("Physics collide (ms)", profile.collide);
+        ATMO_PROFILE_PLOT("Physics solve (ms)", profile.solve);
+
+        const b2Counters counters = b2World_GetCounters(world_id);
+        ATMO_PROFILE_PLOT("Physics bodies", static_cast<std::int64_t>(counters.bodyCount));
+        ATMO_PROFILE_PLOT("Physics contacts", static_cast<std::int64_t>(counters.contactCount));
+        ATMO_PROFILE_PLOT("Physics islands", static_cast<std::int64_t>(counters.islandCount));
+        ATMO_PROFILE_PLOT("Physics tasks", static_cast<std::int64_t>(counters.taskCount));
+    }
+#endif
 
     void Scene::RegisterSystems(flecs::world *world)
     {
@@ -74,21 +93,40 @@ namespace atmo::core::ecs::entities
             .tick_source(physics_tick)
             .each([&](flecs::iter &it, size_t i, components::Scene &scene) {
                 if (b2World_IsValid(scene.world_id)) {
-                    b2World_Step(scene.world_id, physics_dt, 4);
+                    ATMO_PROFILE_SCOPE_N_COLOR("Physics::Update", profiler::color::Physics);
 
-                    b2BodyEvents events = b2World_GetBodyEvents(scene.world_id);
+                    {
+                        ATMO_PROFILE_SCOPE_N_COLOR("Physics::Step", profiler::color::Physics);
+                        b2World_Step(scene.world_id, physics_dt, 4);
+                    }
+#if defined(ATMO_PROFILING)
+                    PlotPhysicsStats(scene.world_id);
+#endif
 
-                    for (int i = 0; i < events.moveCount; ++i) {
-                        const b2BodyMoveEvent *event = events.moveEvents + i;
-                        Entity body(flecs::entity(it.world(), (flecs::entity_t)event->userData));
-                        auto &transform = body.getComponentMutable<components::Transform2d>();
-                        transform.position = event->transform.p;
-                        transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(event->transform.q));
+                    {
+                        ATMO_PROFILE_SCOPE_N_COLOR("Physics::SyncTransforms", profiler::color::Physics);
+                        b2BodyEvents events = b2World_GetBodyEvents(scene.world_id);
+                        ATMO_PROFILE_ZONE_VALUE(events.moveCount);
+
+                        for (int i = 0; i < events.moveCount; ++i) {
+                            const b2BodyMoveEvent *event = events.moveEvents + i;
+                            Entity body(flecs::entity(it.world(), (flecs::entity_t)event->userData));
+                            auto &transform = body.getComponentMutable<components::Transform2d>();
+                            transform.position = event->transform.p;
+                            transform.rotation = atmo::common::math::RadiansToDegrees(b2Rot_GetAngle(event->transform.q));
+                        }
                     }
 
-                    auto evt = event::EventRegistry::Create<event::events::PhysicsProgressTickEvent>("Event::PhysicsProgressTickEvent");
-                    evt->delta_time = physics_dt;
-                    event::EventRegistry::Dispatch(evt);
+                    {
+                        // Script-side physics callbacks run here.
+                        ATMO_PROFILE_SCOPE_N_COLOR("Physics::TickEvent", profiler::color::Physics);
+                        auto evt = event::EventRegistry::Create<event::events::PhysicsProgressTickEvent>("Event::PhysicsProgressTickEvent");
+                        evt->delta_time = physics_dt;
+                        event::EventRegistry::Dispatch(evt);
+                    }
+
+                    // Secondary frame set: one "frame" per fixed physics step.
+                    ATMO_PROFILE_FRAME_N("Physics");
                 }
             });
     }
@@ -108,7 +146,11 @@ namespace atmo::core::ecs::entities
             int end = std::min(start + chunkSize, itemCount);
 
             if (start < end)
-                group->tasks.emplace_back(atmo::core::ThreadPool::Instance().submit([=] { task(start, end, i, taskContext); }));
+                group->tasks.emplace_back(atmo::core::ThreadPool::Instance().submit([=] {
+                    ATMO_PROFILE_SCOPE_N_COLOR("Physics::Box2dTask", profiler::color::Physics);
+                    ATMO_PROFILE_ZONE_VALUE(end - start);
+                    task(start, end, i, taskContext);
+                }));
         }
 
         return group;
@@ -116,6 +158,8 @@ namespace atmo::core::ecs::entities
 
     void finishTask(void *userTask, void *userContext)
     {
+        // Time the stepping thread spends blocked on Box2D's parallel work.
+        ATMO_PROFILE_SCOPE_N_COLOR("Physics::WaitTasks", profiler::color::Wait);
         for (auto task : ((atmo::core::TaskHandleGroup *)userTask)->tasks) task.wait();
         delete (atmo::core::TaskHandleGroup *)userTask;
     }

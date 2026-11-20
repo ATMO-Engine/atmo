@@ -460,6 +460,8 @@ namespace atmo::core
         }
 #endif
 
+        ATMO_PROFILE_THREAD_GROUP("Main", profiler::group::Main);
+
         auto last_time = std::chrono::steady_clock::now();
         float deltaTime = 0.0f;
         float title_update_accumulator = 0.0f;
