@@ -59,7 +59,8 @@ add_requires("catch2 v3.10.0", { system = false })
 add_requires("box2d v3.1.1", { system = false })
 add_requires("argparse v3.2", { system = false })
 add_requires("ctre v3.11.0", { system = false })
-add_requires("cpp-httplib v0.63.0", { system = false })
+add_requires("libcurl 8.21.0", { system = false })
+add_requires("llhttp v9.4.3", { system = false })
 if is_mode("debug", "profile") then
     add_requires("tracy v0.13.1", { system = false, configs = { enforce_callstack = false } })
 end
@@ -211,7 +212,10 @@ function packages()
 end
 
 function mcp()
-    add_packages("cpp-httplib")
+    add_packages("libcurl", "llhttp")
+    if is_plat("windows") then
+        add_syslinks("Ws2_32")
+    end
 end
 
 function rendering(opt)

@@ -57,6 +57,7 @@ namespace atmo
 
         struct Debug {
             ATMO_PROJECT_SETTING bool draw_physics_debug = true;
+            ATMO_PROJECT_SETTING bool draw_physics_debug_in_game = false;
         };
 
         struct Addons {
@@ -134,7 +135,9 @@ ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Engine);
 
 template <> struct atmo::meta::ComponentMeta<atmo::project::Debug> {
     static constexpr const char *name = "ProjectSettings.Debug";
-    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::project::Debug::draw_physics_debug>("draw_physics_debug"));
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::Debug::draw_physics_debug>("draw_physics_debug"),
+        atmo::meta::field<&atmo::project::Debug::draw_physics_debug_in_game>("draw_physics_debug_in_game"));
 };
 ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Debug);
 

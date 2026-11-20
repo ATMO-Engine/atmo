@@ -1,7 +1,5 @@
 #pragma once
 
-#include <chrono>
-#include <condition_variable>
 #include <exception>
 #include <functional>
 #include <memory>
@@ -54,13 +52,13 @@ namespace atmo::mcp
         }
 
         [[nodiscard]] bool sent() const;
-        [[nodiscard]] std::optional<ToolResult> wait(std::chrono::milliseconds timeout) const;
+        void onSent(std::function<void(const ToolResult &result)> callback) const;
 
     private:
         struct State {
             std::mutex mutex;
-            std::condition_variable cv;
             std::optional<ToolResult> result;
+            std::function<void(const ToolResult &result)> callback;
         };
 
         std::shared_ptr<State> m_state;

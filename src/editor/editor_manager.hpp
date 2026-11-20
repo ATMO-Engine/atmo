@@ -74,6 +74,7 @@ namespace atmo::editor
         core::ecs::entities::UIButton makeEditorCreationButton(const std::string &editor);
 
         std::shared_ptr<Editor> openEditor(const std::string &type_name, const std::optional<std::string> &path = std::nullopt);
+        std::shared_ptr<Editor> openFile(const std::filesystem::path &path);
         std::shared_ptr<Editor> findEditor(std::uint32_t id) const;
         std::shared_ptr<Editor> findEditorByPath(const std::filesystem::path &path) const;
         void activateEditor(const std::shared_ptr<Editor> &editor);

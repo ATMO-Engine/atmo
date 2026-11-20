@@ -1,6 +1,7 @@
 #include <atomic>
 #include <chrono>
 #include <format>
+#include <functional>
 #include <optional>
 #include <string>
 #include <thread>
@@ -13,7 +14,8 @@
 #include "core/ecs/entity_registry.hpp"
 #include "core/engine.hpp"
 #include "core/thread/thread_pool.hpp"
-#include "httplib.h"
+#include "mcp/http/http_client.hpp"
+#include "mcp/http/http_server.hpp"
 #include "mcp/log_buffer.hpp"
 #include "mcp/mcp_server.hpp"
 #include "mcp/schema.hpp"
@@ -58,21 +60,47 @@ namespace
         return *json;
     }
 
-    glz::generic Rpc(McpServer &server, const std::string &body)
+    std::optional<std::string> Message(McpServer &server, const std::string &body, bool *initialize = nullptr)
     {
-        std::optional<std::string> response;
-        std::atomic<bool> done{ false };
-        std::thread worker([&] {
-            response = server.handleMessage(body);
-            done = true;
-        });
-        while (!done) {
+        std::optional<std::optional<std::string>> response;
+        server.handleMessage(body, [&response](std::optional<std::string> answer) { response = std::move(answer); }, initialize);
+        while (!response) {
             atmo::core::SignalQueue::Flush();
             server.tick();
             std::this_thread::sleep_for(1ms);
         }
-        worker.join();
-        return Parse(response);
+        return *response;
+    }
+
+    glz::generic Rpc(McpServer &server, const std::string &body)
+    {
+        return Parse(Message(server, body));
+    }
+
+    atmo::mcp::http::ClientResponse Send(atmo::mcp::http::HttpClient &client, atmo::mcp::http::ClientRequest request, const std::function<void()> &pump = [] {})
+    {
+        request.use_proxy = false;
+        request.timeout = 10s;
+        std::optional<atmo::mcp::http::ClientResponse> response;
+        client.request(std::move(request), [&response](atmo::mcp::http::ClientResponse answer) { response = std::move(answer); });
+        while (!response) {
+            client.step();
+            pump();
+            atmo::core::SignalQueue::Flush();
+            std::this_thread::sleep_for(1ms);
+        }
+        return *response;
+    }
+
+    atmo::mcp::http::ClientResponse PostMcp(atmo::mcp::http::HttpClient &client, int port, const std::string &body, atmo::mcp::http::Headers headers = {})
+    {
+        atmo::mcp::http::ClientRequest request;
+        request.method = "POST";
+        request.url = std::format("http://127.0.0.1:{}/mcp", port);
+        request.headers = std::move(headers);
+        request.headers.emplace_back("Content-Type", "application/json");
+        request.body = body;
+        return Send(client, std::move(request));
     }
 
     struct CallResult {
@@ -115,26 +143,25 @@ TEST_CASE("MCP initialize negotiates the protocol version", "[mcp]")
     McpServer server(TestEngine(), McpServer::Mode::Game);
     bool initialize = false;
 
-    glz::generic response =
-        Parse(server.handleMessage(R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}})", &initialize));
+    glz::generic response = Parse(Message(server, R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}})", &initialize));
     REQUIRE(initialize);
     REQUIRE(response["id"].get_number() == 1);
     REQUIRE(response["result"]["protocolVersion"].get_string() == "2025-06-18");
     REQUIRE(response["result"]["serverInfo"]["name"].get_string() == "atmo");
     REQUIRE(response["result"]["capabilities"].contains("tools"));
 
-    response = Parse(server.handleMessage(R"({"jsonrpc":"2.0","id":"a","method":"initialize","params":{"protocolVersion":"1999-01-01"}})"));
+    response = Parse(Message(server, R"({"jsonrpc":"2.0","id":"a","method":"initialize","params":{"protocolVersion":"1999-01-01"}})"));
     REQUIRE(response["id"].get_string() == "a");
     REQUIRE(response["result"]["protocolVersion"].get_string() == McpServer::latest_protocol_version);
 
-    REQUIRE_FALSE(server.handleMessage(R"({"jsonrpc":"2.0","method":"notifications/initialized"})").has_value());
-    REQUIRE(Parse(server.handleMessage(R"({"jsonrpc":"2.0","id":2,"method":"ping"})"))["result"].is_object());
+    REQUIRE_FALSE(Message(server, R"({"jsonrpc":"2.0","method":"notifications/initialized"})").has_value());
+    REQUIRE(Parse(Message(server, R"({"jsonrpc":"2.0","id":2,"method":"ping"})"))["result"].is_object());
 }
 
 TEST_CASE("MCP tools/list describes every tool with an object schema", "[mcp]")
 {
     McpServer server(TestEngine(), McpServer::Mode::Game);
-    glz::generic response = Parse(server.handleMessage(R"({"jsonrpc":"2.0","id":1,"method":"tools/list"})"));
+    glz::generic response = Parse(Message(server, R"({"jsonrpc":"2.0","id":1,"method":"tools/list"})"));
     const auto &tools = response["result"]["tools"].get_array();
     REQUIRE(tools.size() == server.tools().all().size());
 
@@ -156,10 +183,10 @@ TEST_CASE("MCP reports protocol and argument errors", "[mcp]")
 {
     McpServer server(TestEngine(), McpServer::Mode::Game);
 
-    REQUIRE(Parse(server.handleMessage("{oops"))["error"]["code"].get_number() == -32700);
-    REQUIRE(Parse(server.handleMessage(R"({"jsonrpc":"2.0","id":1,"method":"resources/list"})"))["error"]["code"].get_number() == -32601);
-    REQUIRE(Parse(server.handleMessage(R"({"jsonrpc":"2.0","id":1})"))["error"]["code"].get_number() == -32600);
-    REQUIRE(Parse(server.handleMessage(R"({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nope"}})"))["error"]["code"].get_number() == -32602);
+    REQUIRE(Parse(Message(server, "{oops"))["error"]["code"].get_number() == -32700);
+    REQUIRE(Parse(Message(server, R"({"jsonrpc":"2.0","id":1,"method":"resources/list"})"))["error"]["code"].get_number() == -32601);
+    REQUIRE(Parse(Message(server, R"({"jsonrpc":"2.0","id":1})"))["error"]["code"].get_number() == -32600);
+    REQUIRE(Parse(Message(server, R"({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nope"}})"))["error"]["code"].get_number() == -32602);
 
     CallResult missing = Call(server, "entity_get", "{}");
     REQUIRE(missing.is_error);
@@ -300,34 +327,121 @@ TEST_CASE("MCP HTTP transport handles sessions and origins", "[mcp]")
     McpServer server(TestEngine(), McpServer::Mode::Game);
     REQUIRE(server.start("127.0.0.1", 0));
     REQUIRE(server.port() > 0);
+    const int port = server.port();
 
-    httplib::Client client("127.0.0.1", server.port());
-    auto initialized = client.Post("/mcp", R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})", "application/json");
-    REQUIRE(initialized);
-    REQUIRE(initialized->status == 200);
-    const std::string session = initialized->get_header_value("Mcp-Session-Id");
+    atmo::mcp::http::HttpClient client;
+    auto initialized = PostMcp(client, port, R"({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})");
+    REQUIRE(initialized.ok());
+    REQUIRE(initialized.status == 200);
+    REQUIRE(initialized.header("content-type") == "application/json");
+    const std::string session = initialized.header("Mcp-Session-Id");
     REQUIRE_FALSE(session.empty());
 
-    auto ping = client.Post("/mcp", { { "Mcp-Session-Id", session } }, R"({"jsonrpc":"2.0","id":2,"method":"ping"})", "application/json");
-    REQUIRE(ping);
-    REQUIRE(ping->status == 200);
+    auto ping = PostMcp(client, port, R"({"jsonrpc":"2.0","id":2,"method":"ping"})", { { "Mcp-Session-Id", session } });
+    REQUIRE(ping.status == 200);
+    REQUIRE(Parse(ping.body)["result"].is_object());
 
-    auto notification = client.Post("/mcp", { { "Mcp-Session-Id", session } }, R"({"jsonrpc":"2.0","method":"notifications/initialized"})", "application/json");
-    REQUIRE(notification);
-    REQUIRE(notification->status == 202);
+    auto tool = PostMcp(
+        client, port, R"({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"game_status","arguments":{}}})", { { "Mcp-Session-Id", session } });
+    REQUIRE(tool.status == 200);
+    REQUIRE_FALSE(Parse(tool.body)["result"].contains("isError"));
 
-    auto stale = client.Post("/mcp", { { "Mcp-Session-Id", "stale" } }, R"({"jsonrpc":"2.0","id":3,"method":"ping"})", "application/json");
-    REQUIRE(stale);
-    REQUIRE(stale->status == 404);
+    auto notification = PostMcp(client, port, R"({"jsonrpc":"2.0","method":"notifications/initialized"})", { { "Mcp-Session-Id", session } });
+    REQUIRE(notification.status == 202);
 
-    auto foreign = client.Post("/mcp", { { "Origin", "http://example.com" } }, R"({"jsonrpc":"2.0","id":4,"method":"ping"})", "application/json");
-    REQUIRE(foreign);
-    REQUIRE(foreign->status == 403);
+    auto stale = PostMcp(client, port, R"({"jsonrpc":"2.0","id":4,"method":"ping"})", { { "Mcp-Session-Id", "stale" } });
+    REQUIRE(stale.status == 404);
 
-    auto get = client.Get("/mcp");
-    REQUIRE(get);
-    REQUIRE(get->status == 405);
+    auto foreign = PostMcp(client, port, R"({"jsonrpc":"2.0","id":5,"method":"ping"})", { { "Origin", "http://example.com" } });
+    REQUIRE(foreign.status == 403);
+
+    auto get = Send(client, atmo::mcp::http::ClientRequest{ .url = std::format("http://127.0.0.1:{}/mcp", port) });
+    REQUIRE(get.status == 405);
+    REQUIRE(get.header("Allow") == "POST, DELETE");
+
+    auto other = Send(client, atmo::mcp::http::ClientRequest{ .url = std::format("http://127.0.0.1:{}/other", port) });
+    REQUIRE(other.status == 404);
 
     server.stop();
-    REQUIRE_FALSE(client.Post("/mcp", R"({"jsonrpc":"2.0","id":5,"method":"ping"})", "application/json"));
+    REQUIRE_FALSE(PostMcp(client, port, R"({"jsonrpc":"2.0","id":6,"method":"ping"})").ok());
+}
+
+TEST_CASE("HttpServer answers a request after its handler has returned", "[mcp]")
+{
+    using namespace atmo::mcp::http;
+
+    std::optional<HttpResponder> pending;
+    HttpRequest seen;
+    HttpServer server([&](const HttpRequest &request, const HttpResponder &responder) {
+        seen = request;
+        pending = responder;
+    });
+    REQUIRE(server.listen("127.0.0.1", 0));
+
+    HttpClient client;
+    ClientRequest request;
+    request.method = "PUT";
+    request.url = std::format("http://127.0.0.1:{}/echo?x=1", server.port());
+    request.headers = { { "X-Test", "Value" } };
+    request.body = std::string(200 * 1024, 'a');
+
+    int steps_after_dispatch = 0;
+    ClientResponse response = Send(client, request, [&] {
+        server.step();
+        if (pending && ++steps_after_dispatch == 20)
+            pending->send(HttpResponse{ .status = 201, .headers = { { "X-Answer", "later" } }, .body = "done" });
+    });
+
+    REQUIRE(response.ok());
+    REQUIRE(response.status == 201);
+    REQUIRE(response.body == "done");
+    REQUIRE(response.header("x-answer") == "later");
+    REQUIRE(seen.method == "PUT");
+    REQUIRE(seen.path == "/echo");
+    REQUIRE(seen.target == "/echo?x=1");
+    REQUIRE(seen.header("x-test") == "Value");
+    REQUIRE(seen.body.size() == 200 * 1024);
+}
+
+TEST_CASE("The MCP server holds no pool worker while it listens and waits on a tool", "[mcp]")
+{
+    McpServer server(TestEngine(), McpServer::Mode::Game);
+    REQUIRE(server.start("127.0.0.1", 0));
+
+    atmo::mcp::http::HttpClient client;
+    std::optional<atmo::mcp::http::ClientResponse> answer;
+    atmo::mcp::http::ClientRequest request;
+    request.method = "POST";
+    request.url = std::format("http://127.0.0.1:{}/mcp", server.port());
+    request.headers = { { "Content-Type", "application/json" } };
+    request.body = R"({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"game_status","arguments":{}}})";
+    request.use_proxy = false;
+    client.request(request, [&answer](atmo::mcp::http::ClientResponse response) { answer = std::move(response); });
+    for (int i = 0; i < 50; ++i) {
+        client.step();
+        std::this_thread::sleep_for(1ms);
+    }
+    REQUIRE_FALSE(answer.has_value());
+
+    const std::size_t workers = atmo::core::ThreadPool::Instance().getWorkerCount();
+    const auto deadline = std::chrono::steady_clock::now() + 2s;
+    std::atomic<std::size_t> arrived{ 0 };
+    std::atomic<std::size_t> met{ 0 };
+    std::vector<atmo::core::TaskHandle> tasks;
+    for (std::size_t i = 0; i < workers; ++i)
+        tasks.push_back(atmo::core::ThreadPool::Instance().submit([&] {
+            ++arrived;
+            while (arrived < workers && std::chrono::steady_clock::now() < deadline) std::this_thread::yield();
+            if (arrived >= workers)
+                ++met;
+        }));
+    for (auto &task : tasks) task.wait();
+    REQUIRE(met == workers);
+
+    while (!answer) {
+        client.step();
+        atmo::core::SignalQueue::Flush();
+        std::this_thread::sleep_for(1ms);
+    }
+    REQUIRE(answer->status == 200);
 }

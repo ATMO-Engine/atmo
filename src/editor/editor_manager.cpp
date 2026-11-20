@@ -443,6 +443,25 @@ namespace atmo::editor
         return editor;
     }
 
+    std::shared_ptr<Editor> EditorManager::openFile(const std::filesystem::path &path)
+    {
+        if (auto existing = findEditorByPath(path)) {
+            activateEditor(existing);
+            return existing;
+        }
+
+        const auto type = EditorTypeForPath(path);
+        if (!type) {
+            spdlog::warn("No editor opens {} files", path.extension().string());
+            return nullptr;
+        }
+
+        auto editor = openEditor(*type, path.string());
+        if (editor)
+            activateEditor(editor);
+        return editor;
+    }
+
     void EditorManager::addEditor(const std::shared_ptr<Editor> &editor)
     {
         if (std::find(m_editors.begin(), m_editors.end(), editor) != m_editors.end())
@@ -678,11 +697,16 @@ namespace atmo::editor
 
     void EditorManager::handleOpen()
     {
-        auto editor = activeEditor();
-        if (!editor)
-            return;
-
-        ShowOpenFileDialog([editor](const std::string &path) { editor->open(path); }, m_project_path);
+        std::weak_ptr<Editor> active = activeEditor();
+        ShowOpenFileDialog(
+            [this, active](const std::string &path) {
+                auto editor = active.lock();
+                if (editor && EditorTypeForPath(path) == std::string(editor->getTypeName()))
+                    editor->open(path);
+                else
+                    openFile(path);
+            },
+            m_project_path);
     }
 
     std::shared_ptr<core::ecs::entities::UIFoldableTreeItem> EditorManager::makeSettingsSection(core::ecs::entities::UI &body, const std::string &title)

@@ -1,6 +1,7 @@
 #include "tool.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace atmo::mcp
 {
@@ -48,13 +49,16 @@ namespace atmo::mcp
 
     void Reply::send(ToolResult result) const
     {
+        std::function<void(const ToolResult &)> callback;
         {
             std::lock_guard lock(m_state->mutex);
             if (m_state->result)
                 return;
             m_state->result = std::move(result);
+            callback = std::exchange(m_state->callback, nullptr);
         }
-        m_state->cv.notify_all();
+        if (callback)
+            callback(*m_state->result);
     }
 
     bool Reply::sent() const
@@ -63,12 +67,16 @@ namespace atmo::mcp
         return m_state->result.has_value();
     }
 
-    std::optional<ToolResult> Reply::wait(std::chrono::milliseconds timeout) const
+    void Reply::onSent(std::function<void(const ToolResult &result)> callback) const
     {
-        std::unique_lock lock(m_state->mutex);
-        if (!m_state->cv.wait_for(lock, timeout, [this] { return m_state->result.has_value(); }))
-            return std::nullopt;
-        return m_state->result;
+        {
+            std::lock_guard lock(m_state->mutex);
+            if (!m_state->result) {
+                m_state->callback = std::move(callback);
+                return;
+            }
+        }
+        callback(*m_state->result);
     }
 
     void ToolRegistry::addTool(Tool tool)

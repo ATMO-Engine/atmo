@@ -1,15 +1,17 @@
 #include <atomic>
 #include <chrono>
+#include <expected>
+#include <format>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "core/engine.hpp"
 #include "core/thread/thread_pool.hpp"
 #include "editor/editor_manager.hpp"
-#include "httplib.h"
+#include "mcp/http/http_client.hpp"
 #include "mcp/mcp_server.hpp"
 #include "mcp/tools/helpers.hpp"
 #include "mcp/tools/tools.hpp"
@@ -35,27 +37,73 @@ namespace atmo::mcp::tools
         };
 
         constexpr auto ready_timeout = std::chrono::seconds(20);
+        constexpr auto ready_retry = std::chrono::milliseconds(100);
 
-        std::expected<glz::generic, std::string> Request(int port, const std::string &method, glz::generic params, std::chrono::seconds timeout)
+        using Answer = std::expected<glz::generic, std::string>;
+
+        void Request(
+            http::HttpClient &client, int port, const std::string &method, glz::generic params, std::chrono::milliseconds timeout,
+            std::function<void(Answer)> done)
         {
             if (port <= 0)
-                return std::unexpected("The game is not running; start it with play_start");
-            httplib::Client client("127.0.0.1", port);
-            client.set_connection_timeout(std::chrono::seconds(2));
-            client.set_read_timeout(timeout);
+                return done(std::unexpected("The game is not running; start it with play_start"));
+
             const glz::generic body = glz::generic::object_t{ { "jsonrpc", "2.0" }, { "id", 1.0 }, { "method", method }, { "params", std::move(params) } };
-            auto response = client.Post("/mcp", body.dump().value_or("{}"), "application/json");
-            if (!response)
-                return std::unexpected("The game's MCP server did not answer on port " + std::to_string(port) + "; is the game still running (play_status)?");
-            auto json = glz::read_json<glz::generic>(response->body);
-            if (!json || !json->is_object())
-                return std::unexpected("Invalid answer from the game: " + response->body);
-            if (json->contains("error"))
-                return std::unexpected("The game answered: " + (*json)["error"].dump().value_or(""));
-            if (!json->contains("result"))
-                return std::unexpected("Invalid answer from the game: " + response->body);
-            return (*json)["result"];
+            http::ClientRequest request;
+            request.method = "POST";
+            request.url = std::format("http://127.0.0.1:{}/mcp", port);
+            request.headers = { { "Content-Type", "application/json" }, { "Accept", "application/json, text/event-stream" } };
+            request.body = body.dump().value_or("{}");
+            request.connect_timeout = std::chrono::seconds(2);
+            request.timeout = timeout;
+            request.use_proxy = false;
+
+            client.request(std::move(request), [port, done = std::move(done)](http::ClientResponse response) {
+                if (!response.ok())
+                    return done(
+                        std::unexpected(
+                            std::format(
+                                "The game's MCP server did not answer on port {} ({}); is the game still running (play_status)?", port, response.error)));
+                if (response.status != 200)
+                    return done(std::unexpected(std::format("The game answered HTTP {}: {}", response.status, response.body)));
+                auto json = glz::read_json<glz::generic>(response.body);
+                if (!json || !json->is_object())
+                    return done(std::unexpected("Invalid answer from the game: " + response.body));
+                if (json->contains("error"))
+                    return done(std::unexpected("The game answered: " + (*json)["error"].dump().value_or("")));
+                if (!json->contains("result"))
+                    return done(std::unexpected("Invalid answer from the game: " + response.body));
+                done((*json)["result"]);
+            });
         }
+
+        struct ReadyProbe : std::enable_shared_from_this<ReadyProbe> {
+            std::shared_ptr<http::HttpClient> client;
+            Reply reply;
+            int port = 0;
+            std::chrono::steady_clock::time_point deadline;
+
+            void attempt()
+            {
+                if (reply.sent())
+                    return;
+                Request(*client, port, "ping", glz::generic::object_t{}, std::chrono::seconds(2), [self = shared_from_this()](const Answer &answer) {
+                    if (self->reply.sent())
+                        return;
+                    if (answer)
+                        return self->reply.json(glz::generic::object_t{ { "running", true }, { "port", static_cast<double>(self->port) }, { "ready", true } });
+                    if (std::chrono::steady_clock::now() >= self->deadline)
+                        return self->reply.json(
+                            glz::generic::object_t{
+                                { "running", true },
+                                { "port", static_cast<double>(self->port) },
+                                { "ready", false },
+                                { "hint", "The game's MCP server did not answer yet; check play_status and logs_read" },
+                            });
+                    core::ThreadPool::Instance().submitAfter([self] { self->attempt(); }, ready_retry);
+                });
+            }
+        };
     } // namespace play_args
 } // namespace atmo::mcp::tools
 
@@ -111,23 +159,12 @@ namespace atmo::mcp::tools
                     return reply.error("Could not start the game (see logs_read)");
                 state->port = port;
 
-                core::ThreadPool::Instance().submit([reply, port] {
-                    const auto deadline = std::chrono::steady_clock::now() + ready_timeout;
-                    while (std::chrono::steady_clock::now() < deadline && !reply.sent()) {
-                        if (Request(port, "ping", glz::generic::object_t{}, std::chrono::seconds(2))) {
-                            reply.json(glz::generic::object_t{ { "running", true }, { "port", static_cast<double>(port) }, { "ready", true } });
-                            return;
-                        }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
-                    reply.json(
-                        glz::generic::object_t{
-                            { "running", true },
-                            { "port", static_cast<double>(port) },
-                            { "ready", false },
-                            { "hint", "The game's MCP server did not answer yet; check play_status and logs_read" },
-                        });
-                });
+                auto probe = std::make_shared<ReadyProbe>();
+                probe->client = server.httpClient();
+                probe->reply = reply;
+                probe->port = port;
+                probe->deadline = std::chrono::steady_clock::now() + ready_timeout;
+                probe->attempt();
             });
 
         tools.add<NoArgs>("play_stop", "Stop the game started with play_start.", [&server, state](const NoArgs &, const Reply &reply) {
@@ -146,35 +183,41 @@ namespace atmo::mcp::tools
         tools.add<NoArgs>(
             "game_tools",
             "List the tools of the running game, for game_call.",
-            [state](const NoArgs &, const Reply &reply) {
-                auto result = Request(state->port.load(), "tools/list", glz::generic::object_t{}, std::chrono::seconds(10));
-                if (!result)
-                    return reply.error(result.error());
-                glz::generic::array_t tools;
-                if (result->contains("tools") && (*result)["tools"].is_array())
-                    for (const auto &tool : (*result)["tools"].get_array())
-                        tools.push_back(
-                            glz::generic::object_t{ { "name", tool["name"] }, { "description", tool["description"] }, { "inputSchema", tool["inputSchema"] } });
-                reply.json(glz::generic::object_t{ { "tools", std::move(tools) } });
+            [&server, state](const NoArgs &, const Reply &reply) {
+                Request(
+                    *server.httpClient(), state->port.load(), "tools/list", glz::generic::object_t{}, std::chrono::seconds(10), [reply](const Answer &result) {
+                        if (!result)
+                            return reply.error(result.error());
+                        glz::generic::array_t tools;
+                        if (result->contains("tools") && (*result)["tools"].is_array())
+                            for (const auto &tool : (*result)["tools"].get_array())
+                                tools.push_back(
+                                    glz::generic::object_t{
+                                        { "name", tool["name"] }, { "description", tool["description"] }, { "inputSchema", tool["inputSchema"] } });
+                        reply.json(glz::generic::object_t{ { "tools", std::move(tools) } });
+                    });
             },
             false);
 
         tools.add<GameCallArgs>(
             "game_call",
             "Call a tool of the game started with play_start and return its result.",
-            [state](const GameCallArgs &args, const Reply &reply) {
-                auto result = Request(
+            [&server, state](const GameCallArgs &args, const Reply &reply) {
+                Request(
+                    *server.httpClient(),
                     state->port.load(),
                     "tools/call",
                     glz::generic::object_t{ { "name", args.tool }, { "arguments", args.arguments.value_or(glz::generic::object_t{}) } },
-                    std::chrono::seconds(35));
-                if (!result)
-                    return reply.error(result.error());
-                ToolResult forwarded;
-                if (result->contains("content") && (*result)["content"].is_array())
-                    forwarded.content = (*result)["content"].get_array();
-                forwarded.is_error = result->contains("isError") && (*result)["isError"].is_boolean() && (*result)["isError"].get_boolean();
-                reply.send(std::move(forwarded));
+                    std::chrono::seconds(35),
+                    [reply](const Answer &result) {
+                        if (!result)
+                            return reply.error(result.error());
+                        ToolResult forwarded;
+                        if (result->contains("content") && (*result)["content"].is_array())
+                            forwarded.content = (*result)["content"].get_array();
+                        forwarded.is_error = result->contains("isError") && (*result)["isError"].is_boolean() && (*result)["isError"].get_boolean();
+                        reply.send(std::move(forwarded));
+                    });
             },
             false);
     }

@@ -73,14 +73,6 @@
             },
             version = "4.3.4"
         },
-        ["cpp-httplib v0.63.0#f56260b5"] = {
-            repo = {
-                branch = "master",
-                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
-                url = "https://github.com/xmake-io/xmake-repo.git"
-            },
-            version = "v0.63.0"
-        },
         ["ctre v3.11.0#f56260b5"] = {
             branch = "v3.11.0",
             repo = {
@@ -130,6 +122,14 @@
                 url = "https://github.com/xmake-io/xmake-repo.git"
             },
             version = "v7.2.2"
+        },
+        ["libcurl 8.21.0#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://github.com/xmake-io/xmake-repo.git"
+            },
+            version = "8.21.0"
         },
         ["libffi#0b3b0fcf"] = {
             repo = {
@@ -321,6 +321,14 @@
             },
             version = "1.2.5"
         },
+        ["llhttp v9.4.3#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://github.com/xmake-io/xmake-repo.git"
+            },
+            version = "v9.4.3"
+        },
         ["luau 0.689#f56260b5"] = {
             repo = {
                 branch = "master",
@@ -376,6 +384,14 @@
                 url = "https://github.com/xmake-io/xmake-repo.git"
             },
             version = "1.1.1-w"
+        },
+        ["openssl3#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://github.com/xmake-io/xmake-repo.git"
+            },
+            version = "3.6.5"
         },
         ["pkg-config#f56260b5"] = {
             repo = {
@@ -527,14 +543,6 @@
             },
             version = "4.3.4"
         },
-        ["cpp-httplib v0.63.0#f56260b5"] = {
-            repo = {
-                branch = "master",
-                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
-                url = "https://gitlab.com/tboox/xmake-repo.git"
-            },
-            version = "v0.63.0"
-        },
         ["ctre v3.11.0#f56260b5"] = {
             branch = "v3.11.0",
             repo = {
@@ -577,6 +585,14 @@
             },
             version = "v7.2.2"
         },
+        ["libcurl 8.21.0#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "8.21.0"
+        },
         ["libsdl3 3.4.12#f56260b5"] = {
             repo = {
                 branch = "master",
@@ -598,6 +614,14 @@
                 url = "deps"
             },
             version = "2025.09.12"
+        },
+        ["llhttp v9.4.3#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "v9.4.3"
         },
         ["luau 0.689#f56260b5"] = {
             repo = {
@@ -636,6 +660,22 @@
                 url = "https://gitlab.com/tboox/xmake-repo.git"
             },
             version = "2024.01.04"
+        },
+        ["openssl3#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "3.6.5"
+        },
+        ["pkg-config#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "0.29.2"
         },
         ["slang v2026.20#4fdec6db"] = {
             repo = {
@@ -699,14 +739,6 @@
             },
             version = "4.3.4"
         },
-        ["cpp-httplib v0.63.0#f56260b5"] = {
-            repo = {
-                branch = "master",
-                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
-                url = "https://gitlab.com/tboox/xmake-repo.git"
-            },
-            version = "v0.63.0"
-        },
         ["ctre v3.11.0#f56260b5"] = {
             branch = "v3.11.0",
             repo = {
@@ -749,6 +781,14 @@
             },
             version = "v7.2.2"
         },
+        ["libcurl 8.21.0#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "8.21.0"
+        },
         ["libsdl3 3.4.12#f56260b5"] = {
             repo = {
                 branch = "master",
@@ -770,6 +810,14 @@
                 url = "deps"
             },
             version = "2025.09.12"
+        },
+        ["llhttp v9.4.3#f56260b5"] = {
+            repo = {
+                branch = "master",
+                commit = "9bdeede299827268f464ccf2fab9e98e0b304c91",
+                url = "https://gitlab.com/tboox/xmake-repo.git"
+            },
+            version = "v9.4.3"
         },
         ["luau 0.689#f56260b5"] = {
             repo = {

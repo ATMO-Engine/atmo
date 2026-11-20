@@ -4,13 +4,13 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
-#include <list>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -18,12 +18,13 @@
 #include "glaze/glaze.hpp"
 #include "mcp/tool.hpp"
 
-namespace httplib
+namespace atmo::mcp::http
 {
-    class Server;
-    struct Request;
-    struct Response;
-} // namespace httplib
+    class HttpClient;
+    class HttpServer;
+    class HttpResponder;
+    struct HttpRequest;
+} // namespace atmo::mcp::http
 
 namespace atmo::core
 {
@@ -76,15 +77,32 @@ namespace atmo::mcp
             m_timeout = timeout;
         }
 
-        std::optional<std::string> handleMessage(std::string_view body, bool *initialize = nullptr);
+        using MessageCallback = std::function<void(std::optional<std::string> response)>;
+
+        void handleMessage(std::string_view body, MessageCallback done, bool *initialize = nullptr);
+
+        [[nodiscard]] std::shared_ptr<http::HttpClient> httpClient() const
+        {
+            return m_client;
+        }
 
         void after(std::uint64_t frames, std::function<void()> fn);
         void tick();
 
     private:
-        glz::generic dispatch(const glz::generic &request, bool *initialize);
-        glz::generic callTool(const glz::generic &params, const glz::generic &id);
-        void handleHttp(const httplib::Request &request, httplib::Response &response);
+        using Respond = std::function<void(glz::generic response)>;
+
+        struct Inflight {
+            Reply reply;
+            std::string tool;
+            std::chrono::steady_clock::time_point deadline;
+        };
+
+        void dispatch(const glz::generic &request, bool *initialize, const Respond &respond);
+        void callTool(const glz::generic &params, const glz::generic &id, const Respond &respond);
+        void handleHttp(const http::HttpRequest &request, const http::HttpResponder &responder);
+        void poll();
+        void expireInflight();
         void failInflight(const std::string &message);
 
         core::Engine &m_engine;
@@ -93,12 +111,14 @@ namespace atmo::mcp
         std::chrono::milliseconds m_timeout{ 30000 };
         int m_port = 0;
 
-        std::unique_ptr<httplib::Server> m_http;
-        std::optional<core::TaskHandle> m_listen_task;
+        std::unique_ptr<http::HttpServer> m_http;
+        std::shared_ptr<http::HttpClient> m_client;
+        std::optional<core::TaskHandle> m_poll_task;
         std::shared_ptr<std::atomic<bool>> m_alive = std::make_shared<std::atomic<bool>>(true);
 
         std::mutex m_inflight_mutex;
-        std::list<Reply> m_inflight;
+        std::unordered_map<std::uint64_t, Inflight> m_inflight;
+        std::uint64_t m_next_inflight = 0;
 
         std::mutex m_session_mutex;
         std::set<std::string> m_sessions;

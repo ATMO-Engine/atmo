@@ -5,15 +5,36 @@
 #if defined(_WIN32)
 #include <sstream>
 #else
+#include <chrono>
 #include <csignal>
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include "core/thread/thread_pool.hpp"
 extern char **environ;
 #endif
 
 namespace atmo::editor
 {
+#if !defined(_WIN32)
+    namespace
+    {
+        constexpr auto terminate_grace = std::chrono::seconds(3);
+        constexpr auto reap_interval = std::chrono::milliseconds(50);
+
+        void Reap(pid_t pid, std::chrono::steady_clock::time_point kill_at)
+        {
+            int status = 0;
+            if (waitpid(pid, &status, WNOHANG) != 0)
+                return;
+            if (std::chrono::steady_clock::now() >= kill_at)
+                kill(pid, SIGKILL);
+            core::ThreadPool::Instance().submitAfter([pid, kill_at] { Reap(pid, kill_at); }, reap_interval);
+        }
+    } // namespace
+#endif
+
     ChildProcess::~ChildProcess()
     {
 #if defined(_WIN32)
@@ -170,11 +191,10 @@ namespace atmo::editor
         if (m_pid < 0)
             return;
 
-        kill(m_pid, SIGTERM);
-
-        int status = 0;
-        waitpid(m_pid, &status, 0);
+        const pid_t pid = m_pid;
         m_pid = -1;
+        kill(pid, SIGTERM);
+        Reap(pid, std::chrono::steady_clock::now() + terminate_grace);
     }
 #endif
 } // namespace atmo::editor
