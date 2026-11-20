@@ -109,6 +109,8 @@ namespace atmo::editor
 
     void EditorSceneContext::resize(int width, int height)
     {
+        if (m_size_override && (m_size_override->x != width || m_size_override->y != height))
+            return;
         if (m_width == width && m_height == height)
             return;
 
@@ -163,6 +165,20 @@ namespace atmo::editor
             return;
 
         core::scene::SceneLoader::LoadSceneInto(path, *m_scene);
+    }
+
+    void EditorSceneContext::setCamera(core::types::Vector2 position, float zoom)
+    {
+        m_cam_position = position;
+        m_cam_zoom = std::clamp(zoom, 0.05f, 20.0f);
+    }
+
+    void EditorSceneContext::setSizeOverride(std::optional<core::types::Vector2i> size)
+    {
+        m_size_override.reset();
+        if (size)
+            resize(size->x, size->y);
+        m_size_override = size;
     }
 
     void EditorSceneContext::pan(core::types::Vector2 delta_screen)

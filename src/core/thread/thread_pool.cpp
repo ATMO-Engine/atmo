@@ -22,6 +22,12 @@ namespace atmo::core
         m_state->cv.wait(lock, [state = m_state] { return state->done; });
     }
 
+    bool TaskHandle::isDone() const
+    {
+        std::lock_guard lock(m_state->mutex);
+        return m_state->done;
+    }
+
     void ThreadPool::WorkQueue::push(TaskItem item)
     {
         std::lock_guard lock(m_mutex);

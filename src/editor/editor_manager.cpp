@@ -202,7 +202,7 @@ namespace atmo::editor
         core::event::EventRegistry::SetCallBack<core::event::events::ProgressTickEvent>([this](core::event::events::ProgressTickEvent *) {
             if (m_play_process && !m_play_process->isRunning()) {
                 m_play_process.reset();
-                m_play_btn_icon->setTexturePath("project://assets/icons/play.svg");
+                updatePlayButton();
             }
         });
     }
@@ -336,7 +336,7 @@ namespace atmo::editor
         m_play_btn = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
         m_play_btn->setParent(*engine_tools_container);
         m_play_btn->getSignal<>("Released").connect([this]() {
-            if (m_play_process && m_play_process->isRunning())
+            if (isPlaying())
                 stopPlay();
             else
                 startPlay();
@@ -352,19 +352,25 @@ namespace atmo::editor
         m_play_btn_icon->setParent(*m_play_btn);
     }
 
-    void EditorManager::startPlay()
+    bool EditorManager::startPlay(const std::optional<std::string> &scene, const std::vector<std::string> &extra_args)
     {
-        if (m_play_process && m_play_process->isRunning())
-            return;
+        if (isPlaying())
+            return false;
+
+        std::vector<std::string> args{ "--project", m_project_path, "--run" };
+        if (scene)
+            args.push_back(*scene);
+        args.insert(args.end(), extra_args.begin(), extra_args.end());
 
         m_play_process.emplace();
-        if (!m_play_process->spawn(project::FileSystem::GetRootPath(), { "--project", m_project_path, "--run" })) {
+        if (!m_play_process->spawn(project::FileSystem::GetRootPath(), args)) {
             spdlog::error("Failed to launch play-mode process");
             m_play_process.reset();
-            return;
+            return false;
         }
 
-        m_play_btn_icon->setTexturePath("project://assets/icons/square-full.svg");
+        updatePlayButton();
+        return true;
     }
 
     void EditorManager::stopPlay()
@@ -374,7 +380,121 @@ namespace atmo::editor
             m_play_process.reset();
         }
 
-        m_play_btn_icon->setTexturePath("project://assets/icons/play.svg");
+        updatePlayButton();
+    }
+
+    bool EditorManager::isPlaying()
+    {
+        return m_play_process && m_play_process->isRunning();
+    }
+
+    void EditorManager::updatePlayButton()
+    {
+        if (m_play_btn_icon)
+            m_play_btn_icon->setTexturePath(m_play_process ? "project://assets/icons/square-full.svg" : "project://assets/icons/play.svg");
+    }
+
+    std::filesystem::path EditorManager::ResolveProjectPath(const std::string &path)
+    {
+        std::filesystem::path resolved = project::FileSystem::ResolvePath(path);
+        if (resolved.is_relative())
+            resolved = project::ProjectManager::GetCurrentProjectPath() / resolved;
+        return std::filesystem::weakly_canonical(std::filesystem::absolute(resolved));
+    }
+
+    std::optional<std::string> EditorManager::EditorTypeForPath(const std::filesystem::path &path)
+    {
+        const std::string extension = path.extension().string();
+        if (extension.empty())
+            return std::nullopt;
+
+        for (const auto &type : EditorRegistry::GetEntries()) {
+            if (EditorRegistry::IsAbstract(type))
+                continue;
+            auto editor = EditorRegistry::Create(type);
+            if (!editor)
+                continue;
+            for (auto candidate : editor->fileExtensions())
+                if (candidate == extension)
+                    return type;
+        }
+        return std::nullopt;
+    }
+
+    std::shared_ptr<Editor> EditorManager::openEditor(const std::string &type_name, const std::optional<std::string> &path)
+    {
+        std::string type = type_name;
+        if (type.empty() && path) {
+            auto from_path = EditorTypeForPath(*path);
+            if (!from_path)
+                return nullptr;
+            type = *from_path;
+        }
+
+        if (EditorRegistry::IsAbstract(type))
+            return nullptr;
+        auto editor = EditorRegistry::Create(type);
+        if (!editor)
+            return nullptr;
+
+        addEditor(editor);
+        if (path)
+            editor->open(*path);
+        return editor;
+    }
+
+    void EditorManager::addEditor(const std::shared_ptr<Editor> &editor)
+    {
+        if (std::find(m_editors.begin(), m_editors.end(), editor) != m_editors.end())
+            return;
+
+        editor->setId(m_next_editor_id++);
+        std::uint64_t index = m_editors.size();
+        m_editors.emplace_back(editor);
+
+        auto editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
+        auto &editor_container_layout = editor_container->getComponentMutable<core::components::Layout>();
+        editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
+        editor_container->setParent(*m_editor_container);
+        m_editor_containers.emplace_back(editor_container);
+
+        editor->init(*editor_container);
+        updateTopBar();
+
+        ((core::ecs::entities::UIButton)m_topbar->getChildren()[index]).press();
+    }
+
+    std::shared_ptr<Editor> EditorManager::findEditor(std::uint32_t id) const
+    {
+        for (const auto &editor : m_editors)
+            if (editor->id() == id)
+                return editor;
+        return nullptr;
+    }
+
+    std::shared_ptr<Editor> EditorManager::findEditorByPath(const std::filesystem::path &path) const
+    {
+        for (const auto &editor : m_editors) {
+            if (!editor->hasFilePath())
+                continue;
+            const std::filesystem::path editor_path = ResolveProjectPath(*editor->filePath());
+            std::error_code ec;
+            if (editor_path == path || std::filesystem::equivalent(editor_path, path, ec))
+                return editor;
+        }
+        return nullptr;
+    }
+
+    void EditorManager::activateEditor(const std::shared_ptr<Editor> &editor)
+    {
+        auto it = std::find(m_editors.begin(), m_editors.end(), editor);
+        if (it == m_editors.end())
+            return;
+        const auto index = static_cast<std::size_t>(it - m_editors.begin());
+        if (m_active_editor_index == index)
+            return;
+        static_cast<core::ecs::entities::UIButton>(m_topbar->getChildren()[index]).press();
     }
 
     void EditorManager::openNewEditorSelectionPopup()
@@ -457,22 +577,7 @@ namespace atmo::editor
         open_editor_btn_layout.padding = { 8, 8, 8, 8 };
         open_editor_btn_layout.child_gap = 8;
         open_editor_btn_layout.direction = core::components::Layout::Direction::Vertical;
-        open_editor_btn->getSignal<>("Released").connect([this, new_editor]() {
-            std::uint64_t index = m_editors.size();
-            m_editors.emplace_back(new_editor);
-
-            auto editor_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
-            auto &editor_container_layout = editor_container->getComponentMutable<core::components::Layout>();
-            editor_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-            editor_container_layout.height.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
-            editor_container->setParent(*m_editor_container);
-            m_editor_containers.emplace_back(editor_container);
-
-            new_editor->init(*editor_container);
-            updateTopBar();
-
-            ((core::ecs::entities::UIButton)m_topbar->getChildren()[index]).press();
-        });
+        open_editor_btn->getSignal<>("Released").connect([this, new_editor]() { addEditor(new_editor); });
 
         auto open_editor_topbar = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         open_editor_topbar->getComponentMutable<core::components::Layout>().width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -556,6 +661,7 @@ namespace atmo::editor
 
         if (editor->hasFilePath()) {
             editor->save();
+            editor->clearDirty();
         } else {
             handleSaveAs();
         }
@@ -678,6 +784,7 @@ namespace atmo::editor
         buildFieldWidgetRows(
             meta::MetaRegistry::Instance().lookup<project::Engine>(), &draft->engine, makeSettingsSection(*body, "Engine")->getChildContainer());
         buildFieldWidgetRows(meta::MetaRegistry::Instance().lookup<project::Debug>(), &draft->debug, makeSettingsSection(*body, "Debug")->getChildContainer());
+        buildFieldWidgetRows(meta::MetaRegistry::Instance().lookup<project::Mcp>(), &draft->mcp, makeSettingsSection(*body, "MCP")->getChildContainer());
 
         auto addons_container = makeSettingsSection(*body, "Addons")->getChildContainer();
         for (auto &[addon_name, enabled] : draft->addons.addons) {

@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <stack>
+#include <string>
 #include <vector>
 
 #include "core/ecs/entities/entity.hpp"
@@ -70,14 +73,42 @@ namespace atmo::editor
         void openNewEditorSelectionPopup();
         core::ecs::entities::UIButton makeEditorCreationButton(const std::string &editor);
 
+        std::shared_ptr<Editor> openEditor(const std::string &type_name, const std::optional<std::string> &path = std::nullopt);
+        std::shared_ptr<Editor> findEditor(std::uint32_t id) const;
+        std::shared_ptr<Editor> findEditorByPath(const std::filesystem::path &path) const;
+        void activateEditor(const std::shared_ptr<Editor> &editor);
+        void closeEditor(const std::shared_ptr<Editor> &editor);
+        std::shared_ptr<Editor> activeEditor() const;
+
+        const std::vector<std::shared_ptr<Editor>> &editors() const
+        {
+            return m_editors;
+        }
+
+        Commands &commands()
+        {
+            return m_commands;
+        }
+
+        const std::string &projectPath() const
+        {
+            return m_project_path;
+        }
+
+        bool startPlay(const std::optional<std::string> &scene = std::nullopt, const std::vector<std::string> &extra_args = {});
+        void stopPlay();
+        bool isPlaying();
+
+        static std::optional<std::string> EditorTypeForPath(const std::filesystem::path &path);
+        static std::filesystem::path ResolveProjectPath(const std::string &path);
+
     private:
         void registerDefaultCommands();
         void registerShortcutDispatcher();
         void updateTopBar();
         void makeToolbar(core::ecs::entities::UI container);
-
-        std::shared_ptr<Editor> activeEditor() const;
-        void closeEditor(const std::shared_ptr<Editor> &editor);
+        void addEditor(const std::shared_ptr<Editor> &editor);
+        void updatePlayButton();
 
         void handleSave();
         void handleSaveAs();
@@ -86,10 +117,8 @@ namespace atmo::editor
         void openProjectSettings();
         std::shared_ptr<core::ecs::entities::UIFoldableTreeItem> makeSettingsSection(core::ecs::entities::UI &body, const std::string &title);
 
-        void startPlay();
-        void stopPlay();
-
         atmo::core::Engine &m_engine;
+        std::uint32_t m_next_editor_id = 1;
         std::string m_project_path;
         Commands m_commands;
         std::unique_ptr<IPlatformMenuBar> m_menu_bar;

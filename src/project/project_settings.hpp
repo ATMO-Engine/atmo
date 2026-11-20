@@ -63,6 +63,11 @@ namespace atmo
             ATMO_PROJECT_SETTING std::map<std::string, bool> addons;
         };
 
+        struct Mcp {
+            ATMO_PROJECT_SETTING bool enabled = false;
+            ATMO_PROJECT_SETTING int port = 27760;
+        };
+
         struct ProjectSettings {
             ATMO_PROJECT_SETTING App app;
             ATMO_PROJECT_SETTING Boot boot;
@@ -72,6 +77,7 @@ namespace atmo
             ATMO_PROJECT_SETTING Engine engine;
             ATMO_PROJECT_SETTING Debug debug;
             ATMO_PROJECT_SETTING Addons addons;
+            ATMO_PROJECT_SETTING Mcp mcp;
         };
     } // namespace project
 } // namespace atmo
@@ -131,5 +137,12 @@ template <> struct atmo::meta::ComponentMeta<atmo::project::Debug> {
     static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::project::Debug::draw_physics_debug>("draw_physics_debug"));
 };
 ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Debug);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Mcp> {
+    static constexpr const char *name = "ProjectSettings.Mcp";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::Mcp::enabled>("enabled"), atmo::meta::field<&atmo::project::Mcp::port>("port").withRange(1.0f, 65535.0f));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Mcp);
 
 #endif

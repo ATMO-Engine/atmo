@@ -20,6 +20,7 @@ namespace atmo::core
     public:
         void cancel() noexcept;
         bool isCancelled() const noexcept;
+        bool isDone() const;
         void wait();
 
     private:
