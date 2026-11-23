@@ -22,24 +22,6 @@ namespace atmo::core::ecs::entities
     b2DebugDraw Scene::m_debug_draw{ b2DefaultDebugDraw() };
     static constexpr int debug_draw_z_index = 1 << 20;
 
-#if defined(ATMO_PROFILING)
-    /// Feeds Box2D's own per-step timings (ms) and world counters to the profiler as plots.
-    static void PlotPhysicsStats(b2WorldId world_id)
-    {
-        const b2Profile profile = b2World_GetProfile(world_id);
-        ATMO_PROFILE_PLOT("Physics step (ms)", profile.step);
-        ATMO_PROFILE_PLOT("Physics pairs (ms)", profile.pairs);
-        ATMO_PROFILE_PLOT("Physics collide (ms)", profile.collide);
-        ATMO_PROFILE_PLOT("Physics solve (ms)", profile.solve);
-
-        const b2Counters counters = b2World_GetCounters(world_id);
-        ATMO_PROFILE_PLOT("Physics bodies", static_cast<std::int64_t>(counters.bodyCount));
-        ATMO_PROFILE_PLOT("Physics contacts", static_cast<std::int64_t>(counters.contactCount));
-        ATMO_PROFILE_PLOT("Physics islands", static_cast<std::int64_t>(counters.islandCount));
-        ATMO_PROFILE_PLOT("Physics tasks", static_cast<std::int64_t>(counters.taskCount));
-    }
-#endif
-
     void Scene::RegisterSystems(flecs::world *world)
     {
         SetupDebugDraw(&m_debug_draw);
@@ -99,9 +81,6 @@ namespace atmo::core::ecs::entities
                         ATMO_PROFILE_SCOPE_N_COLOR("Physics::Step", profiler::color::Physics);
                         b2World_Step(scene.world_id, physics_dt, 4);
                     }
-#if defined(ATMO_PROFILING)
-                    PlotPhysicsStats(scene.world_id);
-#endif
 
                     {
                         ATMO_PROFILE_SCOPE_N_COLOR("Physics::SyncTransforms", profiler::color::Physics);

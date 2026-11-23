@@ -11,6 +11,12 @@ option("tsan")
     set_description("Build debug mode with ThreadSanitizer instead of AddressSanitizer and UBSan")
 option_end()
 
+option("tracy_system_tracing")
+    set_default(false)
+    set_showmenu(true)
+    set_description("Tracy: capture call stack sampling, context switches and vsync (noisy: shows every unnamed driver/OS thread)")
+option_end()
+
 if is_mode("debug") then
     set_symbols("debug")
     set_optimize("none")
@@ -60,7 +66,16 @@ add_requires("box2d v3.1.1", { system = false })
 add_requires("argparse v3.2", { system = false })
 add_requires("ctre v3.11.0", { system = false })
 if is_mode("debug", "profile") then
-    add_requires("tracy v0.15.0", { system = false, configs = { enforce_callstack = false } })
+    -- System tracing (sampling, context switches, vsync) is off by default: it floods the timeline with
+    -- "Tracy Sampling" and unnamed driver/OS threads shown only by TID. Enable with `xmake f --tracy_system_tracing=y`.
+    local tracy_system = has_config("tracy_system_tracing")
+    add_requires("tracy v0.15.0", { system = false, configs = {
+        enforce_callstack = false,
+        system_tracing = tracy_system,
+        sampling = tracy_system,
+        context_switch = tracy_system,
+        vsync_capture = tracy_system,
+    } })
 end
 
 add_requireconfs("libsdl3_ttf.libsdl3", "libsdl3_image.libsdl3", { override = true, version = SDL_VERSION, system = false })

@@ -24,6 +24,8 @@
 #define ATMO_PROFILE_THREAD_GROUP(name, group) tracy::SetThreadNameWithHint(name, group)
 #define ATMO_PROFILE_PLOT(name, value) TracyPlot(name, value)
 #define ATMO_PROFILE_PLOT_STEP(name) TracyPlotConfig(name, tracy::PlotFormatType::Number, true, true, 0)
+/// Plot whose values are byte counts: Tracy displays them as KB/MB/GB.
+#define ATMO_PROFILE_PLOT_MEMORY(name) TracyPlotConfig(name, tracy::PlotFormatType::Memory, false, true, 0)
 #define ATMO_PROFILE_MSG(msg) TracyMessageL(msg)
 #define ATMO_PROFILE_LOCKABLE(type, var) TracyLockable(type, var)
 #define ATMO_PROFILE_LOCKABLE_N(type, var, desc) TracyLockableN(type, var, desc)
@@ -59,6 +61,7 @@ namespace atmo::profiler
 #define ATMO_PROFILE_THREAD_GROUP(name, group)
 #define ATMO_PROFILE_PLOT(name, value)
 #define ATMO_PROFILE_PLOT_STEP(name)
+#define ATMO_PROFILE_PLOT_MEMORY(name)
 #define ATMO_PROFILE_MSG(msg)
 #define ATMO_PROFILE_LOCKABLE(type, var) type var
 #define ATMO_PROFILE_LOCKABLE_N(type, var, desc) type var
@@ -89,4 +92,16 @@ namespace atmo::profiler
         inline constexpr int Workers = 2;
         inline constexpr int Scheduler = 3;
     } // namespace group
+
+    /// Memory plot names. Tracy identifies a plot by its name pointer, so every TU must use these arrays, not a copy of the literal.
+    namespace plot
+    {
+        inline constexpr char ProcessMemory[] = "Memory: RAM";
+        inline constexpr char HeapLive[] = "Memory: C++ heap live";
+        inline constexpr char HeapAllocatedPerFrame[] = "Memory: C++ heap allocated / frame";
+        inline constexpr char AllocationsPerFrame[] = "Memory: C++ allocations / frame";
+        inline constexpr char LuauHeap[] = "Memory: Luau heap";
+        inline constexpr char GpuMemory[] = "Memory: GPU";
+        inline constexpr char GpuBudget[] = "Memory: GPU (VMA budget)";
+    } // namespace plot
 } // namespace atmo::profiler

@@ -27,8 +27,10 @@
 #include "core/resource/subresources/2d/shape/circle_shape2d.hpp"
 #include "core/resource/subresources/2d/shape/rectangle_shape2d.hpp"
 #include "core/types.hpp"
+#include "impl/memory_profiler.hpp"
 #include "impl/profiler.hpp"
 #include "locale/locale_manager.hpp"
+#include "lua.h"
 #include "luau/luau.hpp"
 #include "luau/script_instance.hpp"
 #include "project/file_system.hpp"
@@ -471,6 +473,13 @@ namespace atmo::core
 
         while (m_ecs.progress(deltaTime)) {
             ATMO_PROFILE_FRAME();
+            ATMO_PROFILE_MEMORY_FRAME();
+#if defined(ATMO_PROFILING) && defined(ATMO_PROFILER_TRACY)
+            if (lua_State *L = luau::Luau::Instance().getState()) {
+                const auto luau_bytes = static_cast<std::int64_t>(lua_gc(L, LUA_GCCOUNT, 0)) * 1024 + lua_gc(L, LUA_GCCOUNTB, 0);
+                ATMO_PROFILE_PLOT(profiler::plot::LuauHeap, luau_bytes);
+            }
+#endif
             server::rendering::RenderingServer::Instance().sync();
 #if !defined(ATMO_EXPORT)
             core::resource::Shader::ReloadChanged();

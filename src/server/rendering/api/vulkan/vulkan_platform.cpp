@@ -22,6 +22,8 @@
 
 #if defined(ATMO_PROFILER_TRACY)
 #include <tracy/TracyVulkan.hpp>
+
+#include "impl/profiler.hpp"
 #endif
 
 namespace atmo::server::rendering
@@ -1341,6 +1343,23 @@ namespace atmo::server::rendering
 #if defined(ATMO_PROFILER_TRACY)
         if (m_profiler.context)
             TracyVkCollect(m_profiler.context, commands);
+
+        {
+            // VRAM: what the engine allocated through VMA, and the driver-reported usage of the whole process.
+            VmaBudget budgets[VK_MAX_MEMORY_HEAPS]{};
+            vmaGetHeapBudgets(m_allocator, budgets);
+            const VkPhysicalDeviceMemoryProperties *properties = nullptr;
+            vmaGetMemoryProperties(m_allocator, &properties);
+
+            std::int64_t allocated = 0;
+            std::int64_t usage = 0;
+            for (std::uint32_t heap = 0; heap < properties->memoryHeapCount; ++heap) {
+                allocated += static_cast<std::int64_t>(budgets[heap].statistics.allocationBytes);
+                usage += static_cast<std::int64_t>(budgets[heap].usage);
+            }
+            TracyPlot(profiler::plot::GpuMemory, allocated);
+            TracyPlot(profiler::plot::GpuBudget, usage);
+        }
 #endif
 
         m_command_list->end();

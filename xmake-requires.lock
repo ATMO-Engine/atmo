@@ -396,7 +396,7 @@
             },
             version = "v1.15.3"
         },
-        ["tracy v0.15.0#3f9f028a"] = {
+        ["tracy v0.15.0#430c4cd0"] = {
             repo = {
                 url = "deps"
             },
