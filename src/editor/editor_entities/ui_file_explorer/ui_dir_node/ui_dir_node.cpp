@@ -47,7 +47,6 @@ namespace atmo::core::ecs::entities
             dirNode.select();
         });
 
-        // UIFoldableTreeItem already handles folding for the chevron, only the selection is needed here.
         getOpenButton().getSignal<bool>("Toggle").connect([handle](bool) {
             if (!handle.is_alive())
                 return;

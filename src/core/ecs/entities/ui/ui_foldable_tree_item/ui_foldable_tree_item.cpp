@@ -4,7 +4,6 @@
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -18,7 +17,6 @@ namespace atmo::core::ecs::entities
     {
         constexpr std::string_view TitleBarName = "Foldable tree title bar";
         constexpr std::string_view OpenBoxName = "Foldable tree open checkbox";
-        constexpr std::string_view OpenIconName = "Foldable tree open icon";
         constexpr std::string_view TitleButtonName = "Foldable tree title button";
         constexpr std::string_view ChildContainerName = "Foldable tree child container";
     } // namespace
@@ -68,7 +66,6 @@ namespace atmo::core::ecs::entities
         openbox_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         openbox_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
         openbox_icon->getComponentMutable<core::components::UIImage>().rotation = 90.0f;
-        openbox_icon->rename(std::string(OpenIconName));
         openbox_icon->setParent(*openbox);
 
         openbox->rename(std::string(OpenBoxName));
@@ -81,7 +78,6 @@ namespace atmo::core::ecs::entities
             UICheckBox chBox(openbox_handle);
             auto &fodableTreeComp = chBox.getParent().getParent().getComponentMutable<core::components::UIFoldableTreeItem>();
 
-            // The button's own state is reset when the mouse leaves it, so `open` is the only source of truth.
             fodableTreeComp.open = !fodableTreeComp.open;
         });
 
@@ -104,8 +100,8 @@ namespace atmo::core::ecs::entities
 
     UIButton UIFoldableTreeItem::getOpenButton() const
     {
-        Entity title_bar = getChild(TitleBarName);
-        return UIButton(title_bar.getChild(OpenBoxName));
+        Entity title_bar = getChildren()[0];
+        return UIButton(title_bar.getChildren()[0]);
     }
 
     UIButton UIFoldableTreeItem::getTitleButton() const
@@ -131,8 +127,8 @@ namespace atmo::core::ecs::entities
         bool is_open = getComponentMutable<components::UIFoldableTreeItem>().open;
         auto child_container = getChildContainer();
         auto &chContainer_comp = child_container.getComponentMutable<components::UI>();
-        auto open_icon = getOpenButton().getChild(OpenIconName);
 
+        UIImage open_icon(getOpenButton().getChildren()[1]);
         open_icon.getComponentMutable<components::UIImage>().rotation = is_open ? 90.0f : 0.0f;
 
         if (!child_container.getChildren().empty())
