@@ -33,6 +33,7 @@ namespace atmo::core::ecs::entities
             return "UIFoldableTreeItem";
         }
 
+        UIButton getOpenButton() const;
         UIButton getTitleButton() const;
         UIRect getChildContainer() const;
 

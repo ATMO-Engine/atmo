@@ -4,7 +4,6 @@
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "core/ecs/entities/ui/ui_checkbox/ui_checkbox.hpp"
 #include "core/ecs/entities/ui/ui_image/ui_image.hpp"
-#include "core/ecs/entities/ui/ui_label/ui_label.hpp"
 #include "core/ecs/entities/ui/ui_layout.hpp"
 #include "core/ecs/entities/ui/ui_rect/ui_rect.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -72,19 +71,14 @@ namespace atmo::core::ecs::entities
         openbox->rename(std::string(OpenBoxName));
         openbox->setParent(*title_bar);
         auto openbox_handle = openbox->getHandle();
-        openbox->getSignal<bool>("Toggle").connect([openbox_handle](bool new_state) {
+        openbox->getSignal<bool>("Toggle").connect([openbox_handle](bool) {
             if (!openbox_handle.is_alive()) {
                 return;
             }
             UICheckBox chBox(openbox_handle);
             auto &fodableTreeComp = chBox.getParent().getParent().getComponentMutable<core::components::UIFoldableTreeItem>();
-            auto &chBoxIcon = chBox.getChildren()[1].getComponentMutable<core::components::UIImage>();
 
-            fodableTreeComp.open = new_state;
-            if (fodableTreeComp.open)
-                chBoxIcon.rotation = 90.0f;
-            else
-                chBoxIcon.rotation = 0.0f;
+            fodableTreeComp.open = !fodableTreeComp.open;
         });
 
         auto title_bar_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
@@ -102,6 +96,12 @@ namespace atmo::core::ecs::entities
         child_container_layout.padding = { 16, 0, 12, 0 };
         child_container->rename(std::string(ChildContainerName));
         child_container->setParent(*this);
+    }
+
+    UIButton UIFoldableTreeItem::getOpenButton() const
+    {
+        Entity title_bar = getChildren()[0];
+        return UIButton(title_bar.getChildren()[0]);
     }
 
     UIButton UIFoldableTreeItem::getTitleButton() const
@@ -127,6 +127,9 @@ namespace atmo::core::ecs::entities
         bool is_open = getComponentMutable<components::UIFoldableTreeItem>().open;
         auto child_container = getChildContainer();
         auto &chContainer_comp = child_container.getComponentMutable<components::UI>();
+
+        UIImage open_icon(getOpenButton().getChildren()[1]);
+        open_icon.getComponentMutable<components::UIImage>().rotation = is_open ? 90.0f : 0.0f;
 
         if (!child_container.getChildren().empty())
             chContainer_comp.visible = is_open;

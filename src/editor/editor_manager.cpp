@@ -102,8 +102,8 @@ namespace atmo::editor
 
         m_commands.registerCommand(
             {
-                .id = "atmo.commands.edit.project_settings",
-                .category = "atmo.commands.edit.category",
+                .id = "atmo.commands.project.project_settings",
+                .category = "atmo.commands.project.category",
                 .shortcut = Shortcut{ SDLK_P, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
                 .action = [this] { core::SignalQueue::Enqueue([this]() { openProjectSettings(); }); },
             });
@@ -154,9 +154,6 @@ namespace atmo::editor
 
         auto scene = m_engine.getECS().getCurrentScene();
 
-        m_menu_bar = makePlatformMenuBar();
-        m_menu_bar->build(core::ecs::entities::Window(scene->getParent()), m_commands);
-
         auto window_ui_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &window_ui_container_layout = window_ui_container->getComponentMutable<core::components::Layout>();
         window_ui_container_layout.width.type = core::components::Layout::SizingAxis::SizingAxisType::GROW;
@@ -164,6 +161,9 @@ namespace atmo::editor
         window_ui_container_layout.direction = core::components::Layout::Direction::Vertical;
         window_ui_container_layout.child_alignment.horizontal = core::components::Layout::ChildAlignment::Center;
         window_ui_container->setParent(*scene);
+
+        m_menu_bar = makePlatformMenuBar();
+        m_menu_bar->build(core::ecs::entities::Window(scene->getParent()), m_commands, *window_ui_container);
 
         auto topbar_container = core::ecs::EntityRegistry::Create<core::ecs::entities::UI>("Entity::UI");
         auto &topbar_container_layout = topbar_container->getComponentMutable<core::components::Layout>();
