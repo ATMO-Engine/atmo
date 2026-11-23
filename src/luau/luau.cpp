@@ -162,6 +162,25 @@ namespace atmo
             lua_pushcfunction(
                 p_L,
                 [](lua_State *L) -> int {
+                    std::string line;
+                    const int count = lua_gettop(L);
+                    for (int i = 1; i <= count; ++i) {
+                        size_t length = 0;
+                        const char *text = luaL_tolstring(L, i, &length);
+                        if (i > 1)
+                            line += '\t';
+                        line.append(text, length);
+                        lua_pop(L, 1);
+                    }
+                    spdlog::info("[Luau] {}", line);
+                    return 0;
+                },
+                "print");
+            lua_setglobal(p_L, "print");
+
+            lua_pushcfunction(
+                p_L,
+                [](lua_State *L) -> int {
                     InputBindings::RegisterType(L);
                     PrefabBindings::RegisterType(L);
                     LuauRegistry::Instance().registerAll(L);

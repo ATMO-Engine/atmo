@@ -6,10 +6,10 @@
 #include "core/ecs/entities/2d/entity_2d.hpp"
 #include "core/ecs/entities/2d/physics_2d/body_2d/body_2d.hpp"
 #include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/scene/physics_tasks.hpp"
 #include "core/ecs/world_context.hpp"
 #include "core/event/event_registry.hpp"
 #include "core/event/events/physics_progress_tick_event/physics_progress_tick_event.hpp"
-#include "core/thread/thread_pool.hpp"
 #include "core/types.hpp"
 #include "meta/auto_register.hpp"
 #include "project/project_manager.hpp"
@@ -38,7 +38,11 @@ namespace atmo::core::ecs::entities
             debug.item = {};
         });
 
-        if (atmo::project::ProjectManager::GetSettings().debug.draw_physics_debug) {
+        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
+        const bool editor_world = ctx && ctx->is_editor_isolated;
+        const auto &debug_settings = atmo::project::ProjectManager::GetSettings().debug;
+
+        if (editor_world ? debug_settings.draw_physics_debug : debug_settings.draw_physics_debug_in_game) {
             world->system<components::Scene, components::DebugDraw2d>("Scene_DebugDraw2d")
                 .kind(flecs::OnValidate)
                 .each([](flecs::entity e, components::Scene &scene, components::DebugDraw2d &debug) {
@@ -59,8 +63,7 @@ namespace atmo::core::ecs::entities
                 });
         }
 
-        const components::WorldContext *ctx = world->try_get<components::WorldContext>();
-        if (ctx && ctx->is_editor_isolated) {
+        if (editor_world) {
             spdlog::debug("Scene::RegisterSystems: skipping physics simulation for editor-isolated world");
             return;
         }
@@ -93,33 +96,6 @@ namespace atmo::core::ecs::entities
             });
     }
 
-    void *enqueueTask(b2TaskCallback *task, int itemCount, int minRange, void *taskContext, void *userContext)
-    {
-        atmo::core::TaskHandleGroup *group = new atmo::core::TaskHandleGroup();
-
-        int maxTasks = atmo::core::ThreadPool::Instance().getWorkerCount() * 2;
-
-        int taskCount = std::min(maxTasks, (itemCount + minRange - 1) / minRange);
-
-        int chunkSize = (itemCount + taskCount - 1) / taskCount;
-
-        for (int i = 0; i < taskCount; i++) {
-            int start = i * chunkSize;
-            int end = std::min(start + chunkSize, itemCount);
-
-            if (start < end)
-                group->tasks.emplace_back(atmo::core::ThreadPool::Instance().submit([=] { task(start, end, i, taskContext); }));
-        }
-
-        return group;
-    }
-
-    void finishTask(void *userTask, void *userContext)
-    {
-        for (auto task : ((atmo::core::TaskHandleGroup *)userTask)->tasks) task.wait();
-        delete (atmo::core::TaskHandleGroup *)userTask;
-    }
-
     void Scene::initialize()
     {
         Entity::initialize();
@@ -132,9 +108,9 @@ namespace atmo::core::ecs::entities
 
         auto gravity = atmo::project::ProjectManager::GetSettings().engine.gravity;
         worldDef.gravity = { .x = gravity.x, .y = gravity.y };
-        worldDef.workerCount = atmo::core::ThreadPool::Instance().getWorkerCount();
-        worldDef.enqueueTask = enqueueTask;
-        worldDef.finishTask = finishTask;
+        worldDef.workerCount = physics::WorkerCount();
+        worldDef.enqueueTask = physics::EnqueueTask;
+        worldDef.finishTask = physics::FinishTask;
 
         scene->world_id = b2CreateWorld(&worldDef);
     }

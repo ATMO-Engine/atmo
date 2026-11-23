@@ -73,6 +73,19 @@ namespace atmo::core::ecs::entities
         ctx->viewport_dpi = rendering_server.windowGetDpiScale(window->rid);
     }
 
+    static void InitClayContext(components::Window &window)
+    {
+        auto totalMemSize = Clay_MinMemorySize();
+        window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
+
+        window.clay_context =
+            Clay_Initialize(window.clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
+                                spdlog::error("Clay error: {}", errorData.errorText.chars);
+                            } });
+
+        Clay_SetMeasureTextFunction(impl::ClayMeasureText, nullptr);
+    }
+
     void Window::initialize()
     {
         Entity::initialize();
@@ -82,6 +95,8 @@ namespace atmo::core::ecs::entities
 
         if (args::ArgManager::Get<bool>("--headless")) {
             window.headless = true;
+            window.dpi_scale = { 1.0f, 1.0f };
+            InitClayContext(window);
             return;
         }
 
@@ -133,15 +148,7 @@ namespace atmo::core::ecs::entities
             }
         });
 
-        auto totalMemSize = Clay_MinMemorySize();
-        window.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemSize, SDL_malloc(totalMemSize));
-
-        window.clay_context =
-            Clay_Initialize(window.clay_arena, { (float)window.size.x, (float)window.size.y }, { .errorHandlerFunction = [](Clay_ErrorData errorData) {
-                                spdlog::error("Clay error: {}", errorData.errorText.chars);
-                            } });
-
-        Clay_SetMeasureTextFunction(impl::ClayMeasureText, nullptr);
+        InitClayContext(window);
     }
 
     bool Window::setTitle(const std::string &name)

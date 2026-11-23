@@ -2,6 +2,7 @@
 #include <exception>
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <system_error>
 #include <utility>
 #include "SDL3/SDL_error.h"
@@ -16,7 +17,7 @@ namespace atmo::editor
      */
     static void HandleFileDialogResult(void *userdata, const char *const *filelist, int /*filter*/)
     {
-        std::unique_ptr<FileDialogCallback> callback(static_cast<FileDialogCallback *>(userdata));
+        std::shared_ptr<FileDialogCallback> callback(static_cast<FileDialogCallback *>(userdata));
 
         if (!filelist) {
             spdlog::error("File dialog error: {}", SDL_GetError());

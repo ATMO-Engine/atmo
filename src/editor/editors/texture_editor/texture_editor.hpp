@@ -40,6 +40,11 @@ namespace atmo::editor
             return FullName();
         }
 
+        std::vector<std::string_view> fileExtensions() const override
+        {
+            return { ".atx" };
+        }
+
         void init(atmo::core::ecs::entities::UI &container) override;
         void createTools() override;
 

@@ -1,8 +1,12 @@
 #include "engine.hpp"
 
+#include <algorithm>
+#include <charconv>
+#include <chrono>
 #include <csignal>
 #include <format>
 #include <string>
+#include <thread>
 
 #include "SDL3/SDL_error.h"
 #include "SDL3/SDL_filesystem.h"
@@ -42,6 +46,8 @@
 #if !defined(ATMO_EXPORT)
 #include "editor/editor_manager.hpp"
 #include "editor/project_explorer/project_explorer.hpp"
+#include "mcp/log_buffer.hpp"
+#include "mcp/mcp_server.hpp"
 #endif
 
 static atmo::core::args::ArgManager::LaunchResult handleArgHelp(atmo::core::args::ArgManager &argManager)
@@ -163,6 +169,9 @@ namespace atmo::core
 #if defined(ATMO_DEBUG)
         spdlog::set_level(spdlog::level::debug);
 #endif
+#if !defined(ATMO_EXPORT)
+        mcp::LogBuffer::Install();
+#endif
 
         return 0;
     }
@@ -261,6 +270,13 @@ namespace atmo::core
                 "an addon with a default xmake.lua that builds a shared library the engine can load.")
             .metavar("name assets|library");
         ArgManager::AddLaunchHandler(9000, "--new-addon", handleArgNewAddon);
+
+        ArgManager::AddArgument("--mcp")
+            .nargs(ArgManager::NargsPattern::Optional)
+            .help(
+                "Start the MCP server on http://127.0.0.1:<port>/mcp so that an MCP client (an AI agent) can drive the editor (with --project) or the "
+                "running game (with --run). The port defaults to the project's mcp.port setting (27760).")
+            .metavar("port");
 #endif
 
         try {
@@ -402,7 +418,56 @@ namespace atmo::core
         m_editor->init();
         return true;
     }
+
+    void Engine::startMcp(bool game_mode)
+    {
+        int port = project::ProjectManager::GetSettings().mcp.port;
+        if (std::optional<std::string> value = args::ArgManager::Present<std::string>("--mcp")) {
+            int parsed = 0;
+            auto [end, ec] = std::from_chars(value->data(), value->data() + value->size(), parsed);
+            if (ec != std::errc() || end != value->data() + value->size() || parsed < 0 || parsed > 65535) {
+                spdlog::error("MCP: invalid port '{}'", *value);
+                return;
+            }
+            port = parsed;
+        }
+
+        auto server = std::make_unique<mcp::McpServer>(*this, game_mode ? mcp::McpServer::Mode::Game : mcp::McpServer::Mode::Editor);
+        if (!server->start("127.0.0.1", port))
+            return;
+        m_mcp = std::move(server);
+    }
 #endif
+
+    void Engine::setPaused(bool paused)
+    {
+        m_paused = paused;
+        if (!paused)
+            m_step_frames = 0;
+    }
+
+    void Engine::step(int frames, float delta_time)
+    {
+        m_paused = true;
+        m_step_frames += std::max(frames, 0);
+        m_step_delta = delta_time;
+    }
+
+    float Engine::applyTimeControl(float delta_time)
+    {
+        flecs::world &world = m_ecs.getWorld();
+        if (!m_paused) {
+            world.set_time_scale(1.0f);
+            return delta_time;
+        }
+        if (m_step_frames > 0) {
+            --m_step_frames;
+            world.set_time_scale(1.0f);
+            return m_step_delta;
+        }
+        world.set_time_scale(0.0f);
+        return delta_time;
+    }
 
     void Engine::start()
     {
@@ -443,9 +508,15 @@ namespace atmo::core
                 spdlog::warn("Run mode: no scene to load (no --run argument and no app.default_scene configured).");
             else
                 m_ecs.changeSceneToFile(scene_path);
+
+            if (args::ArgManager::IsUsed("--mcp"))
+                startMcp(true);
         } else if (std::optional<std::string> project_path = args::ArgManager::Present<std::string>("--project")) {
             if (!launchEditor(*project_path))
                 return;
+
+            if (args::ArgManager::IsUsed("--mcp") || project::ProjectManager::GetSettings().mcp.enabled)
+                startMcp(false);
         } else {
             editor::ProjectExplorer explorer(*this);
             explorer.init();
@@ -467,8 +538,12 @@ namespace atmo::core
 
         auto progress_tick = event::EventRegistry::Create<event::events::ProgressTickEvent>("Event::ProgressTickEvent");
 
+        static constexpr std::chrono::duration<double> headless_frame_time{ 1.0 / 60.0 };
+        auto frame_start = std::chrono::steady_clock::now();
+
         while (m_ecs.progress(deltaTime)) {
             ATMO_PROFILE_FRAME();
+            ++m_frame;
             server::rendering::RenderingServer::Instance().sync();
 #if !defined(ATMO_EXPORT)
             core::resource::Shader::ReloadChanged();
@@ -498,7 +573,21 @@ namespace atmo::core
                 title_update_accumulator = 0.0f;
                 frame_count = 0;
             }
+
+            deltaTime = applyTimeControl(deltaTime);
+
+            if (m_headless) {
+                std::this_thread::sleep_until(frame_start + headless_frame_time);
+                frame_start = std::chrono::steady_clock::now();
+            }
         }
+
+#if !defined(ATMO_EXPORT)
+        if (m_mcp) {
+            m_mcp->stop();
+            m_mcp.reset();
+        }
+#endif
     }
 
     void Engine::stop()
