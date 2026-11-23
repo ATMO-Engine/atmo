@@ -12,11 +12,11 @@ and has at least one shape. The simulation only runs in the game, not in the sce
 
 ## Bodies {#bodies}
 
-| Entity        | Moved by                  | Use it for                                   |
-| ------------- | ------------------------- | -------------------------------------------- |
-| `Static2d`    | Nothing                   | Floors, walls                                |
-| `Dynamic2d`   | Gravity, impulses, shocks | Balls, crates, characters driven by impulses |
-| `Kinematic2d` | Its transform             | Moving platforms, doors                      |
+| Entity          | Moved by                  | Use it for                                   |
+| --------------- | ------------------------- | -------------------------------------------- |
+| [[Static2d]]    | Nothing                   | Floors, walls                                |
+| [[Dynamic2d]]   | Gravity, impulses, shocks | Balls, crates, characters driven by impulses |
+| [[Kinematic2d]] | Its transform             | Moving platforms, doors                      |
 
 A `Kinematic2d` is not affected by gravity or shocks, and does not collide with `Static2d` or with other `Kinematic2d`.
 
@@ -27,10 +27,10 @@ While the game runs, the simulation writes the position and rotation of the bodi
 Shapes are in the `shapes` list of the **Body2dData** component. A body without a shape falls, but touches nothing and
 does not react to impulses.
 
-| Shape              | Field    | Default  |
-| ------------------ | -------- | -------- |
-| `RectangleShape2d` | `size`   | 50 by 50 |
-| `CircleShape2d`    | `radius` | 2        |
+| Shape                | Field    | Default  |
+| -------------------- | -------- | -------- |
+| [[RectangleShape2d]] | `size`   | 50 by 50 |
+| [[CircleShape2d]]    | `radius` | 2        |
 
 Sizes are in pixels. Shapes are centered on the entity, and follow its rotation but not its `scale`: set the size of the
 shape instead. A body can have several shapes, all with the same center.
@@ -52,8 +52,8 @@ Density, friction and bounciness cannot be set in the editor: every shape uses B
 
 ### Seeing the shapes {#debug}
 
-The scene editor draws the shapes over the scene. This is the `draw_physics_debug` [[project-settings#debug|project
-setting]].
+The scene editor draws the shapes over the scene. This is the `draw_physics_debug`
+[[project-settings#debug|project setting]].
 
 ## Units {#units}
 

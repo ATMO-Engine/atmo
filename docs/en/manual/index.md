@@ -17,9 +17,9 @@ The manual explains the engine's systems and how they work together. Start with 
 - [[luau-api]]: every engine type and function available to scripts.
 - [[prefabs]]: save entities to a file, and load them from the editor or from scripts.
 - [[project-settings]]: every project setting and what it changes.
-- [[entities]]: the entity types and the fields of their components.
-- [[physics]]: bodies, shapes, units, and how to move bodies.
-- [[ui]]: labels, buttons and their layout.
+- [[page:entities]]: the entity types and the fields of their components.
+- [[page:physics]]: bodies, shapes, units, and how to move bodies.
+- [[page:ui]]: labels, buttons and their layout.
 - [[texture-editor]]: draw images with layers and frames.
 - [[exporting]]: turn a project into a standalone executable.
 - [[addons]]: share assets, or extend the engine with a C++ library.

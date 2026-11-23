@@ -26,20 +26,20 @@ The UI system is used by the editor and is not finished for games:
 
 ## UI entities {#types}
 
-| Type                 | Draws                                   | Can be saved in a scene |
-| -------------------- | --------------------------------------- | ----------------------- |
-| `UI`                 | Nothing: groups and places its children | Yes                     |
-| `UIRect`             | A rectangle with a border and corners   | Yes                     |
-| `UILabel`            | Text                                    | Yes                     |
-| `UIImage`            | An image                                | Yes                     |
-| `UIButton`           | A `UIRect` that reacts to the mouse     | Yes                     |
-| `UIInput`            | A text field                            | Yes                     |
-| `UITextInput`        | A text field for a string               | Yes                     |
-| `UINumberInput`      | A text field for a number               | Yes                     |
-| `UICheckBox`         | A checkbox                              | [No](#known-issues)     |
-| `UISlider`           | A slider                                | [No](#known-issues)     |
-| `UiDropdownMenu`     | A menu that opens under the mouse       | [No](#known-issues)     |
-| `UIFoldableTreeItem` | A section that folds                    | [No](#known-issues)     |
+| Type                             | Draws                                   | Can be saved in a scene |
+| -------------------------------- | --------------------------------------- | ----------------------- |
+| [[entities::UI]]                 | Nothing: groups and places its children | Yes                     |
+| [[entities::UIRect]]             | A rectangle with a border and corners   | Yes                     |
+| [[entities::UILabel]]            | Text                                    | Yes                     |
+| [[entities::UIImage]]            | An image                                | Yes                     |
+| [[entities::UIButton]]           | A `UIRect` that reacts to the mouse     | Yes                     |
+| [[entities::UIInput]]            | A text field                            | Yes                     |
+| [[entities::UITextInput]]        | A text field for a string               | Yes                     |
+| [[entities::UINumberInput]]      | A text field for a number               | Yes                     |
+| [[entities::UICheckBox]]         | A checkbox                              | [No](#known-issues)     |
+| [[entities::UISlider]]           | A slider                                | [No](#known-issues)     |
+| [[entities::UiDropdownMenu]]     | A menu that opens under the mouse       | [No](#known-issues)     |
+| [[entities::UIFoldableTreeItem]] | A section that folds                    | [No](#known-issues)     |
 
 The other UI types in the list belong to the editor.
 

@@ -47,7 +47,7 @@ atmo --headless --read /path/to/my-game-executable main.ascn
 
 ## Before exporting {#checklist}
 
-- Use [[projects#project-paths|`project://` paths]] everywhere. Other paths only work on your computer.
+- Use [[projects#project-paths|project:// paths]] everywhere. Other paths only work on your computer.
 - Copy the engine files that the game uses into the project, at the same place. The engine's files are found in the editor
   but **not in exported games**:
 

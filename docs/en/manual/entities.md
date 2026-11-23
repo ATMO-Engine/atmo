@@ -12,19 +12,19 @@ data: this is what the inspector shows and what scene files store.
 
 ## Entity types {#types}
 
-| Type          | Components                                         | Purpose                                          |
-| ------------- | -------------------------------------------------- | ------------------------------------------------ |
-| `Entity`      | None                                               | Groups other entities                            |
-| `Entity2d`    | [Transform2d](#transform2d)                        | Something with a place in the world              |
-| `Sprite2d`    | [Transform2d](#transform2d), [Sprite2d](#sprite2d) | Draws an image                                   |
-| `Camera2d`    | [Transform2d](#transform2d), [CameraData](#camera) | Chooses the part of the world that is shown      |
-| `Static2d`    | [Transform2d](#transform2d), [Body2dData](#body)   | Physics body that does not move: see [[physics]] |
-| `Dynamic2d`   | [Transform2d](#transform2d), [Body2dData](#body)   | Physics body moved by the simulation             |
-| `Kinematic2d` | [Transform2d](#transform2d), [Body2dData](#body)   | Physics body moved by its transform              |
-| `UI` types    | `UI`, `Layout` and others                          | Interface elements: see [[ui]]                   |
+| Type                   | Components                                         | Purpose                                               |
+| ---------------------- | -------------------------------------------------- | ----------------------------------------------------- |
+| [[Entity]]             | None                                               | Groups other entities                                 |
+| [[Entity2d]]           | [Transform2d](#transform2d)                        | Something with a place in the world                   |
+| [[entities::Sprite2d]] | [Transform2d](#transform2d), [Sprite2d](#sprite2d) | Draws an image                                        |
+| [[Camera2d]]           | [Transform2d](#transform2d), [CameraData](#camera) | Chooses the part of the world that is shown           |
+| [[Static2d]]           | [Transform2d](#transform2d), [Body2dData](#body)   | Physics body that does not move: see [[page:physics]] |
+| [[Dynamic2d]]          | [Transform2d](#transform2d), [Body2dData](#body)   | Physics body moved by the simulation                  |
+| [[Kinematic2d]]        | [Transform2d](#transform2d), [Body2dData](#body)   | Physics body moved by its transform                   |
+| UI types               | `UI`, `Layout` and others                          | Interface elements: see [[page:ui]]                   |
 
-`Body2d` cannot be created: it only groups the three kinds of bodies. `Scene` and `Window` are created by the engine: do
-not add them to a scene. The list of the editor also shows the types it uses for its own interface, such as `UIPanel`,
+[[Body2d]] cannot be created: it only groups the three kinds of bodies. [[entities::Scene]] and [[entities::Window]] are
+created by the engine: do not add them to a scene. The list of the editor also shows the types it uses for its own interface, such as `UIPanel`,
 `UIGrid` or `UIFileExplorer`. They do not exist in exported games.
 
 Every entity can also have a [Script](#script).
@@ -51,7 +51,7 @@ turn or scale with its parent: a child at (10, 0) of a parent that is rotated by
 | `material_path` | Empty        | [[shaders-and-materials#materials\|Material]] to draw with   |
 | `custom`        | (0, 0, 0, 0) | Four numbers for the material                                |
 
-Use [[projects#project-paths|`project://` paths]]. A sprite without a texture draws nothing. Textures are smooth by
+Use [[projects#project-paths|project:// paths]]. A sprite without a texture draws nothing. Textures are smooth by
 default; for pixel art, see [[screen-sizes#texture-filter]].
 
 ## CameraData {#camera}
@@ -86,9 +86,9 @@ This script is for a camera next to an entity named `Player`. Scripts cannot cha
 
 ## Body2dData {#body}
 
-| Field    | Description                                          |
-| -------- | ---------------------------------------------------- |
-| `shapes` | Collision shapes of the body: see [[physics#shapes]] |
+| Field    | Description                                               |
+| -------- | --------------------------------------------------------- |
+| `shapes` | Collision shapes of the body: see [[page:physics#shapes]] |
 
 ## Script {#script}
 

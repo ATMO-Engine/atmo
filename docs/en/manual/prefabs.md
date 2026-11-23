@@ -28,7 +28,7 @@ cannot be loaded as a prefab.
 The file contains the entity as it was when the button was pressed, including its position. The entity stays in the scene,
 and is not linked to the file.
 
-Use [[projects#project-paths|`project://` paths]] in the components, such as `script_path` and `texture_path`, so that
+Use [[projects#project-paths|project:// paths]] in the components, such as `script_path` and `texture_path`, so that
 the prefab works on other computers and in exported games.
 
 ### Names {#names}

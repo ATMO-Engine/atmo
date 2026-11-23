@@ -32,11 +32,11 @@ Closing a tab does not ask to save it.
 
 Each kind of file has its editor:
 
-| Editor          | Extension   | Documentation              |
-| --------------- | ----------- | -------------------------- |
-| Scene editor    | `.ascn`     | [This page](#scene-editor) |
-| Material editor | `.material` | [[shaders-and-materials]]  |
-| Texture editor  | `.atx`      | [[texture-editor]]         |
+| Editor                              | Extension   | Documentation              |
+| ----------------------------------- | ----------- | -------------------------- |
+| [[SceneEditor\|Scene editor]]       | `.ascn`     | [This page](#scene-editor) |
+| [[MaterialEditor\|Material editor]] | `.material` | [[shaders-and-materials]]  |
+| [[TextureEditor\|Texture editor]]   | `.atx`      | [[texture-editor]]         |
 
 - **+** opens an empty editor.
 - **Open** asks for a file. If the active tab has the right editor, the file replaces its contents; otherwise a new tab
@@ -48,7 +48,7 @@ Scripts and shaders are written in the text editor of your choice.
 ::: danger
 When a file cannot be loaded in an editor, the tab stays open and empty, and saving it replaces the file. Do not save
 after an error in the log. This concerns in particular prefabs, which [[prefabs#change|cannot be opened as scenes]], and
-[[texture-editor#known-issues|`.atx` images]].
+[[texture-editor#known-issues|.atx images]].
 :::
 
 ## Shortcuts {#shortcuts}
@@ -96,14 +96,15 @@ The **+** button of the panel adds an entity to the scene. Each row has four but
 | Disk   | [[prefabs#create-editor\|Saves the entity as a prefab]]   |
 | Cross  | Deletes the entity and its children, without confirmation |
 
-Press a row to select the entity. The types are described in [[entities]].
+Press a row to select the entity. The types are described in [[page:entities]].
 
 ### Inspector {#inspector}
 
-The inspector shows the fields of each component of the selected entity. **Add Script** adds a [[entities#script]] to it.
+The inspector shows the fields of each component of the selected entity. **Add Script** adds a [[page:entities#script|script]] to
+it.
 Components cannot be added or removed otherwise: they come with the type of the entity.
 
-Paths are typed by hand: write [[projects#project-paths|`project://` paths]]. Some fields, such as the layout of UI
+Paths are typed by hand: write [[projects#project-paths|project:// paths]]. Some fields, such as the layout of UI
 entities, show their name without any way to change them: edit the scene file instead.
 
 ## Run the game {#play}
