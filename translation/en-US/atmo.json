@@ -14,7 +14,10 @@
       "edit": {
         "category": "Edit",
         "undo": "Undo",
-        "redo": "Redo",
+        "redo": "Redo"
+      },
+      "project": {
+        "category": "Project",
         "project_settings": "Project settings"
       },
       "debug": {

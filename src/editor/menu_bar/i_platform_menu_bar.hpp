@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "core/ecs/entities/entity.hpp"
+#include "core/ecs/entities/ui/ui.hpp"
 #include "core/ecs/entities/window/window.hpp"
 #include "editor/commands/commands.hpp"
 
@@ -15,7 +15,12 @@ namespace atmo::editor
     public:
         virtual ~IPlatformMenuBar() = default;
 
-        virtual void build(core::ecs::entities::Window window_entity, Commands &commands) = 0;
+        /**
+         * @param window_entity Window the menu bar belongs to
+         * @param commands Commands listed in the menus
+         * @param container UI node the bar is attached to when the engine draws it (ignored by native menu bars)
+         */
+        virtual void build(core::ecs::entities::Window window_entity, Commands &commands, core::ecs::entities::UI container) = 0;
     };
 
     std::unique_ptr<IPlatformMenuBar> makePlatformMenuBar();
