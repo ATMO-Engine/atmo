@@ -12,7 +12,7 @@ editor with **Project > Project settings** (Ctrl+Shift+P, Cmd+Shift+P on macOS),
 without **Apply** discards the changes.
 
 Settings can also be edited in the file while the editor is closed, or with the `project_settings_set` tool of the
-[[mcp-server]]. Missing settings keep their default value.
+[[mcp-server]]. Missing settings keep their default value. In C++, they are in [[ProjectSettings]].
 
 ::: warning
 Some settings are read when the engine starts, before the project is opened. They are ignored by the editor and by run
@@ -21,13 +21,13 @@ mode, which includes the Play button. They are marked [late](#late) below.
 
 ## App {#app}
 
-| Setting           | Default                     | Description                                                                          |
-| ----------------- | --------------------------- | ------------------------------------------------------------------------------------ |
-| `project_name`    | `New Atmo Project`          | Title of the window, and [[projects#user-paths\|`user://`]] folder of exported games |
-| `default_scene`   | Empty                       | [[projects#default-scene\|First scene]] of the game                                  |
-| `icon_path`       | `project://assets/atmo.png` | Not used yet                                                                         |
-| `engine_version`  | Version of the engine       | Only in the file. Set when the project is created.                                   |
-| `project_version` |                             | Only in the file. Used in the name of `.pck` files.                                  |
+| Setting           | Default                     | Description                                                                        |
+| ----------------- | --------------------------- | ---------------------------------------------------------------------------------- |
+| `project_name`    | `New Atmo Project`          | Title of the window, and [[projects#user-paths\|user:// folder]] of exported games |
+| `default_scene`   | Empty                       | [[projects#default-scene\|First scene]] of the game                                |
+| `icon_path`       | `project://assets/atmo.png` | Not used yet                                                                       |
+| `engine_version`  | Version of the engine       | Only in the file. Set when the project is created.                                 |
+| `project_version` |                             | Only in the file. Used in the name of `.pck` files.                                |
 
 ## Boot {#boot}
 
@@ -55,11 +55,11 @@ The settings window does not show this section: edit the file or use the [[mcp-s
 
 ## Engine {#engine}
 
-| Setting              | Default      | Description                                                 |
-| -------------------- | ------------ | ----------------------------------------------------------- |
-| `gravity`            | (0, 9.81, 0) | Gravity in m/s². `z` is not used.                           |
-| `physics_frame_rate` | 60           | Physics steps per second ([late](#late))                    |
-| `pixels_per_meter`   | 50           | Conversion between pixels and meters: see [[physics#units]] |
+| Setting              | Default      | Description                                                      |
+| -------------------- | ------------ | ---------------------------------------------------------------- |
+| `gravity`            | (0, 9.81, 0) | Gravity in m/s². `z` is not used.                                |
+| `physics_frame_rate` | 60           | Physics steps per second ([late](#late))                         |
+| `pixels_per_meter`   | 50           | Conversion between pixels and meters: see [[page:physics#units]] |
 
 ## Debug {#debug}
 

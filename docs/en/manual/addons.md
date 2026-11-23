@@ -30,7 +30,7 @@ addons/My_Addon/
 
 ## The manifest {#manifest}
 
-`addon.json` describes the addon:
+`addon.json` describes the addon. Its fields are those of [[AddonHeader]]:
 
 | Field           | Description                                                                         |
 | --------------- | ----------------------------------------------------------------------------------- |
@@ -81,15 +81,15 @@ ATMO_REGISTER_ADDON()
 
 `api`, an [[AtmoAPI]], gives access to the engine:
 
-| Member                 | Description                               |
-| ---------------------- | ----------------------------------------- |
-| `engine`               | The engine, with its world                |
-| `input_manager`        | Named inputs                              |
-| `arg_manager`          | Command-line arguments                    |
-| `entity_registry`      | Entity types: see [[adding-entities]]     |
-| `subresource_registry` | Subresource types, such as physics shapes |
-| `meta_registry`        | Component types                           |
-| `rendering_server`     | Rendering                                 |
+| Member                            | Description                               |
+| --------------------------------- | ----------------------------------------- |
+| [[AtmoAPI::engine]]               | The engine, with its world                |
+| [[AtmoAPI::input_manager]]        | Named inputs                              |
+| [[AtmoAPI::arg_manager]]          | Command-line arguments                    |
+| [[AtmoAPI::entity_registry]]      | Entity types: see [[adding-entities]]     |
+| [[AtmoAPI::subresource_registry]] | Subresource types, such as physics shapes |
+| [[AtmoAPI::meta_registry]]        | Component types                           |
+| [[AtmoAPI::rendering_server]]     | Rendering                                 |
 
 Build it with the same compiler and the same version of the source code as the engine. `ATMO_DIR` is the folder of the
 engine:
@@ -120,4 +120,4 @@ An addon that cannot be loaded is skipped, and the reason is logged:
 | `addon.json not found`                              | The path in the settings is wrong                     |
 | `ATMO version mismatch`                             | `atmo_version` is not the version of the engine       |
 | `dlopen failed`, `LoadLibrary failed`               | The library is missing, not built, or misses a symbol |
-| `Symbol 'atmo_register_addon_entrypoint' not found` | The library has no `ATMO_REGISTER_ADDON`              |
+| `Symbol 'atmo_register_addon_entrypoint' not found` | The library has no [[ATMO_REGISTER_ADDON]]            |

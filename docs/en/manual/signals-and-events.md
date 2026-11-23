@@ -20,22 +20,24 @@ This page is for contributors to the engine. Neither signals nor events are avai
 
 ### Create and emit {#create-signal}
 
-Create signals in `initialize`, with the types of their arguments:
+Create a [[Signal]] with [[Entity::createSignal]] in `initialize`, with the types of its arguments:
 
 ```cpp
 createSignal<int>("Collected");
 ```
 
-and emit them:
+and emit it with [[Signal::emit]]:
 
 ```cpp
 getSignal<int>("Collected").emit(coin.value);
 ```
 
-`getSignal` must be given the same types as `createSignal`. A wrong type or an unknown name is only detected by an
-`assert`.
+[[Entity::getSignal]] must be given the same types as `createSignal`. A wrong type or an unknown name is only detected by
+an `assert`.
 
 ### Connect {#connect}
+
+Receive a signal with [[Signal::connect]]:
 
 ```cpp
 coin.getSignal<int>("Collected").connect([handle = player.getHandle()](int value) {
@@ -55,32 +57,34 @@ instead of immediately.
 
 ### Signals of entities {#entity-signals}
 
-| Signal          | Arguments                    | Emitted by                             |
-| --------------- | ---------------------------- | -------------------------------------- |
-| `child_added`   | `Entity`                     | The parent, in `setParent`             |
-| `child_removed` | `Entity`                     | The parent, in `destroy`               |
-| `renamed`       | `std::string`, `std::string` | The entity, with the old and new names |
+| Signal          | Arguments                    | Emitted by                                                    |
+| --------------- | ---------------------------- | ------------------------------------------------------------- |
+| `child_added`   | [[Entity]]                   | The parent, in [[Entity::setParent]]                          |
+| `child_removed` | [[Entity]]                   | The parent, in [[Entity::destroy]]                            |
+| `renamed`       | `std::string`, `std::string` | The entity, in [[Entity::rename]], with the old and new names |
 
 ### Signals of UI entities {#ui-signals}
 
-| Entity           | Signal                                 | Arguments      | When                                                      |
-| ---------------- | -------------------------------------- | -------------- | --------------------------------------------------------- |
-| `UIButton`       | `MouseEntered`, `MouseExited`          |                | The mouse enters or leaves                                |
-| `UIButton`       | `Pressed`, `Released`                  |                | The mouse button goes down or up. Not for toggle buttons. |
-| `UIButton`       | `Toggle`                               | `bool`         | The state of a toggle button changes                      |
-| `UISlider`       | `FloatValueChanged`, `IntValueChanged` | `float`, `int` | The value changes, depending on the type                  |
-| `UIInput`        | `TextChanged`                          | `std::string`  | After each edit                                           |
-| `UIInput`        | `Submitted`                            | `std::string`  | Enter is pressed, in a single-line field                  |
-| `UIInput`        | `FocusChanged`                         | `bool`         | The field gains or loses the focus                        |
-| `UITextInput`    | `StringValueChanged`                   | `std::string`  | An edited value is committed                              |
-| `UINumberInput`  | `FloatValueChanged`, `IntValueChanged` | `float`, `int` | An edited value is committed                              |
-| `UiDropdownMenu` | `Opened`, `Closed`                     |                | The menu opens or closes                                  |
+| Entity                       | Signal                                 | Arguments      | When                                                      |
+| ---------------------------- | -------------------------------------- | -------------- | --------------------------------------------------------- |
+| [[entities::UIButton]]       | `MouseEntered`, `MouseExited`          |                | The mouse enters or leaves                                |
+| [[entities::UIButton]]       | `Pressed`, `Released`                  |                | The mouse button goes down or up. Not for toggle buttons. |
+| [[entities::UIButton]]       | `Toggle`                               | `bool`         | The state of a toggle button changes                      |
+| [[entities::UISlider]]       | `FloatValueChanged`, `IntValueChanged` | `float`, `int` | The value changes, depending on the type                  |
+| [[entities::UIInput]]        | `TextChanged`                          | `std::string`  | After each edit                                           |
+| [[entities::UIInput]]        | `Submitted`                            | `std::string`  | Enter is pressed, in a single-line field                  |
+| [[entities::UIInput]]        | `FocusChanged`                         | `bool`         | The field gains or loses the focus                        |
+| [[entities::UITextInput]]    | `StringValueChanged`                   | `std::string`  | An edited value is committed                              |
+| [[entities::UINumberInput]]  | `FloatValueChanged`, `IntValueChanged` | `float`, `int` | An edited value is committed                              |
+| [[entities::UiDropdownMenu]] | `Opened`, `Closed`                     |                | The menu opens or closes                                  |
 
 When one button of a group is pressed, every button of the group emits `Toggle`.
 
 ## Events {#events}
 
 ### Declare an event {#declare-event}
+
+An event is a class derived from [[events::Event]], registered with [[ATMO_REGISTER_EVENT]].
 
 `score_event.hpp`:
 
@@ -117,6 +121,8 @@ ATMO_REGISTER_EVENT(atmo::core::event::events::ScoreEvent);
 
 ### Listen and dispatch {#dispatch}
 
+Events go through the [[EventRegistry]]:
+
 ```cpp
 using event::EventRegistry;
 using event::events::ScoreEvent;
@@ -133,26 +139,27 @@ EventRegistry::Dispatch(event);
 EventRegistry::RemoveCallBack<ScoreEvent>(listener);
 ```
 
-- `Dispatch` calls the listeners immediately, in the order they were added, until one consumes the event.
-- Listeners only receive their exact type: a listener of `UIEvent` does not receive a `ButtonGroupToggleEvent`.
-- Keep the number returned by `SetCallBack` and remove the listener when its owner is destroyed. For an entity, do it in
-  an observer of `flecs::OnRemove`, as `UIButton` does.
+- [[EventRegistry::Dispatch]] calls the listeners immediately, in the order they were added, until one consumes the event.
+- Listeners only receive their exact type: a listener of [[UIEvent]] does not receive a [[ButtonGroupToggleEvent]].
+- Keep the number returned by [[EventRegistry::SetCallBack]], and remove the listener with
+  [[EventRegistry::RemoveCallBack]] when its owner is destroyed. For an entity, do it in an observer of
+  `flecs::OnRemove`, as [[entities::UIButton]] does.
 - Do not add or remove listeners of a type while an event of that type is dispatched: the list is being read.
 
 ### Events of the engine {#engine-events}
 
-| Event                                      | Dispatched                                      |
-| ------------------------------------------ | ----------------------------------------------- |
-| `ProgressTickEvent`                        | At the end of each frame, with `delta_time`     |
-| `PhysicsProgressTickEvent`                 | After each physics step, with its `delta_time`  |
-| `InputEvent`                               | For each input event of SDL, as `sdl_event`     |
-| `ButtonGroupToggleEvent`                   | When a button of a group is pressed             |
-| `DropdownGroupEvent`                       | When a dropdown of a group is hovered or closed |
-| `FileSelectedEvent`, `ReloadExplorerEvent` | By the file explorer and the file watcher       |
+| Event                                          | Dispatched                                      |
+| ---------------------------------------------- | ----------------------------------------------- |
+| [[ProgressTickEvent]]                          | At the end of each frame, with `delta_time`     |
+| [[PhysicsProgressTickEvent]]                   | After each physics step, with its `delta_time`  |
+| [[InputEvent]]                                 | For each input event of SDL, as `sdl_event`     |
+| [[ButtonGroupToggleEvent]]                     | When a button of a group is pressed             |
+| [[DropdownGroupEvent]]                         | When a dropdown of a group is hovered or closed |
+| [[FileSelectedEvent]], [[ReloadExplorerEvent]] | By the file explorer and the file watcher       |
 
 ## The signal queue {#queue}
 
-Flecs does not allow entities to be created or destroyed while systems run. `SignalQueue::Enqueue` delays a function to
+Flecs does not allow entities to be created or destroyed while systems run. [[SignalQueue::Enqueue]] delays a function to
 the end of the frame, when the world can be changed:
 
 ```cpp
@@ -166,5 +173,5 @@ SignalQueue::Enqueue([handle]() {
 - Functions added while the queue is emptied run in the same frame.
 - Check that entities are still alive: another function may have destroyed them.
 
-In each frame, the order is: the systems of the world, the signal queue, `ProgressTickEvent`, then the reset of the
+In each frame, the order is: the systems of the world, the signal queue, [[ProgressTickEvent]], then the reset of the
 "just pressed" inputs.

@@ -150,7 +150,8 @@ transform.position = Vector2(10, transform.position.y)  -- correct
   `transform.position` on a `Kinematic2d`.
 - `Input.isJustReleased` is always `false` for keys. It works for mouse buttons.
 - Only a few keys can be read: see [[luau-api#input-names]].
-- Prefabs with repeated names crash the engine: see [[prefabs#names]].
+- Prefabs with repeated names crash the engine: see [[prefabs#names|the names of prefabs]].
 - Saving a prefab that was opened as a scene erases it: see [[prefabs#change]].
 - Some project settings are ignored in run mode: see [[project-settings#late]].
-- Scenes saved with some UI widgets cannot be opened again: see [[ui#known-issues]].
+- Scenes saved with some UI widgets cannot be opened again: see
+  [[page:ui#known-issues|the known issues of the user interface]].

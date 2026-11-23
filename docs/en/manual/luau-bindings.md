@@ -7,24 +7,24 @@ description: For engine contributors. Expose an entity, a component, a value or 
 
 # Adding a Luau binding
 
-This page is for contributors to the engine. A binding is a specialization of `LuaBindings<T>` that describes a C++ type to
+This page is for contributors to the engine. A binding is a specialization of [[LuaBindings]] that describes a C++ type to
 Luau. What scripts can use today is in [[luau-api]].
 
 ## Choose the base class {#base}
 
-| To expose                       | Derive from                               | Directory                     | What the script holds                                    |
-| ------------------------------- | ----------------------------------------- | ----------------------------- | -------------------------------------------------------- |
-| An entity type                  | `EntityLuaBindings`                       | `src/luau/bindings/entity`    | An entity handle                                         |
-| A component                     | `ComponentLuaBindings`                    | `src/luau/bindings/component` | The entity. The component is found again at each access. |
-| A small value, such as a vector | `ValueLuaBindings`                        | `src/luau/bindings/value`     | A copy                                                   |
-| A shared resource               | `ValueLuaBindings` of a `std::shared_ptr` | `src/luau/bindings/resource`  | A shared pointer                                         |
-| Functions, such as `Input`      | None                                      | `src/luau/bindings`           | A global table: see [functions](#functions)              |
+| To expose                       | Derive from                                 | Directory                     | What the script holds                                    |
+| ------------------------------- | ------------------------------------------- | ----------------------------- | -------------------------------------------------------- |
+| An entity type                  | [[EntityLuaBindings]]                       | `src/luau/bindings/entity`    | An entity handle                                         |
+| A component                     | [[ComponentLuaBindings]]                    | `src/luau/bindings/component` | The entity. The component is found again at each access. |
+| A small value, such as a vector | [[ValueLuaBindings]]                        | `src/luau/bindings/value`     | A copy                                                   |
+| A shared resource               | [[ValueLuaBindings]] of a `std::shared_ptr` | `src/luau/bindings/resource`  | A shared pointer                                         |
+| Functions, such as `Input`      | None                                        | `src/luau/bindings`           | A global table: see [functions](#functions)              |
 
 Scripts never hold a pointer to the memory of a component, because Flecs moves it.
 
 ## An entity {#entity}
 
-This exposes `getZoom` and `setZoom` on `Camera2d`, which has no binding today.
+This exposes [[Camera2d::getZoom]] and [[Camera2d::setZoom]], which have no binding today.
 
 `bindings_camera_entity.hpp`:
 
@@ -113,28 +113,28 @@ ATMO_REGISTER_LUA_ENTITY_BINDING(atmo::core::ecs::entities::Camera2d);
 
 `RegisterType` builds the metatable of the type, in this order:
 
-1. `__index` and `__newindex`, always the `Index` and `NewIndex` of the base class.
-2. The `__methods` table. `ChainTable` adds the methods of the parent.
-3. `RegisterProperties`, even without properties.
-4. `RegisterIsA`, which lets the methods of `Entity` accept the type. Only for entities.
-5. `Seal`, last: scripts can then no longer change the metatable.
+1. `__index` and `__newindex`, always [[LuaBindingsBase::Index]] and [[LuaBindingsBase::NewIndex]].
+2. The `__methods` table. [[LuaBindingsBase::ChainTable]] adds the methods of the parent.
+3. [[LuaBindingsBase::RegisterProperties]], even without properties.
+4. [[LuaBindingsBase::RegisterIsA]], which lets the methods of `Entity` accept the type. Only for entities.
+5. [[LuaBindingsBase::Seal]], last: scripts can then no longer change the metatable.
 
 ### How a binding is chosen {#lookup}
 
-When an entity is given to a script, [[EntityRegistry]]'s full name is read from the end, and the first type with a
-binding wins. `Entity::Entity2d::Camera2d` looks for `Camera2d`, then `Entity2d`, then `Entity`. This is why `name` must be
-the `LocalName` of the entity.
+When an entity is given to a script, [[LuauRegistry::pushEntity]] reads its full name from the end, and the first type
+with a binding wins. `Entity::Entity2d::Camera2d` looks for `Camera2d`, then `Entity2d`, then `Entity`. This is why `name`
+must be the `LocalName` of the entity.
 
 ## Properties {#properties}
 
 `m_properties` ends with `{ nullptr, nullptr, nullptr }`. Use these functions to fill it:
 
-| Function              | For                                                                 |
-| --------------------- | ------------------------------------------------------------------- |
-| `makeFloatProperty`   | A `float`                                                           |
-| `makeVector2Property` | A vector: it is read as a copy, and written whole                   |
-| `makeProperty`        | A number or a string                                                |
-| `makeValueProperty`   | A field of a value type: reading works, and writing raises an error |
+| Function                | For                                                                 |
+| ----------------------- | ------------------------------------------------------------------- |
+| [[makeFloatProperty]]   | A `float`                                                           |
+| [[makeVector2Property]] | A vector: it is read as a copy, and written whole                   |
+| [[makeProperty]]        | A number or a string                                                |
+| [[makeValueProperty]]   | A field of a value type: reading works, and writing raises an error |
 
 A property without a setter is read-only:
 
@@ -146,33 +146,34 @@ Property LuaBindings<Transform2d>::m_properties[] = { makeVector2Property("posit
 
 ## Components and values {#components}
 
-Follow `bindings_transform2` and `bindings_vector2`. They are registered with `ATMO_REGISTER_LUA_COMPONENT_BINDING`, which
-is also the macro for values and resources. Give them to scripts with:
+Follow `bindings_transform2` and `bindings_vector2`. They are registered with [[ATMO_REGISTER_LUA_COMPONENT_BINDING]],
+which is also the macro for values and resources. Give them to scripts with:
 
-| Function                       | Base class             | Gives                                      |
-| ------------------------------ | ---------------------- | ------------------------------------------ |
-| `PushComponent(state, entity)` | `ComponentLuaBindings` | The component of an entity                 |
-| `PushOwned(state, pointer)`    | `ComponentLuaBindings` | An object made with `new`, deleted by Luau |
-| `Push(state, value)`           | `ValueLuaBindings`     | A copy                                     |
+| Function                                | Gives                                      |
+| --------------------------------------- | ------------------------------------------ |
+| [[ComponentLuaBindings::PushComponent]] | The component of an entity                 |
+| [[ComponentLuaBindings::PushOwned]]     | An object made with `new`, deleted by Luau |
+| [[ValueLuaBindings::Push]]              | A copy                                     |
 
 For a constructor, such as `Vector2(1, 2)`, set a global function with the name of the type after `lua_pop`.
 
 ## Functions {#functions}
 
 For a group of functions such as `Input`, write a class with a static `RegisterType` that fills a table and calls
-`lua_setglobal`, then call it from `Luau::registerBindings` in `src/luau/luau.cpp`. It must be there: globals cannot be
-added once `luaL_sandbox` has been called.
+`lua_setglobal`, as [[InputBindings]] does, then call it from [[Luau::registerBindings]]. It must be there: globals cannot
+be added once `luaL_sandbox` has been called.
 
 ## Rules {#rules}
 
-- Read the arguments with the `luaL_check` functions, which raise clear errors. Read bound types with `CheckPtr`.
+- Read the arguments with the `luaL_check` functions, which raise clear errors. Read bound types with
+  [[LuaBindingsBase::CheckPtr]].
 - For an entity, `CheckPtr` only checks the type. Check `is_alive()` before any access.
 - Return `nil` for what is missing, and raise an error with `luaL_error` for a wrong use.
 - `luaL_error` does not return. Do not call it while objects with a destructor, such as a `std::string`, are alive unless
   they are safe to unwind.
 - Scripts run inside systems, while the world is read-only. Creating or destroying an entity, or adding a component, must
-  go through `SignalQueue::Enqueue`, as `Prefab.instantiate` does.
-- A callback given by a script is kept with `LuauRef` and called with `Luau::ProtectedCall`.
+  go through [[SignalQueue::Enqueue]], as [[PrefabBindings]] does.
+- A callback given by a script is kept with [[LuauRef]] and called with [[Luau::ProtectedCall]].
 - Name methods and properties in `camelCase`, and types like the C++ ones.
 - One registration macro per `.cpp` file.
 

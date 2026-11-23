@@ -7,7 +7,7 @@ description: Draw images with layers and frames, import sprite sheets, and expor
 
 # Texture editor
 
-The texture editor draws images made of layers and animation frames. Open it with **+** in the tab bar.
+The [[TextureEditor|texture editor]] draws images made of layers and animation frames. Open it with **+** in the tab bar.
 
 ::: danger
 `.atx` images, the format of the editor, currently [cannot be opened again](#known-issues). Export your work to `.png`.
@@ -80,7 +80,7 @@ are lost.
 
 ## Use the image in a game {#use}
 
-Export it to `.png` and write its path in `texture_path`: see [[entities#sprite2d]]. Sprites cannot use `.atx` files, and
+Export it to `.png` and write its path in `texture_path`: see [[page:entities#sprite2d]]. Sprites cannot use `.atx` files, and
 do not animate sprite sheets.
 
 ## File explorer {#file-explorer}
