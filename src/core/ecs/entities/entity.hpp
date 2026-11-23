@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <typeindex>
@@ -33,19 +34,26 @@ namespace atmo::core
 
         static void Enqueue(std::function<void()> fn)
         {
+            std::lock_guard lock(s_mutex);
             s_pending.emplace_back(std::move(fn));
         }
 
         static void Flush()
         {
-            while (!s_pending.empty()) {
-                auto tasks = std::move(s_pending);
-                s_pending.clear();
+            for (;;) {
+                std::vector<std::function<void()>> tasks;
+                {
+                    std::lock_guard lock(s_mutex);
+                    if (s_pending.empty())
+                        return;
+                    tasks.swap(s_pending);
+                }
                 for (auto &t : tasks) t();
             }
         }
 
         static inline flecs::world *s_world = nullptr;
+        static inline std::mutex s_mutex;
         static inline std::vector<std::function<void()>> s_pending;
     };
 

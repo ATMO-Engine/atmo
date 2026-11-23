@@ -79,6 +79,33 @@ Options are set once with `xmake f` and kept for later builds.
 | `--rendering_metal=y\|n`  | on for macOS             | Builds the [[rendering#metal\|Metal rendering platform]]   |
 | `--rendering_vulkan=y\|n` | on for Windows and Linux | Builds the [[rendering#vulkan\|Vulkan rendering platform]] |
 | `--tsan=y\|n`             | off                      | ThreadSanitizer in debug builds, instead of ASan/UBSan     |
+| `--coverage=y\|n`         | off                      | Writes a [coverage report](#coverage) after `xmake test`   |
+
+## Test coverage {#coverage}
+
+```sh
+xmake f --coverage=y
+xmake build atmo-test
+xmake test -v
+```
+
+With `--coverage=y`, `atmo-test` is built with coverage instrumentation, and each `xmake test` run prints the line,
+function and branch coverage of `src/` and writes `build/coverage/`:
+
+| File                             | Content                                                   |
+| -------------------------------- | --------------------------------------------------------- |
+| `build/coverage/html/index.html` | Browsable report, with the hit count of each line         |
+| `build/coverage/lcov.info`       | LCOV data, for editor extensions such as Coverage Gutters |
+
+The report needs clang or g++, so it is not available with MSVC:
+
+- clang uses LLVM source-based coverage. On macOS, `llvm-profdata` and `llvm-cov` come from Xcode. Elsewhere they
+  are looked up on the `PATH`, or in the `LLVM_PROFDATA` and `LLVM_COV` environment variables, and must match the
+  clang version.
+- g++ uses gcov, and the report is made by [gcovr](https://gcovr.com) (`pipx install gcovr`).
+
+Each run replaces the previous report. Release builds report less precise line counts than debug builds, because
+optimized code no longer maps exactly to source lines. `xmake f --coverage=n` removes the instrumentation again.
 
 ## Command-line options {#command-line}
 

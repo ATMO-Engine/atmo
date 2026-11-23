@@ -2,14 +2,16 @@
 #include <exception>
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <system_error>
+#include "core/ecs/entities/entity.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
 {
     static void HandleFileDialogResult(void *userdata, const char *const *filelist, int /*filter*/)
     {
-        std::unique_ptr<FileDialogCallback> callback(static_cast<FileDialogCallback *>(userdata));
+        std::shared_ptr<FileDialogCallback> callback(static_cast<FileDialogCallback *>(userdata));
 
         if (!filelist) {
             spdlog::error("File dialog error: {}", SDL_GetError());
@@ -18,11 +20,13 @@ namespace atmo::editor
         if (!filelist[0])
             return;
 
-        try {
-            (*callback)(filelist[0]);
-        } catch (const std::exception &e) {
-            spdlog::error("File dialog action failed: {}", e.what());
-        }
+        core::SignalQueue::Enqueue([callback, path = std::string(filelist[0])] {
+            try {
+                (*callback)(path);
+            } catch (const std::exception &e) {
+                spdlog::error("File dialog action failed: {}", e.what());
+            }
+        });
     }
 
     static std::string DialogLocation(const std::string &default_location)

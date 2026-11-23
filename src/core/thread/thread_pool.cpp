@@ -22,6 +22,12 @@ namespace atmo::core
         m_state->cv.wait(lock, [state = m_state] { return state->done; });
     }
 
+    bool TaskHandle::isDone() const
+    {
+        std::lock_guard lock(m_state->mutex);
+        return m_state->done;
+    }
+
     void ThreadPool::WorkQueue::push(TaskItem item)
     {
         std::lock_guard lock(m_mutex);
@@ -48,7 +54,24 @@ namespace atmo::core
         return item;
     }
 
-    ThreadPool::ThreadPool() : m_worker_count(std::max(1u, std::thread::hardware_concurrency()))
+    namespace
+    {
+        struct CurrentWorker {
+            const ThreadPool *pool = nullptr;
+            std::size_t index = 0;
+        };
+
+        thread_local CurrentWorker current_worker;
+    } // namespace
+
+    std::optional<std::size_t> ThreadPool::currentWorkerIndex() const
+    {
+        if (current_worker.pool != this)
+            return std::nullopt;
+        return current_worker.index;
+    }
+
+    ThreadPool::ThreadPool(std::size_t worker_count) : m_worker_count(std::max<std::size_t>(1, worker_count))
     {
         m_queues.reserve(m_worker_count);
         for (std::size_t i = 0; i < m_worker_count; ++i) m_queues.push_back(std::make_unique<WorkQueue>());
@@ -61,7 +84,7 @@ namespace atmo::core
 
     ThreadPool &ThreadPool::Instance()
     {
-        static ThreadPool pool;
+        static ThreadPool pool(std::max(1u, std::thread::hardware_concurrency()));
         return pool;
     }
 
@@ -69,6 +92,17 @@ namespace atmo::core
     {
         auto state = std::make_shared<TaskHandle::State>();
         enqueue({ .fn = std::move(fn), .control = state, .remaining = 1, .delay = {} });
+        return TaskHandle(std::move(state));
+    }
+
+    TaskHandle ThreadPool::submitAfter(std::function<void()> fn, std::chrono::milliseconds delay)
+    {
+        auto state = std::make_shared<TaskHandle::State>();
+        TaskItem item{ .fn = std::move(fn), .control = state, .remaining = 1, .delay = delay };
+        if (delay.count() > 0)
+            reschedule(std::move(item));
+        else
+            enqueue(std::move(item));
         return TaskHandle(std::move(state));
     }
 
@@ -88,6 +122,9 @@ namespace atmo::core
     {
         std::size_t idx = m_dispatch_idx.fetch_add(1, std::memory_order_relaxed) % m_worker_count;
         m_queues[idx]->push(std::move(item));
+        {
+            std::lock_guard lock(m_work_mutex);
+        }
         m_work_cv.notify_one();
     }
 
@@ -139,6 +176,7 @@ namespace atmo::core
 
     void ThreadPool::workerLoop(std::stop_token stoken, std::size_t idx)
     {
+        current_worker = { .pool = this, .index = idx };
         while (!stoken.stop_requested()) {
             auto task = tryGetTask(idx);
 

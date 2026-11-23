@@ -277,6 +277,11 @@ namespace atmo::editor
         }
     }
 
+    void MaterialEditor::reloadFromMaterial()
+    {
+        setMaterial(m_material);
+    }
+
     void MaterialEditor::setMaterial(std::shared_ptr<core::resource::Material> material)
     {
         m_material = std::move(material);

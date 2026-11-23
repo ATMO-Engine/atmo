@@ -48,6 +48,13 @@ namespace atmo::editor
             return FullName();
         }
 
+        std::vector<std::string_view> fileExtensions() const override
+        {
+            return { core::resource::Material::extension };
+        }
+
+        void reloadFromMaterial();
+
         void init(atmo::core::ecs::entities::UI &container) override;
         void createTools() override;
 

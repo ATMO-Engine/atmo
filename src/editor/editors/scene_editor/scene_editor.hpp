@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "core/ecs/entities/ui/ui_button/ui_button.hpp"
 #include "editor/editor_registry.hpp"
@@ -47,6 +48,11 @@ namespace atmo::editor
             return FullName();
         }
 
+        std::vector<std::string_view> fileExtensions() const override
+        {
+            return { ".ascn" };
+        }
+
         void init(atmo::core::ecs::entities::UI &container) override;
         void createTools() override;
 
@@ -72,6 +78,7 @@ namespace atmo::editor
     private:
         std::uint32_t m_tick_callback = 0;
         flecs::entity m_selected_entity;
+        std::unordered_map<flecs::entity_t, flecs::entity> m_tree_buttons;
         flecs::entity m_viewport_image;
         std::unique_ptr<EditorSceneContext> m_scene_ctx;
         std::vector<std::function<void()>> m_inspector_update_fns;
