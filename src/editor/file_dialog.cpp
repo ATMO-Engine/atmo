@@ -4,11 +4,17 @@
 #include <memory>
 #include <string>
 #include <system_error>
+#include <utility>
+#include "SDL3/SDL_error.h"
 #include "core/ecs/entities/entity.hpp"
 #include "spdlog/spdlog.h"
 
 namespace atmo::editor
 {
+    /**
+     * SDL can call this while pumping events, in the middle of the ECS frame where creating entities crashes. The action goes
+     * through the signal queue, which runs between two frames.
+     */
     static void HandleFileDialogResult(void *userdata, const char *const *filelist, int /*filter*/)
     {
         std::shared_ptr<FileDialogCallback> callback(static_cast<FileDialogCallback *>(userdata));
@@ -20,9 +26,9 @@ namespace atmo::editor
         if (!filelist[0])
             return;
 
-        core::SignalQueue::Enqueue([callback, path = std::string(filelist[0])] {
+        core::SignalQueue::Enqueue([callback = std::move(*callback), path = std::string(filelist[0])]() {
             try {
-                (*callback)(path);
+                callback(path);
             } catch (const std::exception &e) {
                 spdlog::error("File dialog action failed: {}", e.what());
             }

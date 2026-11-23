@@ -615,14 +615,14 @@ namespace atmo::core::ecs::entities
 
         /* temporary check. Must be reworked */
         auto fileSize = fs::file_size(path, ec);
-        if ((!ec && fileSize == 0) && (ext == "bmp" || ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "atmo")) {
+        if ((!ec && fileSize == 0) && (ext == "bmp" || ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "atx")) {
             spdlog::info("Import Canvas: file {} exists but is empty, creating blank 16x16 canvas", path);
             initPixelBuffer(DEFAULT_TEXTURE_SIZE, DEFAULT_TEXTURE_SIZE);
             comp.file_path = path;
             return;
         }
 
-        if (ext == "atmo") {
+        if (ext == "atx") {
             atmo::image::extension::AtmoFormat loaded;
             if (!loaded.load(path))
                 return;

@@ -227,8 +227,11 @@ namespace atmo::core::ecs::entities
     // TODO: remove once Clay is replaced with an in-house UI system.
     void Window::primeScrollContainers()
     {
-        if (Clay_Context *context = getComponent<components::Window>().clay_context)
-            Clay_SetCurrentContext(context);
+        Clay_Context *context = getComponent<components::Window>().clay_context;
+        if (!context)
+            return;
+
+        Clay_SetCurrentContext(context);
         Clay_UpdateScrollContainers(true, { 0.0f, 0.0001f }, 0.0f);
     }
 } // namespace atmo::core::ecs::entities

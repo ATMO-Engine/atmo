@@ -53,9 +53,9 @@ namespace atmo::core::ecs::entities
         void rebuild();
         void updateHighlight();
 
-        static std::shared_ptr<UIFileExplorerDirNode>
-        CreateDirNode(const FileWatcher::FileSystemNode &dir, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path);
-        static std::shared_ptr<UIFileExplorerFileNode> CreateFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path);
+        std::shared_ptr<UIFileExplorerDirNode>
+        createDirNode(const FileWatcher::FileSystemNode &dir, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path);
+        std::shared_ptr<UIFileExplorerFileNode> createFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path);
 
         UITextInput getAddInput() const;
         UITextInput getAddFolderInput() const;

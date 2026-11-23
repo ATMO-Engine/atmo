@@ -392,7 +392,7 @@ namespace atmo::core::ecs::entities
         if (tree.path.empty())
             return;
 
-        auto root_node = CreateDirNode(tree, open_paths, focused_node);
+        auto root_node = createDirNode(tree, open_paths, focused_node);
         root_node->setParent(tree_container);
     }
 
@@ -413,7 +413,7 @@ namespace atmo::core::ecs::entities
         }
     }
 
-    std::shared_ptr<UIFileExplorerFileNode> UIFileExplorer::CreateFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path)
+    std::shared_ptr<UIFileExplorerFileNode> UIFileExplorer::createFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path)
     {
         auto node = core::ecs::EntityRegistry::Create<UIFileExplorerFileNode>("Entity::UI::UIRect::UIButton::UIFileExplorerFileNode");
 
@@ -422,11 +422,20 @@ namespace atmo::core::ecs::entities
         if (file.path == focused_path)
             node->setHighlight(true);
 
+        // Connected after the selection is restored above, so rebuilding the tree doesn't open the focused file again.
+        node->getSignal<bool>("Toggle").connect([explorerHandle = p_handle, path = file.path.string()](bool state) {
+            if (!state || !explorerHandle.is_alive()) {
+                return;
+            }
+            UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(explorerHandle));
+            explorer.getSignal<std::string>("FileFocus").emit(path);
+        });
+
         return node;
     }
 
     std::shared_ptr<UIFileExplorerDirNode>
-    UIFileExplorer::CreateDirNode(const FileWatcher::FileSystemNode &dir, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path)
+    UIFileExplorer::createDirNode(const FileWatcher::FileSystemNode &dir, const std::vector<std::string> &open_paths, const std::filesystem::path &focused_path)
     {
         auto node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
         node->setPath(dir.path);
@@ -442,9 +451,9 @@ namespace atmo::core::ecs::entities
 
         for (const auto &child : dir.child) {
             if (child.is_dir)
-                CreateDirNode(child, open_paths, focused_path)->setParent(node->getChildContainer());
+                createDirNode(child, open_paths, focused_path)->setParent(node->getChildContainer());
             else
-                CreateFileNode(child, focused_path)->setParent(node->getChildContainer());
+                createFileNode(child, focused_path)->setParent(node->getChildContainer());
         }
         return node;
     }
