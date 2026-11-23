@@ -42,6 +42,7 @@ namespace atmo::core::ecs::entities
         bool isOpen() const;
         const std::string &path() const;
 
+        void select();
         void setHighlight(bool highlighted);
     };
 } // namespace atmo::core::ecs::entities

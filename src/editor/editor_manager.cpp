@@ -102,8 +102,8 @@ namespace atmo::editor
 
         m_commands.registerCommand(
             {
-                .id = "atmo.commands.edit.project_settings",
-                .category = "atmo.commands.edit.category",
+                .id = "atmo.commands.project.project_settings",
+                .category = "atmo.commands.project.category",
                 .shortcut = Shortcut{ SDLK_P, static_cast<SDL_Keymod>(PRIMARY_MOD | SDL_KMOD_SHIFT) },
                 .action = [this] { core::SignalQueue::Enqueue([this]() { openProjectSettings(); }); },
             });

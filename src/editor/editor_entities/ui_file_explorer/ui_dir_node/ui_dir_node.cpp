@@ -37,19 +37,25 @@ namespace atmo::core::ecs::entities
         getComponentMutable<components::UIFileExplorerNode>().label = title_label->getHandle();
 
         auto handle = p_handle;
-        getTitleButton().getSignal<>("Pressed").connect([handle]() {
+        getTitleButton().getSignal<>("Released").connect([handle]() {
             if (!handle.is_alive())
                 return;
 
             UIFileExplorerDirNode dirNode(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &foldComp = dirNode.getComponentMutable<core::components::UIFoldableTreeItem>();
             foldComp.open = !foldComp.open;
-
-            auto &comp = dirNode.getComponentMutable<components::UIFileExplorerNode>();
-            auto selectEvt = atmo::core::event::EventRegistry::Create<atmo::core::event::events::FileSelectedEvent>("Event::FileSelectedEvent");
-            selectEvt->path = comp.full_path;
-            atmo::core::event::EventRegistry::Dispatch(selectEvt);
+            dirNode.select();
         });
+
+        // UIFoldableTreeItem already handles folding for the chevron, only the selection is needed here.
+        getOpenButton().getSignal<bool>("Toggle").connect([handle](bool) {
+            if (!handle.is_alive())
+                return;
+
+            UIFileExplorerDirNode(core::ecs::EntityRegistry::GetEntityFromId(handle)).select();
+        });
+
+        setHighlight(false);
     }
 
     void UIFileExplorerDirNode::setPath(const std::filesystem::path &path, bool force_scan)
@@ -74,11 +80,19 @@ namespace atmo::core::ecs::entities
         return getComponent<components::UIFileExplorerNode>().full_path;
     }
 
+    void UIFileExplorerDirNode::select()
+    {
+        auto evt = atmo::core::event::EventRegistry::Create<atmo::core::event::events::FileSelectedEvent>("Event::FileSelectedEvent");
+        evt->path = path();
+        atmo::core::event::EventRegistry::Dispatch(evt);
+    }
+
     void UIFileExplorerDirNode::setHighlight(bool highlighted)
     {
         auto &rect = getTitleButton().getComponentMutable<core::components::UIRect>();
         if (highlighted) {
-            rect.color = types::Color("#DBEAFE");
+            rect.color = types::Color::BLACK;
+            rect.color.a = 0.2f;
         } else {
             rect.color = core::types::Color::TRANSPARENT_COL;
         }

@@ -33,18 +33,18 @@ namespace atmo::core::ecs::entities
         getComponentMutable<components::UIFileExplorerNode>().label = file_label->getHandle();
 
         auto handle = p_handle;
-        getSignal<>("Pressed").connect([handle]() {
+        getSignal<>("Released").connect([handle]() {
             if (!handle.is_alive()) {
                 return;
             }
             UIFileExplorerFileNode fileNode(core::ecs::EntityRegistry::GetEntityFromId(handle));
-            auto &node = fileNode.getComponentMutable<components::UIFileExplorerNode>();
-
             auto &comp = fileNode.getComponentMutable<components::UIFileExplorerNode>();
             auto selectEvt = atmo::core::event::EventRegistry::Create<atmo::core::event::events::FileSelectedEvent>("Event::FileSelectedEvent");
             selectEvt->path = comp.full_path;
             atmo::core::event::EventRegistry::Dispatch(selectEvt);
         });
+
+        setHighlight(false);
     }
 
     void UIFileExplorerFileNode::setPath(const std::filesystem::path &path)
@@ -65,7 +65,8 @@ namespace atmo::core::ecs::entities
     {
         auto &rect = getComponentMutable<core::components::UIRect>();
         if (highlighted) {
-            rect.color = types::Color("#DBEAFE");
+            rect.color = types::Color::BLACK;
+            rect.color.a = 0.2f;
         } else {
             rect.color = core::types::Color::TRANSPARENT_COL;
         }

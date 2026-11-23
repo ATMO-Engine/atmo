@@ -345,6 +345,7 @@ namespace atmo::core::ecs::entities
             UIFileExplorer explorer(core::ecs::EntityRegistry::GetEntityFromId(handle));
             auto &comp = explorer.getComponentMutable<atmo::core::components::UIFileExplorer>();
             comp.focused_path = evt->path;
+            explorer.updateHighlight();
         });
 
         rebuild();
@@ -395,36 +396,31 @@ namespace atmo::core::ecs::entities
         root_node->setParent(tree_container);
     }
 
+    void UIFileExplorer::updateHighlight()
+    {
+        const std::filesystem::path focused_path = getComponent<components::UIFileExplorer>().focused_path;
+
+        for (auto &child : getTreeContainer().getChildren(true)) {
+            if (!child.hasComponent<components::UIFileExplorerNode>())
+                continue;
+
+            const auto &node = child.getComponent<components::UIFileExplorerNode>();
+            const bool highlighted = focused_path == node.full_path;
+            if (node.is_directory)
+                UIFileExplorerDirNode(child).setHighlight(highlighted);
+            else
+                UIFileExplorerFileNode(child).setHighlight(highlighted);
+        }
+    }
+
     std::shared_ptr<UIFileExplorerFileNode> UIFileExplorer::CreateFileNode(const FileWatcher::FileSystemNode &file, const std::filesystem::path &focused_path)
     {
         auto node = core::ecs::EntityRegistry::Create<UIFileExplorerFileNode>("Entity::UI::UIRect::UIButton::UIFileExplorerFileNode");
 
-        auto &btnComp = node->getComponentMutable<core::components::UIButton>();
-        btnComp.toggle = true;
-        btnComp.group = -1;
-        auto nodeHandle = node->getHandle();
-
-        node->getSignal<bool>("Toggle").connect([nodeHandle](bool state) {
-            if (!nodeHandle.is_alive()) {
-                return;
-            }
-
-            UIFileExplorerFileNode node(nodeHandle);
-            auto &uiComp = node.getComponentMutable<core::components::UIRect>();
-            if (state) {
-                node.getSignal<>("Pressed").emit();
-                uiComp.color = core::types::Color::BLACK;
-                uiComp.color.a = 0.2f;
-            } else {
-                uiComp.color.a = 0.0f;
-            }
-        });
-
         node->setPath(file.path);
 
-        if (file.path == focused_path) {
-            node->getSignal<bool>("Toggle").emit(true);
-        }
+        if (file.path == focused_path)
+            node->setHighlight(true);
 
         return node;
     }
@@ -435,30 +431,9 @@ namespace atmo::core::ecs::entities
         auto node = core::ecs::EntityRegistry::Create<UIFileExplorerDirNode>("Entity::UI::UIRect::UIFoldableTreeItem::UIFileExplorerDirNode");
         node->setPath(dir.path);
 
-        auto btn = node->getTitleButton();
-        auto &btnComp = btn.getComponentMutable<core::components::UIButton>();
-        btnComp.toggle = true;
-        btnComp.group = -1;
-        auto btnHandle = btn.getHandle();
-        btn.getSignal<bool>("Toggle").connect([btnHandle](bool state) {
-            if (!btnHandle.is_alive()) {
-                return;
-            }
+        if (dir.path == focused_path)
+            node->setHighlight(true);
 
-            UIButton node(btnHandle);
-            auto &uiComp = node.getComponentMutable<core::components::UIRect>();
-            if (state) {
-                node.getSignal<>("Pressed").emit();
-                uiComp.color = core::types::Color::BLACK;
-                uiComp.color.a = 0.2f;
-            } else {
-                uiComp.color.a = 0.0f;
-            }
-        });
-
-        if (dir.path == focused_path) {
-            btn.getSignal<bool>("Toggle").emit(true);
-        }
         bool should_be_open = std::find(open_paths.begin(), open_paths.end(), dir.path.string()) != open_paths.end();
         if (should_be_open) {
             auto &treeComp = node->getComponentMutable<core::components::UIFoldableTreeItem>();

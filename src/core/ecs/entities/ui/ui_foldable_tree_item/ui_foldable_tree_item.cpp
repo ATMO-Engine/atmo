@@ -18,6 +18,7 @@ namespace atmo::core::ecs::entities
     {
         constexpr std::string_view TitleBarName = "Foldable tree title bar";
         constexpr std::string_view OpenBoxName = "Foldable tree open checkbox";
+        constexpr std::string_view OpenIconName = "Foldable tree open icon";
         constexpr std::string_view TitleButtonName = "Foldable tree title button";
         constexpr std::string_view ChildContainerName = "Foldable tree child container";
     } // namespace
@@ -67,24 +68,21 @@ namespace atmo::core::ecs::entities
         openbox_icon->getComponentMutable<core::components::Layout>().height.type = core::components::Layout::SizingAxis::SizingAxisType::FIXED;
         openbox_icon->getComponentMutable<core::components::Layout>().height.size = core::components::Layout::SizingAxis::MinMax{ 18.0f, 18.0f };
         openbox_icon->getComponentMutable<core::components::UIImage>().rotation = 90.0f;
+        openbox_icon->rename(std::string(OpenIconName));
         openbox_icon->setParent(*openbox);
 
         openbox->rename(std::string(OpenBoxName));
         openbox->setParent(*title_bar);
         auto openbox_handle = openbox->getHandle();
-        openbox->getSignal<bool>("Toggle").connect([openbox_handle](bool new_state) {
+        openbox->getSignal<bool>("Toggle").connect([openbox_handle](bool) {
             if (!openbox_handle.is_alive()) {
                 return;
             }
             UICheckBox chBox(openbox_handle);
             auto &fodableTreeComp = chBox.getParent().getParent().getComponentMutable<core::components::UIFoldableTreeItem>();
-            auto &chBoxIcon = chBox.getChildren()[1].getComponentMutable<core::components::UIImage>();
 
-            fodableTreeComp.open = new_state;
-            if (fodableTreeComp.open)
-                chBoxIcon.rotation = 90.0f;
-            else
-                chBoxIcon.rotation = 0.0f;
+            // The button's own state is reset when the mouse leaves it, so `open` is the only source of truth.
+            fodableTreeComp.open = !fodableTreeComp.open;
         });
 
         auto title_bar_button = core::ecs::EntityRegistry::Create<core::ecs::entities::UIButton>("Entity::UI::UIRect::UIButton");
@@ -102,6 +100,12 @@ namespace atmo::core::ecs::entities
         child_container_layout.padding = { 16, 0, 12, 0 };
         child_container->rename(std::string(ChildContainerName));
         child_container->setParent(*this);
+    }
+
+    UIButton UIFoldableTreeItem::getOpenButton() const
+    {
+        Entity title_bar = getChild(TitleBarName);
+        return UIButton(title_bar.getChild(OpenBoxName));
     }
 
     UIButton UIFoldableTreeItem::getTitleButton() const
@@ -127,6 +131,9 @@ namespace atmo::core::ecs::entities
         bool is_open = getComponentMutable<components::UIFoldableTreeItem>().open;
         auto child_container = getChildContainer();
         auto &chContainer_comp = child_container.getComponentMutable<components::UI>();
+        auto open_icon = getOpenButton().getChild(OpenIconName);
+
+        open_icon.getComponentMutable<components::UIImage>().rotation = is_open ? 90.0f : 0.0f;
 
         if (!child_container.getChildren().empty())
             chContainer_comp.visible = is_open;
