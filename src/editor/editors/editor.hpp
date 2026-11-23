@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -35,6 +36,11 @@ namespace atmo::editor
         virtual void save() = 0;
         virtual void load() = 0;
 
+        virtual std::vector<std::string_view> fileExtensions() const
+        {
+            return {};
+        }
+
         bool hasFilePath() const
         {
             return p_file_path.has_value();
@@ -49,12 +55,49 @@ namespace atmo::editor
         {
             p_file_path = path;
             load();
+            m_dirty = false;
         }
 
         void saveAs(const std::string &path)
         {
             p_file_path = path;
             save();
+            m_dirty = false;
+        }
+
+        std::uint32_t id() const
+        {
+            return m_id;
+        }
+
+        void setId(std::uint32_t id)
+        {
+            m_id = id;
+        }
+
+        bool isDirty() const
+        {
+            return m_dirty;
+        }
+
+        void markDirty()
+        {
+            m_dirty = true;
+        }
+
+        void clearDirty()
+        {
+            m_dirty = false;
+        }
+
+        bool openedByMcp() const
+        {
+            return m_opened_by_mcp;
+        }
+
+        void setOpenedByMcp(bool opened_by_mcp)
+        {
+            m_opened_by_mcp = opened_by_mcp;
         }
 
         bool isToggleToolSelected(std::string_view tool_name);
@@ -79,5 +122,8 @@ namespace atmo::editor
 
     private:
         std::vector<std::vector<EditorTool>::iterator> m_selected_tools;
+        std::uint32_t m_id = 0;
+        bool m_dirty = false;
+        bool m_opened_by_mcp = false;
     };
 } // namespace atmo::editor

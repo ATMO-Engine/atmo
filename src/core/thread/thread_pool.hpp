@@ -20,6 +20,7 @@ namespace atmo::core
     public:
         void cancel() noexcept;
         bool isCancelled() const noexcept;
+        bool isDone() const;
         void wait();
 
     private:
@@ -45,14 +46,19 @@ namespace atmo::core
     public:
         static ThreadPool &Instance();
 
+        explicit ThreadPool(std::size_t worker_count);
+        ThreadPool(const ThreadPool &) = delete;
+        ThreadPool &operator=(const ThreadPool &) = delete;
+
         TaskHandle submit(std::function<void()> fn);
+        TaskHandle submitAfter(std::function<void()> fn, std::chrono::milliseconds delay);
         TaskHandle repeat(std::function<void()> fn, int count, std::chrono::milliseconds delay = std::chrono::milliseconds{ 0 });
 
         std::size_t getWorkerCount() const;
 
-    private:
-        ThreadPool();
+        [[nodiscard]] std::optional<std::size_t> currentWorkerIndex() const;
 
+    private:
         struct TaskItem {
             std::function<void()> fn;
             std::shared_ptr<TaskHandle::State> control;

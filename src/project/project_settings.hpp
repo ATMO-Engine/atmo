@@ -57,10 +57,16 @@ namespace atmo
 
         struct Debug {
             ATMO_PROJECT_SETTING bool draw_physics_debug = true;
+            ATMO_PROJECT_SETTING bool draw_physics_debug_in_game = false;
         };
 
         struct Addons {
             ATMO_PROJECT_SETTING std::map<std::string, bool> addons;
+        };
+
+        struct Mcp {
+            ATMO_PROJECT_SETTING bool enabled = false;
+            ATMO_PROJECT_SETTING int port = 27760;
         };
 
         struct ProjectSettings {
@@ -72,6 +78,7 @@ namespace atmo
             ATMO_PROJECT_SETTING Engine engine;
             ATMO_PROJECT_SETTING Debug debug;
             ATMO_PROJECT_SETTING Addons addons;
+            ATMO_PROJECT_SETTING Mcp mcp;
         };
     } // namespace project
 } // namespace atmo
@@ -128,8 +135,17 @@ ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Engine);
 
 template <> struct atmo::meta::ComponentMeta<atmo::project::Debug> {
     static constexpr const char *name = "ProjectSettings.Debug";
-    static constexpr auto fields = std::make_tuple(atmo::meta::field<&atmo::project::Debug::draw_physics_debug>("draw_physics_debug"));
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::Debug::draw_physics_debug>("draw_physics_debug"),
+        atmo::meta::field<&atmo::project::Debug::draw_physics_debug_in_game>("draw_physics_debug_in_game"));
 };
 ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Debug);
+
+template <> struct atmo::meta::ComponentMeta<atmo::project::Mcp> {
+    static constexpr const char *name = "ProjectSettings.Mcp";
+    static constexpr auto fields = std::make_tuple(
+        atmo::meta::field<&atmo::project::Mcp::enabled>("enabled"), atmo::meta::field<&atmo::project::Mcp::port>("port").withRange(1.0f, 65535.0f));
+};
+ATMO_REGISTER_COMPONENT_NO_FLECS(atmo::project::Mcp);
 
 #endif

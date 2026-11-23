@@ -65,6 +65,8 @@ add_requires("catch2 v3.10.0", { system = false })
 add_requires("box2d v3.1.1", { system = false })
 add_requires("argparse v3.2", { system = false })
 add_requires("ctre v3.11.0", { system = false })
+add_requires("libcurl 8.21.0", { system = false })
+add_requires("llhttp v9.4.3", { system = false })
 if is_mode("debug", "profile") then
     add_requires("tracy v0.13.1", { system = false, configs = { enforce_callstack = false } })
 end
@@ -215,6 +217,13 @@ function packages()
     add_defines("FLECS_CPP_NO_AUTO_REGISTRATION", "FLECS_META=")
 end
 
+function mcp()
+    add_packages("libcurl", "llhttp")
+    if is_plat("windows") then
+        add_syslinks("Ws2_32")
+    end
+end
+
 function rendering(opt)
     local shader_targets = {}
     if has_config("rendering_vulkan") then
@@ -249,6 +258,7 @@ target("atmo")
     set_kind("binary")
     set_default(true)
     packages()
+    mcp()
     add_files("src/**.cpp")
     add_includedirs("src")
     if is_plat("macosx") then
@@ -332,6 +342,7 @@ target("atmo-test")
 
     add_deps("atmo")
     packages()
+    mcp()
     add_packages("catch2")
     add_files("tests/**.cpp")
     add_files("src/*/**.cpp")
@@ -366,7 +377,7 @@ target("atmo-export")
     set_kind("binary")
     set_default(false)
     packages()
-    add_files("src/**.cpp|src/editor/**.cpp")
+    add_files("src/**.cpp|editor/**.cpp|mcp/**.cpp")
     add_includedirs("src")
     rendering({ shader_compiler = false })
     platform_specifics()

@@ -1,6 +1,8 @@
 #include "input_manager.hpp"
+#include <algorithm>
 #include <iostream>
 #include "SDL3/SDL_events.h"
+#include "SDL3/SDL_keyboard.h"
 #include "core/event/events/sdl_event/input_event/input_event.hpp"
 #include "spdlog/spdlog.h"
 
@@ -109,6 +111,49 @@ void atmo::core::InputManager::Tick()
             mouseEvent->scroll = { 0.0f, 0.0f };
         }
     }
+}
+
+std::vector<std::string> atmo::core::InputManager::GetInputNames(bool include_internal)
+{
+    std::vector<std::string> names;
+    for (const auto &[name, inputs] : Instance().p_inputs) {
+        const bool internal = !inputs.empty() && std::all_of(inputs.begin(), inputs.end(), [](const auto &input) { return input->internal; });
+        if (include_internal || !internal)
+            names.push_back(name);
+    }
+    std::sort(names.begin(), names.end());
+    return names;
+}
+
+std::vector<SDL_Event> atmo::core::InputManager::MakeEventsForInput(const std::string &inputName, bool pressed)
+{
+    std::vector<SDL_Event> events;
+    auto it = Instance().p_inputs.find(inputName);
+    if (it == Instance().p_inputs.end())
+        return events;
+
+    for (const auto &input : it->second) {
+        SDL_Event event{};
+        if (auto key = std::dynamic_pointer_cast<KeyEvent>(input)) {
+            event.type = pressed ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+            event.key.down = pressed;
+            if (key->scancode) {
+                event.key.scancode = static_cast<SDL_Scancode>(key->key);
+                event.key.key = SDL_GetKeyFromScancode(event.key.scancode, SDL_KMOD_NONE, false);
+            } else {
+                event.key.key = static_cast<SDL_Keycode>(key->key);
+                event.key.scancode = SDL_GetScancodeFromKey(event.key.key, nullptr);
+            }
+            events.push_back(event);
+        } else if (auto button = std::dynamic_pointer_cast<MouseButtonEvent>(input)) {
+            event.type = pressed ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+            event.button.down = pressed;
+            event.button.button = static_cast<Uint8>(button->button);
+            event.button.clicks = 1;
+            events.push_back(event);
+        }
+    }
+    return events;
 }
 
 bool atmo::core::InputManager::IsPressed(const std::string &inputName)

@@ -179,6 +179,21 @@ namespace atmo::editor
         m_scene_ctx->loadSceneFromFile(*p_file_path);
     }
 
+    flecs::entity SceneEditor::getSelectedEntity()
+    {
+        return m_selected_entity.is_valid() && m_selected_entity.is_alive() ? m_selected_entity : flecs::entity();
+    }
+
+    void SceneEditor::setSelectedEntity(flecs::entity new_slected_entity)
+    {
+        auto it = m_tree_buttons.find(new_slected_entity.id());
+        if (it != m_tree_buttons.end() && it->second.is_alive()) {
+            core::ecs::entities::UIButton(it->second).press();
+            return;
+        }
+        m_selected_entity = new_slected_entity;
+    }
+
     void entityComponentFoldableTreeinit(flecs::entity entity, core::ecs::entities::Entity parent, std::vector<std::function<void()>> &update_fns)
     {
         core::ecs::entities::Entity ent(entity);
@@ -635,6 +650,7 @@ namespace atmo::editor
         title_button_comp.toggle = true;
         title_button_comp.group = 1;
         auto title_button_handle = title_button.getHandle();
+        m_tree_buttons[entity_handle.id()] = title_button_handle;
 
         title_button.getSignal<bool>("Toggle").connect([this, entity_handle, title_button_handle, component_container, child_container](bool state) {
             if (state) {
@@ -670,7 +686,9 @@ namespace atmo::editor
                     m_selected_entity = flecs::entity();
                 }
 
-                child_container.destroy();
+                m_tree_buttons.erase(entity_handle.id());
+                if (child_container.isAlive())
+                    child_container.destroy();
             });
 
         add_child_btn.getSignal<>("Released").connect([add_child_btn, entity, this]() mutable {
