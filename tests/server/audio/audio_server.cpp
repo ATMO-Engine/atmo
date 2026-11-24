@@ -615,3 +615,92 @@ TEST_CASE("buses hold when the number of frames changes between mixes", "[audio]
     RequireEqual(Mix(1), Stereo({ 0.4f }));
     RequireEqual(Mix(4), Stereo({ 0.5f, 0.6f, 0.0f, 0.0f }));
 }
+
+TEST_CASE("update ends voices when no device plays them", "[audio][update]")
+{
+    ScopedSample sample(std::vector<float>(AudioServer::sample_rate * AudioServer::channels, 0.5f));
+    ScopedVoice voice(sample);
+    Server().voicePlay(voice.rid);
+
+    Server().update(0.5f);
+    REQUIRE(Server().voiceIsPlaying(voice.rid));
+    Server().update(0.25f);
+    REQUIRE(Server().voiceIsPlaying(voice.rid));
+    Server().update(0.25f);
+    REQUIRE_FALSE(Server().voiceIsPlaying(voice.rid));
+
+    Server().voicePlay(voice.rid);
+    Server().update(0.5f);
+    REQUIRE(Server().voiceIsPlaying(voice.rid));
+}
+
+TEST_CASE("update follows the pitch", "[audio][update]")
+{
+    ScopedSample sample(std::vector<float>(AudioServer::sample_rate * AudioServer::channels, 0.5f));
+    ScopedVoice fast(sample);
+    ScopedVoice slow(sample);
+    Server().voiceSetPitch(fast.rid, 2.0f);
+    Server().voiceSetPitch(slow.rid, 0.5f);
+    Server().voicePlay(fast.rid);
+    Server().voicePlay(slow.rid);
+
+    Server().update(0.5f);
+    REQUIRE_FALSE(Server().voiceIsPlaying(fast.rid));
+    Server().update(1.0f);
+    REQUIRE(Server().voiceIsPlaying(slow.rid));
+    Server().update(0.5f);
+    REQUIRE_FALSE(Server().voiceIsPlaying(slow.rid));
+}
+
+TEST_CASE("update leaves paused and stopped voices alone", "[audio][update]")
+{
+    ScopedSample sample(Stereo({ 0.1f, 0.2f, 0.3f }));
+    ScopedVoice paused(sample);
+    ScopedVoice stopped(sample);
+    Server().voicePlay(paused.rid);
+    Server().voiceSetPaused(paused.rid, true);
+
+    Server().update(10.0f);
+    REQUIRE(Server().voiceIsPlaying(paused.rid));
+    REQUIRE_FALSE(Server().voiceIsPlaying(stopped.rid));
+    Server().voiceSetPaused(paused.rid, false);
+    RequireEqual(Mix(1), Stereo({ 0.1f }));
+}
+
+TEST_CASE("update wraps looping voices", "[audio][update]")
+{
+    ScopedSample sample(Stereo({ 0.1f, 0.2f, 0.3f, 0.4f }));
+    ScopedVoice voice(sample);
+    Server().voiceSetLoop(voice.rid, true);
+    Server().voicePlay(voice.rid);
+
+    Server().update(6.0f / AudioServer::sample_rate);
+    REQUIRE(Server().voiceIsPlaying(voice.rid));
+    const std::vector<float> out = Mix(1);
+    REQUIRE_THAT(out[0], WithinAbs(0.3f, 1e-4f));
+    REQUIRE_THAT(out[1], WithinAbs(0.3f, 1e-4f));
+}
+
+TEST_CASE("update ignores bad delta times", "[audio][update]")
+{
+    constexpr float infinity = std::numeric_limits<float>::infinity();
+    const float bad = GENERATE_COPY(0.0f, -1.0f, std::numeric_limits<float>::quiet_NaN(), infinity, -infinity);
+
+    ScopedSample sample(Stereo({ 0.1f, 0.2f }));
+    ScopedVoice voice(sample);
+    Server().voicePlay(voice.rid);
+
+    Server().update(bad);
+    REQUIRE(Server().voiceIsPlaying(voice.rid));
+    RequireEqual(Mix(1), Stereo({ 0.1f }));
+}
+
+TEST_CASE("update stops voices whose sample is empty", "[audio][update]")
+{
+    ScopedSample sample(std::vector<float>{});
+    ScopedVoice voice(sample);
+    Server().voicePlay(voice.rid);
+
+    Server().update(0.1f);
+    REQUIRE_FALSE(Server().voiceIsPlaying(voice.rid));
+}

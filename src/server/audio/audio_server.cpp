@@ -439,6 +439,34 @@ namespace atmo::server::audio
         std::ranges::copy(master.buffer, out);
     }
 
+    void AudioServer::update(float delta_time)
+    {
+        if (m_initialized || !CheckFinite(delta_time, "update") || delta_time <= 0.0f)
+            return;
+
+        const double frames = static_cast<double>(delta_time) * sample_rate;
+
+        std::lock_guard lock(m_mutex);
+        for (auto &[id, voice] : m_voices) {
+            if (!voice.playing || voice.paused)
+                continue;
+
+            const auto it = m_samples.find(voice.sample.raw());
+            if (it == m_samples.end() || it->second.frames() == 0) {
+                voice.playing = false;
+                continue;
+            }
+
+            const double length = static_cast<double>(it->second.frames());
+            voice.cursor += frames * voice.pitch;
+            if (voice.cursor < length)
+                continue;
+
+            voice.playing = voice.loop;
+            voice.cursor = voice.loop ? std::fmod(voice.cursor, length) : 0.0;
+        }
+    }
+
     void AudioServer::ProcessBus(BusState &bus)
     {
         for (float &sample : bus.buffer) sample = dsp::Sanitize(sample);

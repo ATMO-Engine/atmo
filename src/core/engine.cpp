@@ -584,6 +584,7 @@ namespace atmo::core
             }
 
             deltaTime = applyTimeControl(deltaTime);
+            server::audio::AudioServer::Instance().update(deltaTime * m_ecs.getWorld().get_info()->time_scale);
 
             if (m_headless) {
                 std::this_thread::sleep_until(frame_start + headless_frame_time);

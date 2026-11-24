@@ -96,6 +96,13 @@ namespace atmo::server::audio
          */
         void mix(float *out, int frames);
 
+        /**
+         * @brief Move the playing voices forward when no audio device does it, so that sounds still end.
+         *
+         * @param delta_time Time since the last update, in seconds
+         */
+        void update(float delta_time);
+
     private:
         AudioServer();
 
