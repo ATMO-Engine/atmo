@@ -31,7 +31,6 @@ namespace
         return AudioServer::Instance();
     }
 
-    // AudioServer is a singleton: nothing set here may leak into the next test.
     struct ScopedBuses {
         ScopedBuses() = default;
         ~ScopedBuses()
@@ -99,7 +98,6 @@ namespace
         return peak;
     }
 
-    // Amplitude of a sine, even when its peaks fall between two frames
     float Amplitude(const std::vector<float> &pcm, std::size_t from_frame)
     {
         double sum = 0.0;
@@ -122,7 +120,6 @@ namespace
         return effect;
     }
 
-    // Gain of an effect for a sine, once it has settled, in decibels
     float Gain(AudioEffect &effect, float frequency)
     {
         auto pcm = Sine(frequency);
@@ -304,7 +301,6 @@ TEST_CASE("the limiter never goes over the ceiling and keeps the shape of the so
     limiter.process(pcm.data(), second);
     REQUIRE(Peak(pcm) <= 1.0f);
 
-    // A clamp would hold 1.0 for most of each period
     std::size_t flat = 0;
     for (std::size_t i = second / 2; i < second; ++i) flat += std::abs(pcm[i * 2]) >= 0.999f;
     REQUIRE(flat < second / 2 / 10);
@@ -414,7 +410,6 @@ TEST_CASE("the tail of an effect outlives its voice", "[audio][effects][server]"
     }
     REQUIRE_THAT(Peak(Mix(second)), WithinAbs(0.25f, 1e-4f));
 
-    // Muting the bus mutes the tail too
     Server().busSetVolume(Bus::Sfx, 0.0f);
     REQUIRE(Peak(Mix(second)) == 0.0f);
 }
@@ -480,7 +475,6 @@ TEST_CASE("a sample with bad values does not break a bus for good", "[audio][eff
             FAIL("value " << value);
     }
 
-    // Once the effect is gone, nothing is left of it in the limiter
     Server().busRemoveEffect(bus, kind);
     Mix(second * 2);
     const PlayingVoice voice(Constant(0.5f, 16), bus);
@@ -497,7 +491,6 @@ TEST_CASE("ducking lowers the music while an sfx plays", "[audio][effects][ducki
     {
         const PlayingVoice sfx(Constant(0.2f, second), Bus::Sfx);
         REQUIRE_THAT(Mix(second / 2).back(), WithinAbs(0.2f + 0.1f, 1e-3f));
-        // A trigger that is not heard does not duck
         Server().busSetVolume(Bus::Sfx, 0.0f);
         REQUIRE_THAT(Mix(second * 2).back(), WithinAbs(0.4f, 1e-3f));
     }

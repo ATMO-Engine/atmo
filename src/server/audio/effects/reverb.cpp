@@ -6,7 +6,6 @@ namespace atmo::server::audio
 {
     namespace
     {
-        // Lengths of the filters in frames, for a sample rate of 44.1 kHz
         constexpr std::array<int, 8> comb_tunings{ 1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617 };
         constexpr std::array<int, 4> all_pass_tunings{ 556, 441, 341, 225 };
         constexpr int stereo_spread = 23;

@@ -24,7 +24,6 @@ namespace atmo::server::audio
 
     private:
         float m_ceiling = 1.0f;
-        // double: the last steps of a slow release are too small for a float, which would never reach 1.
         double m_release = 1.0;
         double m_gain = 1.0;
     };

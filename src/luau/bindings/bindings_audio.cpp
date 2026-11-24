@@ -30,7 +30,6 @@ namespace atmo::luau
             return *kind;
         }
 
-        // Reads an optional table of settings, such as { cutoff = 400 }
         std::vector<server::audio::EffectValue> CheckValues(lua_State *state, int index, std::span<const server::audio::EffectParameter> parameters)
         {
             std::vector<server::audio::EffectValue> values;

@@ -14,7 +14,6 @@ namespace atmo::server::audio
     {
         constexpr int frame_bytes = static_cast<int>(sizeof(float)) * AudioServer::channels;
 
-        // std::max and std::clamp let NaN through, and a NaN cursor makes mix() read outside the sample.
         bool CheckFinite(float value, const char *call)
         {
             if (std::isfinite(value))
@@ -293,7 +292,6 @@ namespace atmo::server::audio
         if (!CheckBus(bus, "busSetEffect") || !CheckEffect(kind, "busSetEffect"))
             return;
 
-        // Some effects allocate large buffers, so the audio thread must not wait for them.
         std::unique_ptr<AudioEffect> created;
         if (!busGetEffect(bus, kind))
             created = CreateEffect(kind);
@@ -314,7 +312,6 @@ namespace atmo::server::audio
         if (!CheckBus(bus, "busRemoveEffect") || !CheckEffect(kind, "busRemoveEffect"))
             return;
 
-        // Destroyed after the lock is released
         std::unique_ptr<AudioEffect> removed;
         std::lock_guard lock(m_mutex);
         removed = std::move(m_buses[BusIndex(bus)].effects[EffectIndex(kind)].effect);
@@ -407,7 +404,6 @@ namespace atmo::server::audio
                     voice.cursor = std::fmod(voice.cursor, length);
                 }
 
-                // Interpolate between the two closest frames so pitch changes stay smooth.
                 const auto frame = static_cast<std::size_t>(voice.cursor);
                 const std::size_t next = frame + 1 < total ? frame + 1 : (voice.loop ? 0 : frame);
                 const float t = static_cast<float>(voice.cursor - static_cast<double>(frame));
@@ -427,7 +423,6 @@ namespace atmo::server::audio
                 ProcessBus(bus);
         }
 
-        // Once every bus is ready: ducking reads the trigger as it is heard.
         for (BusState &bus : m_buses) {
             if (&bus == &master)
                 continue;

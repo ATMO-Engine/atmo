@@ -52,7 +52,6 @@ namespace
 
     template <typename T> void Append(std::string &out, T value)
     {
-        // WAV files are little endian
         for (std::size_t i = 0; i < sizeof(T); ++i) out.push_back(static_cast<char>((static_cast<std::uint64_t>(value) >> (8 * i)) & 0xFF));
     }
 
@@ -157,8 +156,8 @@ TEST_CASE("8-bit and float WAV files are converted", "[audio][resource]")
     REQUIRE_THAT(u8_out[1], WithinAbs(-0.5, 0.01));
 
     std::string floats;
-    Append<std::uint32_t>(floats, 0x3F000000); // 0.5f
-    Append<std::uint32_t>(floats, 0xBE800000); // -0.25f
+    Append<std::uint32_t>(floats, 0x3F000000);
+    Append<std::uint32_t>(floats, 0xBE800000);
     const auto f32 = loader.load(directory.write("f32.wav", Wav(format_float, 2, 48000, 32, floats)));
     const std::vector<float> f32_out = Render(*f32, 1);
     REQUIRE_THAT(f32_out[0], WithinAbs(0.5, 1e-6));

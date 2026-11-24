@@ -24,7 +24,6 @@ namespace atmo::server::audio
         Reverb
     };
 
-    // In the order of EffectKind
     inline constexpr std::array<std::string_view, 5> effect_names{ "high_pass", "low_pass", "eq", "delay", "reverb" };
 
     inline constexpr std::size_t max_effect_parameters = 4;

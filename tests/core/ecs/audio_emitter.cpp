@@ -32,7 +32,6 @@ using Emitter = atmo::core::ecs::entities::AudioEmitter;
 
 namespace
 {
-    // A world with AudioEmitter only, and WAV files whose frames all hold the same value.
     struct TestWorld {
         std::filesystem::path root = std::filesystem::temp_directory_path() / "atmo-audio-emitter-test";
         flecs::world world;
@@ -45,7 +44,6 @@ namespace
             Emitter::RegisterSystems(&world);
         }
 
-        // A second world, without touching the files of the first one
         struct Editor {
             flecs::world world;
 
@@ -107,7 +105,6 @@ namespace
         return { out[0], out[1] };
     }
 
-    // AudioServer is a singleton: bus volumes must not leak into the next test.
     struct ScopedBusVolume {
         Bus bus;
 
@@ -360,7 +357,6 @@ TEST_CASE("changing the path stops the old sound and keeps the settings", "[audi
     const std::string first = test.wav("a.wav", 0.5f);
     emitter->setAudioPath(first);
 
-    // Another owner keeps the first sample alive: it must stop all the same
     auto other = test.create();
     other->setAudioPath(first);
     emitter->play();
@@ -525,7 +521,6 @@ TEST_CASE("an emitter saved in a scene plays once loaded", "[audio][ecs]")
     TestWorld test;
     const std::string path = test.wav("music.wav", 0.5f);
 
-    // Saved from a first world, as the editor does
     std::string json;
     {
         TestWorld::Editor editor;
@@ -556,7 +551,6 @@ TEST_CASE("an emitter saved in a scene plays once loaded", "[audio][ecs]")
     REQUIRE(emitter.isPlaying());
     REQUIRE(Near(MixFrame().first, 0.25f));
 
-    // Destroying the parent takes the emitter with it
     loaded->getHandle().destruct();
     REQUIRE(MixFrame().first == 0.0f);
 }
@@ -624,7 +618,6 @@ TEST_CASE("an unknown bus in a scene does not lose the other settings", "[audio]
     REQUIRE(emitter.loop);
     REQUIRE(emitter.volume == 0.25f);
 
-    // Scenes saved before the buses existed
     AudioEmitter old;
     REQUIRE(info->from_json(&old, R"({"audio_path":"a.wav","volume":0.25})"));
     REQUIRE(old.bus == "master");

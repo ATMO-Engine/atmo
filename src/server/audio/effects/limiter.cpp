@@ -26,7 +26,6 @@ namespace atmo::server::audio
                 m_gain = static_cast<double>(m_ceiling) / peak;
             const auto gain = static_cast<float>(m_gain);
 
-            // The product can exceed the ceiling by a rounding error.
             left = std::clamp(left * gain, -m_ceiling, m_ceiling);
             right = std::clamp(right * gain, -m_ceiling, m_ceiling);
         }

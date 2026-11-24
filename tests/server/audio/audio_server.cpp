@@ -21,7 +21,6 @@ namespace
         return AudioServer::Instance();
     }
 
-    // AudioServer is a singleton: every test frees what it creates so voices never leak into the next one.
     struct ScopedSample {
         SampleRid rid;
 
@@ -53,7 +52,6 @@ namespace
         ScopedVoice &operator=(const ScopedVoice &) = delete;
     };
 
-    // Same for bus volumes
     struct ScopedBusVolumes {
         ScopedBusVolumes() = default;
         ~ScopedBusVolumes()
@@ -65,7 +63,6 @@ namespace
         ScopedBusVolumes &operator=(const ScopedBusVolumes &) = delete;
     };
 
-    // The limiter remembers loud sounds: it must be back to rest for the next test.
     struct ScopedLimiter {
         ScopedLimiter() = default;
         ~ScopedLimiter()
@@ -93,7 +90,6 @@ namespace
         return pcm;
     }
 
-    // Starts from garbage so the tests notice when mix() does not clear the buffer.
     std::vector<float> Mix(int frames)
     {
         std::vector<float> out(static_cast<std::size_t>(frames) * AudioServer::channels, 42.0f);
@@ -194,7 +190,6 @@ TEST_CASE("looping keeps the fractional overshoot and blends the seam", "[audio]
     Server().voiceSetPitch(voice.rid, 1.5f);
     Server().voicePlay(voice.rid);
 
-    // Cursor: 0, 1.5 (between the last and first frame), 3 -> 1, 2.5 -> 0.5
     RequireEqual(Mix(4), Stereo({ 0.0f, 0.2f, 0.4f, 0.2f }));
 }
 
@@ -269,7 +264,6 @@ TEST_CASE("pitch below one interpolates and lengthens the sound", "[audio][mix]"
     Server().voiceSetPitch(voice.rid, 0.25f);
     Server().voicePlay(voice.rid);
 
-    // The last frame has nothing to blend with, so it is held.
     RequireEqual(Mix(9), { 0.0f, 0.4f, 0.1f, 0.3f, 0.2f, 0.2f, 0.3f, 0.1f, 0.4f, 0.0f, 0.4f, 0.0f, 0.4f, 0.0f, 0.4f, 0.0f, 0.0f, 0.0f });
 }
 
@@ -322,7 +316,6 @@ TEST_CASE("voices are summed and keep their own settings", "[audio][mix]")
     Server().voiceSetVolume(b.rid, 0.5f);
     Server().voicePlay(b.rid);
 
-    // a is at 0.2, 0.3 then over; b starts at 0.05, 0.1, 0.15
     RequireEqual(Mix(3), Stereo({ 0.25f, 0.4f, 0.15f }));
 }
 
@@ -336,13 +329,11 @@ TEST_CASE("the mix is limited after summing, not before", "[audio][mix]")
     ScopedVoice c(opposite);
     for (const VoiceRid voice : { a.rid, b.rid, c.rid }) Server().voicePlay(voice);
 
-    // Second frame: -1.6 + 0.5 = -1.1, still turned down by the 1 / 1.6 of the first one
     const auto out = Mix(2);
     REQUIRE(out[0] == 1.0f);
     REQUIRE(out[1] == 1.0f);
     REQUIRE_THAT(out[2], WithinAbs(-1.1f / 1.6f, 1e-3f));
 
-    // Nothing is limited when the sum fits
     ScopedLimiter::Settle();
     ScopedSample inverse(Stereo({ -0.8f }));
     ScopedVoice d(inverse);
@@ -365,7 +356,6 @@ TEST_CASE("freeing a sample stops the voices using it and no others", "[audio]")
     REQUIRE(Server().voiceIsPlaying(b.rid));
     RequireEqual(Mix(1), Stereo({ 0.2f }));
 
-    // A new sample may reuse the slot, but the voice must not pick it up.
     ScopedSample reused(Stereo({ 0.7f }));
     REQUIRE(reused.rid.slot() == freed.rid.slot());
     Server().voicePlay(a.rid);
@@ -477,7 +467,6 @@ TEST_CASE("a bus volume only affects its own voices", "[audio][mix][bus]")
         Bus bus;
         float expected;
     };
-    // One voice per bus: 0.1 in Master, 0.2 in Music, 0.4 in Sfx
     const Case c = GENERATE(Case{ Bus::Music, 0.6f }, Case{ Bus::Sfx, 0.5f }, Case{ Bus::Master, 0.35f });
 
     ScopedBusVolumes reset;
@@ -553,7 +542,6 @@ TEST_CASE("the limiter applies after the bus volumes", "[audio][mix][bus]")
         Server().voicePlay(voice);
     }
 
-    // 1.6 * 0.5 = 0.8: limiting the bus or Master before its volume would give 0.5
     Server().busSetVolume(Bus::Sfx, 0.5f);
     RequireEqual(Mix(1), Stereo({ 0.8f }));
     Server().busSetVolume(Bus::Sfx, 1.0f);

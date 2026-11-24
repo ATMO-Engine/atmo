@@ -29,7 +29,6 @@ using Emitter = atmo::core::ecs::entities::AudioEmitter;
 
 namespace
 {
-    // AudioServer is a singleton: bus settings must not leak into the next test.
     struct ScopedBuses {
         ScopedBuses() = default;
         ~ScopedBuses()
@@ -76,7 +75,6 @@ namespace
             return (root / name).generic_string();
         }
 
-        // 0.1 s of silence, stereo 16-bit 48 kHz
         std::string wav() const
         {
             const auto append = [](std::string &out, std::uint32_t number, int bytes) {
@@ -98,7 +96,6 @@ namespace
             return write("sound.wav", out + data);
         }
 
-        // Runs code with the emitter as "this", like ScriptInstance does. Returns the error, empty on success.
         std::string run(const std::string &code) const
         {
             lua_State *vm = Luau::Instance().getState();
@@ -291,7 +288,6 @@ TEST_CASE("scripts read and write the bus volumes", "[audio][luau][bus]")
     )")
                 .empty());
 
-    // Another script sees the same volumes
     REQUIRE(test.run("assert(Audio.getBusVolume('music') == 0.5)").empty());
     REQUIRE(test.run("Audio.setBusVolume('music', 0/0) assert(Audio.getBusVolume('music') == 0.5)").empty());
 }
@@ -365,7 +361,6 @@ TEST_CASE("scripts add, change and remove effects", "[audio][luau][effects]")
         assert(low_pass.cutoff == 400 and low_pass.resonance > 0)
         assert(Audio.getEffect("sfx", "low_pass") == nil)
 
-        -- The other settings are kept
         Audio.setEffect("music", "low_pass", { resonance = 2 })
         low_pass = Audio.getEffect("music", "low_pass")
         assert(low_pass.cutoff == 400 and low_pass.resonance == 2)

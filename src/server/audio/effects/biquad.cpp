@@ -82,7 +82,6 @@ namespace atmo::server::audio
         const double output = m_b0 * input + s.z1;
         s.z1 = m_b1 * input - m_a1 * output + s.z2;
         s.z2 = m_b2 * input - m_a2 * output;
-        // Together: clearing only one of them feeds an endless tiny oscillation.
         if (dsp::Flush(s.z1) == 0.0 && dsp::Flush(s.z2) == 0.0)
             s = {};
         return static_cast<float>(output);

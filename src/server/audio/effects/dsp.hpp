@@ -7,14 +7,12 @@
 
 namespace atmo::server::audio::dsp
 {
-    // Effects remember past samples: one NaN or infinity would silence a bus for good.
     [[nodiscard]] inline float Sanitize(float value) noexcept
     {
         constexpr float limit = 1e6f;
         return std::isnan(value) ? 0.0f : std::clamp(value, -limit, limit);
     }
 
-    // Feedback that fades to silence ends in denormals, which are very slow on some CPUs.
     template <typename T> [[nodiscard]] T Flush(T value) noexcept
     {
         return std::abs(value) < T(1e-15) ? T(0) : value;

@@ -19,7 +19,6 @@ namespace atmo::server::audio
 
     float Ducker::next(float left, float right) noexcept
     {
-        // The level falls slowly so the zero crossings of a wave do not count as silence.
         m_level = dsp::Flush(std::max({ std::abs(left), std::abs(right), m_level * m_level_decay }));
 
         const double target = m_level > m_threshold ? m_ducked : 1.0;
