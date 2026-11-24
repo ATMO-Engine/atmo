@@ -33,6 +33,10 @@ namespace atmo::core::ecs::entities
             return "UICheckBox";
         }
 
+        /**
+         * @brief Set the state and the icon without emitting "Toggle".
+         */
+        void setChecked(bool checked);
         void removeTexture();
         Clay_ElementDeclaration buildDecl() override;
         void draw(float delta_time) override;

@@ -18,6 +18,7 @@ std::optional<atmo::core::ecs::entities::Entity> createBoolWidget(atmo::core::ec
     bool checked = false;
     if (value)
         field.get(value, &checked);
+    checkbox_entity->setChecked(checked);
 
     checkbox_entity->getSignal<bool>("Toggle").connect([value, field](bool new_value) { field.set(value, &new_value); });
 
@@ -28,6 +29,7 @@ void updateBoolWidget(atmo::core::ecs::entities::Entity widget, void *value, con
 {
     bool checked = false;
     field.get(value, &checked);
+    atmo::core::ecs::entities::UICheckBox(widget.getHandle()).setChecked(checked);
 }
 
 ATMO_REGISTER_WIDGET("bool", createBoolWidget, {}, updateBoolWidget);

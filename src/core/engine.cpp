@@ -37,6 +37,7 @@
 #include "luau/script_instance.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "server/audio/audio_server.hpp"
 #include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog-inl.h"
 #include "spdlog/spdlog.h"
@@ -159,6 +160,11 @@ namespace atmo::core
     Engine::RenderingServerShutdown::~RenderingServerShutdown()
     {
         server::rendering::RenderingServer::Instance().shutdown();
+    }
+
+    Engine::AudioServerShutdown::~AudioServerShutdown()
+    {
+        server::audio::AudioServer::Instance().shutdown();
     }
 
     Engine::Engine() = default;
@@ -390,6 +396,9 @@ namespace atmo::core
             SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Atmo cannot start", no_gpu_message, nullptr);
             return 1;
         }
+
+        if (!m_headless && !server::audio::AudioServer::Instance().init())
+            spdlog::warn("Audio output is disabled");
 
         m_ecs.reset();
 

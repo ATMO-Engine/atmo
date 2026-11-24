@@ -49,6 +49,7 @@
     "create_new_entity": "Create new entity",
     "entities": {
       "Entity": "Entity",
+      "Entity::AudioEmitter": "AudioEmitter",
       "Entity::Entity2d": "Entity2d",
       "Entity::Entity2d::Camera2d": "Camera2d",
       "Entity::Entity2d::Body2d": "Body2d",
