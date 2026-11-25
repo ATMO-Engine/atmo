@@ -21,6 +21,12 @@
 
 namespace atmo::server::audio
 {
+    struct Ducking {
+        Bus trigger = Bus::Master;
+        Ducker ducker;
+        std::array<float, max_effect_parameters> values{};
+    };
+
     class AudioServer
     {
     public:
@@ -129,12 +135,6 @@ namespace atmo::server::audio
 
         struct EffectSlot {
             std::unique_ptr<AudioEffect> effect;
-            std::array<float, max_effect_parameters> values{};
-        };
-
-        struct Ducking {
-            Bus trigger = Bus::Master;
-            Ducker ducker;
             std::array<float, max_effect_parameters> values{};
         };
 

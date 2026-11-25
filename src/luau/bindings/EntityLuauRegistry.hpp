@@ -39,8 +39,8 @@
 namespace atmo::luau
 {
     struct LuaEntry {
-        const char *metatable_name;
-        const char *parent_name;
+        const char *metatable_name = nullptr;
+        const char *parent_name = nullptr;
         std::function<void(lua_State *)> register_type;
         std::function<void(lua_State *, flecs::entity &)> push_entity;
     };
