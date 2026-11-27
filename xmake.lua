@@ -5,6 +5,10 @@ set_allowedmodes("release", "debug", "profile")
 
 set_languages("c++23")
 
+if is_plat("windows") then
+    set_runtimes(is_mode("debug") and "MTd" or "MT")
+end
+
 option("tsan")
     set_default(false)
     set_showmenu(true)

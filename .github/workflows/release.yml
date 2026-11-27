@@ -75,8 +75,8 @@ jobs:
           - name: macOS
             os: macos-26
             platform: macos
-            configure: "--target_minver=13.0"
-            cache-suffix: "-minver13"
+            configure: "--target_minver=14.0"
+            cache-suffix: "-minver14"
           - name: Windows
             os: windows-latest
             platform: windows
@@ -162,8 +162,8 @@ jobs:
             archs=$(lipo -archs "$binary")
             minos=$(vtool -show-build "$binary" | awk '$1 == "minos" { print $2 }')
             echo "$binary: $archs, minos $minos"
-            if [[ "$archs" != "arm64" || "$minos" != "13.0" ]]; then
-              echo "::error::$binary is built for '$archs' and macOS $minos, expected arm64 and macOS 13.0"
+            if [[ "$archs" != "arm64" || "$minos" != "14.0" ]]; then
+              echo "::error::$binary is built for '$archs' and macOS $minos, expected arm64 and macOS 14.0"
               exit 1
             fi
           done
