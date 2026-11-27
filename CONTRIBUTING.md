@@ -14,6 +14,7 @@ This document provides guidelines to help you contribute effectively.
 - [Formatting](#formatting)
 - [Testing](#testing)
 - [Documentation](#documentation)
+- [Releasing](#releasing)
 - [Translations](#translations)
 - [Pull Requests](#pull-requests)
 - [Commit Messages](#commit-messages)
@@ -315,6 +316,59 @@ The guides and manual of the [documentation site](https://docs.atmo-engine.com) 
 
 See [`docs/README.md`](docs/README.md) for how to write and preview pages.
 
+
+## Releasing
+
+Releases are built by the `release` workflow (`.github/workflows/release.yml`) when a version tag is pushed. It builds
+the editor (`atmo`) and the export runtime (`atmo-export`) in release mode on Windows (x64), macOS (arm64) and Linux
+(x64), and attaches `atmo_<version>_<platform>.zip`, `atmo-export_<version>_<platform>.zip` and `SHA256SUMS.txt` to a
+draft GitHub release. Nothing is signed.
+
+1. On `main`, set `ATMO_VERSION` in `src/project/project_settings.hpp` to the new version and merge it.
+2. Tag that commit with `v` followed by the same version, and push the tag:
+
+   ```bash
+   git tag -a v1.1.0 -m "Atmo 1.1.0" <commit on main>
+   git push origin v1.1.0
+   ```
+
+3. When the workflow is done, review the draft release on GitHub and publish it.
+
+The workflow fails before building if the tag is not `v<ATMO_VERSION>` or if the tagged commit is not on `main`.
+Versions with a prerelease part (`v1.1.0-beta`) are marked as prereleases. Running the workflow again for the same tag
+replaces the files of the draft. Only tags on commits that contain the workflow start it, so tags made before it was
+added never do.
+
+The release builds for macOS use `--target_minver=13.0`, so that they start on macOS 13 and later; their packages are
+cached separately from the other builds.
+
+### Icons
+
+The icons live in `packaging/` (not in `assets/`, which is packed into the editor):
+
+| File                                                | Used by                                                     |
+| --------------------------------------------------- | ----------------------------------------------------------- |
+| `packaging/icons/atmo.png`                          | Source of the macOS icon (1024×1024, macOS icon grid)       |
+| `packaging/icons/atmo-256.png`                      | Editor window icon (embedded in `atmo`), Linux `atmo.png`   |
+| `packaging/windows/atmo.ico`, `atmo.rc`             | Icon of `atmo.exe`                                          |
+| `packaging/macos/atmo.icns`, `Info.plist.in`        | `atmo_<version>_macos.app`                                  |
+| `packaging/linux/atmo.desktop`                      | Linux menu entry                                            |
+
+They are made from `assets/Atmo-exports/Plapipou/PNG/Dark/Atmo-platy-dark.png`, centered on a white rounded square
+(824 px wide, 185 px corner radius, in a 1024 px transparent image). `atmo-256.png` and `atmo.ico` are that square
+cropped to its edges, `atmo.ico` holds the sizes 16, 24, 32, 48, 64, 128 and 256. To rebuild `atmo.icns` on macOS
+from an updated `atmo.png`:
+
+```bash
+mkdir atmo.iconset
+for size in 16 32 128 256 512; do
+  sips -z $size $size packaging/icons/atmo.png --out atmo.iconset/icon_${size}x${size}.png
+  sips -z $((size * 2)) $((size * 2)) packaging/icons/atmo.png --out atmo.iconset/icon_${size}x${size}@2x.png
+done
+iconutil -c icns atmo.iconset -o packaging/macos/atmo.icns
+```
+
+`atmo-export` has no icon, so exported games are not shown with the ATMO icon.
 
 ## Translations
 

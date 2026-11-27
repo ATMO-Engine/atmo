@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "SDL3/SDL_surface.h"
 #include "clay.h"
 #include "core/ecs/entities/entity.hpp"
 #include "core/ecs/entity_registry.hpp"
@@ -53,6 +54,7 @@ namespace atmo::core::ecs::entities
         bool setTitle(const std::string &name);
         void setSize(const core::types::Vector2i &size);
         void focus();
+        bool setIcon(SDL_Surface *icon);
 
         core::types::Vector2i getSize() const noexcept;
         std::string getTitle() const noexcept;

@@ -1,7 +1,7 @@
 ---
 id: editor
 title: Using the editor
-order: 3
+order: 4
 description: Create a project, build a scene, run it, and find your way around the editor.
 ---
 

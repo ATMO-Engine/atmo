@@ -1,7 +1,7 @@
 ---
 id: projects
 title: Projects and files
-order: 2
+order: 3
 description: Where projects are stored on your computer and how to reach their files with project:// paths.
 ---
 

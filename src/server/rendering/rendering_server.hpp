@@ -59,6 +59,7 @@ namespace atmo::server::rendering
         bool windowSetTitle(WindowRid window, std::string_view title);
         bool windowSetSize(WindowRid window, core::types::Vector2i size);
         bool windowFocus(WindowRid window);
+        bool windowSetIcon(WindowRid window, SDL_Surface *icon);
         void windowSetEventCallback(WindowRid window, std::function<void(const WindowEvent &)> callback);
         [[nodiscard]] bool windowIsAlive(WindowRid window) const;
         [[nodiscard]] core::types::Vector2i windowGetSize(WindowRid window) const;

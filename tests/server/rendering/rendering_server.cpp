@@ -265,3 +265,26 @@ TEST_CASE("the SDL window handle is only given for live windows", "[rendering][s
     server->windowFree(window);
     REQUIRE(server->windowGetSdlWindow(window) == nullptr);
 }
+
+TEST_CASE("window icons are only set on live windows", "[rendering][server][window]")
+{
+    OffscreenVideo video;
+    if (!video.available)
+        SKIP("SDL offscreen video driver unavailable: " << SDL_GetError());
+
+    Server server;
+
+    SDL_Surface *icon = SDL_CreateSurface(16, 16, SDL_PIXELFORMAT_RGBA32);
+    REQUIRE(icon != nullptr);
+    REQUIRE(SDL_FillSurfaceRect(icon, nullptr, SDL_MapSurfaceRGBA(icon, 255, 255, 255, 255)));
+
+    const WindowRid window = server->windowCreate({ .title = "icon", .size = { 32, 32 } });
+    REQUIRE_NOTHROW(server->windowSetIcon(window, icon));
+    REQUIRE_FALSE(server->windowSetIcon(window, nullptr));
+
+    server->windowFree(window);
+    REQUIRE_FALSE(server->windowSetIcon(window, icon));
+    REQUIRE_FALSE(server->windowSetIcon(WindowRid{}, icon));
+
+    SDL_DestroySurface(icon);
+}
