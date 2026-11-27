@@ -49,13 +49,17 @@ namespace atmo::core::ecs::entities
             if (!handle.is_alive()) {
                 return;
             }
-            UICheckBox chBox(handle);
-            if (!chBox.getComponent<core::components::UICheckBox>().default_texture)
-                return;
-            auto &checkBoxIcon = chBox.getChildren()[0].getChildren()[0].getComponentMutable<core::components::UI>();
-
-            checkBoxIcon.visible = new_state;
+            UICheckBox(handle).setChecked(new_state);
         });
+    }
+
+    void UICheckBox::setChecked(bool checked)
+    {
+        getComponentMutable<core::components::UIButton>().is_pressed = checked;
+        if (!getComponent<core::components::UICheckBox>().default_texture)
+            return;
+
+        getChildren()[0].getChildren()[0].getComponentMutable<core::components::UI>().visible = checked;
     }
 
     void UICheckBox::removeTexture()

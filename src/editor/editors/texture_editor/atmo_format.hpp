@@ -236,7 +236,7 @@ namespace atmo::image::extension
         {
             static_assert(std::is_trivially_copyable_v<T>);
             need(sizeof(T));
-            std::array<char, sizeof(T)> bytes;
+            std::array<char, sizeof(T)> bytes{};
             std::memcpy(bytes.data(), m_buffer.data() + m_pos, sizeof(T));
             m_pos += sizeof(T);
             return std::bit_cast<T>(bytes);

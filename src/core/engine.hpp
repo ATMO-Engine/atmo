@@ -41,7 +41,16 @@ namespace atmo::core
             RenderingServerShutdown &operator=(const RenderingServerShutdown &) = delete;
         };
 
+        struct AudioServerShutdown {
+            AudioServerShutdown() = default;
+            ~AudioServerShutdown();
+
+            AudioServerShutdown(const AudioServerShutdown &) = delete;
+            AudioServerShutdown &operator=(const AudioServerShutdown &) = delete;
+        };
+
         RenderingServerShutdown m_rendering_server_shutdown;
+        AudioServerShutdown m_audio_server_shutdown;
         ecs::ECS m_ecs;
         std::atomic<bool> m_running{ false };
         bool m_headless = false;

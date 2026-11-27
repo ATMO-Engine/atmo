@@ -1,4 +1,5 @@
 #include "luau.hpp"
+#include "bindings/bindings_audio.hpp"
 #include "bindings/bindings_input.hpp"
 #include "bindings/bindings_prefab.hpp"
 #include "ctre.hpp"
@@ -183,6 +184,7 @@ namespace atmo
                 [](lua_State *L) -> int {
                     InputBindings::RegisterType(L);
                     PrefabBindings::RegisterType(L);
+                    AudioBindings::RegisterType(L);
                     LuauRegistry::Instance().registerAll(L);
                     return 0;
                 },

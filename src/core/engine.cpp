@@ -37,6 +37,7 @@
 #include "luau/script_instance.hpp"
 #include "project/file_system.hpp"
 #include "project/project_manager.hpp"
+#include "server/audio/audio_server.hpp"
 #include "server/rendering/rendering_server.hpp"
 #include "spdlog/spdlog-inl.h"
 #include "spdlog/spdlog.h"
@@ -159,6 +160,11 @@ namespace atmo::core
     Engine::RenderingServerShutdown::~RenderingServerShutdown()
     {
         server::rendering::RenderingServer::Instance().shutdown();
+    }
+
+    Engine::AudioServerShutdown::~AudioServerShutdown()
+    {
+        server::audio::AudioServer::Instance().shutdown();
     }
 
     Engine::Engine() = default;
@@ -391,6 +397,9 @@ namespace atmo::core
             return 1;
         }
 
+        if (!m_headless && !server::audio::AudioServer::Instance().init())
+            spdlog::warn("Audio output is disabled");
+
         m_ecs.reset();
 
         return 0;
@@ -575,6 +584,7 @@ namespace atmo::core
             }
 
             deltaTime = applyTimeControl(deltaTime);
+            server::audio::AudioServer::Instance().update(deltaTime * m_ecs.getWorld().get_info()->time_scale);
 
             if (m_headless) {
                 std::this_thread::sleep_until(frame_start + headless_frame_time);
