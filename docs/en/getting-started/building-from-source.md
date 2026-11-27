@@ -1,7 +1,7 @@
 ---
 id: building-from-source
 title: Building from source
-order: 1
+order: 2
 description: Install the toolchain and build the engine, its tests and the export runtime.
 ---
 

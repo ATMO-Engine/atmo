@@ -146,6 +146,19 @@ namespace atmo::server::rendering
         return true;
     }
 
+    bool WindowSystem::setIcon(WindowRid rid, SDL_Surface *icon)
+    {
+        State *state = find(rid);
+        if (!state || !icon)
+            return false;
+
+        if (!SDL_SetWindowIcon(state->window, icon)) {
+            spdlog::warn("Failed to set window icon: {}", SDL_GetError());
+            return false;
+        }
+        return true;
+    }
+
     void WindowSystem::setEventCallback(WindowRid rid, EventCallback callback)
     {
         if (State *state = find(rid))

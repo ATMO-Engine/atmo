@@ -1,0 +1,232 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  XMAKE_VERSION: "3.1.1"
+
+jobs:
+  prepare:
+    name: Check tag
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check tag, version and branch
+        id: version
+        shell: bash
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$tag' is not v<project>.<major>.<minor>[-prerelease][+build]"
+            exit 1
+          fi
+          version="${tag#v}"
+
+          source_version=$(sed -nE 's/^#define ATMO_VERSION "(.*)"$/\1/p' src/project/project_settings.hpp)
+          if [[ "$version" != "$source_version" ]]; then
+            echo "::error::Tag '$tag' does not match ATMO_VERSION '$source_version' in src/project/project_settings.hpp"
+            exit 1
+          fi
+
+          commit=$(git rev-parse "$GITHUB_REF^{commit}")
+          if ! git merge-base --is-ancestor "$commit" origin/main; then
+            echo "::error::Tag '$tag' points to $commit, which is not on main"
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: ${{ matrix.name }}
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-24.04
+            platform: linux
+            configure: ""
+            cache-suffix: "-ubuntu-24.04"
+          - name: macOS
+            os: macos-26
+            platform: macos
+            configure: "--target_minver=13.0"
+            cache-suffix: "-minver13"
+          - name: Windows
+            os: windows-latest
+            platform: windows
+            configure: ""
+            cache-suffix: ""
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install SDL3 build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential git make pkg-config cmake ninja-build \
+            libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+            libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev \
+            libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
+            libpipewire-0.3-dev libwayland-dev libxinerama-dev \
+            libvulkan1 mesa-vulkan-drivers vulkan-validationlayers
+
+      - name: Setup Xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: ${{ env.XMAKE_VERSION }}
+          actions-cache-folder: .xmake-cache
+
+      - name: Use a cacheable package directory
+        shell: bash
+        run: echo "XMAKE_PKG_INSTALLDIR=${{ runner.temp }}/xmake-packages" >> "$GITHUB_ENV"
+
+      - name: Restore xmake packages
+        id: packages
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/xmake-packages
+          key: xmake-packages-${{ runner.os }}-${{ runner.arch }}-${{ env.XMAKE_VERSION }}${{ matrix.cache-suffix }}-${{ hashFiles('xmake.lua', 'xmake-requires.lock', 'deps/**') }}
+
+      - name: Configure and install packages
+        run: xmake f -y -m release ${{ matrix.configure }}
+
+      - name: Check lock file
+        shell: bash
+        run: |
+          if ! git diff --quiet -- xmake-requires.lock; then
+            echo "::error::xmake-requires.lock changed during configuration. Commit the lock file for this platform before releasing."
+            git diff -- xmake-requires.lock
+            exit 1
+          fi
+
+      - name: Save xmake packages
+        if: steps.packages.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/xmake-packages
+          key: ${{ steps.packages.outputs.cache-primary-key }}
+
+      - name: Build
+        shell: bash
+        run: |
+          xmake build -y atmo
+          xmake build -y atmo-export
+
+      - name: Check Linux binaries
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          for binary in build/atmo build/atmo-export; do
+            echo "$binary"
+            ldd "$binary"
+            glibc=$(objdump -T "$binary" | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1)
+            echo "::notice::$binary needs $glibc"
+          done
+
+      - name: Check macOS binaries
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          for binary in build/atmo build/atmo-export; do
+            otool -L "$binary"
+            archs=$(lipo -archs "$binary")
+            minos=$(vtool -show-build "$binary" | awk '$1 == "minos" { print $2 }')
+            echo "$binary: $archs, minos $minos"
+            if [[ "$archs" != "arm64" || "$minos" != "13.0" ]]; then
+              echo "::error::$binary is built for '$archs' and macOS $minos, expected arm64 and macOS 13.0"
+              exit 1
+            fi
+          done
+
+      - name: Check Windows binaries
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $dumpbin = & $vswhere -latest -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+          foreach ($binary in 'build\atmo.exe', 'build\atmo-export.exe') {
+            $dependents = & $dumpbin /nologo /dependents $binary | Out-String
+            Write-Output $dependents
+            if ($dependents -match '(?i)(vcruntime|msvcp)[0-9]*\.dll') {
+              Write-Output "::error::$binary needs the Visual C++ runtime DLLs, which the release zip does not include"
+              exit 1
+            }
+          }
+
+      - name: Package
+        shell: bash
+        run: python .github/scripts/package_release.py --version "${{ needs.prepare.outputs.version }}" --platform ${{ matrix.platform }} --build-dir build --out dist
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Draft release
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Write checksums
+        working-directory: dist
+        run: sha256sum *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Create or update the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            flags=(--draft --verify-tag --generate-notes --title "Atmo $VERSION")
+            if [[ "$PRERELEASE" == "true" ]]; then
+              flags+=(--prerelease)
+            fi
+            gh release create "$TAG" "${flags[@]}" dist/*
+          fi

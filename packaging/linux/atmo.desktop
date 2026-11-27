@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Atmo
+GenericName=Game Engine
+Comment=2D game engine and editor
+Exec=atmo
+Icon=atmo
+Terminal=false
+Categories=Development;IDE;
+StartupWMClass=atmo

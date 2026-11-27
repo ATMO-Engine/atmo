@@ -332,6 +332,12 @@ namespace atmo::server::rendering
         return m_window_rids.isAlive(window) && m_windows.focus(window);
     }
 
+    bool RenderingServer::windowSetIcon(WindowRid window, SDL_Surface *icon)
+    {
+        assertMainThread();
+        return m_window_rids.isAlive(window) && m_windows.setIcon(window, icon);
+    }
+
     void RenderingServer::windowSetEventCallback(WindowRid window, std::function<void(const WindowEvent &)> callback)
     {
         assertMainThread();

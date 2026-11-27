@@ -185,6 +185,16 @@ namespace atmo::core::ecs::entities
         server::rendering::RenderingServer::Instance().windowFocus(window->rid);
     }
 
+    bool Window::setIcon(SDL_Surface *icon)
+    {
+        auto window = p_handle.get_ref<components::Window>();
+
+        if (window->headless)
+            return false;
+
+        return server::rendering::RenderingServer::Instance().windowSetIcon(window->rid, icon);
+    }
+
     void Window::draw(components::Window &window, float delta_time)
     {
         if (window.headless || !window.clay_context)

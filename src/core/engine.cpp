@@ -45,6 +45,7 @@
 #include "addon/addon.hpp"
 
 #if !defined(ATMO_EXPORT)
+#include "editor/app_icon.hpp"
 #include "editor/editor_manager.hpp"
 #include "editor/project_explorer/project_explorer.hpp"
 #include "mcp/log_buffer.hpp"
@@ -300,6 +301,11 @@ namespace atmo::core
         static constexpr SDL_InitFlags flags =
             SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS | SDL_INIT_SENSOR | SDL_INIT_CAMERA;
 
+#if !defined(ATMO_EXPORT)
+        if (!args::ArgManager::IsUsed("--run"))
+            editor::SetAppMetadata();
+#endif
+
         if (args::ArgManager::Get<bool>("--headless") == false && SDL_Init(flags)) {
             m_headless = false;
         } else {
@@ -486,6 +492,10 @@ namespace atmo::core
         window->rename("_Root");
         window->setTitle(get_window_name(0.0f));
         window->onClose([&]() { stop(); });
+#if !defined(ATMO_EXPORT)
+        if (!args::ArgManager::IsUsed("--run"))
+            editor::ApplyAppIcon(*window);
+#endif
 
         auto scene = ecs::EntityRegistry::Create<ecs::entities::Scene>("Entity::Scene");
         scene->setSingleton(false);

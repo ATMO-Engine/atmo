@@ -224,6 +224,11 @@ function mcp()
     end
 end
 
+function app_icon()
+    add_rules("utils.bin2c", { extensions = { ".png" } })
+    add_files("packaging/icons/atmo-256.png")
+end
+
 function rendering(opt)
     local shader_targets = {}
     if has_config("rendering_vulkan") then
@@ -264,6 +269,10 @@ target("atmo")
     if is_plat("macosx") then
         add_files("src/editor/menu_bar/macos_menu_bar.mm")
     end
+    if is_plat("windows") then
+        add_files("packaging/windows/atmo.rc")
+    end
+    app_icon()
     rendering({ shader_compiler = true })
     platform_specifics()
     if is_mode("debug") or is_mode("profile") then
@@ -350,6 +359,7 @@ target("atmo-test")
     if is_plat("macosx") then
         add_files("src/editor/menu_bar/macos_menu_bar.mm")
     end
+    app_icon()
     rendering({ shader_compiler = true })
     platform_specifics()
     add_tests("atmo-test", {

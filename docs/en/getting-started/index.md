@@ -10,7 +10,7 @@ description: What ATMO is and where to begin.
 ATMO is a lightweight, cross-platform 2D game engine written in C++23. It is built around an Entity Component
 System (ECS) and uses [Luau](https://luau.org) for scripting.
 
-- New to the engine? Start by [[building-from-source|building it from source]].
+- New to the engine? [[installing|Download a release]], or start by [[building-from-source|building it from source]].
 - Engine installed? Create a project and a first game by [[page:editor|using the editor]].
 - Looking for your project on the disk, or for what `project://` means? See [[projects]].
 - Ready to make a game? Write your first script with [[scripting]].

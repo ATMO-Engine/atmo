@@ -41,6 +41,7 @@ namespace atmo::server::rendering
         bool setTitle(WindowRid rid, std::string_view title);
         bool setSize(WindowRid rid, core::types::Vector2i size);
         bool focus(WindowRid rid);
+        bool setIcon(WindowRid rid, SDL_Surface *icon);
         void setEventCallback(WindowRid rid, EventCallback callback);
 
         [[nodiscard]] core::types::Vector2i size(WindowRid rid) const;

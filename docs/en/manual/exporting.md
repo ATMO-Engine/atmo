@@ -12,7 +12,8 @@ the project. Players need neither the engine nor the project.
 
 ## Export {#export}
 
-1. Build the export runtime, in the folder of the engine:
+1. Get the export runtime of the same version as the editor: download `atmo-export_<version>_<system>.zip` from
+   the [[installing#downloads|release]], or build it in the folder of the engine:
 
     ```sh
     xmake f -m release
@@ -26,9 +27,14 @@ the project. Players need neither the engine nor the project.
     atmo --project /path/to/my-game --export /path/to/atmo-export /path/to/my-game-executable
     ```
 
-There is no export button in the editor. On Windows, give the executable a name that ends in `.exe`.
+With the release of the editor, `atmo` is `atmo_<version>_<system>` (inside `atmo_<version>_macos.app/Contents/MacOS/`,
+named `atmo`, on macOS) and `/path/to/atmo-export` is the extracted `atmo-export_<version>_<system>` file.
 
-The game runs on the system `atmo-export` was built for. To export for another system, use an `atmo-export` built there.
+There is no export button in the editor. On Windows, give the executable a name that ends in `.exe`. Exported games
+have no icon yet.
+
+The game runs on the system `atmo-export` was built for. To export for another system, use the `atmo-export` of that
+system, from the release or built there.
 
 ## What is packed {#packed}
 
